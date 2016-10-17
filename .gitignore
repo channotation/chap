@@ -1,3 +1,6 @@
 # ignored subdirecotires:
 build/*
 bin/*
+
+# temporary files:
+*.swp
