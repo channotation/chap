@@ -1,0 +1,3 @@
+# ignored subdirecotires:
+build/*
+bin/*
