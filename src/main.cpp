@@ -1,10 +1,14 @@
 #include <iostream>
+#include <string>
+#include <vector>
 
-using namespace std;
+#include <gromacs/trajectoryanalysis.h>
+
+using namespace gmx;
 
 int main()
 {
-	cout<<"Hello, world!"<<endl;
+	std::cout<<"Hello, world!"<<std::endl;
 
 
 
