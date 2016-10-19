@@ -1,0 +1,1 @@
+/sbcb/packages/opt/Linux_x86_64/gcc/6.2.0/bin/gcc   -Wall -lstdc++ -lm   -L/sbcb/packages/opt/Linux_x86_64/gcc/6.2.0/lib64 CMakeFiles/runTests.dir/tests.cpp.o  -o runTests -rdynamic -Wl,-Bstatic -lgtest -Wl,-Bdynamic -lpthread 
