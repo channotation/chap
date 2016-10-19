@@ -4,3 +4,11 @@ bin/*
 
 # temporary files:
 *.swp
+
+# log files:
+*.log
+
+# object files and executables:
+*.o
+*.out
+*.bin
