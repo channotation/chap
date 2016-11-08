@@ -8,9 +8,17 @@ project(CHAP)
 # set path to custom cmake modules:
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+# bring header files into build environment:
+include_directories(${CHAP_SOURCE_DIR}/include)
+
 # set library directories for the linker:
 link_directories( /usr/local/fftw/lib/ )
 
+
+
+
+# add source files:
+#file(GLOB SOURCES "src/*.cpp")
 
 # set compiler flags:
 set(CMAKE_CXX_FLAGS "-Wall")
@@ -40,7 +48,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 #------------------------------------------------------------------------------
 
 # create executable chap from main.cpp:
-add_executable(chap main.cpp)
+add_executable(chap src/main.cpp src/trajectoryAnalysis/trajectoryAnalysis.cpp)
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS}")
 message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
