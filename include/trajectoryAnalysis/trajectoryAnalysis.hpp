@@ -12,10 +12,10 @@ using namespace gmx;
 
 
 
-class AnalysisTemplate : public TrajectoryAnalysisModule
+class trajectoryAnalysis : public TrajectoryAnalysisModule
 {
     public:
-        AnalysisTemplate();
+        trajectoryAnalysis();
         virtual void initOptions(IOptionsContainer          *options,
                                  TrajectoryAnalysisSettings *settings);
         virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
@@ -24,6 +24,7 @@ class AnalysisTemplate : public TrajectoryAnalysisModule
                                   TrajectoryAnalysisModuleData *pdata);
         virtual void finishAnalysis(int nframes);
         virtual void writeOutput();
+
     private:
         class ModuleData;
         std::string                      fnDist_;

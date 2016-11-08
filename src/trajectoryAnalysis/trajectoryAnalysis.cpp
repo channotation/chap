@@ -2,7 +2,7 @@
 
 using namespace gmx;
 
-AnalysisTemplate::AnalysisTemplate()
+trajectoryAnalysis::trajectoryAnalysis()
     : cutoff_(0.0)
 {
     registerAnalysisDataset(&data_, "avedist");
@@ -11,7 +11,7 @@ AnalysisTemplate::AnalysisTemplate()
 
 
 void
-AnalysisTemplate::initOptions(IOptionsContainer          *options,
+trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                               TrajectoryAnalysisSettings *settings)
 {
     static const char *const desc[] = {
@@ -50,7 +50,7 @@ AnalysisTemplate::initOptions(IOptionsContainer          *options,
 
 
 void
-AnalysisTemplate::initAnalysis(const TrajectoryAnalysisSettings &settings,
+trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                const TopologyInformation         & /*top*/)
 {
     nb_.setCutoff(cutoff_);
@@ -74,7 +74,7 @@ AnalysisTemplate::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 
 void
-AnalysisTemplate::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
+trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                TrajectoryAnalysisModuleData *pdata)
 {
     AnalysisDataHandle         dh     = pdata->dataHandle(data_);
@@ -104,7 +104,7 @@ AnalysisTemplate::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 void
-AnalysisTemplate::finishAnalysis(int /*nframes*/)
+trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 {
 
 }
@@ -113,7 +113,7 @@ AnalysisTemplate::finishAnalysis(int /*nframes*/)
 
 
 void
-AnalysisTemplate::writeOutput()
+trajectoryAnalysis::writeOutput()
 {
     // We print out the average of the mean distances for each group.
     for (size_t g = 0; g < sel_.size(); ++g)
