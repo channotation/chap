@@ -40,13 +40,12 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     private:
 	class ModuleData;
-//	std::string                      fnDist_;
 	double                           cutoff_;	// cutoff for grid search
 	Selection                        refsel_;   // selection of the reference group
 	SelectionList                    sel_;		// selection of the small particle groups
 	AnalysisNeighborhood             nb_;		// neighbourhood for grid searches
 	AnalysisData                     data_;		// raw data container
-//	AnalysisDataAverageModulePointer avem_;
+	t_topology *top_;							// system topology
 };
 
 

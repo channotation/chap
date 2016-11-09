@@ -1,4 +1,7 @@
+#include <gromacs/topology/atomprop.h>
+
 #include "trajectoryAnalysis/trajectoryAnalysis.hpp"
+
 
 using namespace gmx;
 
@@ -45,16 +48,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
 	                     .store(&cutoff_)
-                         .description("Cutoff for distance calculation (0 = no cutoff)"));
-
-	   /* 
-    options->addOption(FileNameOption("o")
-                           .filetype(eftPlot).outputFile()
-                           .store(&fnDist_).defaultBasename("avedist")
-                           .description("Average distances from reference group"));
-                           .description("Cutoff for distance calculation (0 = no cutoff)"));
-    settings->setFlag(TrajectoryAnalysisSettings::efRequireTop);
-	*/
+                         .description("Cutoff for distance calculation (0 = no cutoff)"));	
 }
 
 
@@ -65,7 +59,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
  */
 void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                 const TopologyInformation         & /*top*/)
+                                 const TopologyInformation &top)
 {
 	// set cutoff distance for grid search as specified in user input:
 	nb_.setCutoff(cutoff_);
@@ -73,6 +67,47 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 	// set number of columns in data set (one column per small particle type):
 	data_.setColumnCount(0, sel_.size());
+
+	
+	
+	// load full topology:
+	t_topology *topol = top.topology();	
+
+	// access list of all atoms:
+	t_atoms atoms = topol -> atoms;
+
+	// create vector of van der Waals radii and allocate memory:
+	std::vector<real> vdwRadii;
+	vdwRadii.reserve(atoms.nr);
+
+	// create atomprop struct:
+	gmx_atomprop_t aps = gmx_atomprop_init();
+
+	// loop over all atoms in system and get vdW-radii:
+	for(int i=0; i<atoms.nr; i++)
+	{
+		real vdwRadius;
+
+		// query vdW radius of current atom:
+		if(gmx_atomprop_query(aps, 
+		                      epropVDW, 
+							  *(atoms.resinfo[atoms.atom[i].resind].name),
+							  *(atoms.atomname[i]), &vdwRadius)) 
+		{
+			// TODO: include scale factor here?
+		}
+		else
+		{
+			// could not find vdW radius
+			// TODO: handle this case
+		}
+
+		// add radius to vector of radii:
+		vdwRadii.push_back(vdwRadius);
+	}
+
+	// delete atomprop struct:
+	gmx_atomprop_destroy(aps);
 }
 
 
@@ -108,7 +143,19 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 		// get number of particles in selection:
 		int n_part = sel.posCount();
-		
+	
+
+		for(int i = 0; i < n_part; i++)
+		{
+			
+			SelectionPosition p = sel.position(i);
+			ConstArrayRef<int> idx = p.atomIndices();
+
+
+	//		std::cout<<idx.front()<<std::endl;
+
+		}
+
 	}
 
 
