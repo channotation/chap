@@ -1,3 +1,6 @@
+#include <algorithm>	// for std::max_element()
+#include <cmath>		// for std::sqrt()
+
 #include <gromacs/topology/atomprop.h>
 
 #include "trajectoryAnalysis/trajectoryAnalysis.hpp"
@@ -107,6 +110,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 	// delete atomprop struct:
 	gmx_atomprop_destroy(aps);
+
+	// find largest van der Waals radius in system:
+	maxVdwRadius = *std::max_element(vdwRadii.begin(), vdwRadii.end());
 }
 
 
@@ -146,17 +152,23 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 	// initialise probe position:
 	std::vector<RVec> probePosition = {initialProbePosition};
-   	// loop for advancing probe position:
-	int i = 0;
+
+
+	real voidRadius = calculateVoidRadius(initialProbePosition,
+	                                      pbc,
+										  ref_selection);
+
+	std::cout<<voidRadius<<std::endl;
+
+	// loop for advancing probe position:
+	int i = maxProbeIter;
 	while(i < maxProbeIter)
 	{
-		// search test:
-		AnalysisNeighborhoodPositions probePos(probePosition);
-		real dist = nbSearch.minimumDistance(probePos);
+	
+		// TODO: implement radius maximum radius calculating function
+		// TODO: implement SA for radius finding		
 		
-		
-		
-		std::cout<<dist<<std::endl;
+//		std::cout<<dist<<std::endl;
 
 
 
@@ -234,6 +246,60 @@ trajectoryAnalysis::writeOutput()
 }
 
 
+/*
+ * Function to calculate the radius of a spherical void around a given center.
+ */
+real
+trajectoryAnalysis::calculateVoidRadius(RVec centre, 
+                                        t_pbc *pbc, 
+										const Selection refSelection)
+{
+	// convert centre coordinate to analysis neighbourhood position:
+	std::vector<RVec> centrePosition = {centre};	
+	AnalysisNeighborhoodPositions centrePos(centrePosition);
 
+
+	/*
+	// initialise neighbourhood search:
+	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
+
+	// find distance to closest reference atom:
+	real minDist = nbSearch.minimumDistance(centrePos);
+
+	// set cutoff distance:
+	nb_.setCutoff(1.0);
+	*/
+
+
+	// initialise neighbourhood pair search:
+	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
+	AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch.startPairSearch(refSelection);
+	AnalysisNeighborhoodPair pair;
+
+	real voidRadius = 999999999; // TODO:  infiinity
+	real pairDist;
+	real referenceVdwRadius;
+
+	// loop over all pairs:
+	while( nbPairSearch.findNextPair(&pair) )
+	{
+		// find distance between particles in pair:
+		// TODO: square root can probably be removed/only drawn for final radius?
+		pairDist = std::sqrt( pair.distance2() );
+
+		// get van der Waals radius of reference atom:
+		referenceVdwRadius = vdwRadii.at(pair.refIndex());
+
+
+		// update void radius if newly found distance is smaller:
+		if( voidRadius > (pairDist - referenceVdwRadius) )
+		{
+			voidRadius = pairDist - referenceVdwRadius;
+		}
+	}
+
+	// return void radius:
+	return voidRadius;
+}
 
 

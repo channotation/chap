@@ -39,13 +39,20 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
     private:
+
 	class ModuleData;
-	double                           cutoff_;	// cutoff for grid search
-	Selection                        refsel_;   // selection of the reference group
-	SelectionList                    sel_;		// selection of the small particle groups
-	AnalysisNeighborhood             nb_;		// neighbourhood for grid searches
-	AnalysisData                     data_;		// raw data container
-	std::vector<real>				 vdwRadii;	// vdW radii of all atoms
+	double                           cutoff_;		// cutoff for grid search
+	Selection                        refsel_;   	// selection of the reference group
+	SelectionList                    sel_;			// selection of the small particle groups
+	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
+	AnalysisData                     data_;			// raw data container
+	std::vector<real>				 vdwRadii;		// vdW radii of all atoms
+	real 							 maxVdwRadius;	// largest vdW radius of all atoms
+
+	// 
+	real calculateVoidRadius(RVec centre,
+                             t_pbc *pbc,
+							 const Selection refSelection);
 };
 
 
