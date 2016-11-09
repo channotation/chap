@@ -15,25 +15,38 @@ using namespace gmx;
 class trajectoryAnalysis : public TrajectoryAnalysisModule
 {
     public:
-        trajectoryAnalysis();
-        virtual void initOptions(IOptionsContainer          *options,
-                                 TrajectoryAnalysisSettings *settings);
-        virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                  const TopologyInformation        &top);
-        virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
-                                  TrajectoryAnalysisModuleData *pdata);
-        virtual void finishAnalysis(int nframes);
-        virtual void writeOutput();
+
+	// constructor for the trajectoryAnalysis module:
+	trajectoryAnalysis();
+
+	// method for adding all options of the trajectoryAnalysis module:
+	virtual void initOptions(IOptionsContainer *options,
+							 TrajectoryAnalysisSettings *settings);
+	
+	// ??
+	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+                              const TopologyInformation &top);
+	
+	// ??
+	virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
+                              TrajectoryAnalysisModuleData *pdata);
+	
+	// ??
+	virtual void finishAnalysis(int nframes);
+	
+	// ??
+	virtual void writeOutput();
+
 
     private:
-        class ModuleData;
-        std::string                      fnDist_;
-        double                           cutoff_;
-        Selection                        refsel_;
-        SelectionList                    sel_;
-        AnalysisNeighborhood             nb_;
-        AnalysisData                     data_;
-        AnalysisDataAverageModulePointer avem_;
+	class ModuleData;
+//	std::string                      fnDist_;
+	double                           cutoff_;	// cutoff for grid search
+	Selection                        refsel_;   // selection of the reference group
+	SelectionList                    sel_;		// selection of the small particle groups
+	AnalysisNeighborhood             nb_;		// neighbourhood for grid searches
+	AnalysisData                     data_;		// raw data container
+//	AnalysisDataAverageModulePointer avem_;
 };
 
 

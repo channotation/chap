@@ -2,6 +2,11 @@
 
 using namespace gmx;
 
+
+
+/*
+ * Constructor for the trajectoryAnalysis class.
+ */
 trajectoryAnalysis::trajectoryAnalysis()
     : cutoff_(0.0)
 {
@@ -10,99 +15,117 @@ trajectoryAnalysis::trajectoryAnalysis()
 
 
 
+/*
+ *
+ */
 void
 trajectoryAnalysis::initOptions(IOptionsContainer          *options,
-                              TrajectoryAnalysisSettings *settings)
+                                TrajectoryAnalysisSettings *settings)
 {
-    static const char *const desc[] = {
-        "This is a template for writing your own analysis tools for",
-        "GROMACS. The advantage of using GROMACS for this is that you",
-        "have access to all information in the topology, and your",
-        "program will be able to handle all types of coordinates and",
-        "trajectory files supported by GROMACS. In addition,",
-        "you get a lot of functionality for free from the trajectory",
-        "analysis library, including support for flexible dynamic",
-        "selections. Go ahead an try it![PAR]",
-        "To get started with implementing your own analysis program,",
-        "follow the instructions in the README file provided.",
-        "This template implements a simple analysis programs that calculates",
-        "average distances from a reference group to one or more",
-        "analysis groups."
-    };
-    settings->setHelpText(desc);
+	// set help text:
+	static const char *const desc[] = {
+		"This is a first prototype for the CHAP tool.",
+		"There is NO HELP, you are on your own!"
+	};
+    settings -> setHelpText(desc);
+
+	// require the user to provide a topology file input:
+    settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
+
+	// get (required) selection option for the reference group: 
+	options -> addOption(SelectionOption("reference")
+	                     .store(&refsel_).required()
+		                 .description("Reference group that defines the channel (normally 'Protein'): "));
+
+	// get (required) selection options for the small particle groups:
+	options -> addOption(SelectionOption("select")
+                         .storeVector(&sel_).required().multiValue()
+	                     .description("Groups to calculate distances to"));
+
+    // get (optional) selection option for the neighbourhood search cutoff:
+    options -> addOption(DoubleOption("cutoff")
+	                     .store(&cutoff_)
+                         .description("Cutoff for distance calculation (0 = no cutoff)"));
+
+	   /* 
     options->addOption(FileNameOption("o")
                            .filetype(eftPlot).outputFile()
                            .store(&fnDist_).defaultBasename("avedist")
                            .description("Average distances from reference group"));
-    options->addOption(SelectionOption("reference")
-                           .store(&refsel_).required()
-                           .description("Reference group to calculate distances from"));
-    options->addOption(SelectionOption("select")
-                           .storeVector(&sel_).required().multiValue()
-                           .description("Groups to calculate distances to"));
-    options->addOption(DoubleOption("cutoff").store(&cutoff_)
                            .description("Cutoff for distance calculation (0 = no cutoff)"));
     settings->setFlag(TrajectoryAnalysisSettings::efRequireTop);
+	*/
 }
 
 
 
 
-
+/*
+ * 
+ */
 void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
-                               const TopologyInformation         & /*top*/)
+                                 const TopologyInformation         & /*top*/)
 {
-    nb_.setCutoff(cutoff_);
-    data_.setColumnCount(0, sel_.size());
-    avem_.reset(new AnalysisDataAverageModule());
-    data_.addModule(avem_);
-    if (!fnDist_.empty())
-    {
-        AnalysisDataPlotModulePointer plotm(
-                new AnalysisDataPlotModule(settings.plotSettings()));
-        plotm->setFileName(fnDist_);
-        plotm->setTitle("Average distance");
-        plotm->setXAxisIsTime();
-        plotm->setYLabel("Distance (nm)");
-        data_.addModule(plotm);
-    }
+	// set cutoff distance for grid search as specified in user input:
+	nb_.setCutoff(cutoff_);
+	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
+
+	// set number of columns in data set (one column per small particle type):
+	data_.setColumnCount(0, sel_.size());
 }
 
 
 
 
-
+/*
+ *
+ */
 void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
-                               TrajectoryAnalysisModuleData *pdata)
+                                 TrajectoryAnalysisModuleData *pdata)
 {
-    AnalysisDataHandle         dh     = pdata->dataHandle(data_);
-    const Selection           &refsel = pdata->parallelSelection(refsel_);
+	// get data handle for this frame:
+	AnalysisDataHandle dh = pdata -> dataHandle(data_);
+
+	// get thread-local selection of reference particles:
+	const Selection &ref_selection = pdata -> parallelSelection(refsel_);
 
 
 
-    AnalysisNeighborhoodSearch nbsearch = nb_.initSearch(pbc, refsel);
+	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
-    for (size_t g = 0; g < sel_.size(); ++g)
-    {
-        const Selection &sel   = pdata->parallelSelection(sel_[g]);
-        int              nr    = sel.posCount();
-        real             frave = 0.0;
-        for (int i = 0; i < nr; ++i)
-        {
-            SelectionPosition p = sel.position(i);
-            frave += nbsearch.minimumDistance(p.x());
-        }
-        frave /= nr;
-        dh.setPoint(g, frave);
-    }
+
+	// initialise neighbourhood search:
+	AnalysisNeighborhoodSearch nbsearch = nb_.initSearch(pbc, ref_selection);
+
+
+	// loop over small particle selections:
+	for(size_t g = 0; g < sel_.size(); ++g)
+	{
+		// get thread-local selection of small particles:
+		const Selection &sel = pdata -> parallelSelection(sel_[g]);
+
+		// get number of particles in selection:
+		int n_part = sel.posCount();
+		
+	}
+
+
+
+
+
+
+
+	// finish analysis of current frame:
     dh.finishFrame();
 }
 
 
 
-
+/*
+ *
+ */
 void
 trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 {
@@ -115,12 +138,7 @@ trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 void
 trajectoryAnalysis::writeOutput()
 {
-    // We print out the average of the mean distances for each group.
-    for (size_t g = 0; g < sel_.size(); ++g)
-    {
-        fprintf(stderr, "Average mean distance for '%s': %.3f nm\n",
-                sel_[g].name(), avem_->average(0, g));
-    }
+	
 }
 
 
