@@ -4,6 +4,7 @@ bin/*
 
 # temporary files:
 *.swp
+*.swo
 
 # log files:
 *.log
