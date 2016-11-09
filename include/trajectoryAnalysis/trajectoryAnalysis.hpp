@@ -45,7 +45,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	SelectionList                    sel_;		// selection of the small particle groups
 	AnalysisNeighborhood             nb_;		// neighbourhood for grid searches
 	AnalysisData                     data_;		// raw data container
-	t_topology *top_;							// system topology
+	std::vector<real>				 vdwRadii;	// vdW radii of all atoms
 };
 
 

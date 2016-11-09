@@ -77,7 +77,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	t_atoms atoms = topol -> atoms;
 
 	// create vector of van der Waals radii and allocate memory:
-	std::vector<real> vdwRadii;
 	vdwRadii.reserve(atoms.nr);
 
 	// create atomprop struct:
@@ -152,7 +151,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 			ConstArrayRef<int> idx = p.atomIndices();
 
 
-	//		std::cout<<idx.front()<<std::endl;
+			std::cout<<"vdW radius = "<<vdwRadii.at(idx.front())<<std::endl;
 
 		}
 
