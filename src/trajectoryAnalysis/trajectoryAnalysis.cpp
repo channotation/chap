@@ -125,15 +125,61 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// get thread-local selection of reference particles:
 	const Selection &ref_selection = pdata -> parallelSelection(refsel_);
 
-
-
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
 
+
+
+	// PORE FINDING AND RADIUS CALCULATION
+	// ------------------------------------------------------------------------
+
 	// initialise neighbourhood search:
-	AnalysisNeighborhoodSearch nbsearch = nb_.initSearch(pbc, ref_selection);
+	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, ref_selection);
 
 
+	// parameters:
+	real probeStep = 1.0;
+	RVec channelVector(0.0, 0.0, 1.0);
+	RVec initialProbePosition(0, 0, 0);
+	int maxProbeIter = 100;
+
+
+	// initialise probe position:
+	std::vector<RVec> probePosition = {initialProbePosition};
+   	// loop for advancing probe position:
+	int i = 0;
+	while(i < maxProbeIter)
+	{
+		// search test:
+		AnalysisNeighborhoodPositions probePos(probePosition);
+		real dist = nbSearch.minimumDistance(probePos);
+		
+		
+		
+		std::cout<<dist<<std::endl;
+
+
+
+		// update probe position along channel axis:
+		probePosition.front()[0] = probePosition.front()[0] + probeStep*channelVector[0];
+		probePosition.front()[1] = probePosition.front()[1] + probeStep*channelVector[1];
+		probePosition.front()[2] = probePosition.front()[2] + probeStep*channelVector[2];
+
+	
+		// increment loop counter:
+		i++;
+	}
+
+
+
+
+	// wrapup
+
+
+	// ANALYSIS OF SMALL PARTICLE POSITIONS
+	// ------------------------------------------------------------------------
+
+/*
 	// loop over small particle selections:
 	for(size_t g = 0; g < sel_.size(); ++g)
 	{
@@ -157,7 +203,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 	}
 
-
+*/
 
 
 
