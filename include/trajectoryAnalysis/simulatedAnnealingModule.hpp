@@ -21,6 +21,12 @@ class simulatedAnnealingModule
 	
 	void anneal();
 
+	// getter functions (used in unit tests):
+	int getStateDim(){return stateDim_;};
+	int getMaxIter(){return maxIter_;};
+	int getSeed(){return seed_;};
+	real getTemp(){return temp_;};
+	real getCoolingFactor(){return coolingFactor_;};
 
 	private:
 

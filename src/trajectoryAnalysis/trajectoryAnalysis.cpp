@@ -26,12 +26,7 @@ trajectoryAnalysis::trajectoryAnalysis()
 
 
 
-	//
-	//
-	//
-	simulatedAnnealingModule simAnMod(1, 15011991, 100, 310, 0.99);
-	simAnMod.anneal();
-}
+	}
 
 
 

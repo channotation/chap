@@ -1,18 +1,34 @@
-#include "whattotest.cpp"
+#include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
+
 #include <gtest/gtest.h>
 
 
-TEST(SquareRootTest, PositiveNos) { 
-    ASSERT_EQ(6, squareRoot(36.0));
-    ASSERT_EQ(18.0, squareRoot(324.0));
-    ASSERT_EQ(25.4, squareRoot(645.16));
-    ASSERT_EQ(0, squareRoot(0.0));
+
+TEST(utSimulatedAnnealingModule, constructorTest)
+{
+	// set parameters:
+	int stateDim = 1;
+	int seed = 15011991;
+	int maxIter = 100;
+	real temp = 310;
+	real coolingFactor = 0.99;
+
+	std::cout<<"blah"<<std::endl;
+
+	// constructe a simulated annealing module:
+	simulatedAnnealingModule simAnMod(stateDim, 
+									  seed,
+									  maxIter,
+									  temp,
+									  coolingFactor);
+	std::cout<<"blub"<<std::endl;
+
+	std::cout<<"stateDim"<<simAnMod.getStateDim()<<std::endl;
+
+	// check that parameters have been set properly:
+	ASSERT_EQ(stateDim, simAnMod.getStateDim());
 }
 
-TEST(SquareRootTest, NegativeNos) {
-    ASSERT_EQ(-1.0, squareRoot(-15.0));
-    ASSERT_EQ(-1.0, squareRoot(-0.2));
-}
 
 
 
