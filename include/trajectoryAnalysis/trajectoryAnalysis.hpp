@@ -49,10 +49,16 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	std::vector<real>				 vdwRadii;		// vdW radii of all atoms
 	real 							 maxVdwRadius;	// largest vdW radius of all atoms
 
-	// 
+	// calculate the radius of a spherical void with given centre: 
 	real calculateVoidRadius(RVec centre,
                              t_pbc *pbc,
 							 const Selection refSelection);
+
+	// optimise centre coordinates for maximum void radius:
+	real maximiseVoidRadius(RVec &centre,
+							RVec channelVec,
+							t_pbc *pbc,
+							const Selection refSelection);
 };
 
 

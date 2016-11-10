@@ -2,6 +2,8 @@
 #include <cmath>		// for std::sqrt()
 
 #include <gromacs/topology/atomprop.h>
+#include <gromacs/random/threefry.h>
+#include <gromacs/random/uniformrealdistribution.h>
 
 #include "trajectoryAnalysis/trajectoryAnalysis.hpp"
 
@@ -146,30 +148,32 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// parameters:
 	real probeStep = 1.0;
 	RVec channelVector(0.0, 0.0, 1.0);
-	RVec initialProbePosition(0, 0, 0);
-	int maxProbeIter = 100;
+	RVec initialProbePosition(0, 0, 1);
+	int maxProbeIter = 1;
 
 
 	// initialise probe position:
 	std::vector<RVec> probePosition = {initialProbePosition};
 
 
-	real voidRadius = calculateVoidRadius(initialProbePosition,
-	                                      pbc,
-										  ref_selection);
-
-	std::cout<<voidRadius<<std::endl;
 
 	// loop for advancing probe position:
-	int i = maxProbeIter;
+	int i = 0;
 	while(i < maxProbeIter)
 	{
 	
 		// TODO: implement radius maximum radius calculating function
 		// TODO: implement SA for radius finding		
 		
-//		std::cout<<dist<<std::endl;
+		std::cout<<std::endl;
+		std::cout<<"----------------------------------------------------"<<std::endl;
 
+
+		real voidRadius = maximiseVoidRadius(initialProbePosition,
+		                                     channelVector,
+											 pbc,
+											 ref_selection);
+		std::cout<<"--> accepted radius = "<<voidRadius<<std::endl;
 
 
 		// update probe position along channel axis:
@@ -259,7 +263,8 @@ trajectoryAnalysis::calculateVoidRadius(RVec centre,
 	AnalysisNeighborhoodPositions centrePos(centrePosition);
 
 
-	/*
+	/* TODO: calculate cutoff distance dynamicallyi
+	 * can test this by comparison to radius calculated without cutoff!
 	// initialise neighbourhood search:
 	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
 
@@ -273,16 +278,16 @@ trajectoryAnalysis::calculateVoidRadius(RVec centre,
 
 	// initialise neighbourhood pair search:
 	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
-	AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch.startPairSearch(refSelection);
+	AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch.startPairSearch(centrePos);
 	AnalysisNeighborhoodPair pair;
 
-	real voidRadius = 999999999; // TODO:  infiinity
+	real voidRadius = 54321; // TODO:  infiinity
 	real pairDist;
 	real referenceVdwRadius;
 
 	// loop over all pairs:
 	while( nbPairSearch.findNextPair(&pair) )
-	{
+	{	
 		// find distance between particles in pair:
 		// TODO: square root can probably be removed/only drawn for final radius?
 		pairDist = std::sqrt( pair.distance2() );
@@ -295,11 +300,90 @@ trajectoryAnalysis::calculateVoidRadius(RVec centre,
 		if( voidRadius > (pairDist - referenceVdwRadius) )
 		{
 			voidRadius = pairDist - referenceVdwRadius;
+			std::cout<<"  pairDist = "<<pairDist<<"  vdW = "<<referenceVdwRadius<<"  smaller radius = "<<voidRadius<<std::endl;
 		}
 	}
 
 	// return void radius:
 	return voidRadius;
 }
+
+
+/*
+ * Maximise the radius of a spherical void by relocation of void centre:
+ */
+real
+trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
+									   RVec chanVec,
+									   t_pbc *pbc,
+									   const Selection refSelection)
+{
+	// parameters:
+	int maxSimAnIter = 10;
+	real initialTemperature = 100;
+	real tempReductionFactor = 0.9;
+
+
+	//
+	RVec candidateCentre;
+	real candidateVoidRadius;
+	real voidRadius = -999999;
+	real temp = initialTemperature;
+
+	// generate random 3-vector:
+	int seed=15011991;
+	DefaultRandomEngine rng(seed);
+    UniformRealDistribution<real> candGenDistr(-sqrt(3), sqrt(3)); // TODO: replace square roots with value for efficiency
+	UniformRealDistribution<real> candAccDistr(0.0, 1.0);
+
+
+	// simulated annealing iteration:
+	for(int i=0; i<maxSimAnIter; i++)
+	{
+		// generate random 3-vector:
+		RVec randVec(candGenDistr(rng), candGenDistr(rng), candGenDistr(rng));
+
+		// remove components in the direction of channel vector:
+		real scalarProduct = std::sqrt( randVec[0]*chanVec[0] + randVec[1]*chanVec[1] + randVec[2]*chanVec[2] );
+		randVec[0] = randVec[0] - scalarProduct*chanVec[0];
+		randVec[1] = randVec[1] - scalarProduct*chanVec[1];
+		randVec[2] = randVec[2] - scalarProduct*chanVec[2];
+
+		// calculate candidate for new centre position:
+		candidateCentre = centre;
+		candidateCentre[0] += randVec[0];
+		candidateCentre[1] += randVec[1];
+		candidateCentre[2] += randVec[2];
+
+		// calculate radius of void around new centre:
+		candidateVoidRadius = calculateVoidRadius(candidateCentre,
+												  pbc,
+												  refSelection);
+
+		// calculate acceptance probability:
+		// TODO: do we have to limit this to 1.0?
+		real accProb = std::exp( (candidateVoidRadius - voidRadius)/temp );
+
+		// accept move?
+		if( accProb > candAccDistr(rng) )
+		{
+			// update centre position and void radius:
+			centre = candidateCentre;
+			voidRadius = candidateVoidRadius;
+		}
+
+		// reduce temperature:
+		std::cout<<"temp = "<<temp<<"  x = "<<centre[0]<<"  y = "<<centre[1]<<"  z = "<<centre[2]<<"  radius = "<<voidRadius<<std::endl;
+		temp *= tempReductionFactor;
+	}
+
+
+	// return maximised void radius:
+	return voidRadius;
+}
+
+
+
+
 
 
