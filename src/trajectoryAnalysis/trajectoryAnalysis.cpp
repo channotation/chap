@@ -146,15 +146,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 	// parameters:
-	real probeStep = 1.0;
+	real probeStep = 0.2;
 	RVec channelVector(0.0, 0.0, 1.0);
-	RVec initialProbePosition(0, 0, 0);
+	RVec initialProbePosition(0, 0, 1.8);
 	int maxProbeIter = 1;
-
-
-	// initialise probe position:
-	std::vector<RVec> probePosition = {initialProbePosition};
-
 
 
 	// loop for advancing probe position:
@@ -165,21 +160,17 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 		// TODO: implement radius maximum radius calculating function
 		// TODO: implement SA for radius finding		
 		
-		std::cout<<std::endl;
-		std::cout<<"----------------------------------------------------"<<std::endl;
-
 
 		real voidRadius = maximiseVoidRadius(initialProbePosition,
 		                                     channelVector,
 											 pbc,
 											 ref_selection);
-		std::cout<<"--> accepted radius = "<<voidRadius<<std::endl;
+		std::cout<<"z = "<<initialProbePosition[2]<<"  r = "<<voidRadius<<std::endl;
 
-
-		// update probe position along channel axis:
-		probePosition.front()[0] = probePosition.front()[0] + probeStep*channelVector[0];
-		probePosition.front()[1] = probePosition.front()[1] + probeStep*channelVector[1];
-		probePosition.front()[2] = probePosition.front()[2] + probeStep*channelVector[2];
+		initialProbePosition[0] = initialProbePosition[0] + probeStep*channelVector[0];
+		initialProbePosition[1] = initialProbePosition[1] + probeStep*channelVector[1];
+		initialProbePosition[2] = initialProbePosition[2] + probeStep*channelVector[2];
+	
 
 	
 		// increment loop counter:
@@ -319,20 +310,22 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 									   const Selection refSelection)
 {
 	// parameters:
-	int maxSimAnIter = 10;
+	int maxSimAnIter = 1000;
 	real initialTemperature = 100;
-	real tempReductionFactor = 0.9;
+	real tempReductionFactor = 0.99;
 
 
 	//
 	RVec candidateCentre;
 	real candidateVoidRadius;
 	real voidRadius = -999999;
+	real bestVoidRadius = voidRadius;
 	real temp = initialTemperature;
+	
 
 	// generate random 3-vector:
 	int seed=15011991;
-	real candStepLength = 0.1;
+	real candStepLength = 0.01;
 	DefaultRandomEngine rng(seed);
     UniformRealDistribution<real> candGenDistr(-candStepLength*sqrt(3), candStepLength*sqrt(3)); // TODO: replace square roots with value for efficiency
 	UniformRealDistribution<real> candAccDistr(0.0, 1.0);
@@ -373,7 +366,13 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 			voidRadius = candidateVoidRadius;
 
 //			std::cout<<"accepted!"<<std::endl;
+//
+			if( voidRadius > bestVoidRadius )
+			{
+				bestVoidRadius = voidRadius;
+			}
 		}
+
 
 		// reduce temperature:
 		std::cout<<"temp = "<<temp<<"  x = "<<centre[0]<<"  y = "<<centre[1]<<"  z = "<<centre[2]<<"  radius = "<<voidRadius<<std::endl;
@@ -382,7 +381,7 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 
 
 	// return maximised void radius:
-	return voidRadius;
+	return bestVoidRadius;
 }
 
 
