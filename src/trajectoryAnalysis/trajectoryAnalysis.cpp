@@ -148,7 +148,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// parameters:
 	real probeStep = 1.0;
 	RVec channelVector(0.0, 0.0, 1.0);
-	RVec initialProbePosition(0, 0, 1);
+	RVec initialProbePosition(0, 0, 0);
 	int maxProbeIter = 1;
 
 
@@ -300,7 +300,7 @@ trajectoryAnalysis::calculateVoidRadius(RVec centre,
 		if( voidRadius > (pairDist - referenceVdwRadius) )
 		{
 			voidRadius = pairDist - referenceVdwRadius;
-			std::cout<<"  pairDist = "<<pairDist<<"  vdW = "<<referenceVdwRadius<<"  smaller radius = "<<voidRadius<<std::endl;
+//			std::cout<<"  pairDist = "<<pairDist<<"  vdW = "<<referenceVdwRadius<<"  smaller radius = "<<voidRadius<<std::endl;
 		}
 	}
 
@@ -332,8 +332,9 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 
 	// generate random 3-vector:
 	int seed=15011991;
+	real candStepLength = 0.1;
 	DefaultRandomEngine rng(seed);
-    UniformRealDistribution<real> candGenDistr(-sqrt(3), sqrt(3)); // TODO: replace square roots with value for efficiency
+    UniformRealDistribution<real> candGenDistr(-candStepLength*sqrt(3), candStepLength*sqrt(3)); // TODO: replace square roots with value for efficiency
 	UniformRealDistribution<real> candAccDistr(0.0, 1.0);
 
 
@@ -344,7 +345,7 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 		RVec randVec(candGenDistr(rng), candGenDistr(rng), candGenDistr(rng));
 
 		// remove components in the direction of channel vector:
-		real scalarProduct = std::sqrt( randVec[0]*chanVec[0] + randVec[1]*chanVec[1] + randVec[2]*chanVec[2] );
+		real scalarProduct = randVec[0]*chanVec[0] + randVec[1]*chanVec[1] + randVec[2]*chanVec[2];
 		randVec[0] = randVec[0] - scalarProduct*chanVec[0];
 		randVec[1] = randVec[1] - scalarProduct*chanVec[1];
 		randVec[2] = randVec[2] - scalarProduct*chanVec[2];
@@ -370,6 +371,8 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 			// update centre position and void radius:
 			centre = candidateCentre;
 			voidRadius = candidateVoidRadius;
+
+//			std::cout<<"accepted!"<<std::endl;
 		}
 
 		// reduce temperature:
