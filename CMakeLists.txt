@@ -48,7 +48,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 #------------------------------------------------------------------------------
 
 # create executable chap from main.cpp:
-add_executable(chap src/main.cpp src/trajectoryAnalysis/trajectoryAnalysis.cpp)
+add_executable(chap src/main.cpp src/trajectoryAnalysis/trajectoryAnalysis.cpp src/trajectoryAnalysis/simulatedAnnealingModule.cpp)
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS}")
 message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})

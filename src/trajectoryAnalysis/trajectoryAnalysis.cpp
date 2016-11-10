@@ -7,6 +7,8 @@
 
 #include "trajectoryAnalysis/trajectoryAnalysis.hpp"
 
+#include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
+
 
 using namespace gmx;
 
@@ -19,6 +21,16 @@ trajectoryAnalysis::trajectoryAnalysis()
     : cutoff_(0.0)
 {
     registerAnalysisDataset(&data_, "avedist");
+
+
+
+
+
+	//
+	//
+	//
+	simulatedAnnealingModule simAnMod(1, 15011991, 100, 310, 0.99);
+	simAnMod.anneal();
 }
 
 
