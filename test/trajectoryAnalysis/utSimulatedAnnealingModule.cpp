@@ -1,7 +1,7 @@
-// tests.cpp
 #include "whattotest.cpp"
 #include <gtest/gtest.h>
- 
+
+
 TEST(SquareRootTest, PositiveNos) { 
     ASSERT_EQ(6, squareRoot(36.0));
     ASSERT_EQ(18.0, squareRoot(324.0));
@@ -17,10 +17,11 @@ TEST(SquareRootTest, NegativeNos) {
 
 
 int main(int argc, char **argv) {
-      testing::InitGoogleTest(&argc, argv);
-      return RUN_ALL_TESTS();
 
+	// initialise Google testing framework:
+	testing::InitGoogleTest(&argc, argv);
 
-
-	return 0;
+	// run all tests:
+	return RUN_ALL_TESTS();
 }
+

@@ -54,8 +54,16 @@ message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 
 
+# Compile Tests
+#------------------------------------------------------------------------------
+
+# add test subdirectory:
+add_subdirectory(test)
+
+
 # Install Destinations
 #------------------------------------------------------------------------------
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION /sansom/s117/scro2967/repos/chap/bin)
+

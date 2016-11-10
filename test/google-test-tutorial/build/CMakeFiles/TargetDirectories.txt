@@ -1,3 +1,0 @@
-/sansom/s117/scro2967/repos/chap/test/build/CMakeFiles/edit_cache.dir
-/sansom/s117/scro2967/repos/chap/test/build/CMakeFiles/rebuild_cache.dir
-/sansom/s117/scro2967/repos/chap/test/build/CMakeFiles/runTests.dir
