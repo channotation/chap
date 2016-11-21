@@ -17,8 +17,10 @@ class simulatedAnnealingModule
 							 int randomSeed,
 							 int maxIter,
 							 real initTemp,
-							 real coolingFactor);
-	
+							 real coolingFactor,
+							 std::vector<real> initState,
+							 energyFunction ef);
+
 	void anneal();
 
 	// getter functions (used in unit tests):
@@ -28,9 +30,13 @@ class simulatedAnnealingModule
 	real getTemp(){return temp_;};
 	real getCoolingFactor(){return coolingFactor_;};
 
-	std::vector<real> getCrntState();
-	std::vector<real> getCandState();
-	std::vector<real> getBestState();
+	std::vector<real> getCrntState(){return crntState_;};
+	std::vector<real> getCandState(){return candState_;};
+	std::vector<real> getBestState(){return bestState_;};
+
+	real getCrntEnergy(){return crntEnergy_;};
+	real getCandEnergy(){return candEnergy_;};
+	real getBestEnergy(){return bestEnergy_;};
 
 	private:
 

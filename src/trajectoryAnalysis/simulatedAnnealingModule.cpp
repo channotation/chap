@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
 
 
@@ -11,7 +13,9 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
                                                    int randomSeed,
 												   int maxIter,
 												   real initTemp,
-												   real coolingFactor)
+												   real coolingFactor,
+												   std::vector<real> initState,
+												   energyFunction ef)
 	: stateDim_(stateDim)
 	, seed_(randomSeed)
 	, maxIter_(maxIter)
@@ -23,16 +27,17 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 	, crntState_()
 	, candState_()
 	, bestState_()
+	, evaluateEnergy_(ef)
 {
 	// initialise state vectors:
-	crntState_ = {0.0, 0.0, 0.0}; // initialise properly! --> pass as argument!
-	candState_ = crntState_;
-	bestState_ = crntState_;
+	crntState_ = initState;
+	candState_ = initState;
+	bestState_ = initState;
 
 	// get initial energy of states:
-//	crntEnergy_ = evaluateEnergy_(crntState_);
-	candEnergy_ = crntEnergy_;
-	bestEnergy_ = bestEnergy_;
+	crntEnergy_ = evaluateEnergy_(crntState_);
+	candEnergy_ = evaluateEnergy_(candState_);
+	bestEnergy_ = evaluateEnergy_(bestState_);
 }
 
 
@@ -51,6 +56,8 @@ simulatedAnnealingModule::anneal()
 	for(int i = 0; i < maxIter_; i++)
 	{
 		// generate candidate
+		//
+		std::cout<<"i = "<<i<<"  crntEnergy = "<<crntEnergy_<<"  bestEnergy = "<<bestEnergy_<<std::endl;
 		
 		// evaluate cost function
 		candEnergy_ = evaluateEnergy_(candState_);

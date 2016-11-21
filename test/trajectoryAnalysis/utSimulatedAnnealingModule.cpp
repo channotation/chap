@@ -1,26 +1,54 @@
+#include <vector>
+#include <limits>
+
 #include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
 
 #include <gtest/gtest.h>
 
 
+/*
+ * The Rosenbrock function is a standard test function for optimisation 
+ * problems. Its minimum is at (a,a^2) where f(x,y) = 0.
+ */
+real rosenbrockFunction(std::vector<real> arg)
+{
+	// set internal parameters:
+	real a = 1;
+	real b = 100;
 
+	// for legibility:
+	real x = arg.at(0);
+	real y = arg.at(1);
+
+	// return value of Rosenbrock function at this point:
+	return (a - x)*(a - x) + b*(y - x*x)*(y - x*x);
+}
+
+
+/*
+ * This test makes checks if internal variables are initialised properly in the
+ * constructor.
+ */
 TEST(utSimulatedAnnealingModule, constructorTest)
 {
 	// set parameters:
-	int stateDim = 1;
+	int stateDim = 2;
 	int seed = 15011991;
 	int maxIter = 100;
 	real temp = 310;
 	real coolingFactor = 0.99;
 
-	std::cout<<"blah"<<std::endl;
+	// set initial state:
+	std::vector<real> initState = {0.0, 0.0};
 
-	// constructe a simulated annealing module:
+	// construct a simulated annealing module:
 	simulatedAnnealingModule simAnMod(stateDim, 
 									  seed,
 									  maxIter,
 									  temp,
-									  coolingFactor);
+									  coolingFactor,
+									  initState,
+									  rosenbrockFunction);
 
 	// check that parameters have been set properly:
 	ASSERT_EQ(stateDim, simAnMod.getStateDim());
@@ -28,8 +56,59 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 	ASSERT_EQ(maxIter, simAnMod.getMaxIter());
 	ASSERT_FLOAT_EQ(temp, simAnMod.getTemp());	// TODO: What is gromacs is compiled to use double?
 	ASSERT_FLOAT_EQ(coolingFactor, simAnMod.getCoolingFactor());
+
+	// are state vectors of correct size:
+	ASSERT_EQ(stateDim, simAnMod.getCrntState().size());
+	ASSERT_EQ(stateDim, simAnMod.getCandState().size());
+	ASSERT_EQ(stateDim, simAnMod.getBestState().size());
+
+	// are state vectors properly initialised:
+	for(int i = 0; i < stateDim; i++)
+	{
+		ASSERT_FLOAT_EQ(initState.at(i), simAnMod.getCrntState().at(i));
+		ASSERT_FLOAT_EQ(initState.at(i), simAnMod.getCandState().at(i));
+		ASSERT_FLOAT_EQ(initState.at(i), simAnMod.getBestState().at(i));
+	}
+
+	// is correct energy computed for initial states:
+	ASSERT_FLOAT_EQ(rosenbrockFunction(initState), simAnMod.getCrntEnergy());	
 }
 
+
+/*
+ *
+ */
+TEST(utSimulatedAnnealingModule, rosenbrockTest)
+{
+	// set tolerance for floating point comparison:
+	real absTol = 10*std::numeric_limits<real>::epsilon();
+	std::cout<<"absTol = "<<absTol<<std::endl;
+
+	// set parameters:
+	int stateDim = 2;
+	int seed = 15011991;
+	int maxIter = 100;
+	real temp = 310;
+	real coolingFactor = 0.99;
+
+	// set initial state:
+	std::vector<real> initState = {0.0, 0.0};
+
+	// construct a simulated annealing module:
+	simulatedAnnealingModule simAnMod(stateDim, 
+									  seed,
+									  maxIter,
+									  temp,
+									  coolingFactor,
+									  initState,
+									  rosenbrockFunction);
+
+	// perform annealing:
+	simAnMod.anneal();
+
+	// has correct best energy been found:
+	ASSERT_NEAR(0.0, simAnMod.getBestEnergy(), absTol);
+}
 
 
 
