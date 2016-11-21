@@ -69,8 +69,6 @@ class simulatedAnnealingModule
 
 	// calculate probability of accepting candidate state:
 	real calculateAcceptanceProbability();
-
-
 };
 
 

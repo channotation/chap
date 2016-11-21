@@ -8,7 +8,8 @@
 
 /*
  * The Rosenbrock function is a standard test function for optimisation 
- * problems. Its minimum is at (a,a^2) where f(x,y) = 0.
+ * problems. Its minimum is at (a,a^2) where f(x,y) = 0. Note the non-canonical
+ * negative sign in the return statement, as we are testing maximisation here.
  */
 real rosenbrockFunction(std::vector<real> arg)
 {
@@ -21,7 +22,7 @@ real rosenbrockFunction(std::vector<real> arg)
 	real y = arg.at(1);
 
 	// return value of Rosenbrock function at this point:
-	return (a - x)*(a - x) + b*(y - x*x)*(y - x*x);
+	return -(a - x)*(a - x) - b*(y - x*x)*(y - x*x);
 }
 
 
@@ -87,9 +88,9 @@ TEST(utSimulatedAnnealingModule, rosenbrockTest)
 	// set parameters:
 	int stateDim = 2;
 	int seed = 15011991;
-	int maxIter = 100;
-	real temp = 310;
-	real coolingFactor = 0.99;
+	int maxIter = 3000;
+	real temp = 300;
+	real coolingFactor = 0.98;
 
 	// set initial state:
 	std::vector<real> initState = {0.0, 0.0};

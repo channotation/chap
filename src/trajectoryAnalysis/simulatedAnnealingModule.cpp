@@ -55,18 +55,29 @@ simulatedAnnealingModule::anneal()
 	// simulated annealing iteration:
 	for(int i = 0; i < maxIter_; i++)
 	{
+
 		// generate candidate
-		//
-		std::cout<<"i = "<<i<<"  crntEnergy = "<<crntEnergy_<<"  bestEnergy = "<<bestEnergy_<<std::endl;
-		
+		generateCandidate();
+
 		// evaluate cost function
 		candEnergy_ = evaluateEnergy_(candState_);
 
 		// calculate acceptance probability:
 		accProb = calculateAcceptanceProbability();
-
+/*
+		// inform user:
+		std::cout<<"i = "<<i
+				 <<"  T = "<<temp_
+				 <<"  P = "<<accProb
+		         <<"  crntState = "<<crntState_[0]<<" , "<<crntState_[1]
+				 <<"  crntEnergy = "<<crntEnergy_
+		         <<"  candState = "<<candState_[0]<<" , "<<candState_[1]
+				 <<"  candEnergy = "<<candEnergy_
+				 <<"  bestState = "<<bestState_[0]<<" , "<<bestState_[1]
+				 <<"  bestEnergy = "<<bestEnergy_<<std::endl;
+*/
 		// accept move?
-		if( accProb < candAccDistr_(rng_) )
+		if( candAccDistr_(rng_) < accProb )
 		{
 			// candidate state becomes current state:
 			crntEnergy_ = candEnergy_;
@@ -94,7 +105,8 @@ simulatedAnnealingModule::anneal()
 real
 simulatedAnnealingModule::calculateAcceptanceProbability()
 {
-	return std::exp( (candEnergy_ - crntEnergy_)/temp_ );
+	real cap = 1.0;
+	return std::min(std::exp( (candEnergy_ - crntEnergy_)/temp_ ), cap);
 }
 
 
@@ -114,12 +126,18 @@ simulatedAnnealingModule::cool()
 
 
 /*
- *
+ * Generates a candidate state from the current state.
  */
 void
 simulatedAnnealingModule::generateCandidate()
 {
-
+	// loop over state dimension:
+	for(int i=0; i<stateDim_; i++)
+	{
+		// new state is current state plus some small random offset:
+		// TODO: introduce step length:
+		candState_.at(i) = crntState_.at(i) + 0.01*candGenDistr_(rng_);
+	}
 }
 
 
