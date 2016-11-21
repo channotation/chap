@@ -30,7 +30,7 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 	bestState_ = crntState_;
 
 	// get initial energy of states:
-	crntEnergy_ = evaluateEnergy_(crntState_);
+//	crntEnergy_ = evaluateEnergy_(crntState_);
 	candEnergy_ = crntEnergy_;
 	bestEnergy_ = bestEnergy_;
 }

@@ -21,12 +21,13 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 									  maxIter,
 									  temp,
 									  coolingFactor);
-	std::cout<<"blub"<<std::endl;
-
-	std::cout<<"stateDim"<<simAnMod.getStateDim()<<std::endl;
 
 	// check that parameters have been set properly:
 	ASSERT_EQ(stateDim, simAnMod.getStateDim());
+	ASSERT_EQ(seed, simAnMod.getSeed());
+	ASSERT_EQ(maxIter, simAnMod.getMaxIter());
+	ASSERT_FLOAT_EQ(temp, simAnMod.getTemp());	// TODO: What is gromacs is compiled to use double?
+	ASSERT_FLOAT_EQ(coolingFactor, simAnMod.getCoolingFactor());
 }
 
 

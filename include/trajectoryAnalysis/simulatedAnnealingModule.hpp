@@ -28,6 +28,10 @@ class simulatedAnnealingModule
 	real getTemp(){return temp_;};
 	real getCoolingFactor(){return coolingFactor_;};
 
+	std::vector<real> getCrntState();
+	std::vector<real> getCandState();
+	std::vector<real> getBestState();
+
 	private:
 
 	int stateDim_;										// dimension of state space
