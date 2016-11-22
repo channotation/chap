@@ -18,6 +18,7 @@ class simulatedAnnealingModule
 							 int maxIter,
 							 real initTemp,
 							 real coolingFactor,
+							 real stepLengthFactor,
 							 std::vector<real> initState,
 							 energyFunction ef);
 
@@ -46,6 +47,7 @@ class simulatedAnnealingModule
 	
 	real temp_;											// temperature
 	real coolingFactor_;								// temperature reduction factor
+	real stepLengthFactor_;								// factor influencing candidate generation step
 
 	real crntEnergy_;									// cost function value of current state
 	real candEnergy_;									// cost function value of candidate state

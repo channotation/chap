@@ -14,6 +14,7 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 												   int maxIter,
 												   real initTemp,
 												   real coolingFactor,
+												   real stepLengthFactor,
 												   std::vector<real> initState,
 												   energyFunction ef)
 	: stateDim_(stateDim)
@@ -21,6 +22,7 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 	, maxIter_(maxIter)
 	, temp_(initTemp)
 	, coolingFactor_(coolingFactor)
+	, stepLengthFactor_(stepLengthFactor)
 	, rng_(seed_)
 	, candGenDistr_(-1.732051, 1.732051)
 	, candAccDistr_(0.0, 1.0)
@@ -64,7 +66,7 @@ simulatedAnnealingModule::anneal()
 
 		// calculate acceptance probability:
 		accProb = calculateAcceptanceProbability();
-/*
+
 		// inform user:
 		std::cout<<"i = "<<i
 				 <<"  T = "<<temp_
@@ -75,7 +77,7 @@ simulatedAnnealingModule::anneal()
 				 <<"  candEnergy = "<<candEnergy_
 				 <<"  bestState = "<<bestState_[0]<<" , "<<bestState_[1]
 				 <<"  bestEnergy = "<<bestEnergy_<<std::endl;
-*/
+
 		// accept move?
 		if( candAccDistr_(rng_) < accProb )
 		{
@@ -136,7 +138,7 @@ simulatedAnnealingModule::generateCandidate()
 	{
 		// new state is current state plus some small random offset:
 		// TODO: introduce step length:
-		candState_.at(i) = crntState_.at(i) + 0.01*candGenDistr_(rng_);
+		candState_.at(i) = crntState_.at(i) + stepLengthFactor_*candGenDistr_(rng_);
 	}
 }
 

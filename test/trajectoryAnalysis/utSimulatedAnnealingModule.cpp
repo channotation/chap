@@ -38,6 +38,7 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 	int maxIter = 100;
 	real temp = 310;
 	real coolingFactor = 0.99;
+	real stepLengthFactor = 0.01;
 
 	// set initial state:
 	std::vector<real> initState = {0.0, 0.0};
@@ -48,6 +49,7 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 									  maxIter,
 									  temp,
 									  coolingFactor,
+									  stepLengthFactor,
 									  initState,
 									  rosenbrockFunction);
 
@@ -82,15 +84,15 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 TEST(utSimulatedAnnealingModule, rosenbrockTest)
 {
 	// set tolerance for floating point comparison:
-	real absTol = 10*std::numeric_limits<real>::epsilon();
-	std::cout<<"absTol = "<<absTol<<std::endl;
+	real absTol = 1e-6;
 
 	// set parameters:
 	int stateDim = 2;
 	int seed = 15011991;
-	int maxIter = 3000;
+	int maxIter = 5000;
 	real temp = 300;
 	real coolingFactor = 0.98;
+	real stepLengthFactor = 0.01;
 
 	// set initial state:
 	std::vector<real> initState = {0.0, 0.0};
@@ -101,6 +103,7 @@ TEST(utSimulatedAnnealingModule, rosenbrockTest)
 									  maxIter,
 									  temp,
 									  coolingFactor,
+									  stepLengthFactor,
 									  initState,
 									  rosenbrockFunction);
 
