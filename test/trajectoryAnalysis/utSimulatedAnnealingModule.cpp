@@ -79,7 +79,8 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 
 
 /*
- *
+ * This test maximises the negative Rosenbrock function in two dimensions and 
+ * asserts that the residual and error are below a certain tolerance threshold.
  */
 TEST(utSimulatedAnnealingModule, rosenbrockTest)
 {
@@ -119,16 +120,5 @@ TEST(utSimulatedAnnealingModule, rosenbrockTest)
 	std::vector<real> bestState = simAnMod.getBestState();
 	real error = std::sqrt( (bestState.at(0) - 1.0)*(bestState.at(0) - 1.0) + (bestState.at(1) - 1.0)*(bestState.at(1) - 1.0) );
 	ASSERT_NEAR(error, 0.0, errTol);
-}
-
-
-
-int main(int argc, char **argv) {
-
-	// initialise Google testing framework:
-	testing::InitGoogleTest(&argc, argv);
-
-	// run all tests:
-	return RUN_ALL_TESTS();
 }
 

@@ -1,5 +1,7 @@
 #include <iostream>
 
+//#include "lapacke.h"
+
 #include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
 
 
@@ -133,6 +135,17 @@ simulatedAnnealingModule::cool()
 void
 simulatedAnnealingModule::generateCandidate()
 {
+
+	int N = 3;
+	double A[9] = {1, 2, 3, 2, 3, 4, 3, 4, 1};
+	int LDA = 3;
+	int IPIV[3];
+	int INFO = 3;
+
+	
+
+
+
 	// loop over state dimension:
 	for(int i=0; i<stateDim_; i++)
 	{
