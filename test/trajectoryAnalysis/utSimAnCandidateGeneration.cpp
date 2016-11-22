@@ -45,3 +45,5 @@ TEST(utSimAnCandidateGeneration, isotropicCandidateGenerationTest)
 		ASSERT_FLOAT_EQ(candState[i], 0.0);
 	}
 }
+
+

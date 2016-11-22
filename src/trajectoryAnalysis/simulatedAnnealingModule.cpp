@@ -1,6 +1,6 @@
 #include <iostream>
 
-//#include "lapacke.h"
+#include <cblas.h>
 
 #include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
 
@@ -31,17 +31,22 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 	, crntState_()
 	, candState_()
 	, bestState_()
-	, evaluateEnergy_(ef)
+//	, evaluateEnergy_(ef)
 {
 	// initialise state vectors:
-	crntState_ = initState;
-	candState_ = initState;
-	bestState_ = initState;
+//	crntState_ = new crnt
+//	candState_ = initState;
+//	bestState_ = initState;
 
 	// get initial energy of states:
-	crntEnergy_ = evaluateEnergy_(crntState_);
-	candEnergy_ = evaluateEnergy_(candState_);
-	bestEnergy_ = evaluateEnergy_(bestState_);
+//	crntEnergy_ = evaluateEnergy_(crntState_);
+//	candEnergy_ = evaluateEnergy_(candState_);
+//	bestEnergy_ = evaluateEnergy_(bestState_);
+
+	// get cost of inital states:
+//	crntCost_ = evaluateCost_(crntState_);
+///	candCost_ = evaluateCost_(candState_);
+//	bestCost_ = evaluateCost_(bestState_);
 }
 
 
@@ -53,6 +58,7 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 void
 simulatedAnnealingModule::anneal()
 {
+/*
 	// initialise temporary variables:
 	real accProb = 0.0;
 
@@ -68,7 +74,7 @@ simulatedAnnealingModule::anneal()
 
 		// calculate acceptance probability:
 		accProb = calculateAcceptanceProbability();
-/*
+
 		// inform user:
 		std::cout<<"i = "<<i
 				 <<"  T = "<<temp_
@@ -79,7 +85,7 @@ simulatedAnnealingModule::anneal()
 				 <<"  candEnergy = "<<candEnergy_
 				 <<"  bestState = "<<bestState_[0]<<" , "<<bestState_[1]
 				 <<"  bestEnergy = "<<bestEnergy_<<std::endl;
-*/
+
 		// accept move?
 		if( candAccDistr_(rng_) < accProb )
 		{
@@ -99,6 +105,77 @@ simulatedAnnealingModule::anneal()
 		// reduce temperature:
 		cool();
 	}
+*/
+	///////////////////////////////////////////////////////////////////////////
+	
+	// start annealing loop:
+	while(true)
+	{
+		// reset counter of accepted and rejected moves:
+		int nAccepted = 0;
+		int nRejected = 0;
+
+		// 
+		for(int i = 0; i < candGenTrials_; i++)
+		{
+			// generate a candidate state:
+			generateCandidateState();
+
+			// TODO: check boundary conditions!
+			
+			// evaluate cost function:
+			candCost_ = evaluateCost_(candState_);
+
+			// accept candidate?
+			if( true )
+			{
+				// candidate state becomes current state:
+				cblas_scopy(stateDim_, crntState_, 1, candState_, 1);
+				crntCost_ = candCost_;
+
+				// increment acceptance counter:
+				nAccepted++;
+
+				// is new state also the best state?
+				if( crntCost_ > bestCost_ )
+				{
+					cblas_scopy(stateDim_, bestState_, 1, candState_, 1);
+					bestCost_ = candCost_;
+				}
+
+			}
+			else
+			{
+				// increment rejection counter:
+				nRejected++;
+			}
+
+		}
+	
+
+		// maximum step number reached?
+		if( nCoolingIter_ >= maxCoolingIter_ )
+		{
+			break;
+		}
+
+		// no candidates accepted?
+		if( nAccepted <= 0 )
+		{
+			break;
+		}
+
+		// update statistics for adaptive candidate generation:
+		if( true )
+		{
+			// calculate moments
+			// update covariance matrix
+		}
+
+	}
+
+
+
 }
 
 
@@ -106,13 +183,14 @@ simulatedAnnealingModule::anneal()
  * Calculate acceptance probability from Boltzmann distribution.
  * TODO: Should cost be capped at 1?
  */
+/*
 real
 simulatedAnnealingModule::calculateAcceptanceProbability()
 {
 	real cap = 1.0;
 	return std::min(std::exp( (candEnergy_ - crntEnergy_)/temp_ ), cap);
 }
-
+*/
 
 
 /*
@@ -130,8 +208,41 @@ simulatedAnnealingModule::cool()
 
 
 /*
+ * Generates a candidate state in the neighbourhood of the current state.
+ */
+void simulatedAnnealingModule::generateCandidateState()
+{
+	// generate random direction in state space:
+	real stateDir[stateDim_];
+	for(int i = 0; i < stateDim_; i++)
+	{
+		stateDir[i] = candGenDistr_(rng_);
+	}
+
+	// copy current state to candidate state:
+	cblas_scopy(stateDim_, crntState_, 1, candState_, 1);	
+
+	// should adaptive candidate generation be used?
+	if( useAdaptiveCandidateGeneration == true )
+	{
+		// candidate state is current state plus adapted random direction:
+//		cblas_sgemv(CblasRowMajor, CblasNoTrans, stateDim_, stateDim_, 1.0, 
+//		            mat, 1, stateDir, 1, 1.0, candState_, 1);
+
+	}
+	else
+	{
+		// candidate state is current state plus random direction:
+		cblas_saxpy(stateDim_, 1.0, stateDir, 1, candState_, 1); 
+	}
+}
+
+
+
+/*
  * Generates a candidate state from the current state.
  */
+/*
 void
 simulatedAnnealingModule::generateCandidate()
 {
@@ -154,5 +265,5 @@ simulatedAnnealingModule::generateCandidate()
 		candState_.at(i) = crntState_.at(i) + stepLengthFactor_*candGenDistr_(rng_);
 	}
 }
-
+*/
 
