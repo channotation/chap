@@ -19,8 +19,12 @@ isotropicCandidateGeneration(int &dim,
  * Generates candidate state by taking into account an estimate of the local 
  * shape of the objective function.
  */
-//void 
-//adaptiveCanidateGeneration();
+void 
+adaptiveCanidateGeneration(int &dim,
+			   real *crntState,
+			   real *candState,
+			   real *stateDir,
+			   real *mat);
 
 
 #endif
