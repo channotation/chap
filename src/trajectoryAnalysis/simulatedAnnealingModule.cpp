@@ -66,7 +66,7 @@ simulatedAnnealingModule::anneal()
 
 		// calculate acceptance probability:
 		accProb = calculateAcceptanceProbability();
-
+/*
 		// inform user:
 		std::cout<<"i = "<<i
 				 <<"  T = "<<temp_
@@ -77,7 +77,7 @@ simulatedAnnealingModule::anneal()
 				 <<"  candEnergy = "<<candEnergy_
 				 <<"  bestState = "<<bestState_[0]<<" , "<<bestState_[1]
 				 <<"  bestEnergy = "<<bestEnergy_<<std::endl;
-
+*/
 		// accept move?
 		if( candAccDistr_(rng_) < accProb )
 		{

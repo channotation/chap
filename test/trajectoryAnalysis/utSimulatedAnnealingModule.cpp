@@ -84,7 +84,8 @@ TEST(utSimulatedAnnealingModule, constructorTest)
 TEST(utSimulatedAnnealingModule, rosenbrockTest)
 {
 	// set tolerance for floating point comparison:
-	real absTol = 1e-6;
+	real resTol = 1e-6;
+	real errTol = 1e-3;
 
 	// set parameters:
 	int stateDim = 2;
@@ -110,8 +111,14 @@ TEST(utSimulatedAnnealingModule, rosenbrockTest)
 	// perform annealing:
 	simAnMod.anneal();
 
-	// has correct best energy been found:
-	ASSERT_NEAR(0.0, simAnMod.getBestEnergy(), absTol);
+	// assert residual:
+	real residual = simAnMod.getBestEnergy() - 0.0;
+	ASSERT_NEAR(residual, 0.0, resTol);
+
+	// assert error:
+	std::vector<real> bestState = simAnMod.getBestState();
+	real error = std::sqrt( (bestState.at(0) - 1.0)*(bestState.at(0) - 1.0) + (bestState.at(1) - 1.0)*(bestState.at(1) - 1.0) );
+	ASSERT_NEAR(error, 0.0, errTol);
 }
 
 
