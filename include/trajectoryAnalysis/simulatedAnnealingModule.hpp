@@ -1,6 +1,8 @@
 #ifndef SIMULATEDANNEALINGMODULE_HPP
 #define SIMULATEDANNEALINGMODULE_HPP
 
+#include <gtest/gtest_prod.h>
+
 #include <gromacs/utility/real.h>
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
@@ -11,6 +13,10 @@ typedef std::function<real(real*)> costFunction;
 
 class SimulatedAnnealingModule
 {
+	friend class SimulatedAnnealingModuleTest;
+	FRIEND_TEST(SimulatedAnnealingModuleTest, CoolingTest);
+
+
 	public:
 
 	SimulatedAnnealingModule(int stateDim,
