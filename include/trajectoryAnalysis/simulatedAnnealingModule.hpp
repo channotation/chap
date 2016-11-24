@@ -15,18 +15,22 @@ class SimulatedAnnealingModule
 {
 	friend class SimulatedAnnealingModuleTest;
 	FRIEND_TEST(SimulatedAnnealingModuleTest, CoolingTest);
+	FRIEND_TEST(SimulatedAnnealingModuleTest, IsotropicCandidateGenerationTest);
+	FRIEND_TEST(SimulatedAnnealingModuleTest, AdaptiveCandidateGenerationTest);
 
 
 	public:
 
 	SimulatedAnnealingModule(int stateDim,
 							 int randomSeed,
-							 int maxIter,
+							 int maxCoolingIter,
+							 int numCovSamples,
 							 real initTemp,
 							 real coolingFactor,
 							 real stepLengthFactor,
 							 real *initState,
-							 costFunction cf);
+							 costFunction cf,
+							 bool useAdaptiveCandidateGeneration);
 
 	~SimulatedAnnealingModule();
 
@@ -34,7 +38,8 @@ class SimulatedAnnealingModule
 
 	// getter functions (used in unit tests):
 	int getStateDim(){return stateDim_;};
-	int getMaxIter(){return maxIter_;};
+	int getMaxCoolingIter(){return maxCoolingIter_;};
+	int getNumCovSamples(){return numCovSamples_;};
 	int getSeed(){return seed_;};
 
 	real getTemp(){return temp_;};
@@ -55,58 +60,41 @@ class SimulatedAnnealingModule
 
 	private:
 
-	bool useAdaptiveCandidateGeneration;
+	bool useAdaptiveCandidateGeneration_;
 
 	int stateDim_;										// dimension of state space
-	int maxIter_;										// maximum number of iterations
 	int seed_;											// seed for random number generator
 	int maxCoolingIter_;								// maximum number of cooling steps
-	int candGenTrials_;									// candidate states generated per covariance matrix update
+	int numCovSamples_;									// candidate states generated per covariance matrix update
 
-	int nCoolingIter_;
+	int nCoolingIter_;									
 	
 	real temp_;											// temperature
 	real coolingFactor_;								// temperature reduction factor
 	real stepLengthFactor_;								// factor influencing candidate generation step
 
-	real *crntState_;
-	real *candState_;
-	real *bestState_;
+	real *crntState_;									// current state vector in optimisation space
+	real *candState_;									// candidate state vector in optimisation space
+	real *bestState_;									// best state vector in optimisation space
 
-	real crntCost_;
-	real candCost_;
-	real bestCost_;
+	real *covarianceMatrix_;							// covariance matrix
+	real *adaptationMatrix_;							// adaptation matrix for candidate generation
 
-
-
-//	real crntEnergy_;									// cost function value of current state
-//	real candEnergy_;									// cost function value of candidate state
-//	real bestEnergy_;									// cost function value of best state
-
-//	std::vector<real> crntState_;						// state space coordinates of current state
-//	std::vector<real> candState_;						// state space coordinates of candidate state
-//	std::vector<real> bestState_;						// state space coordinates of best state
+	real crntCost_;										// cost function value at current state
+	real candCost_;										// cost function value at candidate state
+	real bestCost_;										// cost function value at best state
 
 	gmx::DefaultRandomEngine rng_;						// pseudo random number generator
 	gmx::UniformRealDistribution<real> candGenDistr_; 	// distribution for candidate generation
 	gmx::UniformRealDistribution<real> candAccDistr_; 	// distribution for candidate acceptance
 
-//	energyFunction evaluateEnergy_;						// function object for evaluating energy of state
 	costFunction evaluateCost_;
 
-//	void generateStateDirection();
-//	bool acceptCandidate();
 
-	// cool temperature:
 	void cool();
-
 	void generateCandidateState();
+	bool acceptCandidateState();
 
-	// generate a candidate state:
-//	void generateCandidate();
-
-	// calculate probability of accepting candidate state:
-//	real calculateAcceptanceProbability();
 };
 
 

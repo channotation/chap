@@ -13,9 +13,36 @@ class SimulatedAnnealingModuleTest : public ::testing::Test
 {
 	protected:
 
-		const int randomSeed_ = 15011991;
-		
-		
+		// default parameters:
+		bool useAdaptiveCandidateGeneration_;
+
+		int randomSeed_;
+		int stateDim_;
+		int maxCoolingIter_;
+		int numCovSamples_;
+
+		real initTemp_;
+		real coolingFactor_;
+		real stepLengthFactor_;
+	
+
+		// constructor:
+		SimulatedAnnealingModuleTest()
+		{
+			useAdaptiveCandidateGeneration_ = false;
+
+			randomSeed_ = 15011991;
+			stateDim_ = 2;
+			maxCoolingIter_ = 10000;
+			numCovSamples_ = 50;
+			
+			initTemp_ = 300;
+			coolingFactor_ = 0.99;
+			stepLengthFactor_ = 0.01;
+		}
+
+
+		// functions to be used in tests:
 		static real rosenbrockFunction(real *arg)
 		{
 			// set internal parameters:
@@ -50,17 +77,20 @@ TEST_F(SimulatedAnnealingModuleTest, ConstructorTest)
 	// create simulated annealing module:
 	SimulatedAnnealingModule sam(stateDim, 
 								 randomSeed_, 
-								 maxIter, 
+								 maxCoolingIter_,
+								 numCovSamples_,
 								 initTemp, 
 	                             coolingFactor, 
 								 stepLengthFactor, 
 								 initState,
-								 rosenbrockFunction);
+								 rosenbrockFunction,
+								 useAdaptiveCandidateGeneration_);
 	
 	// check if integer parameters have been set correctly:
 	ASSERT_EQ(stateDim, sam.getStateDim());
 	ASSERT_EQ(randomSeed_, sam.getSeed());
-	ASSERT_EQ(maxIter, sam.getMaxIter());
+	ASSERT_EQ(maxCoolingIter_, sam.getMaxCoolingIter());
+	ASSERT_EQ(numCovSamples_, sam.getNumCovSamples());
 
 	// check of real parameters have been set correctly:
 	ASSERT_FLOAT_EQ(initTemp, sam.getTemp());
@@ -97,12 +127,14 @@ TEST_F(SimulatedAnnealingModuleTest, CoolingTest)
 	// create simulated annealing module:
 	SimulatedAnnealingModule sam(stateDim, 
 								 randomSeed_, 
-								 maxIter, 
+								 maxCoolingIter_,
+								 numCovSamples_,
 								 initTemp, 
 	                             coolingFactor, 
 								 stepLengthFactor, 
 								 initState,
-								 rosenbrockFunction);
+								 rosenbrockFunction,
+								 useAdaptiveCandidateGeneration_);
 	
 	// perform cooling step:
 	sam.cool();
@@ -135,24 +167,26 @@ TEST_F(SimulatedAnnealingModuleTest, RosenbrockTest)
 	real errTol = 1e-3;
 
 	// set parameters:
-	int stateDim = 2;
-	int maxIter = 5000;
-	real temp = 300;
+	maxCoolingIter_ = 10000;
+	numCovSamples_ = 1;
+	real temp = 3000;
 	real coolingFactor = 0.98;
 	real stepLengthFactor = 0.01;
 
 	// set initial state:
-	real initState[stateDim] = {0.0, 0.0};
+	real initState[stateDim_] = {0.0, 0.0};
 
 	// construct a simulated annealing module:
-	SimulatedAnnealingModule sam(stateDim, 
+	SimulatedAnnealingModule sam(stateDim_, 
 								 randomSeed_,
-								 maxIter,
+								 maxCoolingIter_,
+								 numCovSamples_,
 								 temp,
 								 coolingFactor,
 								 stepLengthFactor,
 								 initState,
-								 rosenbrockFunction);
+								 rosenbrockFunction,
+								 useAdaptiveCandidateGeneration_);
 
 	// perform annealing:
 	sam.anneal();
@@ -163,7 +197,7 @@ TEST_F(SimulatedAnnealingModuleTest, RosenbrockTest)
 
 	// assert error:
 	real error = 0.0;
-	for(int i = 0; i < stateDim; i++)
+	for(int i = 0; i < stateDim_; i++)
 	{
 		error += (sam.getBestStateAt(i) - 1.0) * (sam.getBestStateAt(i) - 1.0);
 	}

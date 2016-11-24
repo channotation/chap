@@ -13,15 +13,18 @@
  */
 SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
                                                    int randomSeed,
-												   int maxIter,
+												   int maxCoolingIter,
+												   int numCovSamples,
 												   real initTemp,
 												   real coolingFactor,
 												   real stepLengthFactor,
 												   real *initState,
-												   costFunction cf)
+												   costFunction cf,
+												   bool useAdaptiveCandidateGeneration)
 	: stateDim_(stateDim)
 	, seed_(randomSeed)
-	, maxIter_(maxIter)
+	, maxCoolingIter_(maxCoolingIter)
+	, numCovSamples_(numCovSamples)
 	, temp_(initTemp)
 	, coolingFactor_(coolingFactor)
 	, stepLengthFactor_(stepLengthFactor)
@@ -32,6 +35,7 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 	, candState_()
 	, bestState_()
 	, evaluateCost_(cf)
+	, useAdaptiveCandidateGeneration_(useAdaptiveCandidateGeneration)
 {
 	// allocate memory for internal state vectors:
 	crntState_ = new real[stateDim_];
@@ -70,56 +74,10 @@ SimulatedAnnealingModule::~SimulatedAnnealingModule()
 void
 SimulatedAnnealingModule::anneal()
 {
-/*
-	// initialise temporary variables:
-	real accProb = 0.0;
+	// initialise counter:
+	nCoolingIter_ = 0;
 
-	// simulated annealing iteration:
-	for(int i = 0; i < maxIter_; i++)
-	{
 
-		// generate candidate
-		generateCandidate();
-
-		// evaluate cost function
-		candEnergy_ = evaluateEnergy_(candState_);
-
-		// calculate acceptance probability:
-		accProb = calculateAcceptanceProbability();
-
-		// inform user:
-		std::cout<<"i = "<<i
-				 <<"  T = "<<temp_
-				 <<"  P = "<<accProb
-		         <<"  crntState = "<<crntState_[0]<<" , "<<crntState_[1]
-				 <<"  crntEnergy = "<<crntEnergy_
-		         <<"  candState = "<<candState_[0]<<" , "<<candState_[1]
-				 <<"  candEnergy = "<<candEnergy_
-				 <<"  bestState = "<<bestState_[0]<<" , "<<bestState_[1]
-				 <<"  bestEnergy = "<<bestEnergy_<<std::endl;
-
-		// accept move?
-		if( candAccDistr_(rng_) < accProb )
-		{
-			// candidate state becomes current state:
-			crntEnergy_ = candEnergy_;
-			crntState_ = candState_;
-
-			// new best state found?
-			if( candEnergy_ > bestEnergy_ )
-			{
-				// candidate state becomes best state:
-				bestEnergy_ = candEnergy_;
-				bestState_ = candState_;
-			}
-		}
-
-		// reduce temperature:
-		cool();
-	}
-*/
-	///////////////////////////////////////////////////////////////////////////
-	
 	// start annealing loop:
 	while(true)
 	{
@@ -128,7 +86,7 @@ SimulatedAnnealingModule::anneal()
 		int nRejected = 0;
 
 		// 
-		for(int i = 0; i < candGenTrials_; i++)
+		for(int i = 0; i < numCovSamples_; i++)
 		{
 			// generate a candidate state:
 			generateCandidateState();
@@ -139,19 +97,19 @@ SimulatedAnnealingModule::anneal()
 			candCost_ = evaluateCost_(candState_);
 
 			// accept candidate?
-			if( true )
+			if( acceptCandidateState() == true )
 			{
 				// candidate state becomes current state:
-				cblas_scopy(stateDim_, crntState_, 1, candState_, 1);
+				cblas_scopy(stateDim_, candState_, 1, crntState_, 1);
 				crntCost_ = candCost_;
 
 				// increment acceptance counter:
 				nAccepted++;
 
 				// is new state also the best state?
-				if( crntCost_ > bestCost_ )
+				if( candCost_ > bestCost_ )
 				{
-					cblas_scopy(stateDim_, bestState_, 1, candState_, 1);
+					cblas_scopy(stateDim_, candState_, 1, bestState_, 1);
 					bestCost_ = candCost_;
 				}
 
@@ -161,9 +119,25 @@ SimulatedAnnealingModule::anneal()
 				// increment rejection counter:
 				nRejected++;
 			}
-
+			
 		}
-	
+
+		// reduce temperature:
+		cool();
+
+		// increment cooling step counter:
+		nCoolingIter_++;
+/*	
+		std::cout<<"i = "<<nCoolingIter_
+				 <<"  temp = "<<temp_
+		         <<"  crntCost = "<<crntCost_
+				 <<"  crntState = "<<crntState_[0]<<","<<crntState_[1]
+				 <<"  candCost = "<<candCost_
+				 <<"  candState = "<<candState_[0]<<","<<candState_[1]
+				 <<"  bestCost = "<<bestCost_
+				 <<"  bestState = "<<bestState_[0]<<","<<bestState_[1]
+				 <<std::endl;
+*/
 
 		// maximum step number reached?
 		if( nCoolingIter_ >= maxCoolingIter_ )
@@ -172,7 +146,7 @@ SimulatedAnnealingModule::anneal()
 		}
 
 		// no candidates accepted?
-		if( nAccepted <= 0 )
+		if( useAdaptiveCandidateGeneration_ && nAccepted <= 0 )
 		{
 			break;
 		}
@@ -180,8 +154,8 @@ SimulatedAnnealingModule::anneal()
 		// update statistics for adaptive candidate generation:
 		if( true )
 		{
-			// calculate moments
-			// update covariance matrix
+			// TODO: calculate moments
+			// TODO: update covariance matrix
 		}
 
 	}
@@ -236,47 +210,35 @@ SimulatedAnnealingModule::generateCandidateState()
 	cblas_scopy(stateDim_, crntState_, 1, candState_, 1);	
 
 	// should adaptive candidate generation be used?
-	if( useAdaptiveCandidateGeneration == true )
+	if( useAdaptiveCandidateGeneration_ == true )
 	{
 		// candidate state is current state plus adapted random direction:
-//		cblas_sgemv(CblasRowMajor, CblasNoTrans, stateDim_, stateDim_, 1.0, 
-//		            mat, 1, stateDir, 1, 1.0, candState_, 1);
+		cblas_sgemv(CblasRowMajor, CblasNoTrans, stateDim_, stateDim_, 1.0, 
+		            adaptationMatrix_, 1, stateDir, 1, 1.0, candState_, 1);
 
 	}
 	else
 	{
 		// candidate state is current state plus random direction:
-		cblas_saxpy(stateDim_, 1.0, stateDir, 1, candState_, 1); 
+		cblas_saxpy(stateDim_, stepLengthFactor_, stateDir, 1, candState_, 1); 
 	}
 }
 
 
-
 /*
- * Generates a candidate state from the current state.
+ * Decides whether to accept or reject a candidate state. Returns true if 
+ * candidate state is accepted.
  */
-/*
-void
-simulatedAnnealingModule::generateCandidate()
+bool
+SimulatedAnnealingModule::acceptCandidateState()
 {
+	// calculate acceptance probability according to Boltzmann statistics:
+	real accProb = std::min(std::exp( (candCost_ - crntCost_)/temp_ ), 1.0f);
 
-	int N = 3;
-	double A[9] = {1, 2, 3, 2, 3, 4, 3, 4, 1};
-	int LDA = 3;
-	int IPIV[3];
-	int INFO = 3;
-
+	// draw unfiform random number on interval [0,1):
+	real r = candAccDistr_(rng_);
 	
-
-
-
-	// loop over state dimension:
-	for(int i=0; i<stateDim_; i++)
-	{
-		// new state is current state plus some small random offset:
-		// TODO: introduce step length:
-		candState_.at(i) = crntState_.at(i) + stepLengthFactor_*candGenDistr_(rng_);
-	}
+	// should candidate be accepted:
+	return (r < accProb);
 }
-*/
 
