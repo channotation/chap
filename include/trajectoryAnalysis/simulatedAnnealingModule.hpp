@@ -6,22 +6,23 @@
 #include <gromacs/random/uniformrealdistribution.h>
 
 
-typedef	std::function<real(std::vector<real>)> energyFunction;
 typedef std::function<real(real*)> costFunction;
 
 
-class simulatedAnnealingModule
+class SimulatedAnnealingModule
 {
 	public:
 
-	simulatedAnnealingModule(int stateDim,
+	SimulatedAnnealingModule(int stateDim,
 							 int randomSeed,
 							 int maxIter,
 							 real initTemp,
 							 real coolingFactor,
 							 real stepLengthFactor,
-							 std::vector<real> initState,
-							 energyFunction ef);
+							 real *initState,
+							 costFunction cf);
+
+	~SimulatedAnnealingModule();
 
 	void anneal();
 
@@ -29,12 +30,14 @@ class simulatedAnnealingModule
 	int getStateDim(){return stateDim_;};
 	int getMaxIter(){return maxIter_;};
 	int getSeed(){return seed_;};
+
 	real getTemp(){return temp_;};
 	real getCoolingFactor(){return coolingFactor_;};
+	real getStepLengthFactor(){return stepLengthFactor_;};
 
-//	std::vector<real> getCrntState(){return crntState_;};
-//	std::vector<real> getCandState(){return candState_;};
-//	std::vector<real> getBestState(){return bestState_;};
+	real getCrntStateAt(int i){return crntState_[i];};
+	real getCandStateAt(int i){return candState_[i];};
+	real getBestStateAt(int i){return bestState_[i];};
 
 	real* getCrntState(){return crntState_;};
 	real* getCandState(){return candState_;};
@@ -43,10 +46,6 @@ class simulatedAnnealingModule
 	real getCrntCost(){return crntCost_;};
 	real getCandCost(){return candCost_;};
 	real getBestCost(){return bestCost_;};
-
-//	real getCrntEnergy(){return crntEnergy_;};
-//	real getCandEnergy(){return candEnergy_;};
-//	real getBestEnergy(){return bestEnergy_;};
 
 	private:
 

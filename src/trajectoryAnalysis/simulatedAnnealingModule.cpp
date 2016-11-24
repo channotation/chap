@@ -11,14 +11,14 @@
  * Note that the candidate generation range is [-sqrt(3), sqrt(3)), which gives
  * a standard deviation of 1.0 for a uniform distribution.
  */
-simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
+SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
                                                    int randomSeed,
 												   int maxIter,
 												   real initTemp,
 												   real coolingFactor,
 												   real stepLengthFactor,
-												   std::vector<real> initState,
-												   energyFunction ef)
+												   real *initState,
+												   costFunction cf)
 	: stateDim_(stateDim)
 	, seed_(randomSeed)
 	, maxIter_(maxIter)
@@ -31,22 +31,34 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
 	, crntState_()
 	, candState_()
 	, bestState_()
-//	, evaluateEnergy_(ef)
+	, evaluateCost_(cf)
 {
-	// initialise state vectors:
-//	crntState_ = new crnt
-//	candState_ = initState;
-//	bestState_ = initState;
+	// allocate memory for internal state vectors:
+	crntState_ = new real[stateDim_];
+	candState_ = new real[stateDim_];
+	bestState_ = new real[stateDim_];
 
-	// get initial energy of states:
-//	crntEnergy_ = evaluateEnergy_(crntState_);
-//	candEnergy_ = evaluateEnergy_(candState_);
-//	bestEnergy_ = evaluateEnergy_(bestState_);
+	// initialise state vectors:
+	cblas_scopy(stateDim_, initState, 1, crntState_, 1);
+	cblas_scopy(stateDim_, initState, 1, candState_, 1);
+	cblas_scopy(stateDim_, initState, 1, bestState_, 1);
 
 	// get cost of inital states:
-//	crntCost_ = evaluateCost_(crntState_);
-///	candCost_ = evaluateCost_(candState_);
-//	bestCost_ = evaluateCost_(bestState_);
+	crntCost_ = evaluateCost_(crntState_);
+	candCost_ = evaluateCost_(candState_);
+	bestCost_ = evaluateCost_(bestState_);
+}
+
+
+/*
+ * Custom destructor to free memory.
+ */
+SimulatedAnnealingModule::~SimulatedAnnealingModule()
+{
+	// free memory occupied by internal state vectors:
+	delete[] crntState_;
+	delete[] candState_;
+	delete[] bestState_;
 }
 
 
@@ -56,7 +68,7 @@ simulatedAnnealingModule::simulatedAnnealingModule(int stateDim,
  * TODO: Handle constraints!
  */
 void
-simulatedAnnealingModule::anneal()
+SimulatedAnnealingModule::anneal()
 {
 /*
 	// initialise temporary variables:
@@ -200,7 +212,7 @@ simulatedAnnealingModule::calculateAcceptanceProbability()
  * TODO: Implement additional cooling schedules.
  */
 void
-simulatedAnnealingModule::cool()
+SimulatedAnnealingModule::cool()
 {
 	temp_ *= coolingFactor_;
 }
@@ -210,7 +222,8 @@ simulatedAnnealingModule::cool()
 /*
  * Generates a candidate state in the neighbourhood of the current state.
  */
-void simulatedAnnealingModule::generateCandidateState()
+void 
+SimulatedAnnealingModule::generateCandidateState()
 {
 	// generate random direction in state space:
 	real stateDir[stateDim_];
