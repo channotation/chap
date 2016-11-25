@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <cblas.h>
+#include <lapacke.h>
 
 #include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
 
@@ -51,6 +52,15 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 	crntCost_ = evaluateCost_(crntState_);
 	candCost_ = evaluateCost_(candState_);
 	bestCost_ = evaluateCost_(bestState_);
+
+	// should adaptive candidate generation be used:
+	if( useAdaptiveCandidateGeneration_ == true )
+	{
+		// allocate memory for covariance and adaptation matrix:
+		stateSampleMatrix_ = new real[stateDim_ * numCovSamples_];
+		covarianceMatrix_ = new real[stateDim_ * stateDim_];
+		adaptationMatrix_ = new real[stateDim_ * stateDim_];
+	}
 }
 
 
@@ -63,6 +73,15 @@ SimulatedAnnealingModule::~SimulatedAnnealingModule()
 	delete[] crntState_;
 	delete[] candState_;
 	delete[] bestState_;
+
+
+	if( useAdaptiveCandidateGeneration_ == true )
+	{
+		// free memory occupied by adaptation algorithm matrices:
+		delete[] stateSampleMatrix_;
+		delete[] covarianceMatrix_;
+		delete[] adaptationMatrix_;
+	}
 }
 
 
@@ -96,6 +115,7 @@ SimulatedAnnealingModule::anneal()
 			// evaluate cost function:
 			candCost_ = evaluateCost_(candState_);
 
+
 			// accept candidate?
 			if( acceptCandidateState() == true )
 			{
@@ -119,14 +139,25 @@ SimulatedAnnealingModule::anneal()
 				// increment rejection counter:
 				nRejected++;
 			}
+
+			// copy current state to sample matrix:
+			if( useAdaptiveCandidateGeneration_ )
+			{
+				LAPACKE_slacpy(LAPACK_ROW_MAJOR, 'A', stateDim_, 1, crntState_,
+							   1, &stateSampleMatrix_[i], numCovSamples_);
+			}
 			
 		}
 
 		// reduce temperature:
 		cool();
-
-		// increment cooling step counter:
 		nCoolingIter_++;
+		
+		// update statistics for adaptive candidate generation:
+		if( useAdaptiveCandidateGeneration_ )
+		{
+			updateAdaptationMatrix();
+		}
 /*	
 		std::cout<<"i = "<<nCoolingIter_
 				 <<"  temp = "<<temp_
@@ -138,6 +169,19 @@ SimulatedAnnealingModule::anneal()
 				 <<"  bestState = "<<bestState_[0]<<","<<bestState_[1]
 				 <<std::endl;
 */
+
+		if( useAdaptiveCandidateGeneration_ )
+		{
+
+			for(int n=0; n<stateDim_; n++)
+			{
+				for(int m=0; m<numCovSamples_; m++)
+				{
+					std::cout<<stateSampleMatrix_[m + n*numCovSamples_]<<"  ";
+				}
+				std::cout<<std::endl;
+			}
+		}
 
 		// maximum step number reached?
 		if( nCoolingIter_ >= maxCoolingIter_ )
@@ -151,12 +195,7 @@ SimulatedAnnealingModule::anneal()
 			break;
 		}
 
-		// update statistics for adaptive candidate generation:
-		if( true )
-		{
-			// TODO: calculate moments
-			// TODO: update covariance matrix
-		}
+		
 
 	}
 
@@ -210,18 +249,18 @@ SimulatedAnnealingModule::generateCandidateState()
 	cblas_scopy(stateDim_, crntState_, 1, candState_, 1);	
 
 	// should adaptive candidate generation be used?
-	if( useAdaptiveCandidateGeneration_ == true )
-	{
+//	if( useAdaptiveCandidateGeneration_ == true )
+//	{
 		// candidate state is current state plus adapted random direction:
-		cblas_sgemv(CblasRowMajor, CblasNoTrans, stateDim_, stateDim_, 1.0, 
-		            adaptationMatrix_, 1, stateDir, 1, 1.0, candState_, 1);
+//		cblas_sgemv(CblasRowMajor, CblasNoTrans, stateDim_, stateDim_, 1.0, 
+//		            adaptationMatrix_, 1, stateDir, 1, 1.0, candState_, 1);
 
-	}
-	else
-	{
+//	}
+//	else
+//	{
 		// candidate state is current state plus random direction:
 		cblas_saxpy(stateDim_, stepLengthFactor_, stateDir, 1, candState_, 1); 
-	}
+//	}
 }
 
 
@@ -241,4 +280,91 @@ SimulatedAnnealingModule::acceptCandidateState()
 	// should candidate be accepted:
 	return (r < accProb);
 }
+
+
+/*
+ *
+ */
+void
+SimulatedAnnealingModule::updateAdaptationMatrix()
+{
+	// calculate fist moment:
+	real firstMoment[stateDim_] = {0};
+	for(int i = 0; i < numCovSamples_; i++)
+	{
+		std::cout<<"i = "<<i<<"  m = "<<i<<"  n = "<<i + numCovSamples_<<"  state(i) = "<<stateSampleMatrix_[i]<<","<<stateSampleMatrix_[i + numCovSamples_];
+		cblas_saxpy(stateDim_, 1.0f, &stateSampleMatrix_[i], numCovSamples_,
+					firstMoment, 1);
+		std::cout<<"  firstMoment = "<<firstMoment[0]<<","<<firstMoment[1]<<std::endl;
+	}
+	cblas_sscal(stateDim_, 1.0f/numCovSamples_, firstMoment,	1);
+	std::cout<<"firstMoment = "<<firstMoment[0]<<","<<firstMoment[1]<<std::endl;
+
+
+
+	// de-mean state sample matrix:
+	for(int i = 0; i < numCovSamples_; i++)
+	{
+		cblas_saxpy(stateDim_, -1.0f, firstMoment, 1, &stateSampleMatrix_[i], numCovSamples_);
+	}
+
+
+	// calculate second moment:
+	real secondMoment[stateDim_ * stateDim_] = {0};
+	
+
+
+	std::cout<<"---"<<std::endl;
+	for(int i = 0; i < stateDim_; i++)
+	{
+		for(int j = 0; j < numCovSamples_; j++)
+		{
+			std::cout<<""<<stateSampleMatrix_[j + i*numCovSamples_]<<" ";
+		}
+		std::cout<<std::endl;
+	}
+	std::cout<<"---"<<std::endl;
+
+
+
+	for(int i = 0; i < numCovSamples_; i++)
+	{
+		cblas_sgemm(CblasRowMajor,
+					CblasNoTrans,
+		              CblasTrans,
+					  stateDim_,
+					  stateDim_,
+					  numCovSamples_,
+					  1.0f,
+					  stateSampleMatrix_,
+					  numCovSamples_,
+					  stateSampleMatrix_,
+					  numCovSamples_,
+					  1.0f,
+					  secondMoment,
+					  stateDim_);		
+	}
+
+	
+	cblas_sscal(stateDim_*stateDim_, 1.0f/numCovSamples_, secondMoment, 1);
+
+
+
+
+
+
+
+	std::cout<<"---"<<std::endl;
+	for(int i = 0; i < stateDim_; i++)
+	{
+		for(int j = 0; j < stateDim_; j++)
+		{
+			std::cout<<""<<stateSampleMatrix_[j + i*stateDim_]<<" ";
+		}
+		std::cout<<std::endl;
+	}
+	std::cout<<"---"<<std::endl;
+	
+}
+
 

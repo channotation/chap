@@ -1,6 +1,8 @@
 #include <vector>
 #include <limits>
 
+#include <lapacke.h>
+
 #include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
 
 #include <gtest/gtest.h>
@@ -204,4 +206,124 @@ TEST_F(SimulatedAnnealingModuleTest, RosenbrockTest)
 	error = std::sqrt(error);
 	ASSERT_NEAR(error, 0.0, errTol);
 }
+
+
+
+/*
+ *
+ */
+TEST_F(SimulatedAnnealingModuleTest, test)
+{
+	real vec1[stateDim_] = {-1, 1};
+	real vec2[stateDim_] = {-2, 2};
+	real vec3[stateDim_] = {-3, 3};
+
+	real mat[stateDim_ * 3] = {1, 2, 3,
+	                           4, 5, 6};
+
+	const int m = 2;
+	const int n = 1;
+	const int ldb = 3;
+	const int lda = 1;
+
+
+	LAPACKE_slacpy(LAPACK_ROW_MAJOR,
+				   'A',
+				   m,
+				   n,
+			   	   vec1,
+			   	   lda,
+			   	   &mat[0],
+			   	   ldb);
+
+	LAPACKE_slacpy(LAPACK_ROW_MAJOR,
+				   'A',
+				   m,
+				   n,
+			   	   vec2,
+			   	   lda,
+			   	   &mat[1],
+			   	   ldb);
+
+	LAPACKE_slacpy(LAPACK_ROW_MAJOR,
+				   'A',
+				   m,
+				   n,
+			   	   vec3,
+			   	   lda,
+			   	   &mat[2],
+			   	   ldb);
+
+
+
+
+	for(int i=0; i<2; i++)
+	{
+		for(int j=0; j<3; j++)
+		{
+			std::cout<<mat[j + 3*i]<<"  ";
+		}
+		std::cout<<std::endl;
+	}
+
+
+	std::cout<<"=============================================================="
+	         <<std::endl
+			 <<std::endl
+			 <<std::endl;
+
+
+	// set parameters:
+	maxCoolingIter_ = 1;
+	numCovSamples_ = 5;
+	useAdaptiveCandidateGeneration_ = true;
+	initTemp_ = 300.0;
+	stepLengthFactor_ = 0.01;
+
+	// set initial state:
+	real initState[stateDim_] = {3.0, 2.0};
+
+	// construct a simulated annealing module:
+	SimulatedAnnealingModule sam(stateDim_, 
+								 randomSeed_,
+								 maxCoolingIter_,
+								 numCovSamples_,
+								 initTemp_,
+								 coolingFactor_,
+								 stepLengthFactor_,
+								 initState,
+								 rosenbrockFunction,
+								 useAdaptiveCandidateGeneration_);
+
+	// perform annealing:
+	sam.anneal();
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

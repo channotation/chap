@@ -77,6 +77,7 @@ class SimulatedAnnealingModule
 	real *candState_;									// candidate state vector in optimisation space
 	real *bestState_;									// best state vector in optimisation space
 
+	real *stateSampleMatrix_;							// matrix containing state space sample collected in a cooling step
 	real *covarianceMatrix_;							// covariance matrix
 	real *adaptationMatrix_;							// adaptation matrix for candidate generation
 
@@ -94,6 +95,7 @@ class SimulatedAnnealingModule
 	void cool();
 	void generateCandidateState();
 	bool acceptCandidateState();
+	void updateAdaptationMatrix();
 
 };
 
