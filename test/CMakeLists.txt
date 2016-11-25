@@ -11,4 +11,5 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # Move to Test Directories
 # -----------------------------------------------------------------------------
 
+add_subdirectory(statistics-utilities)
 add_subdirectory(trajectoryAnalysis)
