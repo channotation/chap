@@ -11,13 +11,13 @@ class CalculateCovarianceMatrix
 
     public:
 
-	void operator() (const int &dataDim, const int &numSamples,
-	                 real *dataMatrix, real *covarianceMatrix);
+		void operator() (const int &dataDim, const int &numSamples,
+		                 real *dataMatrix, real *covarianceMatrix);
 
     private:
 		
-	void calculate(const int &dataDim, const int &numSamples, 
-	               real *dataMatrix, real *covarianceMatrix);
+		void calculate(const int &dataDim, const int &numSamples, 
+	    	           real *dataMatrix, real *covarianceMatrix);
 };
 
 

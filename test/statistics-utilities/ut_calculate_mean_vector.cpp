@@ -7,7 +7,7 @@
 
 
 /*
- *
+ * Test fixture for testing the mean vector calculation functor.
  */
 class CalculateMeanVectorTest : public ::testing::Test
 {
@@ -19,7 +19,9 @@ class CalculateMeanVectorTest : public ::testing::Test
 
 
 /*
- *
+ * Tests mean vectors calculation on a small, low dimensional data set and 
+ * makes sure the mean of each dimension is equal to the analytically known
+ * mean.
  */
 TEST_F(CalculateMeanVectorTest, deterministicDataTest)
 {
@@ -43,7 +45,9 @@ TEST_F(CalculateMeanVectorTest, deterministicDataTest)
 
 
 /*
- *
+ * Tests the mean vector calculation on a large, low dimensional data set of
+ * randomly created points and makes sure that the mean of each dimension 
+ * agrees with the set mean for data creation.
  */
 TEST_F(CalculateMeanVectorTest, randomDataTest)
 {
@@ -77,9 +81,9 @@ TEST_F(CalculateMeanVectorTest, randomDataTest)
     real *dataMatrix = new real[dataDim * numSamples];
     for(int i = 0; i < numSamples; i++)
     {
-	dataMatrix[i + 0*numSamples] = distribution1(rng) + mean1;
-	dataMatrix[i + 1*numSamples] = distribution2(rng) + mean2;
-	dataMatrix[i + 2*numSamples] = distribution3(rng) + mean3;
+		dataMatrix[i + 0*numSamples] = distribution1(rng) + mean1;
+		dataMatrix[i + 1*numSamples] = distribution2(rng) + mean2;
+		dataMatrix[i + 2*numSamples] = distribution3(rng) + mean3;
 
     }
 
@@ -96,3 +100,4 @@ TEST_F(CalculateMeanVectorTest, randomDataTest)
     // clean up:
     delete[] dataMatrix;
 }
+

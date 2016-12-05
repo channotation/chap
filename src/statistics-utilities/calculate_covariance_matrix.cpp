@@ -3,6 +3,7 @@
 #include <cblas.h>
 
 #include "statistics-utilities/calculate_covariance_matrix.hpp"
+#include "statistics-utilities/calculate_mean_vector.hpp"
 
 
 /*
@@ -18,78 +19,42 @@ void CalculateCovarianceMatrix::operator()(const int &dataDim,
 
 
 /*
- * Function for calculating the covariance matrix for a given data matrix.
+ * Function for calculating the covariance matrix for a given data matrix. Note
+ * that consistent with Vanderbilt and Louie, this is a biased estimate of the 
+ * covariance matrix, where each entry is scaled by 1/N rather than 1/(N-1).
  */
 void
 CalculateCovarianceMatrix::calculate(const int &dataDim,
                                      const int &numSamples,
-				     real *dataMatrix,
-				     real *covarianceMatrix)
-{
-
-/*
-
+								     real *dataMatrix,
+								     real *covarianceMatrix)
+{	
+	// calculate the mean / first moment:
+	real firstMoment[dataDim];
+	CalculateMeanVector calculateMeanVector;
+	calculateMeanVector(dataDim, numSamples, dataMatrix, firstMoment);
+	
 	// de-mean state sample matrix:
 	for(int i = 0; i < numSamples; i++)
 	{
 		cblas_saxpy(dataDim, -1.0f, firstMoment, 1, &dataMatrix[i], numSamples);
 	}
-
-
-	// calculate second moment:
-	real secondMoment[dataDim * dataDim] = {0};
 	
-
-
-	std::cout<<"---"<<std::endl;
-	for(int i = 0; i < dataDim; i++)
-	{
-		for(int j = 0; j < numSamples; j++)
-		{
-			std::cout<<""<<dataMatrix[j + i*numSamples]<<" ";
-		}
-		std::cout<<std::endl;
-	}
-	std::cout<<"---"<<std::endl;
-
-
-
-	for(int i = 0; i < numSamples; i++)
-	{
-		cblas_sgemm(CblasRowMajor,
-					CblasNoTrans,
-		              CblasTrans,
-					  dataDim,
-					  dataDim,
-					  numSamples,
-					  1.0f,
-					  dataMatrix,
-					  numSamples,
-					  dataMatrix,
-					  numSamples,
-					  1.0f,
-					  secondMoment,
-					  dataDim);		
-	}
-
-	
-	cblas_sscal(dataDim*dataDim, 1.0f/numSamples, secondMoment, 1);
-
-
-
-
-
-
-
-	std::cout<<"---"<<std::endl;
-	for(int i = 0; i < dataDim; i++)
-	{
-		for(int j = 0; j < dataDim; j++)
-		{
-			std::cout<<""<<dataMatrix[j + i*dataDim]<<" ";
-		}
-		std::cout<<std::endl;
-	}
-	std::cout<<"---"<<std::endl;
-*/	
+	// calculate second moment / covariance matrix:
+	std::fill_n(covarianceMatrix, dataDim*dataDim, 0.0f);
+	cblas_sgemm(CblasRowMajor,
+				CblasNoTrans,
+                CblasTrans,
+				dataDim,
+				dataDim,
+				numSamples,
+				1.0f,
+				dataMatrix,
+				numSamples,
+				dataMatrix,
+				numSamples,
+				1.0f,
+				covarianceMatrix,
+				dataDim);		
+	cblas_sscal(dataDim*dataDim, 1.0f/numSamples, covarianceMatrix, 1);
 }
