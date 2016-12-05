@@ -15,7 +15,7 @@ class CalculateCovarianceMatrixTest : public ::testing::Test
 {
 	protected:
 
-		const static int seed_ = 15011991;
+		const static int seed_ = 15011993;
 
 };
 
@@ -65,30 +65,30 @@ TEST_F(CalculateCovarianceMatrixTest, deterministicDataTest)
 
 
 /*
- *
+ * Tests the calculation of the covariance matrix on a medium sized, low
+ * dimensional data set of random numbers. It is asserted that the covariance
+ * is symmatric and that it is positive semi-definite, i.e. that its eigen-
+ * values are all larger than or equal to zero.
  */
 TEST_F(CalculateCovarianceMatrixTest, randomDataTest)
 {
-	// set tolerance threshold:
-    real relTol = 1e-2;
-
     // set parameters:
     int dataDim = 3;
-    int numSamples = 1e5;
+    int numSamples = 1e2;
     
     real mean1 = -1.0f;
-    real mean2 = 1.0f;
-    real mean3 = 1e7f;
+    real mean2 = 1.4f;
+    real mean3 = 1.e5f;
     
     real lo1 = -1.0f;
-    real lo2 = -1.0f;
+    real lo2 = -1e0f;
     real lo3 = -1.0f;
     
     real hi1 = 1.0f;
-    real hi2 = 1.0f;
+    real hi2 = 1e4f;
     real hi3 = 1.0f;
 
-	// set up data structure and functor:
+	// set up data structures and functor:
 	real covarianceMatrix[dataDim * dataDim];
 	CalculateCovarianceMatrix calculateCovarianceMatrix;
 	
@@ -110,7 +110,18 @@ TEST_F(CalculateCovarianceMatrixTest, randomDataTest)
 
 	// calculate covariance matrix:	
 	calculateCovarianceMatrix(dataDim, numSamples, dataMatrix, covarianceMatrix);
-/*
+
+	// check symmetry of matrix:
+	for(int i  = 0; i < dataDim; i++)
+	{
+		for(int j = 0; j < dataDim; j++)
+		{
+			ASSERT_FLOAT_EQ(covarianceMatrix[i*dataDim + j], 
+			                covarianceMatrix[j*dataDim + i]);
+		}
+	}
+
+
 	// calculate eigenvalues of from upper triangle of covariance matrix:
 	real ev1[dataDim] = {0};
 	int status1 = LAPACKE_ssyev(LAPACK_ROW_MAJOR, 
@@ -142,11 +153,7 @@ TEST_F(CalculateCovarianceMatrixTest, randomDataTest)
 	{
 		// covariance matrix should be positive-semidefinite:	
 		ASSERT_GE(ev1[i], 0.0);
-		ASSERT_GE(ev2[i], 0.0); 
-
-		// eigenvalues from both calculations should be equal:
-		ASSERT_FLOAT_EQ(ev1[i], ev2[i]);
+		ASSERT_GE(ev2[i], 0.0);
 	}
-	*/
 }
 
