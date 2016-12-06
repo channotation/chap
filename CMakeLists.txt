@@ -58,8 +58,10 @@ message("lapack = " ${LAPACK_LIBRARIES})
 # Compile Instructions
 #------------------------------------------------------------------------------
 
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp) 
+
 # create executable chap from main.cpp:
-add_executable(chap src/main.cpp src/trajectoryAnalysis/trajectoryAnalysis.cpp src/trajectoryAnalysis/simulatedAnnealingModule.cpp)
+add_executable(chap ${SRC_FILES})
 message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
 message(STATUS "libs = " ${GROMACS_LIBRARIES})
