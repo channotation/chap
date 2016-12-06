@@ -240,7 +240,7 @@ TEST_F(SimulatedAnnealingModuleTest, AdaptiveRosenbrockTest)
 	randomSeed_ = 15011991;
 	maxCoolingIter_ = 1e4;
 	numCostSamples_ = 60;
-	convRelTol_ = 1e-6;
+	convRelTol_ = 4.5e-5;
 	xi_ = 3.0f;
 	real temp = 10.0;
 	real coolingFactor = 0.95;
@@ -267,9 +267,7 @@ TEST_F(SimulatedAnnealingModuleTest, AdaptiveRosenbrockTest)
 	eSimAnTerm status = sam.anneal();
 
 	// assert convergence:
-//	EXPECT_TRUE(status != NO_CAND_ACCEPTED);
-//	EXPECT_TRUE(status != MAX_COOLING_ITER);
-//	EXPECT_TRUE(status == CONVERGENCE);
+	EXPECT_TRUE(status != MAX_COOLING_ITER);
 
 	// assert residual:
 	real residual = sam.getBestCost() - 0.0;
