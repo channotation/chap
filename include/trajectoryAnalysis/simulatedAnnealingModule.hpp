@@ -29,6 +29,8 @@ class SimulatedAnnealingModule
 								 int randomSeed,
 								 int maxCoolingIter,
 								 int numCovSamples,
+								 real xi,
+								 real convRelTol,
 								 real initTemp,
 								 real coolingFactor,
 								 real stepLengthFactor,
@@ -43,7 +45,7 @@ class SimulatedAnnealingModule
 		// getter functions (used in unit tests):
 		int getStateDim(){return stateDim_;};
 		int getMaxCoolingIter(){return maxCoolingIter_;};
-		int getNumCovSamples(){return numCovSamples_;};
+		int getNumCandSamples(){return numCostSamples_;};
 		int getSeed(){return seed_;};
 
 		real getTemp(){return temp_;};
@@ -64,17 +66,19 @@ class SimulatedAnnealingModule
 
 	private:
 
+		// parameters:
 		const bool useAdaptiveCandidateGeneration_;
 
-		const int stateDim_;								// dimension of state space
 		const int seed_;									// seed for random number generator
+		const int stateDim_;								// dimension of state space
 		const int maxCoolingIter_;							// maximum number of cooling steps
-		const int numCovSamples_;							// candidate states generated per covariance matrix update
+		const int numCostSamples_;							// candidate states generate per check of convergence criterion
+	
 		const real beta_;									// free random walk parameter from Vanderbilt & Louie
 		const real xi_;										// growth factor from Vanderbilt & Louie
 		const real convRelTol_;
 
-		int nCoolingIter_;										
+		// internal state variables:
 		real temp_;											// temperature
 		real coolingFactor_;								// temperature reduction factor
 		real stepLengthFactor_;								// factor influencing candidate generation step
@@ -90,22 +94,27 @@ class SimulatedAnnealingModule
 		real candCost_;										// cost function value at candidate state
 		real bestCost_;										// cost function value at best state
 
-		real *candCostSamples_;
+		real *costSamples_;
 
 		gmx::DefaultRandomEngine rng_;						// pseudo random number generator
 		gmx::UniformRealDistribution<real> candGenDistr_; 	// distribution for candidate generation
 		gmx::UniformRealDistribution<real> candAccDistr_; 	// distribution for candidate acceptance
 
-		costFunction evaluateCost_;
-	
+		// funcotrs and function type members:
+		costFunction evaluateCost;
 		CalculateCovarianceMatrix calculateCovarianceMatrix;
 
+		// member functions
+		eSimAnTerm annealIsotropic();						// function for non-adaptive annealing with isotropic canidate generation
+		eSimAnTerm annealAdaptive();						// function for adaptive annealing
+
 		void cool();
-		void generateCandidateState();
+		void generateCandidateStateIsotropic();
+		void generateCandidateStateAdaptive();
 		void updateAdaptationMatrix();
 
 		bool acceptCandidateState();						// checks Boltzmann criterion for accepting new candidate
-		bool isConverged();									// checks if the non-adaptive algorithm has reached convergence
+		bool isConvergedIsotropic();						// checks if the non-adaptive algorithm has reached convergence
 		bool isConvergedAdaptive();							// checks if the adaptive algorithm has reached convergence
 };
 
