@@ -59,6 +59,8 @@ class SimulatedAnnealingModuleTest : public ::testing::Test
 			return -(a - x)*(a - x) - b*(y - x*x)*(y - x*x);
 		}
 
+
+
 };
 
 
@@ -110,7 +112,6 @@ TEST_F(SimulatedAnnealingModuleTest, ConstructorTest)
 	ASSERT_FLOAT_EQ(rosenbrockFunction(initState), sam.getCandCost());
 	ASSERT_FLOAT_EQ(rosenbrockFunction(initState), sam.getBestCost());	
 }
-
 
 
 /*
@@ -208,7 +209,6 @@ TEST_F(SimulatedAnnealingModuleTest, RosenbrockTest)
 }
 
 
-
 /*
  *
  */
@@ -265,6 +265,12 @@ TEST_F(SimulatedAnnealingModuleTest, test)
 		}
 		std::cout<<std::endl;
 	}
+
+
+	
+
+
+
 
 
 	std::cout<<"=============================================================="

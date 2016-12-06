@@ -59,6 +59,7 @@ message("lapack = " ${LAPACK_LIBRARIES})
 #------------------------------------------------------------------------------
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp) 
+message("CHAP_SRC = " ${SRC_FILES})
 
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
