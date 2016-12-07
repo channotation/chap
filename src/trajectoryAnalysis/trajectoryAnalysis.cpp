@@ -7,7 +7,7 @@
 
 #include "trajectoryAnalysis/trajectoryAnalysis.hpp"
 
-#include "trajectoryAnalysis/simulatedAnnealingModule.hpp"
+#include "trajectoryAnalysis/simulated_annealing_module.hpp"
 
 
 using namespace gmx;
