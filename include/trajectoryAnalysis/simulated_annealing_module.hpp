@@ -13,7 +13,9 @@
 typedef std::function<real(real*)> costFunction;
 
 
-enum eSimAnTerm {CONVERGENCE, MAX_COOLING_ITER, NO_CAND_ACCEPTED};
+enum eSimAnTerm {CONVERGENCE = 101, 
+                 MAX_COOLING_ITER = 102, 
+                 NO_CAND_ACCEPTED = 103};
 
 
 class SimulatedAnnealingModule
