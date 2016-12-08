@@ -11,10 +11,8 @@ class PathFindingModule
 		
 		PathFindingModule(gmx::RVec initProbePos,
                           gmx::RVec chanDirVec,
-                          gmx::AnalysisNeighborhood neighborhood,
-                          gmx::Selection poreSelection,
                           gmx::AnalysisNeighborhoodSearch nbSearch,
-                          t_pbc *pbc);
+                          std::vector<real> vdwRadii);
 		~PathFindingModule();
 
         void findPath();

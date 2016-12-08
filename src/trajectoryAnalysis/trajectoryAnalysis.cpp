@@ -8,7 +8,7 @@
 #include "trajectoryAnalysis/trajectoryAnalysis.hpp"
 
 #include "trajectoryAnalysis/simulated_annealing_module.hpp"
-
+#include "trajectoryAnalysis/path_finding_module.hpp"
 
 using namespace gmx;
 
@@ -154,70 +154,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 	// parameters:
 	real probeStep = 0.2;
-	RVec channelVector(0.0, 0.0, 1.0);
-	RVec initialProbePosition(0, 0, 1.8);
-	int maxProbeIter = 1;
+	RVec channelVector(0.0, 1.0, 0.0);
+	RVec initialProbePosition(50, 50, 0.0);
+    int maxProbeIter = 1;
 
-
-	// loop for advancing probe position:
-	int i = 0;
-	while(i < maxProbeIter)
-	{
-	
-		// TODO: implement radius maximum radius calculating function
-		// TODO: implement SA for radius finding		
-		
-
-		real voidRadius = maximiseVoidRadius(initialProbePosition,
-		                                     channelVector,
-											 pbc,
-											 ref_selection);
-		std::cout<<"z = "<<initialProbePosition[2]<<"  r = "<<voidRadius<<std::endl;
-
-		initialProbePosition[0] = initialProbePosition[0] + probeStep*channelVector[0];
-		initialProbePosition[1] = initialProbePosition[1] + probeStep*channelVector[1];
-		initialProbePosition[2] = initialProbePosition[2] + probeStep*channelVector[2];
-	
-
-	
-		// increment loop counter:
-		i++;
-	}
-
-
-
-
-	// wrapup
-
-
-	// ANALYSIS OF SMALL PARTICLE POSITIONS
-	// ------------------------------------------------------------------------
-
-/*
-	// loop over small particle selections:
-	for(size_t g = 0; g < sel_.size(); ++g)
-	{
-		// get thread-local selection of small particles:
-		const Selection &sel = pdata -> parallelSelection(sel_[g]);
-
-		// get number of particles in selection:
-		int n_part = sel.posCount();
-	
-
-		for(int i = 0; i < n_part; i++)
-		{
-			
-			SelectionPosition p = sel.position(i);
-			ConstArrayRef<int> idx = p.atomIndices();
-
-
-			std::cout<<"vdW radius = "<<vdwRadii.at(idx.front())<<std::endl;
-
-		}
-
-	}
-
-*/
+    std::cout<<"blah"<<std::endl;
+    PathFindingModule pfm(initialProbePosition, channelVector, nbSearch, vdwRadii);
+    pfm.findPath();
 
 
 

@@ -61,7 +61,6 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 
 	// allocate candidate cost vector:
 	costSamples_ = new real[numCostSamples_];
-
 	// should adaptive candidate generation be used:
 	if( useAdaptiveCandidateGeneration_ == true )
 	{

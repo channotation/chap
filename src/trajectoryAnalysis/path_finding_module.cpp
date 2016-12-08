@@ -9,11 +9,10 @@
  */
 PathFindingModule::PathFindingModule(gmx::RVec initProbePos,
                                      gmx::RVec chanDirVec,
-                                     gmx::AnalysisNeighborhood neighborhood,
-                                     gmx::Selection poreSelection,
                                      gmx::AnalysisNeighborhoodSearch nbSearch,
-                                     t_pbc *pbc)
+                                     std::vector<real> vdwRadii)
     : stepLength_(0.1)
+    , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , chanDirVec_(chanDirVec)
     , nbSearch_(nbSearch)
@@ -78,12 +77,12 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
     // prepare simulated annealing module:
     int stateDim = 2;
     int randomSeed = 15011991;
-    int maxCoolingIter = 1e5;
-    int numCostSamples = 10;
+    int maxCoolingIter = 1e3;
+    int numCostSamples = 50;
     real xi = 3.0;
-    real convRelTol = 1e-21;
+    real convRelTol = 1e-3;
     real initTemp = 10;
-    real coolingFactor = 0.99;
+    real coolingFactor = 0.98;
     real simAnStepLengthFactor = 1.0;
     real initstate[stateDim] = {0.0, 0.0};
     bool useAdaptiveCandidateGeneration = false;
@@ -117,8 +116,12 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
         std::cout<<"status = "<<status<<"  "
                  <<"bestCost = "<<sam.getBestCost()<<"  "
                  <<"bestState(0) = "<<sam.getBestStateAt(0)<<"  "
-                 <<"bestState(1) = "<<sam.getBestStateAt(1)<<std::endl;
-                 
+                 <<"bestState(1) = "<<sam.getBestStateAt(1)<<"  "
+                 <<"x = "<<prevProbePos_[0]<<"  "
+                 <<"y = "<<prevProbePos_[1]<<"  "
+                 <<"z = "<<prevProbePos_[2]<<std::endl;
+
+          
 
 
 
@@ -129,16 +132,12 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
         // add result to path container: 
         path_.push_back(crntProbePos_);
       
-
-        std::cout<<"x = "<<prevProbePos_[0]<<"  "
-                 <<"y = "<<prevProbePos_[1]<<"  "
-                 <<"z = "<<prevProbePos_[2]<<std::endl;
-
         
+               
 
 
         fudge++;
-        if(fudge>0)
+        if(fudge>100)
         {
             break;
         }
@@ -152,10 +151,12 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
 real
 PathFindingModule::findMinimumDistance(real *optimSpacePos)
 {
+
     // internal variables:
     real pairDist;              // distance between probe and pore atom
     real poreAtomVdwRadius;     // van-der-Waals radius of pore atom
-    real voidRadius;            // radius of maximal non-overlapping sphere
+    // TODO: infinity
+    real voidRadius=99;            // radius of maximal non-overlapping sphere
 
     // convert point in optimisation space to point in configuration space:
     gmx::AnalysisNeighborhoodPositions probePos(optimToConfig(optimSpacePos).as_vec());
@@ -177,9 +178,11 @@ PathFindingModule::findMinimumDistance(real *optimSpacePos)
         // TODO: factor in a probe radius!
         if( (pairDist - poreAtomVdwRadius) < voidRadius )
         {
+//        std::cout<<"voidRadius = "<<voidRadius<<std::endl;
             voidRadius = pairDist - poreAtomVdwRadius;
         }
     }
+//        std::cout<<"voidRadius = "<<voidRadius<<std::endl;
 
     // return radius of maximal free sphere:
     return voidRadius;
