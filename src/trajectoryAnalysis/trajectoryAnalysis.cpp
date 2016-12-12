@@ -1,5 +1,8 @@
 #include <algorithm>	// for std::max_element()
 #include <cmath>		// for std::sqrt()
+#include <fstream>
+#include <iomanip>
+#include <string>
 
 #include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
@@ -138,7 +141,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
 
 	// get thread-local selection of reference particles:
-	const Selection &ref_selection = pdata -> parallelSelection(refsel_);
+	const Selection &refSelection = pdata -> parallelSelection(refsel_);
+
+
+    std::cout<<"atomCount = "<<refSelection.atomCount()<<std::endl;
+
+
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
@@ -149,13 +157,16 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// ------------------------------------------------------------------------
 
 	// initialise neighbourhood search:
-	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, ref_selection);
+	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
 
 
 	// parameters:
-	real probeStep = 0.2;
-	RVec channelVector(0.0, 1.0, 0.0);
-	RVec initialProbePosition(50, 50, 0.0);
+	real probeStep = 0.5;
+	RVec channelVector(0.0, 0.0, 1.0);
+
+    
+    
+	RVec initialProbePosition(55, 55, 40.0);
     int maxProbeIter = 1;
 
     std::cout<<"blah"<<std::endl;
@@ -163,6 +174,79 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfm.findPath();
 
 
+    std::vector<gmx::RVec> path = pfm.getPath();
+    std::vector<real> radii = pfm.getRadii();
+
+
+    // write path to PDB file:
+    std::fstream pdbfile;
+    std::string pdbfilename = "test.pdb"; 
+    pdbfile.open(pdbfilename.c_str(), std::fstream::out);
+    pdbfile.precision(3);
+
+    pdbfile<<"HEADER"<<"   test"<<std::endl;
+    pdbfile<<"TITLE"<<"   test"<<std::endl;
+   
+
+    for(int i=0; i<path.size(); i++)
+    {
+        pdbfile<<std::setw(6)<<"ATOM  "                 // record name
+            <<std::setw(5)<<i+1                    // atom serial number (one-based)
+            <<std::setw(1)<<" "
+            <<std::setw(4)<<"PORE"                 // atom name
+            <<std::setw(1)<<" "                    // alternate location indicator
+            <<std::setw(3)<<"POR"                  // residue name
+            <<std::setw(1)<<""
+            <<std::setw(1)<<"X"                    // chain identifier
+            <<std::setw(4)<<"000"                  // residue sequence number
+            <<std::setw(1)<<" "                    // code for insertion of residues
+            <<std::setw(3)<<""
+            <<std::setw(8)<<path[i][0]             // x
+            <<std::setw(8)<<path[i][1]             // y
+            <<std::setw(8)<<path[i][2]             // z
+            <<std::setw(6)<<radii[i]                  // occupancy
+            <<std::setw(6)<<radii[i]               // temperature factor
+            <<std::setw(10)<<"" 
+            <<std::setw(2)<<"XX"                   // element symbol
+            <<std::setw(2)<<0                      // charge
+            <<std::endl;
+
+    }
+
+    pdbfile<<"  10.34380  10.34380  10.83500"<<std::endl;
+
+    pdbfile.close();
+
+
+
+    // write path to GRO file:
+    std::fstream file;
+    std::string filename = "test.gro"; 
+    file.open(filename.c_str(), std::fstream::out);
+    file.precision(3);
+
+    file<<"titlestring"<<std::endl;
+    file<<radii.size()<<std::endl;
+
+    for(int i=0; i<path.size(); i++)
+    {
+        file<<std::setw(5)<<1                 // residue number
+            <<std::setw(5)<<"PORE"            // residue name
+            <<std::setw(5)<<"PORE"            // atom name
+            <<std::setw(5)<<i                 // atom number
+            <<std::setw(8)<<path[i][0]        // x
+            <<std::setw(8)<<path[i][1]        // y
+            <<std::setw(8)<<path[i][2]        // z
+            <<std::setw(8)<<0.000             // vx
+            <<std::setw(8)<<0.000             // vy
+            <<std::setw(8)<<0.000             // vz
+            <<std::endl;
+
+    }
+
+    file<<"  10.34380  10.34380  10.83500"<<std::endl;
+
+    file.close();
 
 
 

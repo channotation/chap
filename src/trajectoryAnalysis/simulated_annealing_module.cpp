@@ -141,9 +141,11 @@ SimulatedAnnealingModule::annealIsotropic()
 	// start annealing loop:
 	while(true)
 	{
+ //   std::cout<<"nCoolingIter = "<<nCoolingIter<<std::endl;
 		// start sampling loop:
 		for(int i = 0; i < numCostSamples_; i++)
 		{
+        //std::cout<<"i = "<<i<<std::endl;
 			// generate a candidate state:
 			generateCandidateStateIsotropic();
 
@@ -152,7 +154,7 @@ SimulatedAnnealingModule::annealIsotropic()
 			// evaluate cost function:
 			candCost_ = evaluateCost(candState_);
 
-			// accept candidate?
+            // accept candidate?
 			if( acceptCandidateState() == true )
 			{
 				// candidate state becomes current state:
@@ -173,6 +175,8 @@ SimulatedAnnealingModule::annealIsotropic()
 			// reduce temperature:
 			cool();
 			nCoolingIter++;
+//    std::cout<<"candCost = "<<candCost_<<std::endl;
+//    std::cout<<"bestCost = "<<bestCost_<<std::endl;
 
 			// maximum step number reached?
 			if( nCoolingIter >= maxCoolingIter_ )

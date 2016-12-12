@@ -17,6 +17,9 @@ class PathFindingModule
 
         void findPath();
 
+        std::vector<gmx::RVec> getPath(){return(path_);};
+        std::vector<real> getRadii(){return(radii_);};
+
 	private:
 
         real stepLength_;
@@ -34,7 +37,7 @@ class PathFindingModule
         const gmx::AnalysisNeighborhoodSearch nbSearch_;
 
         std::vector<gmx::RVec> path_;
-        std::vector<real> radius_;
+        std::vector<real> radii_;
 
 
         void marchAndOptimise(gmx::RVec initPos, bool forward);
