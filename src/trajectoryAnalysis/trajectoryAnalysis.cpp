@@ -143,9 +143,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// get thread-local selection of reference particles:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
 
-
-    std::cout<<"atomCount = "<<refSelection.atomCount()<<std::endl;
-
+    int atmCount = refSelection.atomCount();
+    std::cout<<"atomCount = "<<atmCount<<std::endl;
+    ConstArrayRef<int> atmIdx = refSelection.atomIndices();
+    for(int i=0; i<atmCount; i++)
+    {
+        std::cout<<"atmIdx = "<<atmIdx[i]<<std::endl;
+    }
 
 
 	// get data for frame number frnr into data handle:
@@ -165,9 +169,107 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	RVec channelVector(0.0, 0.0, 1.0);
 
     
-    
-	RVec initialProbePosition(55, 55, 40.0);
+    // NOTE: Gromacs uses nm as unit of distance internally!  
+	RVec initialProbePosition(5.0, 5.0, 5.50);
     int maxProbeIter = 1;
+
+/*
+    gmx::AnalysisNeighborhoodPositions probePos(initialProbePosition.as_vec());
+    AnalysisNeighborhoodPairSearch pairSearch = nbSearch.startPairSearch(probePos);
+
+    AnalysisNeighborhoodPair pair;
+    AnalysisNeighborhoodPair bestPair;
+
+    real bestDist = 99;
+    real bestManualDist = 1e9;
+    while( pairSearch.findNextPair(&pair) )
+    {
+        real pairDist = pair.distance2();
+
+//        std::cout<<"pairDist = "<<pairDist<<std::endl;
+
+
+        ConstArrayRef<rvec> coords = refSelection.coordinates(); 
+
+        real manualDist = std::pow(coords[pair.refIndex()][0] - initialProbePosition[0], 2) +
+                          std::pow(coords[pair.refIndex()][1] - initialProbePosition[1], 2) +
+                           std::pow(coords[pair.refIndex()][2] - initialProbePosition[2], 2);
+        manualDist = std::sqrt(manualDist);
+ 
+  //      std::cout<<"manualDist = "<<manualDist<<std::endl;
+
+        if( pair.isValid() == false )
+        {
+            std::cerr<<"ERROR: pair invalid!"<<std::endl;
+            break;
+        }
+
+        if( manualDist < bestManualDist )
+        {
+            bestManualDist = manualDist;
+        }
+
+        if( pairDist < bestDist )
+        {
+            bestDist = pairDist;
+            bestPair = pair;
+        }
+    }
+    
+    ConstArrayRef<rvec> refCoords = refSelection.coordinates(); 
+    std::cout<<"bestManualDist = "<<bestManualDist<<std::endl;
+    std::cout<<"bestDist = "<<std::sqrt(bestDist)<<std::endl;
+    std::cout<<"refIndex = "<<atmIdx[bestPair.refIndex()]<<std::endl;
+    std::cout<<"refCoordinates = "<<refCoords[bestPair.refIndex()][0]<<"  "
+                                  <<refCoords[bestPair.refIndex()][1]<<"  "
+                                  <<refCoords[bestPair.refIndex()][2]<<std::endl;
+
+    std::cout<<"testIndex = "<<bestPair.testIndex()<<std::endl;
+    std::cout<<"testCoordinates = "<<initialProbePosition[0]<<"  "
+                                   <<initialProbePosition[1]<<"  "
+                                   <<initialProbePosition[2]<<std::endl;
+ 
+
+    real directDistance = nbSearch.minimumDistance(probePos);
+    std::cout<<"directDist = "<<directDistance<<std::endl;
+
+    AnalysisNeighborhoodPair dp = nbSearch.nearestPoint(probePos);
+    std::cout<<"directRefIndex = "<<atmIdx[dp.refIndex()]<<std::endl;
+
+
+    SelectionPosition culpritPos = refSelection.position(bestPair.refIndex());
+    std::cout<<"culpritPos.x = "<<culpritPos.x()[0]<<"  "
+                                <<culpritPos.x()[1]<<"  "
+                                <<culpritPos.x()[2]<<"  "
+                                <<std::endl;
+    std::cout<<"culpritPos.atomCount = "<<culpritPos.atomCount()<<std::endl;
+    std::cout<<"initialProbePosition = "<<initialProbePosition[0]<<"  "
+                                        <<initialProbePosition[1]<<"  "
+                                        <<initialProbePosition[2]<<"  "
+                                        <<std::endl;
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     std::cout<<"blah"<<std::endl;
     PathFindingModule pfm(initialProbePosition, channelVector, nbSearch, vdwRadii);
@@ -176,6 +278,25 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     std::vector<gmx::RVec> path = pfm.getPath();
     std::vector<real> radii = pfm.getRadii();
+
+    std::cout<<"hallo!"<<std::endl; 
+    // write path to DAT file:
+    std::fstream datfile;
+    std::string datfilename = "test.dat"; 
+    datfile.open(datfilename.c_str(), std::fstream::out);
+ 
+    for(int i=0; i<path.size(); i++)
+    {
+        datfile<<i<<"\t"                 // index
+               <<path[i][0]<<"\t"        // x
+               <<path[i][1]<<"\t"        // y
+               <<path[i][2]<<"\t"        // z
+               <<radii[i]                // radius
+               <<std::endl;
+    }
+
+
+    datfile.close();
 
 
     // write path to PDB file:
@@ -201,11 +322,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             <<std::setw(4)<<"000"                  // residue sequence number
             <<std::setw(1)<<" "                    // code for insertion of residues
             <<std::setw(3)<<""
-            <<std::setw(8)<<path[i][0]             // x
-            <<std::setw(8)<<path[i][1]             // y
-            <<std::setw(8)<<path[i][2]             // z
-            <<std::setw(6)<<radii[i]                  // occupancy
-            <<std::setw(6)<<radii[i]               // temperature factor
+            <<std::setw(8)<<path[i][0]*10.0        // x [Ang]
+            <<std::setw(8)<<path[i][1]*10.0        // y [Ang]
+            <<std::setw(8)<<path[i][2]*10.0        // z [Ang]
+            <<std::setw(6)<<radii[i]*10.0          // occupancy [Ang]
+            <<std::setw(6)<<radii[i]*10.0          // temperature factor [Ang]
             <<std::setw(10)<<"" 
             <<std::setw(2)<<"XX"                   // element symbol
             <<std::setw(2)<<0                      // charge
@@ -247,6 +368,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     file<<"  10.34380  10.34380  10.83500"<<std::endl;
 
     file.close();
+
+
 
 
 

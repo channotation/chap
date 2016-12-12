@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 
 #include "trajectoryAnalysis/path_finding_module.hpp"
 #include "trajectoryAnalysis/simulated_annealing_module.hpp"
@@ -11,7 +12,7 @@ PathFindingModule::PathFindingModule(gmx::RVec initProbePos,
                                      gmx::RVec chanDirVec,
                                      gmx::AnalysisNeighborhoodSearch nbSearch,
                                      std::vector<real> vdwRadii)
-    : stepLength_(0.5)
+    : stepLength_(0.1)
     , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , chanDirVec_(chanDirVec)
@@ -55,12 +56,91 @@ PathFindingModule::findPath()
                                  <<initProbePos_[1]<<"  "
                                  <<initProbePos_[2]<<std::endl;
 
-    // positive channel direction:
-    marchAndOptimise(initProbePos_, chanDirVec_);
+    // TODO: optimise starting position!
+    optimiseInitial();
     
-    // negative nnel direction:
-    // negChanDirVec
-    // marchAndOptimise(initProbePos
+
+
+
+    // find path in positive channel direction:
+    marchAndOptimise(initProbePos_, true);
+
+    // invert order of path vector so that final result will be sorted:
+    std::reverse(path_.begin(), path_.end());
+    std::reverse(radii_.begin(), radii_.end());
+
+    // find path in negative channel direction:
+    marchAndOptimise(initProbePos_, false);
+}
+
+
+/*
+ *
+ */
+void
+PathFindingModule::optimiseInitial()
+{
+    // create orthogonal vectors:
+    orthVecU_[0] = 1;
+    orthVecU_[1] = 0;
+    orthVecU_[2] = 0;
+    orthVecW_[0] = 0;
+    orthVecW_[1] = 1;
+    orthVecW_[2] = 0;
+
+    
+    crntProbePos_ = initProbePos_;
+
+
+    // prepare simulated annealing module:
+    int stateDim = 2;
+    int randomSeed = 15011991;
+    int maxCoolingIter = 1e3;
+    int numCostSamples = 50;
+    real xi = 3.0;
+    real convRelTol = 1e-10;
+    real initTemp = 10;
+    real coolingFactor = 0.99;
+    real simAnStepLengthFactor = 0.2;
+    real initstate[stateDim] = {0.0, 0.0};
+    bool useAdaptiveCandidateGeneration = false;
+    costFunction cf = std::bind(&PathFindingModule::findMinimumDistance, this, std::placeholders::_1);
+
+    std::cout<<"======================================================="<<std::endl;
+
+    // create new simulated annealing module:
+    SimulatedAnnealingModule sam(stateDim,
+                                 randomSeed,
+                                 maxCoolingIter,
+                                 numCostSamples,
+                                 xi,
+                                 convRelTol,
+                                 initTemp,
+                                 coolingFactor,
+                                 simAnStepLengthFactor,
+                                 initstate,
+                                 cf,
+                                 useAdaptiveCandidateGeneration);
+    std::cout<<"*******************************************************"<<std::endl;
+
+    // perform simulated annealing:
+    sam.anneal();
+
+        std::cout<<"  "
+                 <<"temp = "<<sam.getTemp()<<"  "
+                 <<"bestCost = "<<sam.getBestCost()<<"  "
+                 <<"bestState(0) = "<<sam.getBestStateAt(0)<<"  "
+                 <<"bestState(1) = "<<sam.getBestStateAt(1)<<"  "
+                 <<"x = "<<optimToConfig(sam.getBestState())[0]<<"  "
+                 <<"y = "<<optimToConfig(sam.getBestState())[1]<<"  "
+                 <<"z = "<<optimToConfig(sam.getBestState())[2]<<std::endl;
+
+    std::cout<<"culpit = "<<culprit<<std::endl;
+    std::cout<<"======================================================="<<std::endl;
+
+    path_.push_back(optimToConfig(sam.getBestState()));
+    radii_.push_back(sam.getBestCost());
+
 }
 
 
@@ -99,25 +179,21 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
     // prepare simulated annealing module:
     int stateDim = 2;
     int randomSeed = 15011991;
-    int maxCoolingIter = 1e3;
+    int maxCoolingIter = 3;
     int numCostSamples = 50;
     real xi = 3.0;
     real convRelTol = 1e-10;
     real initTemp = 10;
-    real coolingFactor = 0.98;
+    real coolingFactor = 0.99;
     real simAnStepLengthFactor = 0.2;
     real initstate[stateDim] = {0.0, 0.0};
     bool useAdaptiveCandidateGeneration = false;
     costFunction cf = std::bind(&PathFindingModule::findMinimumDistance, this, std::placeholders::_1);
-   
-   
-    // add initial position to path container:
-    // TODO: remove this!
-    path_.push_back(crntProbePos_);
-    radii_.push_back(1.0);
+     
  
     eSimAnTerm status = CONVERGENCE;
     int fudge = 0;
+    real maxRadius = 10.0f;
     while(true)
     {
         // advance probe position to next plane:
@@ -146,6 +222,7 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
         crntProbePos_ = optimToConfig(sam.getBestState());
 
         std::cout<<"status = "<<status<<"  "
+                 <<"temp = "<<sam.getTemp()<<"  "
                  <<"bestCost = "<<sam.getBestCost()<<"  "
                  <<"bestState(0) = "<<sam.getBestStateAt(0)<<"  "
                  <<"bestState(1) = "<<sam.getBestStateAt(1)<<"  "
@@ -162,7 +239,11 @@ PathFindingModule::marchAndOptimise(gmx::RVec initPos,
 
 
         fudge++;
-        if(fudge>20)
+        if(fudge>15)
+        {
+            break;
+        }
+        if( sam.getBestCost() > maxRadius )
         {
             break;
         }
@@ -190,14 +271,22 @@ PathFindingModule::findMinimumDistance(real *optimSpacePos)
     gmx::AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch_.startPairSearch(probePos);
     gmx::AnalysisNeighborhoodPair pair;
 
+    gmx::AnalysisNeighborhoodPair test;
+
     // loop over all pairs:
     while( nbPairSearch.findNextPair(&pair) )
     {
+        if( pair.testIndex() != 0 )
+        {
+            std::cerr<<"ERROR: more than one test position!"<<std::endl;
+        }
+
         // get pair distance:
         pairDist = std::sqrt(pair.distance2());
 
         // get vdW radius of reference atom:
-        poreAtomVdwRadius = vdwRadii_.at(pair.refIndex());
+        //poreAtomVdwRadius = vdwRadii_.at(pair.refIndex());
+        poreAtomVdwRadius = 0.0;
 
         // update void radius if necessary:
         // TODO: factor in a probe radius!
@@ -205,11 +294,22 @@ PathFindingModule::findMinimumDistance(real *optimSpacePos)
         {
 //        std::cout<<"voidRadius = "<<voidRadius<<std::endl;
             voidRadius = pairDist - poreAtomVdwRadius;
+            test = pair;
         }
     }
- //       std::cout<<"voidRadius = "<<voidRadius<<std::endl;
-
+   /* 
+    
+    std::cout<<"voidRadius = "<<voidRadius<<std::endl;
+    std::cout<<"refIndex = "<<test.refIndex()<<std::endl;
+    std::cout<<"testIndex = "<<test.testIndex()<<std::endl;
+    std::cout<<"mode = "<<nbSearch_.mode()<<std::endl;
+    std::cout<<"distance2 = "<<test.distance2()<<std::endl;
+    std::cout<<"sqrt(distance2) = "<<std::sqrt(test.distance2())<<std::endl;
+*/
+//    std::cout<<"refPos = "<<test.
+    culprit = test.refIndex();
     // return radius of maximal free sphere:
+    // TODO: remove square?
     return voidRadius;
 }
 
@@ -221,7 +321,9 @@ PathFindingModule::findMinimumDistance(real *optimSpacePos)
 gmx::RVec
 PathFindingModule::optimToConfig(real *optimSpacePos)
 {
-/*    std::cout<<"orthVecU = "<<orthVecU_[0]<<" "
+    std::cout<<"-----------------------------------------------------------"<<std::endl;
+
+    std::cout<<"orthVecU = "<<orthVecU_[0]<<" "
                             <<orthVecU_[1]<<" "
                             <<orthVecU_[2]<<" "<<std::endl;
     std::cout<<"orthVecW = "<<orthVecW_[0]<<" "
@@ -234,7 +336,7 @@ PathFindingModule::optimToConfig(real *optimSpacePos)
 
     std::cout<<"optimSpacePos = "<<optimSpacePos[0]<<" "
                                  <<optimSpacePos[1]<<" "<<std::endl;
-*/
+
     gmx::RVec configSpacePos;
     configSpacePos[0] = crntProbePos_[0] + optimSpacePos[0]*orthVecU_[0]
                                          + optimSpacePos[1]*orthVecW_[0];
@@ -242,11 +344,11 @@ PathFindingModule::optimToConfig(real *optimSpacePos)
                                          + optimSpacePos[1]*orthVecW_[1];
     configSpacePos[2] = crntProbePos_[2] + optimSpacePos[0]*orthVecU_[2] 
                                          + optimSpacePos[1]*orthVecW_[2];
-/*
+
     std::cout<<"configProbePos = "<<configSpacePos[0]<<" "
                                   <<configSpacePos[1]<<" "
                                  <<configSpacePos[2]<<" "<<std::endl;
-  */  
+    
     return(configSpacePos);
 }
 

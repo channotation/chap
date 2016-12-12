@@ -17,10 +17,14 @@ class PathFindingModule
 
         void findPath();
 
+        int getCulprit(){return culprit;};
+
         std::vector<gmx::RVec> getPath(){return(path_);};
         std::vector<real> getRadii(){return(radii_);};
 
 	private:
+
+        int culprit;
 
         real stepLength_;
 
@@ -39,7 +43,7 @@ class PathFindingModule
         std::vector<gmx::RVec> path_;
         std::vector<real> radii_;
 
-
+        void optimiseInitial();
         void marchAndOptimise(gmx::RVec initPos, bool forward);
 
         real findMinimumDistance(real *state);
