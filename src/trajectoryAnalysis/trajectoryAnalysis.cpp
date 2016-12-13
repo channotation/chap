@@ -12,6 +12,8 @@
 
 #include "trajectoryAnalysis/simulated_annealing_module.hpp"
 #include "trajectoryAnalysis/path_finding_module.hpp"
+#include "path-finding/inplane_optimised_probe_path_finder.hpp"
+
 
 using namespace gmx;
 
@@ -146,11 +148,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     int atmCount = refSelection.atomCount();
     std::cout<<"atomCount = "<<atmCount<<std::endl;
     ConstArrayRef<int> atmIdx = refSelection.atomIndices();
-    for(int i=0; i<atmCount; i++)
-    {
-        std::cout<<"atmIdx = "<<atmIdx[i]<<std::endl;
-    }
-
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
@@ -170,112 +167,35 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     
     // NOTE: Gromacs uses nm as unit of distance internally!  
-	RVec initialProbePosition(5.0, 5.0, 5.50);
-    int maxProbeIter = 1;
-
-/*
-    gmx::AnalysisNeighborhoodPositions probePos(initialProbePosition.as_vec());
-    AnalysisNeighborhoodPairSearch pairSearch = nbSearch.startPairSearch(probePos);
-
-    AnalysisNeighborhoodPair pair;
-    AnalysisNeighborhoodPair bestPair;
-
-    real bestDist = 99;
-    real bestManualDist = 1e9;
-    while( pairSearch.findNextPair(&pair) )
-    {
-        real pairDist = pair.distance2();
-
-//        std::cout<<"pairDist = "<<pairDist<<std::endl;
-
-
-        ConstArrayRef<rvec> coords = refSelection.coordinates(); 
-
-        real manualDist = std::pow(coords[pair.refIndex()][0] - initialProbePosition[0], 2) +
-                          std::pow(coords[pair.refIndex()][1] - initialProbePosition[1], 2) +
-                           std::pow(coords[pair.refIndex()][2] - initialProbePosition[2], 2);
-        manualDist = std::sqrt(manualDist);
- 
-  //      std::cout<<"manualDist = "<<manualDist<<std::endl;
-
-        if( pair.isValid() == false )
-        {
-            std::cerr<<"ERROR: pair invalid!"<<std::endl;
-            break;
-        }
-
-        if( manualDist < bestManualDist )
-        {
-            bestManualDist = manualDist;
-        }
-
-        if( pairDist < bestDist )
-        {
-            bestDist = pairDist;
-            bestPair = pair;
-        }
-    }
+	RVec initialProbePosition(5.0, 5.0, 5.00);
     
-    ConstArrayRef<rvec> refCoords = refSelection.coordinates(); 
-    std::cout<<"bestManualDist = "<<bestManualDist<<std::endl;
-    std::cout<<"bestDist = "<<std::sqrt(bestDist)<<std::endl;
-    std::cout<<"refIndex = "<<atmIdx[bestPair.refIndex()]<<std::endl;
-    std::cout<<"refCoordinates = "<<refCoords[bestPair.refIndex()][0]<<"  "
-                                  <<refCoords[bestPair.refIndex()][1]<<"  "
-                                  <<refCoords[bestPair.refIndex()][2]<<std::endl;
-
-    std::cout<<"testIndex = "<<bestPair.testIndex()<<std::endl;
-    std::cout<<"testCoordinates = "<<initialProbePosition[0]<<"  "
-                                   <<initialProbePosition[1]<<"  "
-                                   <<initialProbePosition[2]<<std::endl;
- 
-
-    real directDistance = nbSearch.minimumDistance(probePos);
-    std::cout<<"directDist = "<<directDistance<<std::endl;
-
-    AnalysisNeighborhoodPair dp = nbSearch.nearestPoint(probePos);
-    std::cout<<"directRefIndex = "<<atmIdx[dp.refIndex()]<<std::endl;
-
-
-    SelectionPosition culpritPos = refSelection.position(bestPair.refIndex());
-    std::cout<<"culpritPos.x = "<<culpritPos.x()[0]<<"  "
-                                <<culpritPos.x()[1]<<"  "
-                                <<culpritPos.x()[2]<<"  "
-                                <<std::endl;
-    std::cout<<"culpritPos.atomCount = "<<culpritPos.atomCount()<<std::endl;
-    std::cout<<"initialProbePosition = "<<initialProbePosition[0]<<"  "
-                                        <<initialProbePosition[1]<<"  "
-                                        <<initialProbePosition[2]<<"  "
-                                        <<std::endl;
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     std::cout<<"blah"<<std::endl;
-    PathFindingModule pfm(initialProbePosition, channelVector, nbSearch, vdwRadii);
+//    PathFindingModule pfm(initialProbePosition, channelVector, nbSearch, vdwRadii);
+ //   pfm.findPath();
+
+    
+
+    real probeStepLength = 0.1;
+
+    InplaneOptimisedProbePathFinder pfm(probeStepLength, initialProbePosition, 
+                                        vdwRadii, nbSearch);
+
+/*
+    real nul[2] = {-5.0, 11.0};
+    real d1 = pfm1.findMinimumDistance(nul);
+    real d2 = pfm.findMinimalFreeDistance(nul);
+
+
+    std::cout<<"d1 = "<<d1<<"  "<<std::endl
+             <<"d2 = "<<d2<<"  "
+             <<std::endl;
+*/
+    
+    
     pfm.findPath();
-
-
+ 
     std::vector<gmx::RVec> path = pfm.getPath();
     std::vector<real> radii = pfm.getRadii();
 

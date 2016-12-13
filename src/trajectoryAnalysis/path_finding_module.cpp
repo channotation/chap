@@ -30,6 +30,13 @@ PathFindingModule::PathFindingModule(gmx::RVec initProbePos,
                                  <<initProbePos_[1]<<"  "
                                  <<initProbePos_[2]<<std::endl;
 
+    orthVecU_[0] = 1;
+    orthVecU_[1] = 0;
+    orthVecU_[2] = 0;
+    orthVecW_[0] = 0;
+    orthVecW_[1] = 1;
+    orthVecW_[2] = 0;
+
 
     // set up neighbourhood search engine:
 //    nbSearch_ = neighborhood.initSearch(pbc, poreSelection);
@@ -95,7 +102,7 @@ PathFindingModule::optimiseInitial()
     // prepare simulated annealing module:
     int stateDim = 2;
     int randomSeed = 15011991;
-    int maxCoolingIter = 1e3;
+    int maxCoolingIter = 3;
     int numCostSamples = 50;
     real xi = 3.0;
     real convRelTol = 1e-10;

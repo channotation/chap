@@ -22,7 +22,7 @@ class PathFindingModule
         std::vector<gmx::RVec> getPath(){return(path_);};
         std::vector<real> getRadii(){return(radii_);};
 
-	private:
+//	private:
 
         int culprit;
 
