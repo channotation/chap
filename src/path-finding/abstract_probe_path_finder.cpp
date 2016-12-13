@@ -6,27 +6,39 @@
  *
  */
 AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
+                                                 real probeRadius,
+                                                 real maxFreeDist,
+                                                 int maxProbeSteps,
                                                  gmx::RVec &initProbePos,
                                                  std::vector<real> &vdwRadii,
-                                                 gmx::AnalysisNeighborhoodSearch nbSearch)
+                                                 gmx::AnalysisNeighborhoodSearch nbSearch,
+                                                 int saRandomSeed,
+                                                 int saMaxCoolingIter,
+                                                 int saNumCostSamples,
+                                                 real saXi,
+                                                 real saConvRelTol,
+                                                 real saInitTemp,
+                                                 real saCoolingFactor,
+                                                 real saStepLengthFactor,
+                                                 bool saUseAdaptiveCandGen)
     : AbstractPathFinder()
-    , maxProbeSteps_(100)
+    , maxProbeSteps_(maxProbeSteps)
     , probeStepLength_(probeStepLength)
-    , probeRadius_(0.0)
-    , maxProbeRadius_(1.0)
+    , probeRadius_(probeRadius)
+    , maxProbeRadius_(maxFreeDist)
     , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , crntProbePos_()
     , nbSearch_(nbSearch)
-    , saRandomSeed_(15011991)
-    , saMaxCoolingIter_(1e3)
-    , saNumCostSamples_(50)
-    , saXi_(3.0)
-    , saConvRelTol_(1e-10)
-    , saInitTemp_(10.0)
-    , saCoolingFactor_(0.99)
-    , saStepLengthFactor_(0.01)
-    , saUseAdaptiveCandGen_(false)
+    , saRandomSeed_(saRandomSeed)
+    , saMaxCoolingIter_(saMaxCoolingIter)
+    , saNumCostSamples_(saNumCostSamples)
+    , saXi_(saXi)
+    , saConvRelTol_(saConvRelTol)
+    , saInitTemp_(saInitTemp)
+    , saCoolingFactor_(saCoolingFactor)
+    , saStepLengthFactor_(saStepLengthFactor)
+    , saUseAdaptiveCandGen_(saUseAdaptiveCandGen)
 {
 
 }

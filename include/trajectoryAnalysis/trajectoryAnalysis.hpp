@@ -49,6 +49,28 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
+    real pfProbeStepLength_;
+    real pfProbeRadius_;
+    real pfMaxFreeDist_;
+
+    int pfMaxProbeSteps_;
+
+    std::vector<real> pfInitProbePos_;
+    std::vector<real> pfChanDirVec_;
+
+    int saRandomSeed_;
+    int saMaxCoolingIter_;
+    int saNumCostSamples_;
+
+    real saXi_;
+    real saConvRelTol_;
+    real saInitTemp_;
+    real saCoolingFactor_;
+    real saStepLengthFactor_;
+
+    bool saUseAdaptiveCandGen_;
+
+
 	// calculate the radius of a spherical void with given centre: 
 	real calculateVoidRadius(RVec centre,
                              t_pbc *pbc,

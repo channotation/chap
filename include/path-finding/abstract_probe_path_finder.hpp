@@ -16,9 +16,21 @@ class AbstractProbePathFinder : public AbstractPathFinder
     public:
 
         AbstractProbePathFinder(real probeStepLength, 
+                                real probeRadius,
+                                real maxFreeDist,
+                                int maxProbeSteps,
                                 gmx::RVec &initProbePos,
                                 std::vector<real> &vdwRadii,
-                                gmx::AnalysisNeighborhoodSearch nbSearch);
+                                gmx::AnalysisNeighborhoodSearch nbSearch,
+                                int saRandomSeed,
+                                int saMaxCoolingIter,
+                                int saNumCostSamples,
+                                real saXi,
+                                real saConvRelTol,
+                                real saInitTemp,
+                                real saCoolingFactor,
+                                real saStepLengthFactor,
+                                bool saUseAdaptiveCandGen);
 
 //    protected:
 

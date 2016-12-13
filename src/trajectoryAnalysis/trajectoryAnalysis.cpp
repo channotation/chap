@@ -24,14 +24,30 @@ using namespace gmx;
  */
 trajectoryAnalysis::trajectoryAnalysis()
     : cutoff_(0.0)
+    , pfProbeStepLength_(0.1)
+    , pfProbeRadius_(0.0)
+    , pfMaxFreeDist_(1.0)
+    , pfMaxProbeSteps_(1e3)
+    , pfInitProbePos_(3)
+    , pfChanDirVec_(3)
+    , saRandomSeed_(15011991)
+    , saMaxCoolingIter_(1e3)
+    , saNumCostSamples_(50)
+    , saConvRelTol_(1e-10)
+    , saInitTemp_(10.0)
+    , saCoolingFactor_(0.99)
+    , saStepLengthFactor_(0.01)
+    , saUseAdaptiveCandGen_(false)
 {
     registerAnalysisDataset(&data_, "avedist");
 
 
+    // default initial probe position and chanell direction:
+    pfInitProbePos_ = {0.0, 0.0, 0.0};
+    pfChanDirVec_ = {0.0, 0.0, 1.0};
 
 
-
-	}
+}
 
 
 
@@ -65,7 +81,62 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
 	                     .store(&cutoff_)
-                         .description("Cutoff for distance calculation (0 = no cutoff)"));	
+                         .description("Cutoff for distance calculation (0 = no cutoff)"));
+
+    // get parameters of path-finding agorithm:
+    options -> addOption(RealOption("probe-step")
+                         .store(&pfProbeStepLength_)
+                         .required()
+                         .description("Step length for probe movement."));
+    options -> addOption(RealOption("probe-radius")
+                         .store(&pfProbeRadius_)
+                         .required()
+                         .description("Radius of probe."));
+    options -> addOption(RealOption("max-free-dist")
+                         .store(&pfMaxFreeDist_)
+                         .required()
+                         .description("Maximum radius of pore."));
+    options -> addOption(IntegerOption("max-probe-steps")
+                         .store(&pfMaxProbeSteps_)
+                         .description("Maximum number of steps the probe is moved in either direction."));
+    options -> addOption(RealOption("init-probe-pos")
+                         .storeVector(&pfInitProbePos_)
+                         .valueCount(3)
+                         .required()
+                         .description("Initial position of probe."));
+    options -> addOption(RealOption("chan-dir-vec")
+                         .storeVector(&pfChanDirVec_)
+                         .valueCount(3)
+                         .required()
+                         .description("Channel direction vector."));
+    options -> addOption(IntegerOption("sa-random-seed")
+                         .store(&saRandomSeed_)
+                         .required()
+                         .description("Seed for RNG used in simulated annealing."));
+    options -> addOption(IntegerOption("sa-max-cool")
+                         .store(&saMaxCoolingIter_)
+                         .required()
+                         .description("Maximum number of cooling iterations in simulated annealing."));
+    options -> addOption(IntegerOption("sa-cost-samples")
+                         .store(&saNumCostSamples_)
+                         .required()
+                         .description("Number of cost samples considered for convergence tolerance."));
+    options -> addOption(RealOption("sa-conv-tol")
+                         .store(&saConvRelTol_)
+                         .required()
+                         .description("Relative tolerance for simulated annealing."));
+    options -> addOption(RealOption("sa-init-temp")
+                         .store(&saInitTemp_)
+                         .required()
+                         .description("Initital temperature for simulated annealing."));
+    options -> addOption(RealOption("sa-cooling-fac")
+                         .store(&saCoolingFactor_)
+                         .required()
+                         .description("Cooling factor using in simulated annealing."));
+    options -> addOption(RealOption("sa-step")
+                         .store(&saStepLengthFactor_)
+                         .required()
+                         .description("Step length factor used in candidate generation.")) ;
 }
 
 
@@ -145,10 +216,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// get thread-local selection of reference particles:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
 
-    int atmCount = refSelection.atomCount();
-    std::cout<<"atomCount = "<<atmCount<<std::endl;
-    ConstArrayRef<int> atmIdx = refSelection.atomIndices();
-
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
 
@@ -186,39 +253,43 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// initialise neighbourhood search:
 	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
 
-
-	// parameters:
-	real probeStep = 0.5;
-	RVec channelVector(0.0, 0.0, 1.0);
-
     
-    // NOTE: Gromacs uses nm as unit of distance internally!  
-	RVec initialProbePosition(5.0, 5.0, 5.00);
-    
+    std::cout<<"pfProbeStepLength = "<<pfProbeStepLength_<<std::endl
+             <<"pfProbeRadius = "<<pfProbeRadius_<<std::endl
+             <<"pfMaxFreeDist = "<<pfMaxFreeDist_<<std::endl
+             <<"pfMaxProbeSteps = "<<pfMaxProbeSteps_<<std::endl
+             <<"pfInitProbePos = "<<pfInitProbePos_[0]<<"  "
+                                  <<pfInitProbePos_[1]<<"  "
+                                  <<pfInitProbePos_[2]<<std::endl
+             <<"pfChanDirVec = "<<pfChanDirVec_[0]<<"  "
+                                <<pfChanDirVec_[1]<<"  "
+                                <<pfChanDirVec_[2]<<std::endl
+             <<"saRandomSeed = "<<saRandomSeed_<<std::endl
+             <<"saMaxCoolingIter = "<<saMaxCoolingIter_<<std::endl
+             <<"saNumCostSamples = "<<saNumCostSamples_<<std::endl
+             <<"saXi = "<<saXi_<<std::endl
+             <<"saConvRelTol = "<<saConvRelTol_<<std::endl
+             <<"saInitTemp = "<<saInitTemp_<<std::endl
+             <<"saCoolingFactor = "<<saCoolingFactor_<<std::endl
+             <<"saStepLengthFactor = "<<saStepLengthFactor_<<std::endl
+             <<"saUseAdaptiveCandGen = "<<saUseAdaptiveCandGen_<<std::endl;
+             
 
 
-    std::cout<<"blah"<<std::endl;
-//    PathFindingModule pfm(initialProbePosition, channelVector, nbSearch, vdwRadii);
- //   pfm.findPath();
+    // create path finding module:        
+	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
+	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
+    InplaneOptimisedProbePathFinder pfm(pfProbeStepLength_, pfProbeRadius_, 
+                                        pfMaxFreeDist_, pfMaxProbeSteps_, 
+                                        initProbePos, chanDirVec, selVdwRadii, 
+                                        nbSearch, saRandomSeed_, 
+                                        saMaxCoolingIter_, saNumCostSamples_, 
+                                        saXi_, saConvRelTol_, saInitTemp_, 
+                                        saCoolingFactor_, saStepLengthFactor_, 
+                                        saUseAdaptiveCandGen_);
+ 
 
-    
-
-    real probeStepLength = 0.1;
-
-    InplaneOptimisedProbePathFinder pfm(probeStepLength, initialProbePosition, 
-                                        selVdwRadii, nbSearch);
-
-/*
-    real nul[2] = {-5.0, 11.0};
-    real d1 = pfm1.findMinimumDistance(nul);
-    real d2 = pfm.findMinimalFreeDistance(nul);
-
-
-    std::cout<<"d1 = "<<d1<<"  "<<std::endl
-             <<"d2 = "<<d2<<"  "
-             <<std::endl;
-*/
-    
+        
    
     std::cout<<"vdwRadii.size() = "<<selVdwRadii.size()<<std::endl;
     std::cout<<"selection.atomCount() = "<<refSelection.atomCount()<<std::endl;
@@ -235,7 +306,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::string datfilename = "test.dat"; 
     datfile.open(datfilename.c_str(), std::fstream::out);
  
-    for(int i=0; i<path.size(); i++)
+    for(unsigned int i=0; i<path.size(); i++)
     {
         datfile<<i<<"\t"                 // index
                <<path[i][0]<<"\t"        // x
@@ -259,7 +330,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pdbfile<<"TITLE"<<"   test"<<std::endl;
    
 
-    for(int i=0; i<path.size(); i++)
+    for(unsigned int i=0; i<path.size(); i++)
     {
         pdbfile<<std::setw(6)<<"ATOM  "                 // record name
             <<std::setw(5)<<i+1                    // atom serial number (one-based)
@@ -299,7 +370,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     file<<"titlestring"<<std::endl;
     file<<radii.size()<<std::endl;
 
-    for(int i=0; i<path.size(); i++)
+    for(unsigned int i=0; i<path.size(); i++)
     {
         file<<std::setw(5)<<1                 // residue number
             <<std::setw(5)<<"PORE"            // residue name

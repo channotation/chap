@@ -13,9 +13,22 @@ class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
     public:
 
         InplaneOptimisedProbePathFinder(real probeStepLength,
+                                        real probeRadius,
+                                        real maxFreeDist,
+                                        int maxProbeSteps,
                                         gmx::RVec initProbePos,
+                                        gmx::RVec chanDirVec,
                                         std::vector<real> vdwRadii,
-                                        gmx::AnalysisNeighborhoodSearch nbSearch);
+                                        gmx::AnalysisNeighborhoodSearch nbSearch,
+                                        int saRandomSeed,
+                                        int saMaxCoolingIter,
+                                        int saNumCostSamples,
+                                        real saXi,
+                                        real saConvRelTol,
+                                        real saInitTemp,
+                                        real saCoolingFactor,
+                                        real saStepLengthFactor,
+                                        bool saUseAdaptiveCandGen);
 
         void findPath();
 

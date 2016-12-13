@@ -3,6 +3,7 @@
 /*
  *
  */
+/*
 OptimisedDirectionProbePathFinder::OptimisedDirectionProbePathFinder(
         real probeStepLength,
         gmx::RVec initProbePos,
@@ -12,11 +13,12 @@ OptimisedDirectionProbePathFinder::OptimisedDirectionProbePathFinder(
 {
 
 }
-
+*/
 
 /*
  * TODO: implement this fully!
  */
+/*
 gmx::RVec
 OptimisedDirectionProbePathFinder::optimToConfig(real *optimSpacePos)
 {
@@ -28,3 +30,4 @@ OptimisedDirectionProbePathFinder::optimToConfig(real *optimSpacePos)
     // return position in configuration space:
     return(configSpacePos);
 }
+*/

@@ -10,11 +10,28 @@
  */
 InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
         real probeStepLength,
+        real probeRadius,
+        real maxFreeDist,
+        int maxProbeSteps,
         gmx::RVec initProbePos,
+        gmx::RVec chanDirVec,
         std::vector<real> vdwRadii,
-        gmx::AnalysisNeighborhoodSearch nbSearch)
-    : AbstractProbePathFinder(probeStepLength, initProbePos, vdwRadii, nbSearch)
-    , chanDirVec_(0.0, 0.0, 5.0)
+        gmx::AnalysisNeighborhoodSearch nbSearch,
+        int saRandomSeed,
+        int saMaxCoolingIter,
+        int saNumCostSamples,
+        real saXi,
+        real saConvRelTol,
+        real saInitTemp,
+        real saCoolingFactor,
+        real saStepLengthFactor,
+        bool saUseAdaptiveCandGen)
+    : AbstractProbePathFinder(probeStepLength, probeRadius, maxFreeDist, 
+                              maxProbeSteps, initProbePos, vdwRadii, nbSearch,
+                              saRandomSeed, saMaxCoolingIter, saNumCostSamples,
+                              saXi, saConvRelTol, saInitTemp, saCoolingFactor,
+                              saStepLengthFactor, saUseAdaptiveCandGen)
+    , chanDirVec_(chanDirVec)
     , orthVecU_(0.0, 0.0, 0.0)
     , orthVecW_(0.0, 0.0, 0.0)
 {
