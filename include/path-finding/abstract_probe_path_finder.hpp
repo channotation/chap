@@ -23,6 +23,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
 //    protected:
 
         real probeStepLength_;
+        real probeRadius_;
 
         int saRandomSeed_;
         int saMaxCoolingIter_;

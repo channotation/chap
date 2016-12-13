@@ -94,7 +94,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	t_atoms atoms = topol -> atoms;
 
 	// create vector of van der Waals radii and allocate memory:
-	vdwRadii.reserve(atoms.nr);
+	vdwRadii_.reserve(atoms.nr);
 
 	// create atomprop struct:
 	gmx_atomprop_t aps = gmx_atomprop_init();
@@ -119,14 +119,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 		}
 
 		// add radius to vector of radii:
-		vdwRadii.push_back(vdwRadius);
+		vdwRadii_.push_back(vdwRadius);
 	}
 
 	// delete atomprop struct:
 	gmx_atomprop_destroy(aps);
 
 	// find largest van der Waals radius in system:
-	maxVdwRadius = *std::max_element(vdwRadii.begin(), vdwRadii.end());
+	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
 }
 
 
@@ -151,6 +151,32 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
+
+
+
+    // GET VDW RADII FOR SELECTION
+    //-------------------------------------------------------------------------
+    // TODO: Move this to separate class and test!
+    // TODO: Should then also work for coarse-grained situations!
+
+
+	// create vector of van der Waals radii and allocate memory:
+    std::vector<real> selVdwRadii;
+	selVdwRadii.reserve(refSelection.atomCount());
+    std::cout<<"selVdwRadii.size() = "<<selVdwRadii.size()<<std::endl;
+
+	// loop over all atoms in system and get vdW-radii:
+	for(int i=0; i<refSelection.atomCount(); i++)
+    {
+        // get global index of i-th atom in selection:
+        gmx::SelectionPosition atom = refSelection.position(i);
+        int idx = atom.mappedId();
+
+		// add radius to vector of radii:
+		selVdwRadii.push_back(vdwRadii_[idx]);
+	}
+
+
 
 
 
@@ -180,7 +206,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     real probeStepLength = 0.1;
 
     InplaneOptimisedProbePathFinder pfm(probeStepLength, initialProbePosition, 
-                                        vdwRadii, nbSearch);
+                                        selVdwRadii, nbSearch);
 
 /*
     real nul[2] = {-5.0, 11.0};
@@ -193,7 +219,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
              <<std::endl;
 */
     
-    
+   
+    std::cout<<"vdwRadii.size() = "<<selVdwRadii.size()<<std::endl;
+    std::cout<<"selection.atomCount() = "<<refSelection.atomCount()<<std::endl;
+
+
     pfm.findPath();
  
     std::vector<gmx::RVec> path = pfm.getPath();
@@ -321,6 +351,7 @@ trajectoryAnalysis::writeOutput()
 /*
  * Function to calculate the radius of a spherical void around a given center.
  */
+/*
 real
 trajectoryAnalysis::calculateVoidRadius(RVec centre, 
                                         t_pbc *pbc, 
@@ -331,17 +362,7 @@ trajectoryAnalysis::calculateVoidRadius(RVec centre,
 	AnalysisNeighborhoodPositions centrePos(centrePosition);
 
 
-	/* TODO: calculate cutoff distance dynamicallyi
-	 * can test this by comparison to radius calculated without cutoff!
-	// initialise neighbourhood search:
-	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
 
-	// find distance to closest reference atom:
-	real minDist = nbSearch.minimumDistance(centrePos);
-
-	// set cutoff distance:
-	nb_.setCutoff(1.0);
-	*/
 
 
 	// initialise neighbourhood pair search:
@@ -375,11 +396,12 @@ trajectoryAnalysis::calculateVoidRadius(RVec centre,
 	// return void radius:
 	return voidRadius;
 }
-
+*/
 
 /*
  * Maximise the radius of a spherical void by relocation of void centre:
  */
+/*
 real
 trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 									   RVec chanVec,
@@ -463,6 +485,6 @@ trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
 
 
 
-
+*/
 
 

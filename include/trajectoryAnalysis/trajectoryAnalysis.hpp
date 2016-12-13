@@ -46,8 +46,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	SelectionList                    sel_;			// selection of the small particle groups
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
 	AnalysisData                     data_;			// raw data container
-	std::vector<real>				 vdwRadii;		// vdW radii of all atoms
-	real 							 maxVdwRadius;	// largest vdW radius of all atoms
+	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
+	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
 	// calculate the radius of a spherical void with given centre: 
 	real calculateVoidRadius(RVec centre,

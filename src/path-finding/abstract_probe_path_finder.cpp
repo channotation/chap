@@ -11,12 +11,13 @@ AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
                                                  gmx::AnalysisNeighborhoodSearch nbSearch)
     : AbstractPathFinder()
     , probeStepLength_(probeStepLength)
+    , probeRadius_(0.0)
     , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , crntProbePos_()
     , nbSearch_(nbSearch)
     , saRandomSeed_(15011991)
-    , saMaxCoolingIter_(1e2)
+    , saMaxCoolingIter_(1e3)
     , saNumCostSamples_(50)
     , saXi_(3.0)
     , saConvRelTol_(1e-10)
@@ -58,18 +59,18 @@ AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
 
         // get vdW radius of reference atom:
         // TODO: factor in vdW radius!
-        //poreAtomVdwRadius = vdwRadii_.at(pair.refIndex());
-        poreAtomVdwRadius = 0.0;
+        poreAtomVdwRadius = vdwRadii_.at(pair.refIndex());
+        //poreAtomVdwRadius = 0.0;
 
         // update void radius if necessary:
         // TODO: factor in probe radius!
-        if( (pairDist - poreAtomVdwRadius) < minimalFreeDistance )
+        if( (pairDist - poreAtomVdwRadius - probeRadius_) < minimalFreeDistance )
         {
             minimalFreeDistance = pairDist - poreAtomVdwRadius;
         }
     }
 
-    std::cout<<"minimalFreeDistance = "<<minimalFreeDistance<<std::endl;
+//    std::cout<<"minimalFreeDistance = "<<minimalFreeDistance<<std::endl;
 
     // return radius of maximal free sphere:
     return minimalFreeDistance; 
