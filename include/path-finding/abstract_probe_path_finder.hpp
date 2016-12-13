@@ -21,7 +21,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
                                 int maxProbeSteps,
                                 gmx::RVec &initProbePos,
                                 std::vector<real> &vdwRadii,
-                                gmx::AnalysisNeighborhoodSearch nbSearch,
+                                gmx::AnalysisNeighborhoodSearch *nbSearch,
                                 int saRandomSeed,
                                 int saMaxCoolingIter,
                                 int saNumCostSamples,
@@ -57,7 +57,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
         gmx::RVec initProbePos_;
         gmx::RVec crntProbePos_;
 
-        gmx::AnalysisNeighborhoodSearch nbSearch_;
+        gmx::AnalysisNeighborhoodSearch *nbSearch_;
 
         real findMinimalFreeDistance(real *optimSpacePos);
 

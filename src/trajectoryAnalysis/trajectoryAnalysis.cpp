@@ -13,6 +13,7 @@
 #include "trajectoryAnalysis/simulated_annealing_module.hpp"
 #include "trajectoryAnalysis/path_finding_module.hpp"
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
+#include "path-finding/optimised_direction_probe_path_finder.hpp"
 
 
 using namespace gmx;
@@ -24,6 +25,7 @@ using namespace gmx;
  */
 trajectoryAnalysis::trajectoryAnalysis()
     : cutoff_(0.0)
+    , pfMethod_("inplane-optim")
     , pfProbeStepLength_(0.1)
     , pfProbeRadius_(0.0)
     , pfMaxFreeDist_(1.0)
@@ -84,6 +86,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Cutoff for distance calculation (0 = no cutoff)"));
 
     // get parameters of path-finding agorithm:
+    options -> addOption(StringOption("pf-method")
+                         .store(&pfMethod_)
+                         .required()
+                         .description("Path finding method."));
     options -> addOption(RealOption("probe-step")
                          .store(&pfProbeStepLength_)
                          .required()
@@ -254,7 +260,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
 
     
-    std::cout<<"pfProbeStepLength = "<<pfProbeStepLength_<<std::endl
+    std::cout<<"pfMethod = "<<pfMethod_<<std::endl
+             <<"pfProbeStepLength = "<<pfProbeStepLength_<<std::endl
              <<"pfProbeRadius = "<<pfProbeRadius_<<std::endl
              <<"pfMaxFreeDist = "<<pfMaxFreeDist_<<std::endl
              <<"pfMaxProbeSteps = "<<pfMaxProbeSteps_<<std::endl
@@ -273,20 +280,37 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
              <<"saCoolingFactor = "<<saCoolingFactor_<<std::endl
              <<"saStepLengthFactor = "<<saStepLengthFactor_<<std::endl
              <<"saUseAdaptiveCandGen = "<<saUseAdaptiveCandGen_<<std::endl;
-             
+    
 
 
-    // create path finding module:        
-	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-    InplaneOptimisedProbePathFinder pfm(pfProbeStepLength_, pfProbeRadius_, 
-                                        pfMaxFreeDist_, pfMaxProbeSteps_, 
-                                        initProbePos, chanDirVec, selVdwRadii, 
-                                        nbSearch, saRandomSeed_, 
-                                        saMaxCoolingIter_, saNumCostSamples_, 
-                                        saXi_, saConvRelTol_, saInitTemp_, 
-                                        saCoolingFactor_, saStepLengthFactor_, 
-                                        saUseAdaptiveCandGen_);
+    // create path finding module:
+    std::unique_ptr<AbstractPathFinder> pfm;
+    if( pfMethod_ == "inplane-optim" )
+    {
+    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
+    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
+        pfm.reset(new InplaneOptimisedProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
+                                            pfMaxFreeDist_, pfMaxProbeSteps_, 
+                                            initProbePos, chanDirVec, selVdwRadii, 
+                                            &nbSearch, saRandomSeed_, 
+                                            saMaxCoolingIter_, saNumCostSamples_, 
+                                            saXi_, saConvRelTol_, saInitTemp_, 
+                                            saCoolingFactor_, saStepLengthFactor_, 
+                                            saUseAdaptiveCandGen_));
+    }
+    else if( pfMethod_ == "optim-direction" )
+    {
+    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
+    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
+        pfm.reset(new OptimisedDirectionProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
+                                            pfMaxFreeDist_, pfMaxProbeSteps_, 
+                                            initProbePos, selVdwRadii, 
+                                            &nbSearch, saRandomSeed_, 
+                                            saMaxCoolingIter_, saNumCostSamples_, 
+                                            saXi_, saConvRelTol_, saInitTemp_, 
+                                            saCoolingFactor_, saStepLengthFactor_, 
+                                            saUseAdaptiveCandGen_));
+    }
  
 
         
@@ -295,10 +319,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<"selection.atomCount() = "<<refSelection.atomCount()<<std::endl;
 
 
-    pfm.findPath();
+    pfm -> findPath();
  
-    std::vector<gmx::RVec> path = pfm.getPath();
-    std::vector<real> radii = pfm.getRadii();
+    std::vector<gmx::RVec> path = pfm -> getPath();
+    std::vector<real> radii = pfm -> getRadii();
+
+    pfm.reset();
+    std::cout<<"after pfm.reset()"<<std::endl;
 
     std::cout<<"hallo!"<<std::endl; 
     // write path to DAT file:

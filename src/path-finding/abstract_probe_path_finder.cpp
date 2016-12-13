@@ -3,7 +3,11 @@
 #include "path-finding/abstract_probe_path_finder.hpp"
 
 /*
+ * Constructor.
  *
+ * TODO: nbSearch is currently passed as a raw pointer. This avoids copying, 
+ * but is also rather not so elegent. Might be better to use a unique_ptr or 
+ * shared_ptr? Maybe ask Gromacs mailing list about this?
  */
 AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
                                                  real probeRadius,
@@ -11,7 +15,7 @@ AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
                                                  int maxProbeSteps,
                                                  gmx::RVec &initProbePos,
                                                  std::vector<real> &vdwRadii,
-                                                 gmx::AnalysisNeighborhoodSearch nbSearch,
+                                                 gmx::AnalysisNeighborhoodSearch *nbSearch,
                                                  int saRandomSeed,
                                                  int saMaxCoolingIter,
                                                  int saNumCostSamples,
@@ -61,7 +65,7 @@ AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
     gmx::AnalysisNeighborhoodPositions probePos(optimToConfig(optimSpacePos).as_vec());
 
     // prepare neighbourhood search:
-    gmx::AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch_.startPairSearch(probePos);
+    gmx::AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch_ -> startPairSearch(probePos);
     gmx::AnalysisNeighborhoodPair pair;
 
     // loop over all pairs:

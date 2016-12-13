@@ -12,6 +12,8 @@
 class AbstractPathFinder
 {
     public:
+
+        AbstractPathFinder();
        
         virtual void findPath() = 0;
 
@@ -21,7 +23,6 @@ class AbstractPathFinder
 
     protected:
 
-        AbstractPathFinder();
  
         std::vector<gmx::RVec> path_;
         std::vector<real> radii_;
