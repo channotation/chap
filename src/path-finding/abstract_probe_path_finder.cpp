@@ -10,8 +10,10 @@ AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
                                                  std::vector<real> &vdwRadii,
                                                  gmx::AnalysisNeighborhoodSearch nbSearch)
     : AbstractPathFinder()
+    , maxProbeSteps_(100)
     , probeStepLength_(probeStepLength)
     , probeRadius_(0.0)
+    , maxProbeRadius_(1.0)
     , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , crntProbePos_()

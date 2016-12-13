@@ -131,11 +131,9 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
     costFunction cf;
     cf = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
                    this, std::placeholders::_1);
-     
- 
-    eSimAnTerm status;
-    int fudge = 0;
-    real maxRadius = 10.0f;
+
+    // advance probe in direction of (inverse) channel direction vector:
+    int numProbeSteps = 0;
     while(true)
     {
         std::cout<<"probeStepLength = "<<probeStepLength_<<std::endl;
@@ -160,7 +158,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
                                      saUseAdaptiveCandGen_);
 
         // optimise in plane:
-        status = sam.anneal();
+        eSimAnTerm status = sam.anneal();
           
         // current position becomes best position in plane: 
         crntProbePos_ = optimToConfig(sam.getBestState());
@@ -170,19 +168,15 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         radii_.push_back(sam.getBestCost());     
               
        
-
-
-        fudge++;
-        if(fudge>15)
+        if( numProbeSteps >= maxProbeSteps_ )
         {
             break;
         }
-        if( sam.getBestCost() > maxRadius )
+        if( sam.getBestCost() > maxProbeRadius_ )
         {
             break;
         }
     }
- 
 }
 
 
