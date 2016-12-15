@@ -1,5 +1,7 @@
 #include <iostream>
+#include <cmath>
 
+#include "trajectoryAnalysis/simulated_annealing_module.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
 /*
@@ -29,6 +31,8 @@ OptimisedDirectionProbePathFinder::OptimisedDirectionProbePathFinder(
                               saStepLengthFactor, saUseAdaptiveCandGen)
 {
 
+    // initialise inverse rotation matrix as identity matrix:
+    clear_mat(inverseRotationMatrix_);
 }
 
 
@@ -40,20 +44,8 @@ OptimisedDirectionProbePathFinder::findPath()
 {
     std::cout<<"Yo!"<<std::endl;
 
-/*
-    // optimise initial position:
-    optimiseInitialPos();
     
-    // advance forward:
-    advanceAndOptimise(true);
 
-    // revert array:
-    std::reverse(path_.begin(), path_.end());
-    std::reverse(radii_.begin(), radii_.end());
-    
-    // advance backward:
-    advanceAndOptimise(false);
-    */
 }
 
 
@@ -63,63 +55,7 @@ OptimisedDirectionProbePathFinder::findPath()
 void
 OptimisedDirectionProbePathFinder::optimiseInitialPos()
 {
-/*
-    // set current probe position to initial probe position: 
-    crntProbePos_ = initProbePos_;
 
-    std::cout<<"crntProbePos = "<<crntProbePos_[0]<<"  "
-                                <<crntProbePos_[1]<<"  "
-                                <<crntProbePos_[2]<<"  "
-             <<"initProbePos = "<<initProbePos_[0]<<"  "
-                                <<initProbePos_[1]<<"  "
-                                <<initProbePos_[2]<<"  "
-             <<"orthVecU = "<<orthVecU_[0]<<"  "
-                            <<orthVecU_[1]<<"  "
-                            <<orthVecU_[2]<<"  "
-             <<"orthVecW = "<<orthVecW_[0]<<"  "
-                            <<orthVecW_[1]<<"  "
-                            <<orthVecW_[2]<<"  "
-              <<std::endl;
-
-    // initial state in optimisation space is always null vector:
-    int stateDim = 2;
-    real initState[stateDim] = {0.0, 0.0};
-    
-    // cost function is minimal free distance function:
-    costFunction cf;
-    cf = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
-                   this, std::placeholders::_1);
-   
-    // create new simulated annealing module:
-    SimulatedAnnealingModule sam(stateDim, saRandomSeed_, saMaxCoolingIter_,
-                                 saNumCostSamples_, saXi_, saConvRelTol_, 
-                                 saInitTemp_, saCoolingFactor_, 
-                                 saStepLengthFactor_, initState, cf,
-                                 saUseAdaptiveCandGen_);
-    
-    // perform simulated annealing:
-    eSimAnTerm status = sam.anneal();
-    
-    // set initial position to its optimal value:
-    initProbePos_ = optimToConfig(sam.getBestState());
-
-
-    std::cout<<"initProbePos = "<<initProbePos_[0]<<"  "
-                                <<initProbePos_[1]<<"  "
-                                <<initProbePos_[2]<<"  "
-             <<"status = "<<status<<"  "
-             <<"bestState = "<<sam.getBestState()[0]<<" "
-                             <<sam.getBestState()[1]<<" "
-             <<std::endl;
-    std::cout<<"crntProbePos = "<<crntProbePos_[0]<<"  "
-                                <<crntProbePos_[1]<<"  "
-                                <<crntProbePos_[2]<<"  "
-             <<std::endl; 
-
-    // add path support point and associated radius to container:
-    path_.push_back(initProbePos_);
-    radii_.push_back(sam.getBestCost());
-*/
 }
 
 
@@ -129,12 +65,7 @@ OptimisedDirectionProbePathFinder::optimiseInitialPos()
 void
 OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
 {
-/*
-    // set previous position to initial point:
-    crntProbePos_ = initProbePos_;
-
-    // set up direction vector for forward/backward marching:
-    gmx::RVec direction(chanDirVec_);
+    gmx::RVec direction(0, 0, 1);
     if( !forward )
     {
         direction[0] = -direction[0];
@@ -142,82 +73,161 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
         direction[2] = -direction[2];
     }
 
-    // initial state in optimisation space is always null vector:
+    // initial state in optimisation space is always the null vector:
     int stateDim = 2;
     real initState[stateDim] = {0.0, 0.0};
 
     // cost function is minimal free distance function:
     costFunction cf;
-    cf = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
+    cf = std::bind(&OptimisedDirectionProbePathFinder::findMinimalFreeDistance,
                    this, std::placeholders::_1);
 
-    // advance probe in direction of (inverse) channel direction vector:
+    // advance probe position:
     int numProbeSteps = 0;
-    while(true)
+    while( true )
     {
-        std::cout<<"probeStepLength = "<<probeStepLength_<<std::endl;
-        std::cout<<"direction = "<<direction[0]<<"  "
-                                 <<direction[1]<<"  "
-                                 <<direction[2]<<"  "
-                 <<"crntProbePos = "<<crntProbePos_[0]<<"  "
-                                    <<crntProbePos_[1]<<"  "
-                                    <<crntProbePos_[2]<<"  "
-                 <<std::endl;
 
-        // advance probe position to next plane:
-        crntProbePos_[0] = crntProbePos_[0] + probeStepLength_*direction[0];
-        crntProbePos_[1] = crntProbePos_[1] + probeStepLength_*direction[1];
-        crntProbePos_[2] = crntProbePos_[2] + probeStepLength_*direction[2]; 
-
-        // create new simulated annealing module:
+        // create new simulated annealing module:                               
         SimulatedAnnealingModule sam(stateDim, saRandomSeed_, saMaxCoolingIter_,
-                                     saNumCostSamples_, saXi_, saConvRelTol_,
-                                     saInitTemp_, saCoolingFactor_,
-                                     saStepLengthFactor_, initState, cf,
-                                     saUseAdaptiveCandGen_);
+                                     saNumCostSamples_, saXi_, saConvRelTol_,   
+                                     saInitTemp_, saCoolingFactor_,                
+                                     saStepLengthFactor_, initState, cf,           
+                                     saUseAdaptiveCandGen_); 
 
-        // optimise in plane:
+        // optimise direction:
         eSimAnTerm status = sam.anneal();
-          
-        // current position becomes best position in plane: 
+
+        // opdate current and previous probe position:
+        prevProbePos_ = crntProbePos_;
         crntProbePos_ = optimToConfig(sam.getBestState());
-        
-        // add result to path container: 
+
+        // add result to path container:
         path_.push_back(crntProbePos_);
-        radii_.push_back(sam.getBestCost());     
-              
-       
-        if( numProbeSteps >= maxProbeSteps_ )
-        {
-            break;
-        }
+        radii_.push_back(sam.getBestCost());
+
+        // update inverse rotation matrix:
+        updateInverseRotationMatrix();
+
+        // incremet probe step counter:
+        numProbeSteps++;
+
+        // termination conditions:
         if( sam.getBestCost() > maxProbeRadius_ )
         {
             break;
         }
+        if( numProbeSteps >= maxProbeSteps_ )
+        {
+            break;
+        }
     }
-*/
 }
 
 
 /*
- * TODO: implement this fully!
+ * Updates inverse rotation matrix used in conversion between optimisation and 
+ * configuration space.
+ */
+void
+OptimisedDirectionProbePathFinder::updateInverseRotationMatrix()
+{
+    // internal tolerance for floating point comparison:
+    real zeroTol = 1e-7;
+
+    // reset inverse rotation matrix to zero:
+    clear_mat(inverseRotationMatrix_);
+
+    // get z-basis vector in rotated and standard/global system:
+    gmx::RVec stdBasisZ(0.0, 0.0, 1.0);
+    gmx::RVec rotBasisZ;
+    rvec_sub(crntProbePos_, prevProbePos_, rotBasisZ);
+    unitv(rotBasisZ, rotBasisZ);
+
+    // calculate cosine of rotation angle: 
+    real cosRotAngle = iprod(stdBasisZ, rotBasisZ);
+
+    // check if edge cases need to be handled:
+    if( std::abs(cosRotAngle - 1.0) < zeroTol )
+    {
+        // in parallel case inverse rotation matrix is identity matrix:
+        inverseRotationMatrix_[XX][XX] = 1.0;
+        inverseRotationMatrix_[YY][YY] = 1.0;
+        inverseRotationMatrix_[ZZ][ZZ] = 1.0;
+    }
+    else if (std::abs(cosRotAngle + 1.0) < zeroTol )
+    {
+        // in anti-parallel case rotate by pi around (global) x-axis:
+        inverseRotationMatrix_[XX][XX] =  1.0;
+        inverseRotationMatrix_[XX][XX] = -1.0;
+        inverseRotationMatrix_[XX][XX] = -1.0; 
+    }
+    else
+    {
+        // calculate rotation axis vector:
+        gmx::RVec rotAxisVec;
+        cprod(stdBasisZ, rotBasisZ, rotAxisVec);
+
+        // calculate cross product matrix:
+        matrix rotationMatrix;
+        rotationMatrix[XX][YY] = -rotAxisVec[ZZ];
+        rotationMatrix[XX][ZZ] =  rotAxisVec[YY];
+        rotationMatrix[YY][XX] =  rotAxisVec[ZZ];
+        rotationMatrix[YY][ZZ] = -rotAxisVec[XX];
+        rotationMatrix[ZZ][XX] = -rotAxisVec[YY];
+        rotationMatrix[ZZ][YY] =  rotAxisVec[XX];
+
+        // calculate and scale square cross product matrix:
+        matrix sqCrossProdMat;
+        mmul(rotationMatrix, rotationMatrix, sqCrossProdMat);
+        msmul(sqCrossProdMat, 1.0/(1.0 + cosRotAngle), sqCrossProdMat);
+
+        // add this to inverse rotation matrix:
+        m_add(rotationMatrix, sqCrossProdMat, rotationMatrix);
+
+        // add diagonal entries to inverse roation matrix:
+        rotationMatrix[XX][XX] += 1.0;
+        rotationMatrix[YY][YY] += 1.0;
+        rotationMatrix[ZZ][ZZ] += 1.0;
+
+        // transpose this:
+        transpose(rotationMatrix, inverseRotationMatrix_);
+    }    
+}
+
+
+/*
+ * Performs optimisation space to configuration space conversion.
+ *
+ * The input array optimSpacePos contains the angles theta and phi in the local
+ * (rotated) coordinate system that describe the probe direction vector:
+ *
+ * optimSpacePos[0] = theta
+ * optimSpacePos[1] = phi
+ *
+ * This is first converted to a cartesian representation in the rotated system,
+ * which is then mapped back to the global cartesian frame. The direction 
+ * vector is then added to the position vector of the probe in the previous 
+ * step to obtain the new configuration space position of the probe.
  */
 gmx::RVec
 OptimisedDirectionProbePathFinder::optimToConfig(real *optimSpacePos)
 {
+    // declare result vector:
+    gmx::RVec configSpacePos;
 
-    // get configuration space position via orthogonal vectors:
-    gmx::RVec configSpacePos;/*
-    configSpacePos[0] = crntProbePos_[0] + optimSpacePos[0]*orthVecU_[0]
-                                         + optimSpacePos[1]*orthVecW_[0];
-    configSpacePos[1] = crntProbePos_[1] + optimSpacePos[0]*orthVecU_[1]
-                                         + optimSpacePos[1]*orthVecW_[1];
-    configSpacePos[2] = crntProbePos_[2] + optimSpacePos[0]*orthVecU_[2] 
-                                         + optimSpacePos[1]*orthVecW_[2];
-    */
+    // calculate cartesian form of direction vector in rotated system:
+    gmx::RVec rotatedDirVec(std::sin(optimSpacePos[0]) * std::cos(optimSpacePos[1]),
+                            std::sin(optimSpacePos[0]) * std::sin(optimSpacePos[1]),
+                            std::cos(optimSpacePos[0]));
+    svmul(probeStepLength_, rotatedDirVec, rotatedDirVec);
+
+    // rotate back to global system:
+    mvmul(inverseRotationMatrix_, rotatedDirVec, configSpacePos);
+
+    // add this to previous probe position:
+    rvec_add(configSpacePos, crntProbePos_, configSpacePos);
+
     // return configuration space position:
     return(configSpacePos);
-    
 }
 

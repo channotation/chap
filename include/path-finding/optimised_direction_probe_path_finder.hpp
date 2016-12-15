@@ -31,8 +31,21 @@ class OptimisedDirectionProbePathFinder : public AbstractProbePathFinder
 
     private:
 
+        real probeStepLength_;
+
+        gmx::RVec initProbePos_;
+        gmx::RVec prevProbePos_;
+        gmx::RVec crntProbePos_;
+
+        gmx::RVec initDirVec_;
+        
+
+        matrix inverseRotationMatrix_;
+
         void optimiseInitialPos();
         void advanceAndOptimise(bool forward);
+
+        void updateInverseRotationMatrix();
 
         gmx::RVec optimToConfig(real *optimSpacePos);
 };
