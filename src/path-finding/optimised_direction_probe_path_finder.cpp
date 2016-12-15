@@ -44,8 +44,13 @@ OptimisedDirectionProbePathFinder::findPath()
 {
     std::cout<<"Yo!"<<std::endl;
 
+    // opimise initial
     
+    // forward
 
+    // array inversion
+
+    // backward
 }
 
 
@@ -55,23 +60,70 @@ OptimisedDirectionProbePathFinder::findPath()
 void
 OptimisedDirectionProbePathFinder::optimiseInitialPos()
 {
+    // FIRST OPTIMISATION: WITHIN A CIRCLE OF GIVEN RADIUS
 
+    // prepare simulated annealing:
+    int stateDimInCircle = 3;
+    real initStateInCircle[stateDimInCircle];
+    costFunction cfInCircle;
+    // TODO: need other cost function to include variable distance
+    cfInCircle = std::bind(&OptimisedDirectionProbePathFinder::findMinimalFreeDistance,
+                           this, std::placeholders::_1);
+
+    // create new simulated annealing module:
+    // TODO: this optimisation problem needs to be cnstrained in the distance variable
+    SimulatedAnnealingModule samInCircle(stateDimInCircle, saRandomSeed_, 
+                                         saMaxCoolingIter_, saNumCostSamples_, 
+                                         saXi_, saConvRelTol_, saInitTemp_, 
+                                         saCoolingFactor_, saStepLengthFactor_, 
+                                         initStateInCircle, cfInCircle,
+                                         saUseAdaptiveCandGen_);
+
+    // find optimal position:
+    eSimAnTerm statusInCircle = samInCircle.anneal();
+
+    // add to path vector:
+//    path_.push_back(samIn;
+    radii_.push_back(samInCircle.getBestCost());
+
+
+    // SECOND OPTIMISATION: ON A CIRCLE OF GIVEN RADIUS
+
+    // prepare simulated annealing:
+    int stateDimOnCircle = 2;
+    real initStateOnCircle[stateDimOnCircle];
+    costFunction cfOnCircle;
+    cfOnCircle = std::bind(&OptimisedDirectionProbePathFinder::findMinimalFreeDistance,
+                           this, std::placeholders::_1);
+
+    // create new simulated annealing module:                               
+    SimulatedAnnealingModule samOnCircle(stateDimOnCircle, saRandomSeed_, 
+                                         saMaxCoolingIter_, saNumCostSamples_, 
+                                         saXi_, saConvRelTol_, saInitTemp_, 
+                                         saCoolingFactor_, saStepLengthFactor_, 
+                                         initStateOnCircle, cfOnCircle,
+                                         saUseAdaptiveCandGen_);
+
+    // find optimal position:
+    eSimAnTerm statusOnCircle = samOnCircle.anneal();
+
+    // add to path vector:
+    path_.push_back(optimToConfig(samOnCircle.getBestState()));
+    radii_.push_back(samOnCircle.getBestCost());
 }
 
 
 /*
- *
+ * Advances the probe position in an optimised direction until the probe radius
+ * exceeds a specified limit (or a maximum number of probe steps has been 
+ * exceeded).
  */
 void
-OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
+OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
 {
-    gmx::RVec direction(0, 0, 1);
-    if( !forward )
-    {
-        direction[0] = -direction[0];
-        direction[1] = -direction[1];
-        direction[2] = -direction[2];
-    }
+    // initialise direction vector and probe position:
+    gmx::RVec direction(initDirection);
+    crntProbePos_ = initProbePos_; // TODO: make crntProbePos_ local variable
 
     // initial state in optimisation space is always the null vector:
     int stateDim = 2;
@@ -86,8 +138,8 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
     int numProbeSteps = 0;
     while( true )
     {
-
-        // create new simulated annealing module:                               
+        // create new simulated annealing module:
+        // TODO: this optimisation problem needs to be constrained to a half-sphere
         SimulatedAnnealingModule sam(stateDim, saRandomSeed_, saMaxCoolingIter_,
                                      saNumCostSamples_, saXi_, saConvRelTol_,   
                                      saInitTemp_, saCoolingFactor_,                
@@ -97,7 +149,7 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
         // optimise direction:
         eSimAnTerm status = sam.anneal();
 
-        // opdate current and previous probe position:
+        // update current and previous probe position:
         prevProbePos_ = crntProbePos_;
         crntProbePos_ = optimToConfig(sam.getBestState());
 
@@ -105,13 +157,15 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
         path_.push_back(crntProbePos_);
         radii_.push_back(sam.getBestCost());
 
-        // update inverse rotation matrix:
-        updateInverseRotationMatrix();
+        // update direction vector and inverse rotation matrix:
+        rvec_sub(crntProbePos_, prevProbePos_, direction);
+        updateInverseRotationMatrix(direction);
 
         // incremet probe step counter:
         numProbeSteps++;
 
         // termination conditions:
+        // TODO: add condition for negative radius!
         if( sam.getBestCost() > maxProbeRadius_ )
         {
             break;
@@ -127,9 +181,19 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(bool forward)
 /*
  * Updates inverse rotation matrix used in conversion between optimisation and 
  * configuration space.
+ *
+ * The exact procedure is based on Rodrigues' rotation formula, from which it
+ * can be derived that the rotation matrix mapping a unit vector a onto a unit
+ * vector b is given by
+ *
+ *     R = I + K + K^2 * 1/(1+cos(alpha))
+ *
+ * Here I is the identity matrix, K is the cross-product matrix prescriping the
+ * direction of the rotation axis in space, and alpha the the angle by which 
+ * vector a is rotated around that axis to be mapped onto b.
  */
 void
-OptimisedDirectionProbePathFinder::updateInverseRotationMatrix()
+OptimisedDirectionProbePathFinder::updateInverseRotationMatrix(gmx::RVec direction)
 {
     // internal tolerance for floating point comparison:
     real zeroTol = 1e-7;
@@ -139,8 +203,7 @@ OptimisedDirectionProbePathFinder::updateInverseRotationMatrix()
 
     // get z-basis vector in rotated and standard/global system:
     gmx::RVec stdBasisZ(0.0, 0.0, 1.0);
-    gmx::RVec rotBasisZ;
-    rvec_sub(crntProbePos_, prevProbePos_, rotBasisZ);
+    gmx::RVec rotBasisZ(direction);
     unitv(rotBasisZ, rotBasisZ);
 
     // calculate cosine of rotation angle: 

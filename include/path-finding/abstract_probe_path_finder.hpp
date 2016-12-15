@@ -60,6 +60,8 @@ class AbstractProbePathFinder : public AbstractPathFinder
         gmx::AnalysisNeighborhoodSearch *nbSearch_;
 
         real findMinimalFreeDistance(real *optimSpacePos);
+        // TODO: need a second freeDistance function here that allows a different
+        // implementation for the initial optimisation problem
 
         virtual gmx::RVec optimToConfig(real *optimSpacePos) = 0;
 };
