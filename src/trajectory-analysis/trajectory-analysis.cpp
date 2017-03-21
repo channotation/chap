@@ -96,20 +96,20 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // get parameters of path-finding agorithm:
     options -> addOption(StringOption("pf-method")
                          .store(&pfMethod_)
-                         .required()
-                         .description("Path finding method."));
+                         .defaultValue("inplane-optim")
+                         .description("Path finding method. Only inplane-optim is implemented so far."));
     options -> addOption(RealOption("probe-step")
                          .store(&pfProbeStepLength_)
-                         .required()
-                         .description("Step length for probe movement."));
+                         .defaultValue(0.025)
+                         .description("Step length for probe movement. Defaults to 0.025 nm."));
     options -> addOption(RealOption("probe-radius")
                          .store(&pfProbeRadius_)
-                         .required()
-                         .description("Radius of probe."));
+                         .defaultValue(0.0)
+                         .description("Radius of probe. Defaults to 0.0, buggy for other values!"));
     options -> addOption(RealOption("max-free-dist")
                          .store(&pfMaxFreeDist_)
-                         .required()
-                         .description("Maximum radius of pore."));
+                         .defaultValue(1.0)
+                         .description("Maximum radius of pore. Defaults to 1.0, buggy for larger values."));
     options -> addOption(IntegerOption("max-probe-steps")
                          .store(&pfMaxProbeSteps_)
                          .description("Maximum number of steps the probe is moved in either direction."));
@@ -130,28 +130,28 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Seed for RNG used in simulated annealing."));
     options -> addOption(IntegerOption("sa-max-cool")
                          .store(&saMaxCoolingIter_)
-                         .required()
-                         .description("Maximum number of cooling iterations in simulated annealing."));
+                         .defaultValue(1000)
+                         .description("Maximum number of cooling iterations in one simulated annealing run. Defaults to 1000."));
     options -> addOption(IntegerOption("sa-cost-samples")
                          .store(&saNumCostSamples_)
-                         .required()
-                         .description("Number of cost samples considered for convergence tolerance."));
+                         .defaultValue(10)
+                         .description("NOT IMPLEMENTED! Number of cost samples considered for convergence tolerance. Defaults to 10."));
     options -> addOption(RealOption("sa-conv-tol")
                          .store(&saConvRelTol_)
-                         .required()
+                         .defaultValue(1e-3)
                          .description("Relative tolerance for simulated annealing."));
     options -> addOption(RealOption("sa-init-temp")
                          .store(&saInitTemp_)
-                         .required()
-                         .description("Initital temperature for simulated annealing."));
+                         .defaultValue(0.1)
+                         .description("Initital temperature for simulated annealing. Defaults to 0.1."));
     options -> addOption(RealOption("sa-cooling-fac")
                          .store(&saCoolingFactor_)
-                         .required()
-                         .description("Cooling factor using in simulated annealing."));
+                         .defaultValue(0.98)
+                         .description("Cooling factor using in simulated annealing. Defaults to 0.98."));
     options -> addOption(RealOption("sa-step")
                          .store(&saStepLengthFactor_)
-                         .required()
-                         .description("Step length factor used in candidate generation.")) ;
+                         .defaultValue(0.001)
+                         .description("Step length factor used in candidate generation. Defaults to 0.001.")) ;
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
