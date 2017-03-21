@@ -275,13 +275,23 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             // get i-th atom position:
             gmx::SelectionPosition atom = initPosSelection.position(i);
 
+            std::cout<<"nAtoms = "<<atom.atomCount()<<", "
+                     <<"x = "<<atom.x()[0]<<", "
+                     <<"y = "<<atom.x()[1]<<", "
+                     <<"z = "<<atom.x()[2]<<", "
+                     <<"mass = "<<atom.mass()
+                     <<std::endl;
+ 
             // add to total mass:
             totalMass += atom.mass();
 
             // add to COM vector:
-            centreOfMass[0] += atom.mass() * atom.x()[0];
-            centreOfMass[1] += atom.mass() * atom.x()[1];
-            centreOfMass[2] += atom.mass() * atom.x()[2];
+//`            centreOfMass[0] += atom.mass() * atom.x()[0];
+//            centreOfMass[1] += atom.mass() * atom.x()[1];
+//            centreOfMass[2] += atom.mass() * atom.x()[2];
+            centreOfMass[0] += atom.x()[0];
+            centreOfMass[1] += atom.x()[1];
+            centreOfMass[2] += atom.x()[2];
 
             if( atom.x()[2] > max_z )
             {
@@ -296,11 +306,17 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
         std::cout<<"max_z = "<<max_z<<std::endl;
         std::cout<<"min_z = "<<min_z<<std::endl;
+        std::cout<<"number of atoms in selection = "<<initPosSelection.atomCount()<<std::endl;
 
         // scale COM vector by total MASS:
-        centreOfMass[0] /= 1.0 * totalMass;
-        centreOfMass[1] /= 1.0 * totalMass;
-        centreOfMass[2] /= 1.0 * totalMass; 
+//        centreOfMass[0] /= 1.0 * totalMass;
+//        centreOfMass[1] /= 1.0 * totalMass;
+//        centreOfMass[2] /= 1.0 * totalMass; 
+
+        centreOfMass[0] = centreOfMass[0] / initPosSelection.atomCount();
+        centreOfMass[1] = centreOfMass[1] / initPosSelection.atomCount();
+        centreOfMass[2] = centreOfMass[2] / initPosSelection.atomCount(); 
+
 
         // set initial probe position:
         pfInitProbePos_[0] = centreOfMass[0];
