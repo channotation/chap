@@ -43,6 +43,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	class ModuleData;
 	double                           cutoff_;		// cutoff for grid search
 	Selection                        refsel_;   	// selection of the reference group
+	Selection                        ippsel_;   	// selection of the initial probe position group
+    bool                             ippselIsSet_;
 	SelectionList                    sel_;			// selection of the small particle groups
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
 	AnalysisData                     data_;			// raw data container
@@ -58,7 +60,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     int pfMaxProbeSteps_;
 
     std::vector<real> pfInitProbePos_;
+    bool pfInitProbePosIsSet_;
     std::vector<real> pfChanDirVec_;
+    bool pfChanDirVecIsSet_;
 
     int saRandomSeed_;
     int saMaxCoolingIter_;
@@ -72,6 +76,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     bool saUseAdaptiveCandGen_;
 
+    bool debug_output_;
 
 	// calculate the radius of a spherical void with given centre: 
 	real calculateVoidRadius(RVec centre,

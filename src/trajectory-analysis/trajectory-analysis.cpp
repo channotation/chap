@@ -7,6 +7,7 @@
 #include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
+#include <gromacs/fileio/confio.h>
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
@@ -77,8 +78,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
 	// get (required) selection options for the small particle groups:
 	options -> addOption(SelectionOption("select")
-                         .storeVector(&sel_).required().multiValue()
-	                     .description("Groups to calculate distances to"));
+                         .storeVector(&sel_).required()
+	                     .description("Group of small particles to calculate density of (normally 'Water'):"));
+
+   	// get (optional) selection options for the initial probe position selection:
+	options -> addOption(SelectionOption("ippsel")
+                         .store(&ippsel_)
+                         .storeIsSet(&ippselIsSet_)
+	                     .description("Reference group from which to determine the initial probe position for the pore finding algorithm. If unspecified, this defaults to the overall pore forming group. Will be overridden if init-probe-pos is set explicitly."));
+ 
 
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
@@ -107,11 +115,12 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Maximum number of steps the probe is moved in either direction."));
     options -> addOption(RealOption("init-probe-pos")
                          .storeVector(&pfInitProbePos_)
+                         .storeIsSet(&pfInitProbePosIsSet_)
                          .valueCount(3)
-                         .required()
-                         .description("Initial position of probe."));
+                         .description("Initial position of probe in probe-based pore finding algorithms. If this is set explicitly, it will overwrite the COM-based initial position set with the ippselflag."));
     options -> addOption(RealOption("chan-dir-vec")
                          .storeVector(&pfChanDirVec_)
+                         .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
                          .required()
                          .description("Channel direction vector."));
@@ -143,6 +152,9 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&saStepLengthFactor_)
                          .required()
                          .description("Step length factor used in candidate generation.")) ;
+    options -> addOption(BooleanOption("debug-output")
+                         .store(&debug_output_)
+                         .description("When this flag is set, the program will write additional information.")) ;
 }
 
 
@@ -216,6 +228,8 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
+
+
 	// get data handle for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
 
@@ -226,6 +240,85 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dh.startFrame(frnr, fr.time);
 
 
+    // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
+    //-------------------------------------------------------------------------
+
+    // recalculate initial probe position based on reference group COM:
+    if( pfInitProbePosIsSet_ == false )
+    {  
+        // helper variable for conditional assignment of selection:
+        Selection tmpsel;
+  
+        // has a group for specifying initial probe position been set?
+        if( ippselIsSet_ == true )
+        {
+            // use explicitly given selection:
+            tmpsel = ippsel_;
+        }
+        else 
+        {
+            // default to overall group of pore forming particles:
+            tmpsel = refsel_;
+        }
+     
+        // load data into initial position selection:
+        const gmx::Selection &initPosSelection = pdata -> parallelSelection(tmpsel);
+ 
+        // initialse total mass and COM vector:
+        real totalMass = 0.0;
+        gmx::RVec centreOfMass(0.0, 0.0, 0.0);
+        real max_z = 0;
+        real min_z = 0;
+        // loop over all atoms: 
+        for(int i = 0; i < initPosSelection.atomCount(); i++)
+        {
+            // get i-th atom position:
+            gmx::SelectionPosition atom = initPosSelection.position(i);
+
+            // add to total mass:
+            totalMass += atom.mass();
+
+            // add to COM vector:
+            centreOfMass[0] += atom.mass() * atom.x()[0];
+            centreOfMass[1] += atom.mass() * atom.x()[1];
+            centreOfMass[2] += atom.mass() * atom.x()[2];
+
+            if( atom.x()[2] > max_z )
+            {
+                max_z = atom.x()[2];
+            }
+            if( atom.x()[2] < min_z )
+            {
+                min_z = atom.x()[2];
+            }
+
+        }
+
+        std::cout<<"max_z = "<<max_z<<std::endl;
+        std::cout<<"min_z = "<<min_z<<std::endl;
+
+        // scale COM vector by total MASS:
+        centreOfMass[0] /= 1.0 * totalMass;
+        centreOfMass[1] /= 1.0 * totalMass;
+        centreOfMass[2] /= 1.0 * totalMass; 
+
+        // set initial probe position:
+        pfInitProbePos_[0] = centreOfMass[0];
+        pfInitProbePos_[1] = centreOfMass[1];
+        pfInitProbePos_[2] = centreOfMass[2];
+    }
+
+
+// inform user:
+        if( debug_output_ == true )
+        {
+            std::cout<<std::endl
+                     <<"Initial probe position for this frame is:  "
+                     <<pfInitProbePos_[0]<<", "
+                     <<pfInitProbePos_[1]<<", "
+                     <<pfInitProbePos_[2]<<". "
+                     <<std::endl;
+        }
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
@@ -300,6 +393,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
     else if( pfMethod_ == "optim-direction" )
     {
+        std::cout<<"OPTIM-DIRECTION"<<std::endl;
+
     	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
     	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
         pfm.reset(new OptimisedDirectionProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
@@ -327,7 +422,33 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfm.reset();
     std::cout<<"after pfm.reset()"<<std::endl;
 
-    std::cout<<"hallo!"<<std::endl; 
+
+   // const t_atoms *atoms;
+   // snew(atoms);
+
+
+    const char *outfile = "yo.pdb";
+    const char *title = "title";
+//    const t_atoms *atoms;
+//    rvec tmp;
+//    const rvec x[1] = {tmp};
+//    const rvec *v;
+//    int ePBC = 0;
+//    const matrix box = NULL;
+
+//    void write_sto_conf(outfile,
+//                        title, 
+//                        atoms, 
+//                        x,
+//                        v, 
+//                        ePBC, 
+//                        box);
+
+
+
+
+
+    std::cout<<"path.size() = "<<path.size()<<std::endl; 
     // write path to DAT file:
     std::fstream datfile;
     std::string datfilename = "test.dat"; 
@@ -444,145 +565,5 @@ trajectoryAnalysis::writeOutput()
 {
 	
 }
-
-
-/*
- * Function to calculate the radius of a spherical void around a given center.
- */
-/*
-real
-trajectoryAnalysis::calculateVoidRadius(RVec centre, 
-                                        t_pbc *pbc, 
-										const Selection refSelection)
-{
-	// convert centre coordinate to analysis neighbourhood position:
-	std::vector<RVec> centrePosition = {centre};	
-	AnalysisNeighborhoodPositions centrePos(centrePosition);
-
-
-
-
-
-	// initialise neighbourhood pair search:
-	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
-	AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch.startPairSearch(centrePos);
-	AnalysisNeighborhoodPair pair;
-
-	real voidRadius = 54321; // TODO:  infiinity
-	real pairDist;
-	real referenceVdwRadius;
-
-	// loop over all pairs:
-	while( nbPairSearch.findNextPair(&pair) )
-	{	
-		// find distance between particles in pair:
-		// TODO: square root can probably be removed/only drawn for final radius?
-		pairDist = std::sqrt( pair.distance2() );
-
-		// get van der Waals radius of reference atom:
-		referenceVdwRadius = vdwRadii.at(pair.refIndex());
-
-
-		// update void radius if newly found distance is smaller:
-		if( voidRadius > (pairDist - referenceVdwRadius) )
-		{
-			voidRadius = pairDist - referenceVdwRadius;
-//			std::cout<<"  pairDist = "<<pairDist<<"  vdW = "<<referenceVdwRadius<<"  smaller radius = "<<voidRadius<<std::endl;
-		}
-	}
-
-	// return void radius:
-	return voidRadius;
-}
-*/
-
-/*
- * Maximise the radius of a spherical void by relocation of void centre:
- */
-/*
-real
-trajectoryAnalysis::maximiseVoidRadius(RVec &centre,
-									   RVec chanVec,
-									   t_pbc *pbc,
-									   const Selection refSelection)
-{
-	// parameters:
-	int maxSimAnIter = 1000;
-	real initialTemperature = 100;
-	real tempReductionFactor = 0.99;
-
-
-	//
-	RVec candidateCentre;
-	real candidateVoidRadius;
-	real voidRadius = -999999;
-	real bestVoidRadius = voidRadius;
-	real temp = initialTemperature;
-	
-
-	// generate random 3-vector:
-	int seed=15011991;
-	real candStepLength = 0.01;
-	DefaultRandomEngine rng(seed);
-    UniformRealDistribution<real> candGenDistr(-candStepLength*sqrt(3), candStepLength*sqrt(3)); // TODO: replace square roots with value for efficiency
-	UniformRealDistribution<real> candAccDistr(0.0, 1.0);
-
-
-	// simulated annealing iteration:
-	for(int i=0; i<maxSimAnIter; i++)
-	{
-		// generate random 3-vector:
-		RVec randVec(candGenDistr(rng), candGenDistr(rng), candGenDistr(rng));
-
-		// remove components in the direction of channel vector:
-		real scalarProduct = randVec[0]*chanVec[0] + randVec[1]*chanVec[1] + randVec[2]*chanVec[2];
-		randVec[0] = randVec[0] - scalarProduct*chanVec[0];
-		randVec[1] = randVec[1] - scalarProduct*chanVec[1];
-		randVec[2] = randVec[2] - scalarProduct*chanVec[2];
-
-		// calculate candidate for new centre position:
-		candidateCentre = centre;
-		candidateCentre[0] += randVec[0];
-		candidateCentre[1] += randVec[1];
-		candidateCentre[2] += randVec[2];
-
-		// calculate radius of void around new centre:
-		candidateVoidRadius = calculateVoidRadius(candidateCentre,
-												  pbc,
-												  refSelection);
-
-		// calculate acceptance probability:
-		// TODO: do we have to limit this to 1.0?
-		real accProb = std::exp( (candidateVoidRadius - voidRadius)/temp );
-
-		// accept move?
-		if( accProb > candAccDistr(rng) )
-		{
-			// update centre position and void radius:
-			centre = candidateCentre;
-			voidRadius = candidateVoidRadius;
-
-//			std::cout<<"accepted!"<<std::endl;
-//
-			if( voidRadius > bestVoidRadius )
-			{
-				bestVoidRadius = voidRadius;
-			}
-		}
-
-
-		// reduce temperature:
-		std::cout<<"temp = "<<temp<<"  x = "<<centre[0]<<"  y = "<<centre[1]<<"  z = "<<centre[2]<<"  radius = "<<voidRadius<<std::endl;
-		temp *= tempReductionFactor;
-	}
-
-
-	// return maximised void radius:
-	return bestVoidRadius;
-}
-
-
-
-*/
 
 

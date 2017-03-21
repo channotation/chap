@@ -60,6 +60,8 @@ OptimisedDirectionProbePathFinder::findPath()
 void
 OptimisedDirectionProbePathFinder::optimiseInitialPos()
 {
+    std::cout<<"OPTIMISING INITIAL POSITION"<<std::endl;
+
     // FIRST OPTIMISATION: WITHIN A CIRCLE OF GIVEN RADIUS
 
     // prepare simulated annealing:
@@ -121,6 +123,8 @@ OptimisedDirectionProbePathFinder::optimiseInitialPos()
 void
 OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
 {
+    std::cout<<"Advance and optimise"<<std::endl;
+
     // initialise direction vector and probe position:
     gmx::RVec direction(initDirection);
     crntProbePos_ = initProbePos_; // TODO: make crntProbePos_ local variable
