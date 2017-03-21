@@ -2,7 +2,7 @@
 
 #include <gromacs/math/vec.h>
 
-#include "trajectoryAnalysis/simulated_annealing_module.hpp"
+#include "trajectory-analysis/simulated_annealing_module.hpp"
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 
 /*

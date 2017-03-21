@@ -5,7 +5,7 @@
 #include <cblas.h>
 #include <lapacke.h>
 
-#include "trajectoryAnalysis/simulated_annealing_module.hpp"
+#include "trajectory-analysis/simulated_annealing_module.hpp"
 #include "statistics-utilities/misc_stats_utilities.hpp"
 
 

@@ -8,10 +8,10 @@
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
 
-#include "trajectoryAnalysis/trajectoryAnalysis.hpp"
+#include "trajectory-analysis/trajectory-analysis.hpp"
 
-#include "trajectoryAnalysis/simulated_annealing_module.hpp"
-#include "trajectoryAnalysis/path_finding_module.hpp"
+#include "trajectory-analysis/simulated_annealing_module.hpp"
+#include "trajectory-analysis/path_finding_module.hpp"
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 

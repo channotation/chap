@@ -1,8 +1,8 @@
 #include <iostream>
 #include <algorithm>
 
-#include "trajectoryAnalysis/path_finding_module.hpp"
-#include "trajectoryAnalysis/simulated_annealing_module.hpp"
+#include "trajectory-analysis/path_finding_module.hpp"
+#include "trajectory-analysis/simulated_annealing_module.hpp"
 
 
 /*

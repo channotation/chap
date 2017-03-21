@@ -4,7 +4,7 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
-#include "trajectoryAnalysis/trajectoryAnalysis.hpp"
+#include "trajectory-analysis/trajectory-analysis.hpp"
 
 using namespace gmx;
 

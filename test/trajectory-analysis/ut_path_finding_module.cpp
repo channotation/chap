@@ -4,7 +4,7 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
-#include "trajectoryAnalysis/path_finding_module.hpp"
+#include "trajectory-analysis/path_finding_module.hpp"
 
 
 /*
