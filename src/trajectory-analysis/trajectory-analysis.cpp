@@ -185,6 +185,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
     lfplotm -> setFileName("pore.dat");
     lfplotm -> setPrecision(3);
+    std::vector<char*> header = {"t", "x", "y", "z", "s", "r"};
+    lfplotm -> setHeader(header);
     data_.addModule(lfplotm);  
 
 

@@ -1,7 +1,8 @@
 #ifndef ANALYSYS_DATA_LONG_FORMAT_PLOT_MODULE_HPP
 #define ANALYSYS_DATA_LONG_FORMAT_PLOT_MODULE_HPP
 
-#include <fstream> 
+#include <fstream>
+#include <vector>
 
 #include <gromacs/analysisdata/modules/plot.h>
 
@@ -28,6 +29,7 @@ class AnalysisDataLongFormatPlotModule : public gmx::AnalysisDataModuleSerial
         // setter methods for parameters:
         void setFileName(char *name){fileName_ = name;};
         void setPrecision(int precision){precision_ = precision;};
+        void setHeader(std::vector<char*> header){header_ = header;};
 
 
     private:
@@ -38,6 +40,7 @@ class AnalysisDataLongFormatPlotModule : public gmx::AnalysisDataModuleSerial
         // internal parameters:
         char *fileName_;
         int precision_;
+        std::vector<char*> header_;
 };
 
 typedef std::shared_ptr<AnalysisDataLongFormatPlotModule> AnalysisDataLongFormatPlotModulePointer;
