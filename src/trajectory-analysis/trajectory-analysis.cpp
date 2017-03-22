@@ -68,6 +68,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 	};
     settings -> setHelpText(desc);
 
+    // hardcoded defaults for multivalue options:
+    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
+
+
 	// require the user to provide a topology file input:
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
 
@@ -122,8 +126,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .storeVector(&pfChanDirVec_)
                          .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
-                         .required()
-                         .description("Channel direction vector."));
+                         .description("Channel direction vector; will be normalised to unit vector internally. Defaults to (0, 0, 1)."));
     options -> addOption(IntegerOption("sa-random-seed")
                          .store(&saRandomSeed_)
                          .required()
