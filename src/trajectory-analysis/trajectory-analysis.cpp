@@ -13,6 +13,7 @@
 
 #include "trajectory-analysis/simulated_annealing_module.hpp"
 #include "trajectory-analysis/path_finding_module.hpp"
+#include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
@@ -49,6 +50,7 @@ trajectoryAnalysis::trajectoryAnalysis()
     pfInitProbePos_ = {0.0, 0.0, 0.0};
     pfChanDirVec_ = {0.0, 0.0, 1.0};
 
+    data_.setMultipoint(true);              // mutliple support points 
 
 }
 
@@ -174,10 +176,25 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	nb_.setCutoff(cutoff_);
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
 
-	// set number of columns in data set (one column per small particle type):
-	data_.setColumnCount(0, sel_.size());
+	// prepare data container:
+	data_.setDataSetCount(1);               // one data set for water   
+    data_.setColumnCount(0, 5);             // x y z s r
 
-	
+    // add plot module to analysis data:
+    int i = 1;
+    AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
+    lfplotm -> setFileName("pore.dat");
+    lfplotm -> setPrecision(3);
+    data_.addModule(lfplotm);  
+
+
+
+ 
+
+
+    
+    // GET ATOM RADII FROM TOPOLOGY
+    //-------------------------------------------------------------------------
 	
 	// load full topology:
 	t_topology *topol = top.topology();	
@@ -231,8 +248,6 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
-
-
 	// get data handle for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
 
@@ -270,57 +285,27 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         // initialse total mass and COM vector:
         real totalMass = 0.0;
         gmx::RVec centreOfMass(0.0, 0.0, 0.0);
-        real max_z = 0;
-        real min_z = 0;
+        
         // loop over all atoms: 
         for(int i = 0; i < initPosSelection.atomCount(); i++)
         {
             // get i-th atom position:
             gmx::SelectionPosition atom = initPosSelection.position(i);
 
-            std::cout<<"nAtoms = "<<atom.atomCount()<<", "
-                     <<"x = "<<atom.x()[0]<<", "
-                     <<"y = "<<atom.x()[1]<<", "
-                     <<"z = "<<atom.x()[2]<<", "
-                     <<"mass = "<<atom.mass()
-                     <<std::endl;
- 
             // add to total mass:
             totalMass += atom.mass();
 
             // add to COM vector:
             // TODO: implement separate centre of geometry and centre of mass 
-//`            centreOfMass[0] += atom.mass() * atom.x()[0];
-//            centreOfMass[1] += atom.mass() * atom.x()[1];
-//            centreOfMass[2] += atom.mass() * atom.x()[2];
-            centreOfMass[0] += atom.x()[0];
-            centreOfMass[1] += atom.x()[1];
-            centreOfMass[2] += atom.x()[2];
-
-            if( atom.x()[2] > max_z )
-            {
-                max_z = atom.x()[2];
-            }
-            if( atom.x()[2] < min_z )
-            {
-                min_z = atom.x()[2];
-            }
-
+            centreOfMass[0] += atom.mass() * atom.x()[0];
+            centreOfMass[1] += atom.mass() * atom.x()[1];
+            centreOfMass[2] += atom.mass() * atom.x()[2];
         }
 
-        std::cout<<"max_z = "<<max_z<<std::endl;
-        std::cout<<"min_z = "<<min_z<<std::endl;
-        std::cout<<"number of atoms in selection = "<<initPosSelection.atomCount()<<std::endl;
-
         // scale COM vector by total MASS:
-//        centreOfMass[0] /= 1.0 * totalMass;
-//        centreOfMass[1] /= 1.0 * totalMass;
-//        centreOfMass[2] /= 1.0 * totalMass; 
-
-        centreOfMass[0] = centreOfMass[0] / initPosSelection.atomCount();
-        centreOfMass[1] = centreOfMass[1] / initPosSelection.atomCount();
-        centreOfMass[2] = centreOfMass[2] / initPosSelection.atomCount(); 
-
+        centreOfMass[0] /= 1.0 * totalMass;
+        centreOfMass[1] /= 1.0 * totalMass;
+        centreOfMass[2] /= 1.0 * totalMass; 
 
         // set initial probe position:
         pfInitProbePos_[0] = centreOfMass[0];
@@ -328,23 +313,22 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[2] = centreOfMass[2];
     }
 
+    // inform user:
+    if( debug_output_ == true )
+    {
+        std::cout<<std::endl
+                 <<"Initial probe position for this frame is:  "
+                 <<pfInitProbePos_[0]<<", "
+                 <<pfInitProbePos_[1]<<", "
+                 <<pfInitProbePos_[2]<<". "
+                 <<std::endl;
+    }
 
-// inform user:
-        if( debug_output_ == true )
-        {
-            std::cout<<std::endl
-                     <<"Initial probe position for this frame is:  "
-                     <<pfInitProbePos_[0]<<", "
-                     <<pfInitProbePos_[1]<<", "
-                     <<pfInitProbePos_[2]<<". "
-                     <<std::endl;
-        }
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
     // TODO: Move this to separate class and test!
     // TODO: Should then also work for coarse-grained situations!
-
 
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
@@ -361,9 +345,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 		// add radius to vector of radii:
 		selVdwRadii.push_back(vdwRadii_[idx]);
 	}
-
-
-
 
 
 	// PORE FINDING AND RADIUS CALCULATION
@@ -425,23 +406,81 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                             saXi_, saConvRelTol_, saInitTemp_, 
                                             saCoolingFactor_, saStepLengthFactor_, 
                                             saUseAdaptiveCandGen_));
-    }
- 
+    }   
 
-        
-   
-    std::cout<<"vdwRadii.size() = "<<selVdwRadii.size()<<std::endl;
-    std::cout<<"selection.atomCount() = "<<refSelection.atomCount()<<std::endl;
-
-
+    // run path finding algorithm on current frame:
     pfm -> findPath();
- 
+
+
+    // ADD DATA TO PARALLELISABLE CONTAINER
+    //-------------------------------------------------------------------------
+   
+    // access path finding module result:
     std::vector<gmx::RVec> path = pfm -> getPath();
     std::vector<real> radii = pfm -> getRadii();
+ 
+    // loop over all support points of path:
+    for(int i = 0; i < radii.size(); i++)
+    {
+        //std::cout<<"i = "<<i<<std::endl;
+        // add to container:
+        dh.setPoint(0, path[i][0]);     // x
+        dh.setPoint(1, path[i][1]);     // y
+        dh.setPoint(2, path[i][2]);     // z
+        dh.setPoint(3, i);              // TODO: this should be s!
+        dh.setPoint(4, radii[i]);       // r
 
+        dh.finishPointSet(); 
+    }
+  
+    // reset smart pointer:
+    // TODO: Is this necessary and parallel compatible?
     pfm.reset();
-    std::cout<<"after pfm.reset()"<<std::endl;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 
    // const t_atoms *atoms;
    // snew(atoms);
@@ -561,7 +600,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     file.close();
 
-
+*/
 
 
 
@@ -586,7 +625,10 @@ trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 void
 trajectoryAnalysis::writeOutput()
 {
-	
+    std::cout<<"datSetCount = "<<data_.dataSetCount()<<std::endl
+             <<"columnCount = "<<data_.columnCount()<<std::endl
+             <<"frameCount = "<<data_.frameCount()<<std::endl
+             <<std::endl;
 }
 
 
