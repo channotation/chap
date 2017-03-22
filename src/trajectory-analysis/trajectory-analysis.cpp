@@ -289,6 +289,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             totalMass += atom.mass();
 
             // add to COM vector:
+            // TODO: implement separate centre of geometry and centre of mass 
 //`            centreOfMass[0] += atom.mass() * atom.x()[0];
 //            centreOfMass[1] += atom.mass() * atom.x()[1];
 //            centreOfMass[2] += atom.mass() * atom.x()[2];
@@ -465,7 +466,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-
+    // TODO: optionally write PORE data to PDB file per frame
+    //
+    //
+    // TODO: Aggregate pore coordinates and radii for post-processing
 
     std::cout<<"path.size() = "<<path.size()<<std::endl; 
     // write path to DAT file:

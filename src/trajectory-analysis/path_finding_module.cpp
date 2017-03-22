@@ -328,6 +328,7 @@ PathFindingModule::findMinimumDistance(real *optimSpacePos)
 gmx::RVec
 PathFindingModule::optimToConfig(real *optimSpacePos)
 {
+    /*
     std::cout<<"-----------------------------------------------------------"<<std::endl;
 
     std::cout<<"orthVecU = "<<orthVecU_[0]<<" "
@@ -343,6 +344,7 @@ PathFindingModule::optimToConfig(real *optimSpacePos)
 
     std::cout<<"optimSpacePos = "<<optimSpacePos[0]<<" "
                                  <<optimSpacePos[1]<<" "<<std::endl;
+    */
 
     gmx::RVec configSpacePos;
     configSpacePos[0] = crntProbePos_[0] + optimSpacePos[0]*orthVecU_[0]
@@ -351,11 +353,11 @@ PathFindingModule::optimToConfig(real *optimSpacePos)
                                          + optimSpacePos[1]*orthVecW_[1];
     configSpacePos[2] = crntProbePos_[2] + optimSpacePos[0]*orthVecU_[2] 
                                          + optimSpacePos[1]*orthVecW_[2];
-
+    /*
     std::cout<<"configProbePos = "<<configSpacePos[0]<<" "
                                   <<configSpacePos[1]<<" "
                                  <<configSpacePos[2]<<" "<<std::endl;
-    
+    */
     return(configSpacePos);
 }
 

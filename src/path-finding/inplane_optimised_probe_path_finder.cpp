@@ -122,7 +122,7 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
 {
     // set current probe position to initial probe position: 
     crntProbePos_ = initProbePos_;
-
+/*
     std::cout<<"crntProbePos = "<<crntProbePos_[0]<<"  "
                                 <<crntProbePos_[1]<<"  "
                                 <<crntProbePos_[2]<<"  "
@@ -136,7 +136,7 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
                             <<orthVecW_[1]<<"  "
                             <<orthVecW_[2]<<"  "
               <<std::endl;
-
+*/
     // initial state in optimisation space is always null vector:
     int stateDim = 2;
     real initState[stateDim] = {0.0, 0.0};
@@ -159,7 +159,7 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
     // set initial position to its optimal value:
     initProbePos_ = optimToConfig(sam.getBestState());
 
-
+/*
     std::cout<<"initProbePos = "<<initProbePos_[0]<<"  "
                                 <<initProbePos_[1]<<"  "
                                 <<initProbePos_[2]<<"  "
@@ -171,7 +171,7 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
                                 <<crntProbePos_[1]<<"  "
                                 <<crntProbePos_[2]<<"  "
              <<std::endl; 
-
+*/
     // add path support point and associated radius to container:
     path_.push_back(initProbePos_);
     radii_.push_back(sam.getBestCost());
@@ -209,6 +209,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
     int numProbeSteps = 0;
     while(true)
     {
+    /*
         std::cout<<"probeStepLength = "<<probeStepLength_<<std::endl;
         std::cout<<"direction = "<<direction[0]<<"  "
                                  <<direction[1]<<"  "
@@ -217,7 +218,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
                                     <<crntProbePos_[1]<<"  "
                                     <<crntProbePos_[2]<<"  "
                  <<std::endl;
-
+*/
         // advance probe position to next plane:
         crntProbePos_[0] = crntProbePos_[0] + probeStepLength_*direction[0];
         crntProbePos_[1] = crntProbePos_[1] + probeStepLength_*direction[1];
