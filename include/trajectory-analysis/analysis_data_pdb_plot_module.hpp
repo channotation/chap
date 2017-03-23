@@ -1,5 +1,5 @@
-#ifndef ANALYSYS_DATA_LONG_FORMAT_PLOT_MODULE_HPP
-#define ANALYSYS_DATA_LONG_FORMAT_PLOT_MODULE_HPP
+#ifndef ANALYSYS_DATA_PDB_PLOT_MODULE_HPP
+#define ANALYSYS_DATA_PDB_PLOT_MODULE_HPP
 
 #include <fstream>
 #include <vector>
@@ -10,13 +10,13 @@
 /*
  *
  */
-class AnalysisDataLongFormatPlotModule : public gmx::AnalysisDataModuleSerial
+class AnalysisDataPdbPlotModule : public gmx::AnalysisDataModuleSerial
 {
     public:
 
         // constructor:
-        AnalysisDataLongFormatPlotModule();                                               
-        explicit AnalysisDataLongFormatPlotModule(int i); 
+        AnalysisDataPdbPlotModule();                                               
+        explicit AnalysisDataPdbPlotModule(int i); 
 
         // virtual methods from base class:
         virtual int flags() const;
@@ -43,7 +43,7 @@ class AnalysisDataLongFormatPlotModule : public gmx::AnalysisDataModuleSerial
         std::vector<char*> header_;
 };
 
-typedef std::shared_ptr<AnalysisDataLongFormatPlotModule> AnalysisDataLongFormatPlotModulePointer;
+typedef std::shared_ptr<AnalysisDataPdbPlotModule> AnalysisDataPdbPlotModulePointer;
 
 
 

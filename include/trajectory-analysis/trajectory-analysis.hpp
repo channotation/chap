@@ -40,6 +40,11 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     private:
 
+    std::string poreParticleFileName_;  // positions of probe particles
+    std::string smallParticleFileName_; // positions of small particles (e.g. water)
+    std::string poreProfileFileName_;       // time averaged radius, energy etc.
+    bool poreFile_;
+
 	class ModuleData;
 	double                           cutoff_;		// cutoff for grid search
 	Selection                        refsel_;   	// selection of the reference group

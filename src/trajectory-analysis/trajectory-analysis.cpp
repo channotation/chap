@@ -14,6 +14,7 @@
 #include "trajectory-analysis/simulated_annealing_module.hpp"
 #include "trajectory-analysis/path_finding_module.hpp"
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
+#include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
@@ -99,6 +100,22 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 	                     .store(&cutoff_)
                          .description("Cutoff for distance calculation (0 = no cutoff)"));
 
+
+    // output options:
+    options -> addOption(StringOption("ppfn")
+                         .store(&poreParticleFileName_)
+                         .defaultValue("pore_particles.dat")
+                         .description("Name of file containing pore particle positions over time."));
+    options -> addOption(StringOption("spfn")
+                         .store(&smallParticleFileName_)
+                         .defaultValue("small_particles.dat")
+                         .description("Name of file containing small particle positions (i.e. water particle positions) over time."));
+    options -> addOption(StringOption("o")
+                         .store(&poreProfileFileName_)
+                         .defaultValue("pore_profile.dat")
+                         .description("Name of file containing pore radius, small particle density, and small particle energy as function of the permeation coordinate."));
+
+
     // get parameters of path-finding agorithm:
     options -> addOption(StringOption("pf-method")
                          .store(&pfMethod_)
@@ -183,13 +200,17 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // add plot module to analysis data:
     int i = 1;
     AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
-    lfplotm -> setFileName("pore.dat");
+    const char *poreParticleFileName = poreParticleFileName_.c_str();
+    lfplotm -> setFileName(poreParticleFileName);
     lfplotm -> setPrecision(3);
     std::vector<char*> header = {"t", "x", "y", "z", "s", "r"};
     lfplotm -> setHeader(header);
     data_.addModule(lfplotm);  
 
-
+    // add pdb plot module to analysis data:
+    AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
+    pdbplotm -> setFileName(poreParticleFileName);
+    data_.addModule(pdbplotm);
 
  
 
