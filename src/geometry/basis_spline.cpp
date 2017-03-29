@@ -43,17 +43,31 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
 
     // initialise state variables:
     evalPoint_ = evalPoint;
-    knotVector_ = knotVector;
 
-    // TODO: make this general!
+    // clear internal knot vector:
+    knotVector_.clear();
+
+    // add degree extra elements at front:
+    for(int i = 0; i < degree; i++)
+    {
+        knotVector_.push_back(knotVector.front());
+    }
+
+    // copy internal knots:
+    for(int i = 0; i < knotVector.size(); i++)
+    {
+        knotVector_.push_back(knotVector[i]);
+    }
+
+    // add degree extra elements at back:
+    for(int i = 0; i < degree; i++)
+    {
+        knotVector_.push_back(knotVector.back());
+    } 
 
     // handle special case of lying on the upper boundary knot:
     if( evalPoint_ == knotVector_.back() )
-    {/*
-        std::cout<<"interval = "<<interval<<"  "
-                 <<"k = "<<knotVector_.size() - degree - 2<<"  "
-                 <<std::endl;*/
-
+    {
         // only last basis vector is nozero in this case:
         if( interval == knotVector_.size() - degree - 2 )
         {
@@ -89,21 +103,16 @@ BasisSpline::operator()(std::vector<real> &knotVector,
 /*
  * Function recursively calculates value of basis spline of degree k in 
  * knot interval i, where the evaluation point x and knot vector t are 
- * maintained as state members of the class.
+ * maintained as state members of the class. This is the Cox-de Boor recursion
+ * that is sometimes used as the definition of basis splines.
  */
 real
 BasisSpline::recursion(int k, int i)
 {
     // recursion reaches bottom when polynomial degree is zero:
     if( k == 0 )
-    {/*
-        std::cout<<"evalPoint = "<<evalPoint_<<"  "
-                 <<"t[i] = "<<knotVector_[i]<<"  "
-                 <<"t[i+1] = "<<knotVector_[i+1]<<"  "
-                 <<std::endl;
-*/
+    {
         // check if evaluation point lies inside i-th knot interval:
-        // Eq. 1.18
         if( evalPoint_ >= knotVector_[i] && evalPoint_ < knotVector_[i + 1] )
         {
             // evaluation point inside interval:
@@ -148,13 +157,7 @@ BasisSpline::recursion(int k, int i)
         {
             scndFac = scndNum / scndDen;
         }
-/*
-        std::cout<<"frstFac = "<<frstFac<<"  "
-                 <<"scndFac = "<<scndFac<<"  "
-                 <<"frstDen = "<<frstDen<<"  "
-                 <<"scndDen = "<<scndDen<<"  "
-                 <<std::endl;
-*/
+
         // call this function recursively:
         return frstFac*recursion(k - 1, i) + scndFac*recursion(k - 1, i + 1);
     }
