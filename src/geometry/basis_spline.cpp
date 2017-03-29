@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 
 
 /*
@@ -44,8 +45,30 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
     evalPoint_ = evalPoint;
     knotVector_ = knotVector;
 
-    // recursion is handled by separate function:
-    return recursion(degree, interval);
+    // TODO: make this general!
+
+    // handle special case of lying on the upper boundary knot:
+    if( evalPoint_ == knotVector_.back() )
+    {/*
+        std::cout<<"interval = "<<interval<<"  "
+                 <<"k = "<<knotVector_.size() - degree - 2<<"  "
+                 <<std::endl;*/
+
+        // only last basis vector is nozero in this case:
+        if( interval == knotVector_.size() - degree - 2 )
+        {
+            return 1.0;
+        }
+        else
+        {
+            return 0.0;
+        }
+    }
+    else
+    {
+        // recursion is handled by separate function:
+        return recursion(degree, interval);
+    }
 }
 
 
@@ -73,8 +96,14 @@ BasisSpline::recursion(int k, int i)
 {
     // recursion reaches bottom when polynomial degree is zero:
     if( k == 0 )
-    {
+    {/*
+        std::cout<<"evalPoint = "<<evalPoint_<<"  "
+                 <<"t[i] = "<<knotVector_[i]<<"  "
+                 <<"t[i+1] = "<<knotVector_[i+1]<<"  "
+                 <<std::endl;
+*/
         // check if evaluation point lies inside i-th knot interval:
+        // Eq. 1.18
         if( evalPoint_ >= knotVector_[i] && evalPoint_ < knotVector_[i + 1] )
         {
             // evaluation point inside interval:
@@ -99,7 +128,7 @@ BasisSpline::recursion(int k, int i)
         real scndFac;
 
         // calculate first prefactor:
-        if( frstDen == 0 )
+        if( frstDen <= std::numeric_limits<real>::epsilon() )
         {
             // handle zero division:
             frstFac = 0.0;
@@ -110,7 +139,7 @@ BasisSpline::recursion(int k, int i)
         }
         
         // calculate second prefactor:
-        if( scndDen == 0.0 )
+        if( scndDen <= std::numeric_limits<real>::epsilon() )
         {
             // handle zero division:
             scndFac = 0.0;
@@ -119,7 +148,13 @@ BasisSpline::recursion(int k, int i)
         {
             scndFac = scndNum / scndDen;
         }
-
+/*
+        std::cout<<"frstFac = "<<frstFac<<"  "
+                 <<"scndFac = "<<scndFac<<"  "
+                 <<"frstDen = "<<frstDen<<"  "
+                 <<"scndDen = "<<scndDen<<"  "
+                 <<std::endl;
+*/
         // call this function recursively:
         return frstFac*recursion(k - 1, i) + scndFac*recursion(k - 1, i + 1);
     }
