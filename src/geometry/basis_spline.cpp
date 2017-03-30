@@ -47,23 +47,11 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
     // clear internal knot vector:
     knotVector_.clear();
 
-    // add degree extra elements at front:
-    for(int i = 0; i < degree; i++)
-    {
-        knotVector_.push_back(knotVector.front());
-    }
-
     // copy internal knots:
     for(int i = 0; i < knotVector.size(); i++)
     {
         knotVector_.push_back(knotVector[i]);
     }
-
-    // add degree extra elements at back:
-    for(int i = 0; i < degree; i++)
-    {
-        knotVector_.push_back(knotVector.back());
-    } 
 
     // handle special case of lying on the upper boundary knot:
     if( evalPoint_ == knotVector_.back() )

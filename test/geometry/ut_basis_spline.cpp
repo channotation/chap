@@ -47,6 +47,22 @@ TEST_F(BasisSplineTest, BasisSplinePartitionOfUnityTest)
         // get size of basis:
         int nBasis = knotVector_.size() + degree - 1;
 
+        // append and prepend the apprpropriate number of knots:
+        std::vector<real> knots;
+        for(int i = 0; i < degree; i++)
+        {
+            knots.push_back(knotVector_.front());
+        }
+        for(int i = 0; i < knotVector_.size(); i++)
+        {
+            knots.push_back(knotVector_[i]);
+        }
+        for(int i = 0; i < degree; i++)
+        {
+            knots.push_back(knotVector_.back());
+        }
+     
+
         // loop over evaluation points:
         for(int i = 0; i < evalPoints_.size(); i++)
         {
@@ -57,7 +73,7 @@ TEST_F(BasisSplineTest, BasisSplinePartitionOfUnityTest)
             for(int j = 0; j < nBasis; j++)
             {
                 // add value to sum:
-                unity += B(knotVector_, degree, j, evalPoints_[i]);
+                unity += B(knots, degree, j, evalPoints_[i]);
             }
 
             // assert partition of unity property:
@@ -89,7 +105,22 @@ TEST_F(BasisSplineTest, BasisSplineQuadraticTest)
 
     // create BasisSpline functor:
     BasisSpline B;
-  
+ 
+    // append and prepend the apprpropriate number of knots:
+    std::vector<real> knots;
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.front());
+    }
+    for(int i = 0; i < knotVector_.size(); i++)
+    {
+        knots.push_back(knotVector_[i]);
+    }
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.back());
+    }
+
     // size of basis:
     int nBasis = knotVector_.size() + degree - 1;
 
@@ -99,7 +130,7 @@ TEST_F(BasisSplineTest, BasisSplineQuadraticTest)
         // loop ober knot intervals:
         for(int i = 0; i < nBasis; i++)
         { 
-            real b = B(knotVector_, degree, i, evalPoints_[j]); 
+            real b = B(knots, degree, i, evalPoints_[j]); 
             ASSERT_NEAR(refValQuadratic[j*nBasis + i], b, std::numeric_limits<real>::epsilon());
         }
     }
@@ -129,7 +160,22 @@ TEST_F(BasisSplineTest, BasisSplineCubicTest)
 
     // create BasisSpline functor:
     BasisSpline B;
-   
+
+    // append and prepend the apprpropriate number of knots:
+    std::vector<real> knots;
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.front());
+    }
+    for(int i = 0; i < knotVector_.size(); i++)
+    {
+        knots.push_back(knotVector_[i]);
+    }
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.back());
+    }
+ 
     // size of basis:
     int nBasis = knotVector_.size() + degree - 1;
 
@@ -139,7 +185,7 @@ TEST_F(BasisSplineTest, BasisSplineCubicTest)
         // loop ober knot intervals:
         for(int i = 0; i < nBasis; i++)
         {      
-            real b = B(knotVector_, degree, i, evalPoints_[j]); 
+            real b = B(knots, degree, i, evalPoints_[j]); 
             ASSERT_NEAR(refValCubic[j*nBasis + i], b, 1e-7);
         }
     }
