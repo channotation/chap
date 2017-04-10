@@ -8,20 +8,18 @@
 
 
 /*
- *
+ * Test fucture for the one dimensional spline curve.
  */
 class SplineCurve1DTest : public ::testing::Test
 {
     public:
   
-        std::vector<real> knotVector_ = {-1, -1, -1, -1, -1, -0.5, -0.0, 0.5, 1.0};
-        std::vector<real> evalPoints_ = {-1.0, -0.25, 0.0, 0.75, 1.0};
 };
 
 
 
 /*
- *
+ * Simple test case for the interval finding method.
  */
 TEST_F(SplineCurve1DTest, SplineCurve1DFindIntervalTest)
 {
@@ -38,9 +36,9 @@ TEST_F(SplineCurve1DTest, SplineCurve1DFindIntervalTest)
     // create spline curve:
     SplineCurve1D SplC(degree, knotVector, ctrlPoints);
 
-    //
+    // note special treatment for final point:
     std::vector<real> evalPoints = {-1.0, -0.75, -0.5, 0.0, 0.15, 0.5, 1.0};
-    std::vector<int> refIndices = {0, 0, 1, 3, 3, 6, 7};
+    std::vector<int> refIndices = {0, 0, 1, 3, 3, 6, 6};
 
     // loop over evaluation points:
     for(int i = 0; i < evalPoints.size(); i++)
@@ -106,8 +104,6 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
  */
 TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
 {
-    std::cout<<"check"<<std::endl;
-
     // floating point comparison threshold:
     real eps = std::numeric_limits<real>::epsilon();
 
@@ -131,7 +127,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
     SplineCurve1D SplC(degree, knots, y);
 
     // check if spline is evaluates to control points at original data points:
-    for(int i = 0; i < x.size() - 1; i++)
+    for(int i = 0; i < x.size(); i++)
     {
         ASSERT_NEAR(y[i],
                     SplC.evaluate(x[i], eSplineEvalDeBoor), 
@@ -139,14 +135,13 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
     }
 
     // check if spline interpolates linearly at interval midpoints:
-    /*
+    
     for(int i = 0; i < x.size() - 1; i++)
     {
         real midpoint = (x[i] + x[i+1])/2.0; 
         ASSERT_NEAR((y[i] + y[i+1])/2.0, 
                     SplC.evaluate(midpoint, eSplineEvalDeBoor), 
                     eps);
-    }*/
+    }
 }
-
 

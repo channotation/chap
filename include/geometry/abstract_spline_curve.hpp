@@ -34,7 +34,7 @@ class AbstractSplineCurve
         BasisSpline B_;
 
         // internal utility functions:
-        int findInterval(real evalPoint);
+        int findInterval(real &evalPoint);
         real deBoorRecursion(int r, 
                              int i, 
                              real &evalPoint, 
