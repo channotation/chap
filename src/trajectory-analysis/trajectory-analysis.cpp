@@ -18,7 +18,6 @@
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
-
 using namespace gmx;
 
 
