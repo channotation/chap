@@ -20,11 +20,11 @@ class BasisSpline
         real evaluate(std::vector<real> &knotVector, 
                       int degree,
                       int interval,
-                      real evalPoint);
+                      real &evalPoint);
         real operator()(std::vector<real> &knotVector,
                         int degree,
                         int interval,
-                        real evalPoint);
+                        real &evalPoint);
 
     private:
 
@@ -34,6 +34,29 @@ class BasisSpline
 
         // bspline recursion:
         real recursion(int k, int i);
+};
+
+
+/*
+ * Functor class to evaluate basis spline derivative.
+ */
+class BasisSplineDerivative
+{
+    public:
+
+        // constructor and destructor:
+        BasisSplineDerivative();
+        ~BasisSplineDerivative();
+
+        // evaluation function and operator:
+        real evaluate(std::vector<real> &knotVector,
+                      int degree,
+                      int interval,
+                      real &evalPoint);
+        real operator()(std::vector<real> &knotVector,
+                        int degree,
+                        int interval, 
+                        real &evalPoint);
 };
 
 #endif

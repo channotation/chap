@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
 #include <gtest/gtest.h>
 
@@ -53,7 +54,7 @@ TEST_F(BasisSplineTest, BasisSplinePartitionOfUnityTest)
         {
             knots.push_back(knotVector_.front());
         }
-        for(int i = 0; i < knotVector_.size(); i++)
+        for(unsigned int i = 0; i < knotVector_.size(); i++)
         {
             knots.push_back(knotVector_[i]);
         }
@@ -62,9 +63,8 @@ TEST_F(BasisSplineTest, BasisSplinePartitionOfUnityTest)
             knots.push_back(knotVector_.back());
         }
      
-
         // loop over evaluation points:
-        for(int i = 0; i < evalPoints_.size(); i++)
+        for(unsigned int i = 0; i < evalPoints_.size(); i++)
         {
             // initialise sum as zero:
             real unity = 0.0;
@@ -112,7 +112,7 @@ TEST_F(BasisSplineTest, BasisSplineQuadraticTest)
     {
         knots.push_back(knotVector_.front());
     }
-    for(int i = 0; i < knotVector_.size(); i++)
+    for(unsigned int i = 0; i < knotVector_.size(); i++)
     {
         knots.push_back(knotVector_[i]);
     }
@@ -125,11 +125,11 @@ TEST_F(BasisSplineTest, BasisSplineQuadraticTest)
     int nBasis = knotVector_.size() + degree - 1;
 
     // loop over evalution points:    
-    for(int j = 0; j < evalPoints_.size(); j++)
+    for(unsigned int j = 0; j < evalPoints_.size(); j++)
     {
         // loop ober knot intervals:
         for(int i = 0; i < nBasis; i++)
-        { 
+        {
             real b = B(knots, degree, i, evalPoints_[j]); 
             ASSERT_NEAR(refValQuadratic[j*nBasis + i], b, std::numeric_limits<real>::epsilon());
         }
@@ -145,7 +145,6 @@ TEST_F(BasisSplineTest, BasisSplineQuadraticTest)
  */
 TEST_F(BasisSplineTest, BasisSplineCubicTest)
 {
-
     // test third degree / cubic splines:   
     int degree = 3;
 
@@ -167,7 +166,7 @@ TEST_F(BasisSplineTest, BasisSplineCubicTest)
     {
         knots.push_back(knotVector_.front());
     }
-    for(int i = 0; i < knotVector_.size(); i++)
+    for(unsigned int i = 0; i < knotVector_.size(); i++)
     {
         knots.push_back(knotVector_[i]);
     }
@@ -175,18 +174,69 @@ TEST_F(BasisSplineTest, BasisSplineCubicTest)
     {
         knots.push_back(knotVector_.back());
     }
- 
+    
     // size of basis:
     int nBasis = knotVector_.size() + degree - 1;
 
     // loop over evalution points:    
-    for(int j = 0; j < evalPoints_.size(); j++)
+    for(unsigned int j = 0; j < evalPoints_.size(); j++)
     {
         // loop ober knot intervals:
         for(int i = 0; i < nBasis; i++)
         {      
             real b = B(knots, degree, i, evalPoints_[j]); 
-            ASSERT_NEAR(refValCubic[j*nBasis + i], b, 1e-7);
+            ASSERT_NEAR(refValCubic[j*nBasis + i], b, std::numeric_limits<real>::epsilon());
+        }
+    }
+}
+
+
+/*
+ *
+ */
+TEST_F(BasisSplineTest, BasisSplineDerivativeTest)
+{
+    // test with cubic splines:
+    int degree = 3;
+
+    // reference values:
+    std::vector<real> refValCubic = {-0.85714286,  0.8571429,  0.0000000,  0.0000000,  0.00000000,  0.0000000, 0.00000000,
+                                     -0.27988338, -0.1046829,  0.2774235,  0.1071429,  0.00000000,  0.0000000, 0.00000000,
+                                      0.00000000,  0.0000000, -0.3333333,  0.0000000,  0.33333333,  0.0000000, 0.00000000,
+                                      0.00000000,  0.0000000,  0.0000000, -0.5833333,  0.48958333,  0.0937500, 0.00000000,
+                                     -0.01749271, -0.2350583, -0.1760204,  0.4285714,  0.00000000,  0.0000000, 0.00000000,
+                                      0.00000000,  0.0000000,  0.0000000, -0.3183948, -0.02224038,  0.2821545, 0.05848068,
+                                      0.00000000,  0.0000000,  0.0000000,  0.0000000,  0.00000000, -0.8571429, 0.85714286};
+
+    // create basis spline derivative functor:
+    BasisSplineDerivative dB;
+
+    // append and prepend the apprpropriate number of knots:
+    std::vector<real> knots;
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.front());
+    }
+    for(unsigned int i = 0; i < knotVector_.size(); i++)
+    {
+        knots.push_back(knotVector_[i]);
+    }
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.back());
+    }
+
+    // size of basis:
+    int nBasis = knotVector_.size() + degree - 1;
+
+    // loop over evalution points:    
+    for(unsigned int j = 0; j < evalPoints_.size(); j++)
+    {
+        // loop ober knot intervals:
+        for(int i = 0; i < nBasis; i++)
+        {      
+            real d = dB(knots, degree, i, evalPoints_[j]);
+            ASSERT_NEAR(refValCubic[j*nBasis + i], d, std::numeric_limits<real>::epsilon());
         }
     }
 }

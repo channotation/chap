@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <cmath>
 
 
 /*
@@ -32,7 +33,7 @@ inline real
 BasisSpline::evaluate(std::vector<real> &knotVector, 
                       int degree,
                       int interval,
-                      real evalPoint)
+                      real &evalPoint)
 {
     // sanity check:
     if( degree < 0 )
@@ -56,8 +57,13 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
     // handle special case of lying on the upper boundary knot:
     if( evalPoint_ == knotVector_.back() )
     {
+        // handle knot multiplicity:
+        std::vector<real>::iterator it;
+        it = std::lower_bound(knotVector_.begin(), knotVector_.end(), evalPoint);   
+        int idx = it - knotVector_.begin();
+
         // only last basis vector is nozero in this case:
-        if( interval == knotVector_.size() - degree - 2 )
+        if( interval == idx - 1 )
         {
             return 1.0;
         }
@@ -81,7 +87,7 @@ real
 BasisSpline::operator()(std::vector<real> &knotVector,
                         int degree,
                         int interval,
-                        real evalPoint)
+                        real &evalPoint)
 {
     // actual calculation is performed by evaluate() method:
     return evaluate(knotVector, degree, interval, evalPoint);
@@ -149,5 +155,82 @@ BasisSpline::recursion(int k, int i)
         // call this function recursively:
         return frstFac*recursion(k - 1, i) + scndFac*recursion(k - 1, i + 1);
     }
+}
+
+
+/*
+ * Constructor.
+ */
+BasisSplineDerivative::BasisSplineDerivative()
+{
+
+}
+
+
+/*
+ * Destructor.
+ */
+BasisSplineDerivative::~BasisSplineDerivative()
+{
+
+}
+
+
+/*
+ * Function to evaluate derivative of basis spline of given degree and at given
+ * evaluation point. Makes use of the relation
+ *
+ * dB_[i,k] / dx = k*( B_[i,k-1]/(t_[i+k] - t_i) - B_[i+1, k-1]/(t_[i+k+1] - t_[i+1]) )
+ *
+ * where t is the knot vector. The value of the lowe degree basis splines is 
+ * found using the functor defined above for this purpose.
+ */
+real
+BasisSplineDerivative::evaluate(std::vector<real> &knotVector,
+                                int degree,
+                                int interval,
+                                real &evalPoint)
+{
+    // create basis spline functor:
+    BasisSpline B;
+    
+    // initialise derivative as zero:
+    real deriv = 0.0;    
+
+    // calculate denominators:
+    real denomA = (knotVector.at(interval + degree) - knotVector.at(interval)); 
+    real denomB = (knotVector.at(interval + degree + 1) - knotVector.at(interval + 1));
+
+    // handle zero division:
+    if( std::abs(denomA) >= std::numeric_limits<real>::epsilon() )
+    {
+        // calculate fist part in derivative sum:
+        deriv += B(knotVector, degree - 1, interval, evalPoint) / denomA;
+    }
+    if( std::abs(denomB) >= std::numeric_limits<real>::epsilon() )
+    {
+        // calculate second part in derivative sum:
+        deriv -= B(knotVector, degree - 1, interval + 1, evalPoint) / denomB;
+    }
+
+    // multiply with degree:
+    deriv *= degree;
+
+    // return derivative value:
+    return deriv;
+}
+
+
+/*
+ * Evaluation function as operator. Refers to evaluate() method.
+ */
+real
+BasisSplineDerivative::operator()(std::vector<real> &knotVector,
+                                  int degree,
+                                  int interval,
+                                  real &evalPoint)
+{
+    // actual calculation is performed by evaluate() method:
+    return evaluate(knotVector, degree, interval, evalPoint);
 }
 
