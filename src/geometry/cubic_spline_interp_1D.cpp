@@ -26,7 +26,17 @@ CubicSplineInterp1D::~CubicSplineInterp1D()
 
 
 /*
+ * Public interface for interpolation. Function takes a one-dimensional data 
+ * cloud of (x_i, f(x_i)) points (each in their separate vectors) and finds the
+ * cubic spline curve that interpolates between these data points such that:
  *
+ *      s(x_i) = f(x_i)
+ *
+ * Currently only Hermite endpoint conditions are implemented. The relevant 
+ * linear system is solved via Gaussian elimination (using LAPACKE) and the 
+ * result is returned as a splien curve object.
+ *
+ * TODO: Implement natural boundary conditions.
  */
 SplineCurve1D
 CubicSplineInterp1D::interpolate(std::vector<real> x,
@@ -35,15 +45,6 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
     
     // generate knot vector:
     std::vector<real> knotVector = prepareKnotVector(x);
-
-    for(int i = 0; i < knotVector.size(); i++)
-    {
-        std::cout<<"i = "<<i<<"   "
-                 <<"knot = "<<knotVector.at(i)<<"  "
-                 <<std::endl;
-    }
-
-    std::cout<<"blah!"<<std::endl;
 
 
     // Assmble Left Hand Side Matrix:
@@ -58,18 +59,9 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
     BasisSplineDerivative D;
 
     // initialse diagonals:
-    real subDiag[nSys - 1] = {66, 66, 66, 66, 66, 66, 66};
-    real mainDiag[nSys] = {66, 66, 66, 66, 66, 66};
-    real superDiag[nSys - 1] = {66, 66, 66, 66, 66, 66};
-
-    for(int i = 0; i < nSys; i++)
-    {
-        std::cout<<"i = "<<i<<"  "
-                 <<"alpha = "<<mainDiag[i]<<"  "
-                 <<std::endl;
-    }
-    std::cout<<"----------------------------------------------------------"<<std::endl;
-
+    real subDiag[nSys - 1];
+    real mainDiag[nSys];
+    real superDiag[nSys - 1];
 
     // assemble subdiagonal:
     subDiag[nSys - 2] = D(knotVector, degree_, nSys - 2, x.back());
@@ -95,28 +87,6 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
     }
 
 
-
-    for(int i = 0; i < nSys; i++)
-    {
-        std::cout<<"i = "<<i<<"  "
-                 <<"alpha = "<<mainDiag[i]<<"  "
-                 <<std::endl;
-    }
-    for(int i = 0; i < nSys - 1; i++)
-    {
-        std::cout<<"i = "<<i<<"  "
-                 <<"beta = "<<subDiag[i]<<"  "
-                 <<std::endl;
-    }
-    for(int i = 0; i < nSys - 1; i++)
-    {
-        std::cout<<"i = "<<i<<"  "
-                 <<"gamma = "<<superDiag[i]<<"  "
-                 <<std::endl;
-    }
-
-
-
     // Assemble Right Hand Side Vector
     //-------------------------------------------------------------------------
 
@@ -130,29 +100,17 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
     rhsVec[0] = ( f.at(1) - f.at(0) ) / ( x.at(1) - x.at(0) );
     rhsVec[nSys - 1] = ( f.at(nDat - 1) - f.at(nDat - 2) ) / ( x.at(nDat - 1) - x.at(nDat - 2) );
 
-    std::cout<<"nSys = "<<nSys<<std::endl;
-
     // assemble internal points:
     for(int i = 0; i < nDat; i++)
     {
         rhsVec[i + 1] = f.at(i);
     }
-
      
     
     // Solve System
     //-------------------------------------------------------------------------
-   
-   
-    for(int i  = 0; i < nSys; i++)
-    {
-        std::cout<<"i = "<<i<<"  "
-                 <<"rhs = "<<rhsVec[i]<<std::endl;
-    }
-
-
+    
     // solve tridiagonal system by Gaussian elimination:
-
     int status = LAPACKE_sgtsv(LAPACK_COL_MAJOR,
                                nSys, 
                                nRhs,
@@ -162,43 +120,19 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
                                rhsVec,
                                nSys);
 
-    std::cout<<"status = "<<status<<std::endl;
     // handle solver failure:
     if( status != 0 )
     {
         std::cerr<<"ERROR: Could not solve tridiagonal system!"<<std::endl;
         std::cerr<<"LAPACK error code: "<<status<<std::endl;
         std::abort();
-    }
-
-    for(int i  = 0; i < nSys; i++)
-    {
-        std::cout<<"i = "<<i<<"  "
-                 <<"c = "<<rhsVec[i]<<std::endl;
-    }
+    } 
 
 
     // Prepare Output
-    // -------------------------------------------------------
+    //-------------------------------------------------------------------------
 
-
-    for(int i = 0; i < x.size(); i++)
-    {
-               
-        real sum = 0.0;
-        for(int j = 0; j < nSys; j++)
-        {
-            sum += rhsVec[j] * B(knotVector, degree_, j, x.at(i));
-        }
-
-        std::cout<<"x = "<<x.at(i)<<"\t"
-                 <<"f = "<<f.at(i)<<"\t"
-                 <<"s = "<<sum<<std::endl; 
-    }
-
-
-
-
+    // create vector of control points:
     std::vector<real> ctrlPoints;
     ctrlPoints.resize(nSys);
     for(unsigned int i = 0; i < nSys; i++)
@@ -215,10 +149,24 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
 
 
 /*
- *
+ * Interpolation interface conveniently defined as operator.
+ */
+SplineCurve1D
+CubicSplineInterp1D::operator()(std::vector<real> x,
+                                std::vector<real> f)
+{
+    // actual computation is handled by interpolate() method:
+    return interpolate(x, f);
+}
+
+
+/*
+ * Internal helper function for creating a knot vector from a vector of input 
+ * data. The knot vector is essentially a copy of the data vector with its 
+ * first and last element repeated four times.
  */
 std::vector<real> 
-CubicSplineInterp1D::prepareKnotVector(std::vector<real> &t)
+CubicSplineInterp1D::prepareKnotVector(std::vector<real> &x)
 {
     // initialise knot vector:
     std::vector<real> knotVector;
@@ -226,19 +174,19 @@ CubicSplineInterp1D::prepareKnotVector(std::vector<real> &t)
     // add repeats of first knot:
     for(int i = 0; i < degree_; i++)
     {
-        knotVector.push_back(t.front());
+        knotVector.push_back(x.front());
     }
 
     // copy support points:
-    for(int i = 0; i < t.size(); i++)
+    for(int i = 0; i < x.size(); i++)
     {
-        knotVector.push_back(t.at(i));
+        knotVector.push_back(x.at(i));
     }
 
     // add repeats of last knot:
     for(int i = 0; i < degree_; i++)
     {
-        knotVector.push_back(t.back());
+        knotVector.push_back(x.back());
     }
 
     // return knot vector:

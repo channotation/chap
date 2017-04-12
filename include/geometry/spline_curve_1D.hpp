@@ -28,6 +28,8 @@ class SplineCurve1D : public AbstractSplineCurve
 
         // public interfact for spline evaluation:
         real evaluate(real &evalPoint, eSplineEvalMethod method);
+        real operator()(real &evalPoint, eSplineEvalMethod method);
+
 
     private:
 

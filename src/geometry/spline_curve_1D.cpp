@@ -93,6 +93,17 @@ SplineCurve1D::evaluate(real &evalPoint, eSplineEvalMethod method)
 
 
 /*
+ * Evaluation interface conveniently defined as operator.
+ */
+real
+SplineCurve1D::operator()(real &evalPoint, eSplineEvalMethod method)
+{
+    // actual compuatation is handled by evaluate method:
+    return evaluate(evalPoint, method);
+}
+
+
+/*
  * Naive method for evaluating spline curve at given point that is based on
  * simply summing up all basis splines, i.e.
  *

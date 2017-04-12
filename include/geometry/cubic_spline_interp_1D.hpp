@@ -7,7 +7,7 @@
 
 
 /*
- *
+ * Functor class for performing cubic spline interpolation in one dimension.
  */
 class CubicSplineInterp1D
 {
@@ -18,8 +18,10 @@ class CubicSplineInterp1D
         ~CubicSplineInterp1D();
 
         // interpolation interface:
-        SplineCurve1D interpolate(std::vector<real> t,
-                                  std::vector<real> x);
+        SplineCurve1D interpolate(std::vector<real> x,
+                                  std::vector<real> f);
+        SplineCurve1D operator()(std::vector<real> x,
+                                 std::vector<real> f);
 
     private:
 
@@ -28,9 +30,7 @@ class CubicSplineInterp1D
 
         // internal functions:
         std::vector<real> prepareKnotVector(std::vector<real> &t);
-
 };
-
 
 #endif
 
