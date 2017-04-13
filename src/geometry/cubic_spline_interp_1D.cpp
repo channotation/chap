@@ -7,7 +7,7 @@
 
 
 /*
- * Constructor.
+ * Constructor. Sets default boundary conditions as Hermite.
  */
 CubicSplineInterp1D::CubicSplineInterp1D()
 {
@@ -40,7 +40,8 @@ CubicSplineInterp1D::~CubicSplineInterp1D()
  */
 SplineCurve1D
 CubicSplineInterp1D::interpolate(std::vector<real> &x,
-                                 std::vector<real> &f)
+                                 std::vector<real> &f,
+                                 eSplineInterpBoundaryCondition bc)
 {
     // sanity check:
     if( x.size() != f.size() )
@@ -49,6 +50,8 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
         std::abort();
     }
 
+    // set boundary condition:
+    bc_ = bc;
 
     // generate knot vector:
     std::vector<real> knotVector = prepareKnotVector(x);
@@ -69,24 +72,51 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     real mainDiag[nSys];
     real superDiag[nSys - 1];
 
+    // handle boundary conditions:
+    if( bc_ == eSplineInterpBoundaryHermite )
+    {
+        int firstOrderDeriv = 1;
+
+        // lower boundary:
+        mainDiag[0] = D(knotVector, degree_, 0, x.front(), firstOrderDeriv);
+        superDiag[0] = D(knotVector, degree_, 1, x.front(), firstOrderDeriv);
+ 
+        // higher boundary:
+        mainDiag[nSys - 1] = D(knotVector, degree_, nSys - 1, x.back(), firstOrderDeriv);
+        subDiag[nSys - 2] = D(knotVector, degree_, nSys - 2, x.back(), firstOrderDeriv);
+    }
+    else if( bc_ == eSplineInterpBoundaryNatural )
+    {
+        // TODO:
+        // implement this proberly
+
+        // lower boundary:
+        mainDiag[0] = 2.0;
+        superDiag[0] = 0.0;
+        
+        // higher boundary:
+        mainDiag[nSys - 1] = 2.0;
+        subDiag[nSys - 2] = 0.0;
+    }
+    else
+    {
+        std::cerr<<"ERROR: Only Hermite and Natural boundary conditions implemented!"<<std::endl;
+        std::abort();
+    }
+
     // assemble subdiagonal:
-    subDiag[nSys - 2] = D(knotVector, degree_, nSys - 2, x.back());
     for(int i = 0; i < nDat; i++)
     {
         subDiag[i] = B(knotVector, degree_, i, x.at(i));
     }
 
     // assemble main diagonal:
-    mainDiag[0] = D(knotVector, degree_, 0, x.front());
-    mainDiag[nSys - 1] = D(knotVector, degree_, nSys - 1, x.back());
     for(int i = 0; i < nDat; i++)
     {
         mainDiag[i + 1] = B(knotVector, degree_, i+1, x.at(i));
     }
 
-
     // assemble superdiagonal:
-    superDiag[0] = D(knotVector, degree_, 1, x.front());
     for(int i = 1; i < nSys - 1; i++)
     {
         superDiag[i] = B(knotVector, degree_, i + 1, x.at(i - 1));
@@ -102,13 +132,28 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     // initialise right hand side:
     real rhsVec[nSys * nRhs];
 
-    // estimate derivatives at endpoints via finite differences:
-//    rhsVec[0] = ( f.at(1) - f.at(0) ) / ( x.at(1) - x.at(0) );
-//    rhsVec[nSys - 1] = ( f.at(nDat - 1) - f.at(nDat - 2) ) / ( x.at(nDat - 1) - x.at(nDat - 2) );
+    // handle bondary conditions:
+    if( bc_ == eSplineInterpBoundaryHermite )
+    {
+        // lower boundary:
+        rhsVec[0] = estimateEndpointDeriv(x, f, eSplineInterpEndpointLo);
 
-    rhsVec[0] = estimateEndpointDeriv(x, f, eSplineInterpEndpointLo);
-    rhsVec[nSys - 1] = estimateEndpointDeriv(x, f, eSplineInterpEndpointHi);
+        // higher boundary:
+        rhsVec[nSys - 1] = estimateEndpointDeriv(x, f, eSplineInterpEndpointHi);
+    }
+    else if( bc_ == eSplineInterpBoundaryNatural )
+    {
+        // lower boundary:
+        rhsVec[0] = 0.0;
 
+        // higher boundary:
+        rhsVec[nSys - 1] = 0.0;
+    }   
+    else
+    {
+        std::cerr<<"ERROR: Only Hermite and Natural boudnary conditions are implemented!"<<std::endl;
+        std::abort();
+    }
 
     // assemble internal points:
     for(int i = 0; i < nDat; i++)
@@ -163,10 +208,11 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
  */
 SplineCurve1D
 CubicSplineInterp1D::operator()(std::vector<real> &x,
-                                std::vector<real> &f)
+                                std::vector<real> &f,
+                                eSplineInterpBoundaryCondition bc)
 {
     // actual computation is handled by interpolate() method:
-    return interpolate(x, f);
+    return interpolate(x, f, bc);
 }
 
 

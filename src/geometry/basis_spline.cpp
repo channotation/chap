@@ -189,35 +189,65 @@ real
 BasisSplineDerivative::evaluate(std::vector<real> &knotVector,
                                 int degree,
                                 int interval,
-                                real &evalPoint)
+                                real &evalPoint,
+                                unsigned int derivOrder)
 {
     // create basis spline functor:
     BasisSpline B;
-    
+        
     // initialise derivative as zero:
-    real deriv = 0.0;    
+    real deriv = 0.0;   
 
-    // calculate denominators:
-    real denomA = (knotVector.at(interval + degree) - knotVector.at(interval)); 
-    real denomB = (knotVector.at(interval + degree + 1) - knotVector.at(interval + 1));
-
-    // handle zero division:
-    if( std::abs(denomA) >= std::numeric_limits<real>::epsilon() )
+    // has recursion reached bottom (i.e. first derivative):
+    if( derivOrder == 1 )
     {
-        // calculate fist part in derivative sum:
-        deriv += B(knotVector, degree - 1, interval, evalPoint) / denomA;
+
+        // calculate denominators:
+        real denomA = (knotVector.at(interval + degree) - knotVector.at(interval)); 
+        real denomB = (knotVector.at(interval + degree + 1) - knotVector.at(interval + 1));
+
+        // handle zero division:
+        if( std::abs(denomA) >= std::numeric_limits<real>::epsilon() )
+        {
+            // calculate fist part in derivative sum:
+            deriv += B(knotVector, degree - 1, interval, evalPoint) / denomA;
+        }
+        if( std::abs(denomB) >= std::numeric_limits<real>::epsilon() )
+        {
+            // calculate second part in derivative sum:
+            deriv -= B(knotVector, degree - 1, interval + 1, evalPoint) / denomB;
+        }
+
+        // multiply with degree:
+        deriv *= degree;
+
+        // return derivative value:
+        return deriv;
     }
-    if( std::abs(denomB) >= std::numeric_limits<real>::epsilon() )
+    else
     {
-        // calculate second part in derivative sum:
-        deriv -= B(knotVector, degree - 1, interval + 1, evalPoint) / denomB;
+        // calculate denominators::
+        real denomA = knotVector.at(interval + degree) - knotVector.at(interval);
+        real denomB = knotVector.at(interval + degree + 1) - knotVector.at(interval + 1);
+
+        // handle zero division:
+        if( std::abs(denomA) >= std::numeric_limits<real>::epsilon() )
+        {
+            // calculate first part of derivative sum:
+            deriv += evaluate(knotVector, degree - 1, interval, evalPoint, derivOrder - 1) / denomA;
+        }
+        if( std::abs(denomB) >= std::numeric_limits<real>::epsilon() )
+        {
+            // calculate second part of derivative sum:
+            deriv -= evaluate(knotVector, degree - 1, interval + 1, evalPoint, derivOrder - 1) / denomB;
+        }
+
+        // multiply with degree:
+        deriv *= (degree);
+
+        // return derivative value:
+        return deriv;
     }
-
-    // multiply with degree:
-    deriv *= degree;
-
-    // return derivative value:
-    return deriv;
 }
 
 
@@ -228,9 +258,10 @@ real
 BasisSplineDerivative::operator()(std::vector<real> &knotVector,
                                   int degree,
                                   int interval,
-                                  real &evalPoint)
+                                  real &evalPoint,
+                                  unsigned int derivOrder)
 {
     // actual calculation is performed by evaluate() method:
-    return evaluate(knotVector, degree, interval, evalPoint);
+    return evaluate(knotVector, degree, interval, evalPoint, derivOrder);
 }
 

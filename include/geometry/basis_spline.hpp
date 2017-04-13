@@ -52,11 +52,13 @@ class BasisSplineDerivative
         real evaluate(std::vector<real> &knotVector,
                       int degree,
                       int interval,
-                      real &evalPoint);
+                      real &evalPoint,
+                      unsigned int derivOrder);
         real operator()(std::vector<real> &knotVector,
                         int degree,
                         int interval, 
-                        real &evalPoint);
+                        real &evalPoint,
+                        unsigned int derivOrder);
 };
 
 #endif

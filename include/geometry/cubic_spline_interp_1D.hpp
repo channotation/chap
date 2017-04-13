@@ -6,7 +6,10 @@
 #include "geometry/spline_curve_1D.hpp"
 
 
-enum eSplineInterpEndpoint {eSplineInterpEndpointLo, eSplineInterpEndpointHi};
+enum eSplineInterpBoundaryCondition {eSplineInterpBoundaryHermite, 
+                                     eSplineInterpBoundaryNatural};    
+enum eSplineInterpEndpoint {eSplineInterpEndpointLo, 
+                            eSplineInterpEndpointHi};
 enum eDerivEstimate {eDeriv};
 
 
@@ -23,17 +26,20 @@ class CubicSplineInterp1D
 
         // interpolation interface:
         SplineCurve1D interpolate(std::vector<real> &x,
-                                  std::vector<real> &f);
+                                  std::vector<real> &f,
+                                  eSplineInterpBoundaryCondition bc);
         SplineCurve1D operator()(std::vector<real> &x,
-                                 std::vector<real> &f);
+                                 std::vector<real> &f,
+                                 eSplineInterpBoundaryCondition bc);
 
     private:
 
         // member variables:
         const int degree_ = 3;
+        eSplineInterpBoundaryCondition bc_;
 
         // internal functions:
-        std::vector<real> prepareKnotVector(std::vector<real> &t);
+        std::vector<real> prepareKnotVector(std::vector<real> &x);
         real estimateEndpointDeriv(std::vector<real> &x,
                                    std::vector<real> &f,
                                    eSplineInterpEndpoint endpoint);

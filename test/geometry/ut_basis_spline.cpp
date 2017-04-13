@@ -192,10 +192,16 @@ TEST_F(BasisSplineTest, BasisSplineCubicTest)
 
 
 /*
- *
+ * Tests that the BasisSplineDerivative functor gives correct values for the 
+ * first derivative of a cubic spline. Reference values have been taken from 
+ * the deriv() function of the splines2 package of the R software. Threshold
+ * for floating point comparison is taken to be the machine epsilon here.
  */
-TEST_F(BasisSplineTest, BasisSplineDerivativeTest)
+TEST_F(BasisSplineTest, BasisSplineFirstDerivativeTest)
 {
+    // test first derivative here:
+    unsigned int derivOrder = 1;
+
     // test with cubic splines:
     int degree = 3;
 
@@ -235,7 +241,65 @@ TEST_F(BasisSplineTest, BasisSplineDerivativeTest)
         // loop ober knot intervals:
         for(int i = 0; i < nBasis; i++)
         {      
-            real d = dB(knots, degree, i, evalPoints_[j]);
+            real d = dB(knots, degree, i, evalPoints_[j], derivOrder);
+            ASSERT_NEAR(refValCubic[j*nBasis + i], d, std::numeric_limits<real>::epsilon());
+        }
+    }
+}
+
+
+/*
+ * Tests that the BasisSplineDerivative functor gives correct values for the 
+ * second derivative of a cubic spline. Reference values have been taken from 
+ * the deriv() function of the splines2 package of the R software. Threshold
+ * for floating point comparison is taken to be the machine epsilon here.
+ */
+
+TEST_F(BasisSplineTest, BasisSplineSecondDerivativeTest)
+{
+    // test first derivative here:
+    unsigned int derivOrder = 2;
+
+    // test with cubic splines:
+    int degree = 3;
+
+    // reference values:
+    std::vector<real> refValCubic = {0.48979592, -0.9183673,  0.42857143,  0.0000000,  0.0000000,  0.00000000, 0.0000000,
+                                     0.27988338, -0.3640671, -0.05867347,  0.1428571,  0.0000000,  0.00000000, 0.0000000,
+                                     0.00000000,  0.0000000,  1.33333333, -2.6666667,  1.3333333,  0.00000000, 0.0000000,
+                                     0.00000000,  0.0000000,  0.00000000,  0.3333333, -0.7083333,  0.37500000, 0.0000000,
+                                     0.06997085,  0.1902332, -0.54591837,  0.2857143,  0.0000000,  0.00000000, 0.0000000,
+                                     0.00000000,  0.0000000,  0.00000000,  0.2462654, -0.4113694,  0.03716744, 0.1279366,
+                                     0.00000000,  0.0000000,  0.00000000,  0.0000000,  0.4285714, -0.91836735, 0.4897959};
+
+    // create basis spline derivative functor:
+    BasisSplineDerivative dB;
+
+    // append and prepend the apprpropriate number of knots:
+    std::vector<real> knots;
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.front());
+    }
+    for(unsigned int i = 0; i < knotVector_.size(); i++)
+    {
+        knots.push_back(knotVector_[i]);
+    }
+    for(int i = 0; i < degree; i++)
+    {
+        knots.push_back(knotVector_.back());
+    }
+
+    // size of basis:
+    int nBasis = knotVector_.size() + degree - 1;
+
+    // loop over evalution points:    
+    for(unsigned int j = 0; j < evalPoints_.size(); j++)
+    {
+        // loop ober knot intervals:
+        for(int i = 0; i < nBasis; i++)
+        {      
+            real d = dB(knots, degree, i, evalPoints_[j], derivOrder);
             ASSERT_NEAR(refValCubic[j*nBasis + i], d, std::numeric_limits<real>::epsilon());
         }
     }
