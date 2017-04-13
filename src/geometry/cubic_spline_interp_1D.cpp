@@ -140,10 +140,16 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     if( bc_ == eSplineInterpBoundaryHermite )
     {
         // lower boundary:
-        rhsVec[0] = estimateEndpointDeriv(x, f, eSplineInterpEndpointLo);
+        rhsVec[0] = estimateEndpointDeriv(x, 
+                                          f,
+                                          eSplineInterpEndpointLo,
+                                          eSplineInterpDerivParabolic);
 
         // higher boundary:
-        rhsVec[nSys - 1] = estimateEndpointDeriv(x, f, eSplineInterpEndpointHi);
+        rhsVec[nSys - 1] = estimateEndpointDeriv(x, 
+                                                 f, 
+                                                 eSplineInterpEndpointHi,
+                                                 eSplineInterpDerivParabolic);
     }
     else if( bc_ == eSplineInterpBoundaryNatural )
     {
@@ -264,33 +270,65 @@ CubicSplineInterp1D::prepareKnotVector(std::vector<real> &x)
 real
 CubicSplineInterp1D::estimateEndpointDeriv(std::vector<real> &x,
                                            std::vector<real> &f,
-                                           eSplineInterpEndpoint endpoint)
+                                           eSplineInterpEndpoint endpoint,
+                                           eSplineInterpDerivEstimate method)
 {
     // get overall number of data points:
     unsigned int nDat = x.size();
 
-    // declare helper variables for local points:
-    real fHi;
-    real fLo;
-    real xHi;
-    real xLo;
-
-    // estimate derivative at lower or upper endpoint?
-    if( endpoint == eSplineInterpEndpointLo )
-    {  
-       fHi = f.at(1);
-       xHi = x.at(1);
-       fLo = f.at(0);
-       xLo = f.at(0);
-    }
-    else if( endpoint == eSplineInterpEndpointHi )
+    // which finite difference should be used?
+    if( method == eSplineInterpDerivParabolic )
     {
-       fHi = f.at(nDat - 1);
-       xHi = x.at(nDat - 1);
-       fLo = f.at(nDat - 2);
-       xLo = f.at(nDat - 2);        
-    }
+        // declare helper variables for local points:
+        real xDeltaLo;
+        real xDeltaHi;
+        real fDeltaLo;
+        real fDeltaHi;
 
-    //
-    return (fHi - fLo)/(xHi - xLo);
+        // estimate derivative at lower or higher endpoint?
+        if( endpoint == eSplineInterpEndpointLo )
+        {
+            xDeltaLo = x.at(0) - x.at(2);
+            xDeltaHi = x.at(1) - x.at(0);
+            fDeltaLo = (f.at(0) - f.at(2))/xDeltaLo;
+            fDeltaHi = (f.at(1) - f.at(0))/xDeltaHi;
+        }
+        else if( endpoint == eSplineInterpEndpointHi )
+        {
+            xDeltaLo = x.at(nDat - 1) - x.at(nDat - 2); 
+            xDeltaHi = x.at(nDat - 3) - x.at(nDat - 1);
+            fDeltaLo = (f.at(nDat - 1) - f.at(nDat - 2))/xDeltaLo;
+            fDeltaHi = (f.at(nDat - 3) - f.at(nDat - 1))/xDeltaHi;
+        }
+
+        // parabolic estimate of endpoint derivative:
+        return (xDeltaLo*fDeltaHi + xDeltaHi*fDeltaLo)/(xDeltaLo + xDeltaHi);
+    }
+    else 
+    {
+        // declare helper variables for local points:
+        real fHi;
+        real fLo;
+        real xHi;
+        real xLo;
+
+        // estimate derivative at lower or upper endpoint?
+        if( endpoint == eSplineInterpEndpointLo )
+        {  
+           fHi = f.at(1);
+           xHi = x.at(1);
+           fLo = f.at(0);
+           xLo = f.at(0);
+        }
+        else if( endpoint == eSplineInterpEndpointHi )
+        {
+           fHi = f.at(nDat - 1);
+           xHi = x.at(nDat - 1);
+           fLo = f.at(nDat - 2);
+           xLo = f.at(nDat - 2);        
+        }
+
+        // simple estimate of endpoint derivative:
+        return (fHi - fLo)/(xHi - xLo);
+    }
 }

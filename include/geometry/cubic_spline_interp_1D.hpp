@@ -10,7 +10,8 @@ enum eSplineInterpBoundaryCondition {eSplineInterpBoundaryHermite,
                                      eSplineInterpBoundaryNatural};    
 enum eSplineInterpEndpoint {eSplineInterpEndpointLo, 
                             eSplineInterpEndpointHi};
-enum eDerivEstimate {eDeriv};
+enum eSplineInterpDerivEstimate {eSplineInterpDerivSimple,
+                                 eSplineInterpDerivParabolic};
 
 
 /*
@@ -42,7 +43,8 @@ class CubicSplineInterp1D
         std::vector<real> prepareKnotVector(std::vector<real> &x);
         real estimateEndpointDeriv(std::vector<real> &x,
                                    std::vector<real> &f,
-                                   eSplineInterpEndpoint endpoint);
+                                   eSplineInterpEndpoint endpoint,
+                                   eSplineInterpDerivEstimate method);
 };
 
 #endif
