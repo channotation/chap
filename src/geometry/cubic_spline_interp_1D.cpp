@@ -87,20 +87,24 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     }
     else if( bc_ == eSplineInterpBoundaryNatural )
     {
+        std::cerr<<"ERROR: Only Hermite boundary conditions implemented!"<<std::endl;
+        std::abort();
+
         // TODO:
-        // implement this proberly
+        // implement this properly
+        int scndOrderDeriv = 2;
 
         // lower boundary:
-        mainDiag[0] = 2.0;
-        superDiag[0] = 0.0;
+        mainDiag[0] = D(knotVector, degree_, 0, x.front(), scndOrderDeriv);
+        superDiag[0] = D(knotVector, degree_, 1, x.front(), scndOrderDeriv);
         
         // higher boundary:
-        mainDiag[nSys - 1] = 2.0;
-        subDiag[nSys - 2] = 0.0;
+        mainDiag[nSys - 1] = D(knotVector, degree_, nSys - 1, x.back(), scndOrderDeriv);
+        subDiag[nSys - 2] = D(knotVector, degree_, nSys - 2, x.back(), scndOrderDeriv);
     }
     else
     {
-        std::cerr<<"ERROR: Only Hermite and Natural boundary conditions implemented!"<<std::endl;
+        std::cerr<<"ERROR: Only Hermite boundary conditions implemented!"<<std::endl;
         std::abort();
     }
 
@@ -143,11 +147,15 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     }
     else if( bc_ == eSplineInterpBoundaryNatural )
     {
+        // TODO: implement this
+        std::cerr<<"ERROR: Only Hermite boundary conditions implemented!"<<std::endl;
+        std::abort();
+ 
         // lower boundary:
         rhsVec[0] = 0.0;
 
         // higher boundary:
-        rhsVec[nSys - 1] = 0.0;
+        rhsVec[nSys - 1] = 0.0; 
     }   
     else
     {
