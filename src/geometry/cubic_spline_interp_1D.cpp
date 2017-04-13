@@ -39,13 +39,19 @@ CubicSplineInterp1D::~CubicSplineInterp1D()
  * TODO: Implement natural boundary conditions.
  */
 SplineCurve1D
-CubicSplineInterp1D::interpolate(std::vector<real> x,
-                                 std::vector<real> f)
+CubicSplineInterp1D::interpolate(std::vector<real> &x,
+                                 std::vector<real> &f)
 {
-    
+    // sanity check:
+    if( x.size() != f.size() )
+    {
+        std::cerr<<"ERROR: x and f vectors must be of same size!"<<std::endl;
+        std::abort();
+    }
+
+
     // generate knot vector:
     std::vector<real> knotVector = prepareKnotVector(x);
-
 
     // Assmble Left Hand Side Matrix:
     //-------------------------------------------------------------------------
@@ -97,8 +103,12 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
     real rhsVec[nSys * nRhs];
 
     // estimate derivatives at endpoints via finite differences:
-    rhsVec[0] = ( f.at(1) - f.at(0) ) / ( x.at(1) - x.at(0) );
-    rhsVec[nSys - 1] = ( f.at(nDat - 1) - f.at(nDat - 2) ) / ( x.at(nDat - 1) - x.at(nDat - 2) );
+//    rhsVec[0] = ( f.at(1) - f.at(0) ) / ( x.at(1) - x.at(0) );
+//    rhsVec[nSys - 1] = ( f.at(nDat - 1) - f.at(nDat - 2) ) / ( x.at(nDat - 1) - x.at(nDat - 2) );
+
+    rhsVec[0] = estimateEndpointDeriv(x, f, eSplineInterpEndpointLo);
+    rhsVec[nSys - 1] = estimateEndpointDeriv(x, f, eSplineInterpEndpointHi);
+
 
     // assemble internal points:
     for(int i = 0; i < nDat; i++)
@@ -152,8 +162,8 @@ CubicSplineInterp1D::interpolate(std::vector<real> x,
  * Interpolation interface conveniently defined as operator.
  */
 SplineCurve1D
-CubicSplineInterp1D::operator()(std::vector<real> x,
-                                std::vector<real> f)
+CubicSplineInterp1D::operator()(std::vector<real> &x,
+                                std::vector<real> &f)
 {
     // actual computation is handled by interpolate() method:
     return interpolate(x, f);
@@ -193,3 +203,40 @@ CubicSplineInterp1D::prepareKnotVector(std::vector<real> &x)
     return knotVector;
 }
 
+
+/*
+ *
+ */
+real
+CubicSplineInterp1D::estimateEndpointDeriv(std::vector<real> &x,
+                                           std::vector<real> &f,
+                                           eSplineInterpEndpoint endpoint)
+{
+    // get overall number of data points:
+    unsigned int nDat = x.size();
+
+    // declare helper variables for local points:
+    real fHi;
+    real fLo;
+    real xHi;
+    real xLo;
+
+    // estimate derivative at lower or upper endpoint?
+    if( endpoint == eSplineInterpEndpointLo )
+    {  
+       fHi = f.at(1);
+       xHi = x.at(1);
+       fLo = f.at(0);
+       xLo = f.at(0);
+    }
+    else if( endpoint == eSplineInterpEndpointHi )
+    {
+       fHi = f.at(nDat - 1);
+       xHi = x.at(nDat - 1);
+       fLo = f.at(nDat - 2);
+       xLo = f.at(nDat - 2);        
+    }
+
+    //
+    return (fHi - fLo)/(xHi - xLo);
+}
