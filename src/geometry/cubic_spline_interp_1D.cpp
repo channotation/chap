@@ -265,7 +265,9 @@ CubicSplineInterp1D::prepareKnotVector(std::vector<real> &x)
 
 
 /*
- *
+ * This function estimates the derivatives (of the data) at the endpoints of
+ * the given data range. Estimation can be done with a simple finite difference
+ * or via a parabolic fit with a ghost node assumption.
  */
 real
 CubicSplineInterp1D::estimateEndpointDeriv(std::vector<real> &x,
