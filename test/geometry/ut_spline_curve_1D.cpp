@@ -254,4 +254,3 @@ TEST_F(SplineCurve1DTest, SplineCurve1DExtrapolationTest)
                 eps); 
 }
 
-
