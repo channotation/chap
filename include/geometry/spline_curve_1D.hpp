@@ -27,8 +27,12 @@ class SplineCurve1D : public AbstractSplineCurve
         ~SplineCurve1D();
 
         // public interfact for spline evaluation:
-        real evaluate(real &evalPoint, eSplineEvalMethod method);
-        real operator()(real &evalPoint, eSplineEvalMethod method);
+        real evaluate(real &evalPoint, 
+                      unsigned int derivOrder, 
+                      eSplineEvalMethod method);
+        real operator()(real &evalPoint, 
+                        unsigned int derivOrder,
+                        eSplineEvalMethod method);
 
 
     private:
@@ -40,6 +44,7 @@ class SplineCurve1D : public AbstractSplineCurve
         // internal drivers for evaluation method:
         real evaluateNaive(real &evalPoint);
         real evaluateDeBoor(real &evalPoint);
+        real evaluateDeriv(real &evalPoint, unsigned int order);
 };
 
 

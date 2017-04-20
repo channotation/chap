@@ -57,34 +57,51 @@ SplineCurve1D::~SplineCurve1D()
  * actual evaluation is handled by different functions and the method argument
  * specifies which of these (a naive sum over all basis splines or de Boor's
  * recursive algorithm) should be used.
+ *
+ * The function can also evaluate the spline curve's derivative at a point and
+ * the derivOrder argument is used to specify which order of the derivative 
+ * should be evaluated. If deriOrder != 0 (the zeroth derivative is the 
+ * function itself), then the method argument is ignored.
  */
 real
-SplineCurve1D::evaluate(real &evalPoint, eSplineEvalMethod method)
+SplineCurve1D::evaluate(real &evalPoint, 
+                        unsigned int derivOrder, 
+                        eSplineEvalMethod method)
 {
     // introduce return variable:
     real value = 0.0;
 
     // check for extrapolation:
-    if( evalPoint < knotVector_.front() || evalPoint > knotVector_.back() )
+    if( evalPoint < knotVector_.front() )
     {
-        std::cerr<<"ERROR: Evaluation lies outside interpolation interval!"<<std::endl;
-        std::cerr<<"Extrapolation is not yet implemented."<<std::endl;
-        std::abort();
+        return 0;
+    }
+    if( evalPoint > knotVector_.back() )
+    {
+        return 0;
     }
 
-    // which method should be used?
-    if( method == eSplineEvalNaive )
+    // evaluation of spline function or its derivatives?
+    if( derivOrder == 0 )
     {
-        value = evaluateNaive(evalPoint);        
-    }
-    else if( method == eSplineEvalDeBoor )
-    {
-        value = evaluateDeBoor(evalPoint);
+        // which method should be used?
+        if( method == eSplineEvalNaive )
+        {
+            value = evaluateNaive(evalPoint);        
+        }
+        else if( method == eSplineEvalDeBoor )
+        {
+            value = evaluateDeBoor(evalPoint);
+        }
+        else
+        {
+            std::cerr<<"ERROR: Requested spline evaluation method not available!"<<std::endl;
+            std::abort();
+        }
     }
     else
     {
-        std::cerr<<"ERROR: Requested spline evaluation method not available!"<<std::endl;
-        std::abort();
+        value = evaluateDeriv(evalPoint, derivOrder);
     }
 
     // return evaluation result:
@@ -96,10 +113,12 @@ SplineCurve1D::evaluate(real &evalPoint, eSplineEvalMethod method)
  * Evaluation interface conveniently defined as operator.
  */
 real
-SplineCurve1D::operator()(real &evalPoint, eSplineEvalMethod method)
+SplineCurve1D::operator()(real &evalPoint, 
+                          unsigned int derivOrder, 
+                          eSplineEvalMethod method)
 {
     // actual compuatation is handled by evaluate method:
-    return evaluate(evalPoint, method);
+    return evaluate(evalPoint, derivOrder, method);
 }
 
 
@@ -144,5 +163,27 @@ SplineCurve1D::evaluateDeBoor(real &evalPoint)
 
     // return result of de Boor recursion:
     return deBoorRecursion(degree_, idx, evalPoint, ctrlPoints_);
+}
+
+
+/*
+ * This method evaluates the spline curve's derivative of a given order by 
+ * simply calculating the sum of the basis spline derivatives weighted by the
+ * control points.
+ */
+real 
+SplineCurve1D::evaluateDeriv(real &evalPoint, unsigned int derivOrder)
+{
+    // initialise derivative value as zero:
+    real value = 0.0;
+
+    // sum derivative value over all control points:
+    for(unsigned int i = 0; i < ctrlPoints_.size(); i++)
+    {
+        value += ctrlPoints_[i] * D_(knotVector_, degree_, i, evalPoint, derivOrder);
+    }
+
+    // return derivative value:
+    return value;
 }
 

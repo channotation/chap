@@ -30,8 +30,9 @@ class AbstractSplineCurve
         int nKnots_;
         std::vector<real> knotVector_;
 
-        // basis spline functor:
+        // basis spline (derivative) functor:
         BasisSpline B_;
+        BasisSplineDerivative D_;
 
         // internal utility functions:
         int findInterval(real &evalPoint);
