@@ -1,5 +1,5 @@
-#ifndef SPLINE_CURVE_1D_HPP
-#define SPLINE_CURVE_1D_HPP
+#ifndef SPLINE_CURVE_3D_HPP
+#define SPLINE_CURVE_3D_HPP
 
 #include <vector>
 
