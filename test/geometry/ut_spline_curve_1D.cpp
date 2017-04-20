@@ -41,7 +41,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DFindIntervalTest)
     std::vector<int> refIndices = {0, 0, 1, 3, 3, 6, 6};
 
     // loop over evaluation points:
-    for(int i = 0; i < evalPoints.size(); i++)
+    for(unsigned int i = 0; i < evalPoints.size(); i++)
     {
         // check that correct interval is found:
         ASSERT_EQ(refIndices[i], SplC.findInterval(evalPoints[i]));
@@ -72,7 +72,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
     // create appropriate knot vector for linear interpolation:
     std::vector<real> knots;
     knots.push_back(x.front());
-    for(int i = 0; i < x.size(); i++)
+    for(unsigned int i = 0; i < x.size(); i++)
     {
         knots.push_back(x[i]);
     }
@@ -82,7 +82,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
     SplineCurve1D SplC(degree, knots, y);
 
     // check if spline is evaluates to control points at original data points:
-    for(int i = 0; i < x.size(); i++)
+    for(unsigned int i = 0; i < x.size(); i++)
     {
         ASSERT_NEAR(y[i],
                     SplC.evaluate(x[i], derivOrder, eSplineEvalNaive), 
@@ -90,7 +90,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
     }
 
     // check if spline interpolates linearly at interval midpoints:
-    for(int i = 0; i < x.size() - 1; i++)
+    for(unsigned int i = 0; i < x.size() - 1; i++)
     {
         real midpoint = (x[i] + x[i+1])/2.0; 
         ASSERT_NEAR((y[i] + y[i+1])/2.0, 
@@ -123,7 +123,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
     // create appropriate knot vector for linear interpolation:
     std::vector<real> knots;
     knots.push_back(x.front());
-    for(int i = 0; i < x.size(); i++)
+    for(unsigned int i = 0; i < x.size(); i++)
     {
         knots.push_back(x[i]);
     }
@@ -133,7 +133,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
     SplineCurve1D SplC(degree, knots, y);
 
     // check if spline is evaluates to control points at original data points:
-    for(int i = 0; i < x.size(); i++)
+    for(unsigned int i = 0; i < x.size(); i++)
     {
         ASSERT_NEAR(y[i],
                     SplC.evaluate(x[i], derivOrder, eSplineEvalDeBoor), 
@@ -141,7 +141,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
     }
 
     // check if spline interpolates linearly at interval midpoints:
-    for(int i = 0; i < x.size() - 1; i++)
+    for(unsigned int i = 0; i < x.size() - 1; i++)
     {
         real midpoint = (x[i] + x[i+1])/2.0; 
         ASSERT_NEAR((y[i] + y[i+1])/2.0, 
@@ -162,10 +162,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
 
     // linear spline:
     int degree = 1;
-
-    // evaluate spline curve itself:
-    unsigned int derivOrder = 0;
-
+    
     // define data points for linear relation:
     std::vector<real> x = {-2.0, -1.0, 0.0,  1.0,  2.0};
     std::vector<real> y = { 4.0,  2.0, 0.0, -2.0, -4.0};
@@ -173,7 +170,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
     // create appropriate knot vector for linear interpolation:
     std::vector<real> knots;
     knots.push_back(x.front());
-    for(int i = 0; i < x.size(); i++)
+    for(unsigned int i = 0; i < x.size(); i++)
     {
         knots.push_back(x[i]);
     }
@@ -183,7 +180,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
     SplineCurve1D SplC(degree, knots, y);
 
     // check if spline is evaluates to control points at original data points:
-    for(int i = 0; i < x.size(); i++)
+    for(unsigned int i = 0; i < x.size(); i++)
     {
         real frstDeriv = SplC.evaluate(x[i], 1, eSplineEvalDeBoor);
         real scndDeriv = SplC.evaluate(x[i], 2, eSplineEvalDeBoor);
@@ -192,7 +189,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
     }
 
     // check evaluation ad interval midpoints:
-    for(int i = 0; i < x.size() - 1; i++)
+    for(unsigned int i = 0; i < x.size() - 1; i++)
     {
         real midpoint = (x[i] + x[i+1])/2.0; 
         real frstDeriv = SplC.evaluate(midpoint, 1, eSplineEvalDeBoor);
@@ -201,4 +198,60 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
         ASSERT_NEAR(0.0, scndDeriv, eps);
     }
 }
+
+
+/*
+ * Test for evaluation of spline outside the knot vector range. In this case, 
+ * linear extrapolation is used and this is checked for the curve value as well
+ * as its first and second derivative.
+ */
+TEST_F(SplineCurve1DTest, SplineCurve1DExtrapolationTest)
+{
+    // floating point comparison threshold:
+    real eps = std::numeric_limits<real>::epsilon();
+
+    // linear spline:
+    int degree = 1;
+    
+    // define data points for linear relation:
+    std::vector<real> x = {-2.0, -1.0, 0.0,  1.0,  2.0};
+    std::vector<real> y = { 4.0,  2.0, 0.0, -2.0, -4.0};
+
+    // create appropriate knot vector for linear interpolation:
+    std::vector<real> knots;
+    knots.push_back(x.front());
+    for(unsigned int i = 0; i < x.size(); i++)
+    {
+        knots.push_back(x[i]);
+    }
+    knots.push_back(x.back());
+
+    // create corresponding spline curve:
+    SplineCurve1D SplC(degree, knots, y);
+
+    // check evaluation below data range:
+    real evalPoint = -4.0;
+    ASSERT_NEAR(8.0,
+                SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor),
+                eps);
+    ASSERT_NEAR(-2.0,
+                SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor),
+                eps);
+    ASSERT_NEAR(0.0,
+                SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor),
+                eps);
+
+    // check evaluation above data range:
+    evalPoint = 4.0;
+    ASSERT_NEAR(-8.0,
+                SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor),
+                eps);
+    ASSERT_NEAR(-2.0,
+                SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor),
+                eps);
+    ASSERT_NEAR(0.0,
+                SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor),
+                eps); 
+}
+
 

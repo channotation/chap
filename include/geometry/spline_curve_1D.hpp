@@ -45,6 +45,9 @@ class SplineCurve1D : public AbstractSplineCurve
         real evaluateNaive(real &evalPoint);
         real evaluateDeBoor(real &evalPoint);
         real evaluateDeriv(real &evalPoint, unsigned int order);
+        
+        // internal drivers for extrapolation method:
+        real linearExtrap(real &evalPoint, real &boundary, unsigned int derivOrder);
 };
 
 

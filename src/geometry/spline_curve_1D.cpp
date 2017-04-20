@@ -74,11 +74,11 @@ SplineCurve1D::evaluate(real &evalPoint,
     // check for extrapolation:
     if( evalPoint < knotVector_.front() )
     {
-        return 0;
+        return linearExtrap(evalPoint, knotVector_.front(), derivOrder);
     }
     if( evalPoint > knotVector_.back() )
     {
-        return 0;
+        return linearExtrap(evalPoint, knotVector_.back(), derivOrder);
     }
 
     // evaluation of spline function or its derivatives?
@@ -185,5 +185,35 @@ SplineCurve1D::evaluateDeriv(real &evalPoint, unsigned int derivOrder)
 
     // return derivative value:
     return value;
+}
+
+
+/*
+ * This method provides linear extrapolation for evaluation points outside the
+ * knot vector range. 
+ */
+real
+SplineCurve1D::linearExtrap(real &evalPoint, real &boundary, unsigned int derivOrder)
+{
+    // evaluate curve or derivative?
+    if( derivOrder == 0 )
+    {
+        // calculate offset and slope:
+        real offset = evaluate(boundary, 0, eSplineEvalDeBoor);
+        real slope = evaluate(boundary, 1, eSplineEvalDeBoor);
+
+        // return linearly extrapolated value:
+        return offset + slope*(evalPoint - boundary);
+    }
+    else if( derivOrder == 1 )
+    {
+        // simply return endpoint slope:
+        return evaluate(boundary, 1, eSplineEvalDeBoor);
+    }
+    else
+    {
+        // for linear extrapolation, higher order derivative is always zero:
+        return 0.0;
+    }
 }
 
