@@ -8,7 +8,7 @@
 
 
 /*
- * Test fucture for the one dimensional spline curve.
+ * Test fixture for the one dimensional spline curve.
  */
 class SplineCurve1DTest : public ::testing::Test
 {

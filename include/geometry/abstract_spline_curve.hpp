@@ -18,10 +18,7 @@ enum eSplineEvalMethod {eSplineEvalNaive = 901, eSplineEvalDeBoor = 902};
  *
  */
 class AbstractSplineCurve
-{
-    public:
-
-  
+{ 
     protected:
 
         // internal variables:
@@ -40,6 +37,25 @@ class AbstractSplineCurve
                              int i, 
                              real &evalPoint, 
                              const std::vector<real> &ctrlCoefs);
+
+        // internal drivers for evaluation method:
+        real evaluateSplineFun(real &evalPoint,
+                               const std::vector<real> &ctrlCoefs,
+                               unsigned int derivOrder, 
+                               eSplineEvalMethod method);
+        real evaluateNaive(real &evalPoint,
+                           const std::vector<real> &ctrlCoefs);
+        real evaluateDeBoor(real &evalPoint,
+                            const std::vector<real> &ctrlCoefs);
+        real evaluateDeriv(real &evalPoint,
+                           const std::vector<real> &ctrlCoefs, 
+                           unsigned int order);
+        
+        // internal drivers for extrapolation method:
+        real linearExtrap(real &evalPoint,
+                          const std::vector<real> ctrlPoints,
+                          real &boundary, 
+                          unsigned int derivOrder);
 };
 
 

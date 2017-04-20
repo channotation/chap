@@ -34,20 +34,10 @@ class SplineCurve1D : public AbstractSplineCurve
                         unsigned int derivOrder,
                         eSplineEvalMethod method);
 
-
     private:
 
         // internal variables:
         std::vector<real> ctrlPoints_;
-
-
-        // internal drivers for evaluation method:
-        real evaluateNaive(real &evalPoint);
-        real evaluateDeBoor(real &evalPoint);
-        real evaluateDeriv(real &evalPoint, unsigned int order);
-        
-        // internal drivers for extrapolation method:
-        real linearExtrap(real &evalPoint, real &boundary, unsigned int derivOrder);
 };
 
 
