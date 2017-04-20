@@ -3,21 +3,14 @@
 
 #include <vector>
 
+#include "geometry/abstract_cubic_spline_interp.hpp"
 #include "geometry/spline_curve_1D.hpp"
-
-
-enum eSplineInterpBoundaryCondition {eSplineInterpBoundaryHermite, 
-                                     eSplineInterpBoundaryNatural};    
-enum eSplineInterpEndpoint {eSplineInterpEndpointLo, 
-                            eSplineInterpEndpointHi};
-enum eSplineInterpDerivEstimate {eSplineInterpDerivSimple,
-                                 eSplineInterpDerivParabolic};
 
 
 /*
  * Functor class for performing cubic spline interpolation in one dimension.
  */
-class CubicSplineInterp1D
+class CubicSplineInterp1D : public AbstractCubicSplineInterp
 {
     public:
         
@@ -32,19 +25,6 @@ class CubicSplineInterp1D
         SplineCurve1D operator()(std::vector<real> &x,
                                  std::vector<real> &f,
                                  eSplineInterpBoundaryCondition bc);
-
-    private:
-
-        // member variables:
-        const int degree_ = 3;
-        eSplineInterpBoundaryCondition bc_;
-
-        // internal functions:
-        std::vector<real> prepareKnotVector(std::vector<real> &x);
-        real estimateEndpointDeriv(std::vector<real> &x,
-                                   std::vector<real> &f,
-                                   eSplineInterpEndpoint endpoint,
-                                   eSplineInterpDerivEstimate method);
 };
 
 #endif
