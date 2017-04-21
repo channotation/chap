@@ -31,6 +31,10 @@ class SplineCurve3D : public AbstractSplineCurve
         gmx::RVec operator()(real &evalPoint,
                              unsigned int derivOrder,
                              eSplineEvalMethod method);
+
+        // calculate properties of curve:
+        real length(real &lo, real &hi, const real &absTol);
+        real length(const real &absTol);
         
     private:
 

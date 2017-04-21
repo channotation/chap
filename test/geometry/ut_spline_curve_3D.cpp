@@ -279,3 +279,48 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
     ASSERT_NEAR(0.0, scndDeriv[2], eps); 
 }
 
+
+/*
+ * Checks curve length calculation on linear curve:
+ */
+TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
+{
+    // floating point comparison threshold:
+    real eps = 1e-3;
+
+    // linear spline:
+    int degree = 1;
+
+    // define data points for linear relation:
+    std::vector<real> t = {-2.0, -1.0, 0.0, 1.0, 2.0};
+    std::vector<gmx::RVec> f = {gmx::RVec(-2.0,  2.0,  2.0),
+                                gmx::RVec(-1.0,  1.0,  2.5),
+                                gmx::RVec( 0.0,  0.0,  3.0),
+                                gmx::RVec( 1.0, -1.0,  3.5),
+                                gmx::RVec( 2.0, -2.0,  4.0)};
+
+    // create appropriate knot vector for linear interpolation:
+    std::vector<real> knots;
+    knots.push_back(t.front());
+    for(unsigned int i = 0; i < t.size(); i++)
+    {
+        knots.push_back(t[i]);
+    }
+    knots.push_back(t.back());
+    
+    // create corresponding spline curve:
+    SplineCurve3D SplC(degree, knots, f);
+
+    // calculate endpoint distance:
+    real dX = std::abs(f.front()[0] - f.back()[0]);
+    real dY = std::abs(f.front()[1] - f.back()[1]);
+    real dZ = std::abs(f.front()[2] - f.back()[2]);
+    real trueLength = std::sqrt(dX*dX + dY*dY + dZ*dZ);
+
+    // calculate curve length internally:
+    real length = SplC.length(eps);
+
+    // both should be equal for linear curve:
+    ASSERT_NEAR(trueLength, length, eps);
+}
+
