@@ -1,7 +1,9 @@
 #include <iostream>
+#include <iomanip>
 #include <limits>
 
 #include "geometry/spline_curve_3D.hpp"
+#include "geometry/cubic_spline_interp_3D.hpp"
 
 
 /*
@@ -99,8 +101,115 @@ SplineCurve3D::operator()(real &evalPoint,
 
 
 /*
+ * Change the internal representation of the curve such that it is 
+ * parameterised in terms of arc length.
+ */
+void
+SplineCurve3D::arcLengthParam()
+{
+    real absTol = 1e-2;
+    int maxIter = 100;
+
+
+    // calculate length of curve:
+    real curveLength = this -> length(absTol);
+
+    // number of uniformly spaced arc length parameters:
+    int nSupport = nCtrlPoints_;
+
+    // step length for uniform arc length parameterisation:
+    real arcLengthStep = curveLength/(nSupport - 1);
+
+    // vectors to hold data for lookup table:
+    std::vector<real> arcParams;
+    std::vector<gmx::RVec> arcPoints;
+    std::vector<real> oldParams;
+
+    // helper variables for temporary values:
+    real prevArcParam = 0.0;
+    real prevOldParam = knotVector_.front();
+
+    // build lookup table:
+    for(unsigned int i = 0; i < nSupport; i++)
+    {
+        // calculate uniformly spaced arc paramater points:
+        real arcParam = i*arcLengthStep;
+        
+        // initialise bisection interval:
+        real lo = prevOldParam;
+        real hi = knotVector_.back();
+        real mi = (lo + hi)/2.0;
+
+        // find corresponding parameter value of old parameterisation:
+        int iter = 0;
+        while( iter < maxIter )
+        {
+            // calculate length on current interval:
+            real miLength = length(prevOldParam, mi, 1e-3);
+
+            // calculate error:
+            real signedError = miLength - arcParam + prevArcParam;
+            real error = std::abs(signedError);
+
+            std::cout.precision(5); 
+            std::cout<<"iter = "<<iter<<"  "
+                     <<"arcParam = "<<arcParam<<"  "
+                     <<"lo = "<<lo<<"  "
+                     <<"hi = "<<hi<<"  "
+                     <<"mi = "<<mi<<"  "
+                     <<"miLength = "<<miLength<<"  "
+                     <<"signedErr = "<<signedError<<"  "
+                     <<"prevOldParam = "<<prevOldParam<<"  "
+                     <<std::endl;
+            
+
+            // error tolerance reached?
+            if( error < absTol )
+            {
+                break;
+            }
+
+            // update bisection interval:
+            if( signedError < 0 )
+            {
+                lo = mi;
+            }
+            else
+            {
+                hi = mi;
+            }
+            mi = (lo + hi)/2.0;
+
+            // increment loop counter:
+            iter++;
+        }
+
+        // update 'previous iteration' values:
+        prevArcParam = arcParam;
+        prevOldParam = mi;
+
+        // add values to lookup table:
+        arcParams.push_back(arcParam);
+        oldParams.push_back(mi);
+
+        // evaluate spline curve at uniform arc length points:
+        arcPoints.push_back(gmx::RVec(evaluate(mi, 0, eSplineEvalDeBoor)));
+    }
+
+    // interpolate between points uniformly spaced wrt arc length:
+    CubicSplineInterp3D Interp;
+
+    // TODO: add method to interpolation class that allows specifying 
+    // parameterisation explictly!
+   
+}
+
+
+/*
  * Calculates the length along the arc of the curve between the two parameter
  * values a and b.
+ *
+ * TODO: might need a faster algorithm here?
  */
 real
 SplineCurve3D::length(real &lo, real &hi, const real &absTol)
@@ -114,6 +223,7 @@ SplineCurve3D::length(real &lo, real &hi, const real &absTol)
     real error = 100.0;
 
     // iteratively calculate chord length until error is sufficiently small:
+    int i = 0;
     while( error > absTol )
     {
         // reset chord length:
@@ -160,7 +270,7 @@ SplineCurve3D::length(real &lo, real &hi, const real &absTol)
  * Convenience function to calculate arc length of curve between first and last
  * support point.
  */
-real SplineCurve3D::length(const real &absTol = 1e-3)
+real SplineCurve3D::length(const real &absTol)
 {
     return length(knotVector_.front(), knotVector_.back(), absTol);
 }

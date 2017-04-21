@@ -32,6 +32,9 @@ class SplineCurve3D : public AbstractSplineCurve
                              unsigned int derivOrder,
                              eSplineEvalMethod method);
 
+        // reparameterisation methods:
+        void arcLengthParam();
+
         // calculate properties of curve:
         real length(real &lo, real &hi, const real &absTol);
         real length(const real &absTol);
