@@ -1,10 +1,12 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <iomanip>
 
 #include <gtest/gtest.h>
 
 #include "geometry/spline_curve_3D.hpp"
+#include "geometry/cubic_spline_interp_3D.hpp"
 
 
 /*
@@ -281,81 +283,142 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
 
 
 /*
- * Checks curve length calculation on linear curve.
+ * Tests that curve length is determined correctly by creating an interpolating
+ * spline on a point set sampled from a helix and comparing the length to the
+ * value of the analytical expression.
  */
 TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
 {
     // floating point comparison threshold:
-    real eps = 1e-3;
+    real eps = 1e-4;
 
-    // linear spline:
-    int degree = 1;
+    // cubic spline:
+    int degree = 3;
 
-    // define data points for linear relation:
-    std::vector<real> t = {-2.0, -1.0, 0.0, 1.0, 2.0};
-    std::vector<gmx::RVec> f = {gmx::RVec(-2.0,  2.0,  2.0),
-                                gmx::RVec(-1.0,  1.0,  2.5),
-                                gmx::RVec( 0.0,  0.0,  3.0),
-                                gmx::RVec( 1.0, -1.0,  3.5),
-                                gmx::RVec( 2.0, -2.0,  4.0)};
+    // define helix parameters:
+    const real PI = std::acos(-1.0);
+    real tStart = 0.0;
+    real tEnd = 2.0*PI;
+    real a = 1.573;
+    real b = 0.875/(tEnd - tStart);
 
-    // create appropriate knot vector for linear interpolation:
-    std::vector<real> knots;
-    knots.push_back(t.front());
-    for(unsigned int i = 0; i < t.size(); i++)
+    // create a point set describing a helix:
+    int nParams = 100;
+    real paramStep = (tEnd - tStart) / (nParams - 1);
+    std::vector<real> params;
+    std::vector<gmx::RVec> points;
+    for(unsigned int i = 0; i < nParams; i++)
     {
-        knots.push_back(t[i]);
+        // setup parameter vector:
+        params.push_back(i*paramStep + tStart);
+
+        // set up curve:
+        points.push_back(gmx::RVec(a*std::cos(params.back()),
+                                   a*std::sin(params.back()),
+                                   b*params.back())); 
     }
-    knots.push_back(t.back());
-    
-    // create corresponding spline curve:
-    SplineCurve3D SplC(degree, knots, f);
 
-    // calculate endpoint distance:
-    real dX = std::abs(f.front()[0] - f.back()[0]);
-    real dY = std::abs(f.front()[1] - f.back()[1]);
-    real dZ = std::abs(f.front()[2] - f.back()[2]);
-    real trueLength = std::sqrt(dX*dX + dY*dY + dZ*dZ);
+    // create spline by interpolation:
+    CubicSplineInterp3D Interp;
+    SplineCurve3D SplC = Interp(params, points, eSplineInterpBoundaryHermite);
 
-    // calculate curve length internally:
-    real length = SplC.length(eps);
+    // check if spline curve approximates true helix well:
+    unsigned int nEval = 100;
+    for(unsigned int i = 0; i < nEval; i++)
+    {
+        // calculate evaluation point:
+        real evalPoint = i*(tEnd - tStart)/(nEval - 1);
 
-    // both should be equal for linear curve:
-    ASSERT_NEAR(trueLength, length, eps);
+        // evaluate spline and analytical expression at this point:
+        gmx::RVec splVal = SplC(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec anaVal(a*std::cos(evalPoint), 
+                         a*std::sin(evalPoint), 
+                         b*evalPoint);
+
+        // these should be the same:
+        ASSERT_NEAR(anaVal[0], splVal[0], eps);
+        ASSERT_NEAR(anaVal[1], splVal[1], eps);
+        ASSERT_NEAR(anaVal[2], splVal[2], eps);
+    }
+
+    // check if length mataches analytical expression:
+    ASSERT_NEAR((tEnd - tStart)*std::sqrt(a*a + b*b),
+                SplC.length(), 
+                eps);
 }
 
 
 /*
  * 
  */
-TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
+TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 {
     // floating point comparison threshold:
-    real eps = 1e-3;
+    real eps = 1e-4;
 
-    // linear spline:
-    int degree = 1;
+    // cubic spline:
+    int degree = 3;
 
-    // define data points for linear relation:
-    std::vector<real> t = {-2.0, -1.0, 0.0, 1.0, 2.0};
-    std::vector<gmx::RVec> f = {gmx::RVec(-2.0,  2.0,  2.0),
-                                gmx::RVec(-1.0,  1.0,  2.5),
-                                gmx::RVec( 0.0,  0.0,  3.0),
-                                gmx::RVec( 1.0, -1.0,  3.5),
-                                gmx::RVec( 2.0, -2.0,  4.0)};
+    // define helix parameters:
+    const real PI = std::acos(-1.0);
+    real tStart = 0.0;
+    real tEnd = 2.0*PI;
+    real a = 5.571;
+    real b = 1.223/(tEnd - tStart);
 
-    // create appropriate knot vector for linear interpolation:
-    std::vector<real> knots;
-    knots.push_back(t.front());
-    for(unsigned int i = 0; i < t.size(); i++)
+    // create a point set describing a helix:
+    int nParams = 100;
+    real paramStep = (tEnd - tStart) / (nParams - 1);
+    std::vector<real> params;
+    std::vector<gmx::RVec> points;
+    for(unsigned int i = 0; i < nParams; i++)
     {
-        knots.push_back(t[i]);
-    }
-    knots.push_back(t.back());
-    
-    // create corresponding spline curve:
-    SplineCurve3D SplC(degree, knots, f);
+        // setup parameter vector:
+        params.push_back(i*paramStep + tStart);
 
-    SplC.arcLengthParam();
+        // set up curve:
+        points.push_back(gmx::RVec(a*std::cos(params.back()),
+                                   a*std::sin(params.back()),
+                                   b*params.back())); 
+    }
+
+    // create spline by interpolation:
+    CubicSplineInterp3D Interp;
+    SplineCurve3D SplC = Interp(params, points, eSplineInterpBoundaryHermite);
+
+    // check if spline curve approximates true helix well:
+    unsigned int nEval = 100;
+    for(unsigned int i = 0; i < nEval; i++)
+    {
+        // calculate evaluation point:
+        real evalPoint = i*(tEnd - tStart)/(nEval - 1);
+
+        // evaluate spline and analytical expression at this point:
+        gmx::RVec splVal = SplC(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec anaVal(a*std::cos(evalPoint), 
+                         a*std::sin(evalPoint), 
+                         b*evalPoint);
+
+        // these should be the same:
+        ASSERT_NEAR(anaVal[0], splVal[0], eps);
+        ASSERT_NEAR(anaVal[1], splVal[1], eps);
+        ASSERT_NEAR(anaVal[2], splVal[2], eps);
+    }
+
+    // check if spline curve speed evaluation is correct:
+    nEval = 100;
+    for(unsigned int i = 0; i < nEval; i++)
+    {
+        // calculate evaluation point:
+        real evalPoint = i*(tEnd - tStart)/(nEval - 1);
+
+        // evaluate spline and analytical expression at this point:
+        real splVal = SplC.speed(evalPoint);
+        real anaVal = std::sqrt(a*a + b*b);
+
+        // these should be the same:
+        ASSERT_NEAR(anaVal, splVal, 1e3);
+    } 
 }
+
 

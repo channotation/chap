@@ -36,8 +36,8 @@ class SplineCurve3D : public AbstractSplineCurve
         void arcLengthParam();
 
         // calculate properties of curve:
-        real length(real &lo, real &hi, const real &absTol);
-        real length(const real &absTol);
+        real length(real &lo, real &hi);
+        real length();
  
         gmx::RVec tangentVec(real &evalPoint);
         

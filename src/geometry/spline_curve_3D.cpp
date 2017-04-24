@@ -112,7 +112,7 @@ SplineCurve3D::arcLengthParam()
 
 
     // calculate length of curve:
-    real curveLength = this -> length(absTol);
+    real curveLength = this -> length();
 
     // number of uniformly spaced arc length parameters:
     int nSupport = nCtrlPoints_;
@@ -145,7 +145,7 @@ SplineCurve3D::arcLengthParam()
         while( iter < maxIter )
         {
             // calculate length on current interval:
-            real miLength = length(prevOldParam, mi, 1e-3);
+            real miLength = length(prevOldParam, mi);
 
             // calculate error:
             real signedError = miLength - arcParam + prevArcParam;
@@ -219,7 +219,7 @@ SplineCurve3D::arcLengthParam()
  * TODO: might need a faster algorithm here?
  */
 real
-SplineCurve3D::length(real &lo, real &hi, const real &absTol)
+SplineCurve3D::length(real &lo, real &hi)
 { 
     // find intervals of evaluation points:
     int idxLo = findInterval(lo);
@@ -319,9 +319,9 @@ SplineCurve3D::length(real &lo, real &hi, const real &absTol)
  * support point.
  */
 real 
-SplineCurve3D::length(const real &absTol)
+SplineCurve3D::length()
 {
-    return length(knotVector_.front(), knotVector_.back(), absTol);
+    return length(knotVector_.front(), knotVector_.back());
 }
 
 
