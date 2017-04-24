@@ -251,66 +251,6 @@ SplineCurve3D::length(real &lo, real &hi)
  
     // return Boole's rule estimate of length:
     return length;
-
-
-
-/*
-    // initialse evaluation points as number of control points:
-    int nEvalPoints = nCtrlPoints_;
-
-    // initialise chord length, previous value a, and error:
-    real chordLength;
-    real prevChordLength = std::numeric_limits<real>::infinity();
-    real error = 100.0;
-
-    // iteratively calculate chord length until error is sufficiently small:
-    int i = 0;
-    while( error > absTol )
-    {
-        // reset chord length:
-        chordLength = 0.0;
-
-        // calculate parameter step:
-        real paramStep = (hi - lo)/nEvalPoints; 
-
-        // evaluate calculate chord length over evaluation points:
-        gmx::RVec pointA = evaluate(lo, 0, eSplineEvalDeBoor);
-        gmx::RVec pointB;
-        for(unsigned int i = 1; i < nEvalPoints; i++)
-        {
-            // evaluate spline curve at current parameter value:
-            real evalPoint = lo + i*paramStep;
-            pointB = evaluate(evalPoint, 0, eSplineEvalDeBoor);
-
-            // calculate Euclidean distance between points:
-            real dX = pointB[0] - pointA[0];
-            real dY = pointB[1] - pointA[1];
-            real dZ = pointB[2] - pointA[2];
-            real dist = std::sqrt(dX*dX + dY*dY + dZ*dZ);
-
-            // add to chord length:
-            chordLength += dist;
-
-            // new point becomes old point:
-            pointA = pointB;
-        }
-
-        // evaluate error:
-        error = std::abs((chordLength - prevChordLength));
-        prevChordLength = chordLength;
-
-        // double the number of evaluation points:
-        nEvalPoints *= 2;
-    }    
-
-
-    std::cout<<"length = "<<length<<"  "
-             <<"chordal = "<<chordLength<<std::endl;
-
-
-    return chordLength;
-
-*/
 }
 
 
@@ -355,7 +295,9 @@ SplineCurve3D::speed(real &evalPoint)
 
 
 /*
- *
+ * Uses Newton-Cotes quadrature of curve speed to determine the length of the 
+ * arc between two given parameter values. The specific quadrature rule applied
+ * is Boole's rule.
  */
 real
 SplineCurve3D::arcLengthBoole(real &lo, real &hi)
@@ -372,27 +314,8 @@ SplineCurve3D::arcLengthBoole(real &lo, real &hi)
     real s3 = speed(t3);
     real s4 = speed(t4);
     real s5 = speed(hi);
-/*
-    std::cout<<"s1 = "<<s1<<"  "
-             <<"s2 = "<<s2<<"  "
-             <<"s3 = "<<s3<<"  "
-             <<"s4 = "<<s4<<"  "
-             <<"s5 = "<<s5<<"  "
-             <<std::endl;
-*/
+
     // evaluate Boole's law:
     return 2.0*h/45.0*(7.0*s1 + 32.0*s2 + 12.0*s3 + 32.0*s4 + 7.0*s5);
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
