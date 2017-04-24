@@ -38,11 +38,21 @@ class SplineCurve3D : public AbstractSplineCurve
         // calculate properties of curve:
         real length(real &lo, real &hi, const real &absTol);
         real length(const real &absTol);
+ 
+        gmx::RVec tangentVec(real &evalPoint);
+        
+
+        real speed(real &evalPoint);
+        
         
     private:
 
         // internal variables:
         std::vector<gmx::RVec> ctrlPoints_;
+
+        // utility functions:
+        real arcLengthBoole(real &lo, real &hi);
+
 
 };
 

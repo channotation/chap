@@ -199,9 +199,16 @@ SplineCurve3D::arcLengthParam()
     // interpolate between points uniformly spaced wrt arc length:
     CubicSplineInterp3D Interp;
 
-    // TODO: add method to interpolation class that allows specifying 
-    // parameterisation explictly!
-   
+    // find interpolating spline between points spaces equally in arc length:
+    SplineCurve3D newSpl = Interp(arcParams, 
+                                  arcPoints, 
+                                  eSplineInterpBoundaryHermite);
+
+    // update this spline:
+    this -> nCtrlPoints_ = newSpl.nCtrlPoints_;
+    this -> nKnots_ = newSpl.nKnots_;
+    this -> knotVector_ = newSpl.knotVector_;
+    this -> ctrlPoints_ = newSpl.ctrlPoints_;
 }
 
 
@@ -213,7 +220,41 @@ SplineCurve3D::arcLengthParam()
  */
 real
 SplineCurve3D::length(real &lo, real &hi, const real &absTol)
-{   
+{ 
+    // find intervals of evaluation points:
+    int idxLo = findInterval(lo);
+    int idxHi = findInterval(hi);
+
+//    real tLo = knotVector_[idxLo];
+//    real tHi = knotVector_[idxHi];
+
+
+    // initialise length as zero:
+    real length = 0.0;
+
+    // first segment:
+    real tLim = std::min(knotVector_[idxLo + 1], hi);
+    length += arcLengthBoole(lo, tLim);
+
+    // loop over intermediate spline segments:
+    if( idxHi - idxLo > 1 )
+    {
+        for(unsigned int i = idxLo + 1; i < idxHi; i++)
+        {
+            // add length of current segment:
+            length += arcLengthBoole(knotVector_[i], knotVector_[i + 1]);
+         }
+    }
+
+    // final segment:
+    length += arcLengthBoole(knotVector_[idxHi], hi);
+ 
+    // return Boole's rule estimate of length:
+    return length;
+
+
+
+/*
     // initialse evaluation points as number of control points:
     int nEvalPoints = nCtrlPoints_;
 
@@ -262,7 +303,14 @@ SplineCurve3D::length(real &lo, real &hi, const real &absTol)
         nEvalPoints *= 2;
     }    
 
+
+    std::cout<<"length = "<<length<<"  "
+             <<"chordal = "<<chordLength<<std::endl;
+
+
     return chordLength;
+
+*/
 }
 
 
@@ -270,15 +318,71 @@ SplineCurve3D::length(real &lo, real &hi, const real &absTol)
  * Convenience function to calculate arc length of curve between first and last
  * support point.
  */
-real SplineCurve3D::length(const real &absTol)
+real 
+SplineCurve3D::length(const real &absTol)
 {
     return length(knotVector_.front(), knotVector_.back(), absTol);
 }
 
 
+/*
+ * Returns the tangent vector at the given evaluation point. Simply a wrapper
+ * around the general evaluation function requesting the first derivative at 
+ * the given point.
+ */
+gmx::RVec
+SplineCurve3D::tangentVec(real &evalPoint)
+{
+    return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
+}
 
 
+/*
+ * Returns the speed of the curve at the given evaluation point, where speed
+ * refers to the magnitude of the tangent vector.
+ */
+real
+SplineCurve3D::speed(real &evalPoint)
+{
+    // calculate tangent vector:
+    gmx::RVec tangentVec = this -> tangentVec(evalPoint);
 
+    // return magnitude of tangent vector:
+    return std::sqrt(tangentVec[0]*tangentVec[0] + 
+                     tangentVec[1]*tangentVec[1] +
+                     tangentVec[2]*tangentVec[2]);
+}
+
+
+/*
+ *
+ */
+real
+SplineCurve3D::arcLengthBoole(real &lo, real &hi)
+{
+    // determine intermediate evaluation points:
+    real h = (hi - lo)/4.0;
+    real t2 = lo + 1.0*h;
+    real t3 = lo + 2.0*h;
+    real t4 = lo + 3.0*h;
+
+    // evaluate speed at support points: 
+    real s1 = speed(lo);
+    real s2 = speed(t2);
+    real s3 = speed(t3);
+    real s4 = speed(t4);
+    real s5 = speed(hi);
+/*
+    std::cout<<"s1 = "<<s1<<"  "
+             <<"s2 = "<<s2<<"  "
+             <<"s3 = "<<s3<<"  "
+             <<"s4 = "<<s4<<"  "
+             <<"s5 = "<<s5<<"  "
+             <<std::endl;
+*/
+    // evaluate Boole's law:
+    return 2.0*h/45.0*(7.0*s1 + 32.0*s2 + 12.0*s3 + 32.0*s4 + 7.0*s5);
+}
 
 
 
