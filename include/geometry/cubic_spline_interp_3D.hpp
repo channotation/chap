@@ -19,10 +19,17 @@ class CubicSplineInterp3D : public AbstractCubicSplineInterp
         ~CubicSplineInterp3D();
 
         // interpolation interface:
-        SplineCurve3D interpolate(const std::vector<gmx::RVec> &points,
+        SplineCurve3D interpolate(std::vector<gmx::RVec> &points,
                                   eSplineInterpBoundaryCondition bc);
-        SplineCurve3D operator()(const std::vector<gmx::RVec> &points,
+        SplineCurve3D operator()(std::vector<gmx::RVec> &points,
                                  eSplineInterpBoundaryCondition bc);
+        SplineCurve3D interpolate(std::vector<real> &param,
+                                  std::vector<gmx::RVec> &points,
+                                  eSplineInterpBoundaryCondition bc);
+        SplineCurve3D operator()(std::vector<real> &param,
+                                 std::vector<gmx::RVec> &points,
+                                 eSplineInterpBoundaryCondition bc);
+
 
     private:
 

@@ -28,14 +28,38 @@ CubicSplineInterp3D::~CubicSplineInterp3D()
  *
  */
 SplineCurve3D
-CubicSplineInterp3D::interpolate(const std::vector<gmx::RVec> &points,
+CubicSplineInterp3D::interpolate(std::vector<gmx::RVec> &points,
                                  eSplineInterpBoundaryCondition bc)
 {
     // find parameterisation:
     std::vector<real> chordLength = calcChordLength(points);
 
+    // interpolate using this parameterisation:
+    return interpolate(chordLength, points, bc);
+}
+
+
+/*
+ * Interpolation interface as convenient operator.
+ */
+SplineCurve3D
+CubicSplineInterp3D::operator()(std::vector<gmx::RVec> &points,
+                                eSplineInterpBoundaryCondition bc)
+{
+    return interpolate(points, bc);
+}
+
+
+/*
+ *
+ */
+SplineCurve3D
+CubicSplineInterp3D::interpolate(std::vector<real> &param,
+                                 std::vector<gmx::RVec> &points,
+                                 eSplineInterpBoundaryCondition bc)
+{
     // calculate corresponding knot vector:
-    std::vector<real> knotVector = prepareKnotVector(chordLength);
+    std::vector<real> knotVector = prepareKnotVector(param);
 
     // get coordinates of each dimension individually:
     std::vector<real> x;
@@ -63,7 +87,7 @@ CubicSplineInterp3D::interpolate(const std::vector<gmx::RVec> &points,
 
     // assemble the matrix diagonals:
     assembleDiagonals(knotVector,
-                      chordLength,
+                      param,
                       subDiag,
                       mainDiag,
                       superDiag,
@@ -83,9 +107,9 @@ CubicSplineInterp3D::interpolate(const std::vector<gmx::RVec> &points,
     real rhsZ[nSys];
 
     // assemble the rhs vectors:
-    assembleRhs(chordLength, x, rhsX, bc);
-    assembleRhs(chordLength, y, rhsY, bc);
-    assembleRhs(chordLength, z, rhsZ, bc);
+    assembleRhs(param, x, rhsX, bc);
+    assembleRhs(param, y, rhsY, bc);
+    assembleRhs(param, z, rhsZ, bc);
 
     // assemble rhs vectors into matrix:
     for(unsigned int i = 0; i < nSys; i++)
@@ -98,55 +122,7 @@ CubicSplineInterp3D::interpolate(const std::vector<gmx::RVec> &points,
     
     // Solve System
     //-------------------------------------------------------------------------
-/* 
-    std::cout<<"chord length"<<std::endl;
-    for(int i = 0; i < chordLength.size(); i++)
-    {
-        std::cout<<chordLength[i]<<std::endl;
-    }
-    std::cout<<std::endl;
- 
 
-    std::cout<<"knot vector"<<std::endl;
-    for(int i = 0; i < knotVector.size(); i++)
-    {
-        std::cout<<knotVector[i]<<std::endl;
-    }
-    std::cout<<std::endl;
-
-
-
-    std::cout<<"RHS"<<std::endl;
-    for(int i = 0; i < nSys; i++)
-    {
-        std::cout<<rhsX[i]<<"  "
-                 <<rhsY[i]<<"  "
-                 <<rhsZ[i]<<std::endl;
-    }
-    std::cout<<std::endl;
-
-
-    std::cout<<"subDiag"<<std::endl;
-    for(int i = 0; i < nSys - 1; i++)
-    {
-        std::cout<<subDiag[i]<<std::endl;
-    }
-    std::cout<<std::endl;
-
-    std::cout<<"mainDiag"<<std::endl;
-    for(int i = 0; i < nSys; i++)
-    {
-        std::cout<<mainDiag[i]<<std::endl;
-    }
-    std::cout<<std::endl;
-
-    std::cout<<"subperDiag"<<std::endl;
-    for(int i = 0; i < nSys - 1; i++)
-    {
-        std::cout<<superDiag[i]<<std::endl;
-    }
-    std::cout<<std::endl;
-*/
     // solve tridiagonal system by Gaussian elimination:
     int status = LAPACKE_sgtsv(LAPACK_COL_MAJOR,
                                nSys, 
@@ -189,10 +165,11 @@ CubicSplineInterp3D::interpolate(const std::vector<gmx::RVec> &points,
  * Interpolation interface as convenient operator.
  */
 SplineCurve3D
-CubicSplineInterp3D::operator()(const std::vector<gmx::RVec> &points,
+CubicSplineInterp3D::operator()(std::vector<real> &param,
+                                std::vector<gmx::RVec> &points,
                                 eSplineInterpBoundaryCondition bc)
 {
-    return interpolate(points, bc);
+    return interpolate(param, points, bc);
 }
 
 
