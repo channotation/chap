@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 
 #include "geometry/abstract_spline_curve.hpp"
@@ -193,8 +194,11 @@ AbstractSplineCurve::evaluateDeriv(real &evalPoint,
     // initialise derivative value as zero:
     real value = 0.0;
 
+    // find index to lowest interval where basis spline is nonzero:
+    int idx = findInterval(evalPoint);
+
     // sum derivative value over all control points:
-    for(unsigned int i = 0; i < nCtrlPoints_; i++)
+    for(int i = std::max(0, idx - degree_); i < std::min(nCtrlPoints_, idx + degree_); i++)
     {
         value += ctrlCoefs[i] * D_(knotVector_, degree_, i, evalPoint, derivOrder);
     }
