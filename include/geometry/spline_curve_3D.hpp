@@ -50,8 +50,13 @@ class SplineCurve3D : public AbstractSplineCurve
         // internal variables:
         std::vector<gmx::RVec> ctrlPoints_;
 
+        bool arcLengthTableAvailable_;
+        std::vector<real> arcLengthTable_;
+
         // utility functions:
         real arcLengthBoole(real &lo, real &hi);
+        void prepareArcLengthTable();
+        real arcLengthToParam(real &arcLength);
 
 
 };

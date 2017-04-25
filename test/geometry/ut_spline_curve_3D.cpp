@@ -290,7 +290,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
 TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
 {
     // floating point comparison threshold:
-    real eps = 1e-4;
+    real eps = 1e-5;
 
     // cubic spline:
     int degree = 3;
@@ -303,7 +303,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
     real b = 0.875/(tEnd - tStart);
 
     // create a point set describing a helix:
-    int nParams = 100;
+    int nParams = 1e2;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -354,8 +354,8 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
 TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 {
     // floating point comparison threshold:
-    real eps = 1e-4;
-
+    real eps = 10*std::numeric_limits<real>::epsilon();
+    
     // cubic spline:
     int degree = 3;
 
@@ -406,7 +406,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
     }
 
     // check if spline curve speed evaluation is correct:
-    nEval = 100;
+    nEval = 10;
     for(unsigned int i = 0; i < nEval; i++)
     {
         // calculate evaluation point:
@@ -417,8 +417,70 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
         real anaVal = std::sqrt(a*a + b*b);
 
         // these should be the same:
-        ASSERT_NEAR(anaVal, splVal, 1e3);
+        ASSERT_NEAR(anaVal, splVal, 1e-2);
     } 
 }
 
+
+/*
+ * Tests whether the reparameterisation yields a curve with unit speed. To this
+ * end a spline curve is constructed by interpolating a point set sampled from
+ * a logarithmic spiral with constant z-velocity, reparameterisation is 
+ * emploeyed and the result velocity is checked to be close to one at several 
+ * evaluation points.
+ */
+TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
+{
+    // floating point comparison threshold:
+    real eps = 1e-3;
+
+    // cubic spline:
+    int degree = 3;
+
+    // define helix parameters:
+    const real PI = std::acos(-1.0);
+    real tStart = -2.0*PI;
+    real tEnd = 2.0*PI;
+    real a = 2.0;
+    real b = 1.0/(tEnd - tStart);
+    real c = 0.005;
+
+    // create a point set describing a logarithmically spiral helix:
+    int nParams = 15;
+    real paramStep = (tEnd - tStart) / (nParams - 1);
+    std::vector<real> params;
+    std::vector<gmx::RVec> points;
+    for(unsigned int i = 0; i < nParams; i++)
+    {
+        // setup parameter vector:
+        params.push_back(i*paramStep + tStart);
+
+        // set up curve:
+        points.push_back(gmx::RVec(a*std::exp(c*params.back())*std::cos(params.back()),
+                                   a*std::exp(c*params.back())*std::sin(params.back()),
+                                   b*params.back())); 
+    }
+
+    // create spline by interpolation:
+    CubicSplineInterp3D Interp;
+    SplineCurve3D SplC = Interp(params, points, eSplineInterpBoundaryHermite);
+
+    // switch to an arc length parameterised curve:
+    SplC.arcLengthParam();
+
+    // check that spline curve now has unit speed everywhere::
+    int nEval = 100;
+    for(int i = 0; i < nEval; i++)
+    {
+        // calculate evaluation point:
+        real evalPoint = i*(tEnd - tStart)/(nEval - 1);
+
+        // evaluate spline and analytical expression at this point:
+        real splVal = SplC.speed(evalPoint);
+        real anaVal = 1.0;
+
+        // these should be the same:
+        ASSERT_NEAR(anaVal, splVal, eps);
+    }     
+}
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -107,136 +108,74 @@ SplineCurve3D::operator()(real &evalPoint,
 void
 SplineCurve3D::arcLengthParam()
 {
-    real absTol = 1e-2;
-    int maxIter = 100;
-
-
-    // calculate length of curve:
-    real curveLength = this -> length();
-
     // number of uniformly spaced arc length parameters:
-    int nSupport = nCtrlPoints_;
+    int nNew = 10*nCtrlPoints_;
 
-    // step length for uniform arc length parameterisation:
-    real arcLengthStep = curveLength/(nSupport - 1);
+    // create lookup table for arc length at knots:
+    prepareArcLengthTable();
+   
+    // determine uniform arc length spacing:
+    real arcLenStep = arcLengthTable_.back() / (nNew - 1);
 
-    // vectors to hold data for lookup table:
-    std::vector<real> arcParams;
-    std::vector<gmx::RVec> arcPoints;
-    std::vector<real> oldParams;
+    // initialise new control points and parameters:
+    std::vector<real> newParams;
+    std::vector<gmx::RVec> newPoints;
 
-    // helper variables for temporary values:
-    real prevArcParam = 0.0;
-    real prevOldParam = knotVector_.front();
-
-    // build lookup table:
-    for(unsigned int i = 0; i < nSupport; i++)
+    // loop over uniformly spaced arc length intervals:
+    for(int i = 0; i < nNew; i++)
     {
-        // calculate uniformly spaced arc paramater points:
-        real arcParam = i*arcLengthStep;
-        
-        // initialise bisection interval:
-        real lo = prevOldParam;
-        real hi = knotVector_.back();
-        real mi = (lo + hi)/2.0;
+        // calculate target arc length:
+        real newParam = i*arcLenStep;
+        newParams.push_back(newParam);
 
-        // find corresponding parameter value of old parameterisation:
-        int iter = 0;
-        while( iter < maxIter )
-        {
-            // calculate length on current interval:
-            real miLength = length(prevOldParam, mi);
+        // find parameter value corresponding to arc length value:
+        real oldParam = arcLengthToParam(newParam); 
 
-            // calculate error:
-            real signedError = miLength - arcParam + prevArcParam;
-            real error = std::abs(signedError);
-
-            std::cout.precision(5); 
-            std::cout<<"iter = "<<iter<<"  "
-                     <<"arcParam = "<<arcParam<<"  "
-                     <<"lo = "<<lo<<"  "
-                     <<"hi = "<<hi<<"  "
-                     <<"mi = "<<mi<<"  "
-                     <<"miLength = "<<miLength<<"  "
-                     <<"signedErr = "<<signedError<<"  "
-                     <<"prevOldParam = "<<prevOldParam<<"  "
-                     <<std::endl;
-            
-
-            // error tolerance reached?
-            if( error < absTol )
-            {
-                break;
-            }
-
-            // update bisection interval:
-            if( signedError < 0 )
-            {
-                lo = mi;
-            }
-            else
-            {
-                hi = mi;
-            }
-            mi = (lo + hi)/2.0;
-
-            // increment loop counter:
-            iter++;
-        }
-
-        // update 'previous iteration' values:
-        prevArcParam = arcParam;
-        prevOldParam = mi;
-
-        // add values to lookup table:
-        arcParams.push_back(arcParam);
-        oldParams.push_back(mi);
-
-        // evaluate spline curve at uniform arc length points:
-        arcPoints.push_back(gmx::RVec(evaluate(mi, 0, eSplineEvalDeBoor)));
+        //  evaluate spline to get new point:
+        newPoints.push_back(this -> evaluate(oldParam, 0, eSplineEvalDeBoor));
     }
-
-    // interpolate between points uniformly spaced wrt arc length:
+     
+    // interpolate new points to get arc length parameterised curve:
     CubicSplineInterp3D Interp;
-
-    // find interpolating spline between points spaces equally in arc length:
-    SplineCurve3D newSpl = Interp(arcParams, 
-                                  arcPoints, 
+    SplineCurve3D newSpl = Interp(newParams, 
+                                  newPoints, 
                                   eSplineInterpBoundaryHermite);
 
-    // update this spline:
-    this -> nCtrlPoints_ = newSpl.nCtrlPoints_;
-    this -> nKnots_ = newSpl.nKnots_;
+    // update own parameters:
     this -> knotVector_ = newSpl.knotVector_;
     this -> ctrlPoints_ = newSpl.ctrlPoints_;
+    this -> nKnots_ = newSpl.nKnots_;
+    this -> nCtrlPoints_ = newSpl.nCtrlPoints_;
+    this -> arcLengthTableAvailable_ = false;
 }
 
 
 /*
  * Calculates the length along the arc of the curve between the two parameter
  * values a and b.
- *
- * TODO: might need a faster algorithm here?
  */
 real
 SplineCurve3D::length(real &lo, real &hi)
 { 
+    // initialise length as zero::
+    real length = 0.0;   
+  
     // find intervals of evaluation points:
     int idxLo = findInterval(lo);
     int idxHi = findInterval(hi);
 
-//    real tLo = knotVector_[idxLo];
-//    real tHi = knotVector_[idxHi];
+    // add distance in endpoint intervals:
+    if( idxHi == idxLo )
+    {
+        length += arcLengthBoole(lo, hi);
+    }
+    else
+    {
+        length += arcLengthBoole(lo, knotVector_[idxLo + 1]);
+        length += arcLengthBoole(knotVector_[idxHi], hi);
+    }
 
-
-    // initialise length as zero:
-    real length = 0.0;
-
-    // first segment:
-    real tLim = std::min(knotVector_[idxLo + 1], hi);
-    length += arcLengthBoole(lo, tLim);
-
-    // loop over intermediate spline segments:
+    // if necessary, loop over intermediate spline segments and sum up lengths:
     if( idxHi - idxLo > 1 )
     {
         for(unsigned int i = idxLo + 1; i < idxHi; i++)
@@ -245,11 +184,7 @@ SplineCurve3D::length(real &lo, real &hi)
             length += arcLengthBoole(knotVector_[i], knotVector_[i + 1]);
          }
     }
-
-    // final segment:
-    length += arcLengthBoole(knotVector_[idxHi], hi);
- 
-    // return Boole's rule estimate of length:
+   
     return length;
 }
 
@@ -317,5 +252,100 @@ SplineCurve3D::arcLengthBoole(real &lo, real &hi)
 
     // evaluate Boole's law:
     return 2.0*h/45.0*(7.0*s1 + 32.0*s2 + 12.0*s3 + 32.0*s4 + 7.0*s5);
+}
+
+
+/*
+ * Prepares a lookup table that associates an arc length with each knot, where
+ * the first knot is assigned an arc length of zero.
+ */
+void
+SplineCurve3D::prepareArcLengthTable()
+{
+    // build arc length lookup table:
+    for(unsigned int i = 0; i < knotVector_.size(); i++)
+    {
+        arcLengthTable_.push_back(length(knotVector_.front(), knotVector_.at(i)));
+    }
+ 
+    // set flag:
+    arcLengthTableAvailable_ = true;
+}
+
+
+/*
+ * Returns the parameter value (in the current parameterisation, typically 
+ * chord length) that corresponds to a given value of arc length. This is done
+ * via bisection.
+ */
+real
+SplineCurve3D::arcLengthToParam(real &arcLength)
+{
+    int maxIter = 100;
+    real absTol = 10*std::numeric_limits<real>::epsilon();
+
+    // sanity check for arc length table:
+    if( arcLengthTableAvailable_ != true )
+    {
+        prepareArcLengthTable();
+    }
+
+    // handle upper endpoint:
+    if( arcLength == arcLengthTable_.back() )
+    {
+        return knotVector_.back();
+    }
+
+    // find appropriate interval:
+    std::pair<std::vector<real>::iterator, std::vector<real>::iterator> bounds;
+    bounds = std::equal_range(arcLengthTable_.begin(), arcLengthTable_.end(), arcLength);
+    int idxLo = bounds.second - arcLengthTable_.begin() - 1;
+    int idxHi = bounds.second - arcLengthTable_.begin();
+
+    // initialise bisection interval and lower limit:
+    real tLo = knotVector_[idxLo];
+    real tHi = knotVector_[idxHi];
+    real tMi = (tHi - tLo)/2.0;
+    real tLi = tLo;
+    
+    // target arc length within this interval:
+    real targetIntervalLength = arcLength - arcLengthTable_[idxLo];
+
+    // bisection:
+    int iter = 0;
+    while( iter < maxIter )
+    {
+        // update interval midpoint:
+        tMi = (tLo + tHi)/2.0;
+
+        // evaluate length of arc:
+        real intervalLength = arcLengthBoole(tLi, tMi);
+
+        // calculate error:
+        real signedError = intervalLength - targetIntervalLength;
+        real error = std::abs(signedError);
+
+        // break out of loop once error tolerance has been achieved:
+        if( error < absTol )
+        {
+            break;
+        }
+        
+        // determine new interval:
+        if( signedError > 0.0 )
+        {
+            tHi = tMi;
+        }
+        else
+        {
+            tLo = tMi;
+        }
+
+        // increment loop counter:
+        iter++;
+    }
+
+    // return bisection result:
+    return tMi;
 }
 
