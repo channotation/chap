@@ -279,7 +279,7 @@ SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
  */
 gmx::RVec 
 SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
-                                      std::vector<int> &initParams,
+                                      int idxCtrlPoint,
                                       real tol)
 {
     int maxIter = 100;
@@ -288,39 +288,60 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
     gmx::RVec curvPoint;
 
 
+    // shift index to take into account repeated knots:
+    int idx = idxCtrlPoint + degree_;
 
+    // get typical distance between knots:
+    // (should be equal for all intervals if curve parameterised by arc length)
+    real paramStep = knotVector_[degree_ + 2] - knotVector_[degree_ + 1];
 
-    // initialise evaluation points:
-    // TODO: implement this properly!
-    std::vector<real> s = {knotVector_[degree_ + initParams[0]], 
-                           knotVector_[degree_ + initParams[1]], 
-                           knotVector_[degree_ + initParams[2]]};
-
-    // sanity check on initial points:
-    // TODO: this should also check weather variables are well ordered!
-    if( std::abs(s[0] - s[1]) < eps || 
-        std::abs(s[1] - s[2]) < eps || 
-        std::abs(s[2] - s[0]) < eps )
-    {
-        std::cerr<<"ERROR: Initial points are degenerate!"<<std::endl;
-        std::abort();
-    }
+    // create initial guess based on closest point and its nearest neighbours:
+    std::vector<real> s = {knotVector_[idx] - paramStep,
+                           knotVector_[idx],
+                           knotVector_[idx] + paramStep};
 
     // evaluate difference at trial points:
     std::vector<real> d = {pointSqDist(cartPoint, s[0]),
                            pointSqDist(cartPoint, s[1]),
                            pointSqDist(cartPoint, s[2])};
+ 
+    // try out new points until local minimum is bracketed:
+    // TODO: this may be slow for points far outside the interpolation interval
+    while( d[0] <= d[1] )
+    {
+        s[0] -= paramStep;
+        d[0] = pointSqDist(cartPoint, s[0]);
+    }
+    while( d[2] <= d[1] )
+    {
+        s[2] += paramStep;
+        d[2] = pointSqDist(cartPoint, s[2]);
+    }
+
+    // sanity check on initial points:
+    if( s[1] - s[0] < eps || s[2] - s[1] < eps )
+    {
+        std::cerr<<"ERROR: Initial points are degenerate!"<<std::endl;
+        std::abort();
+    }
 
     // sanity check on bracketing:
     if( d[0] <= d[1] || d[2] <= d[1] )
     {
-        std::cerr<<"Warning: Initial guess does not bracket the minimum!"<<std::endl;
+        std::cerr<<"ERROR: Initial guess does not bracket the minimum!"<<std::endl;
         std::cerr<<"Require d(a) > d(b) and d(c) > d(b)."<<std::endl;
+        std::cerr<<"But have: "<<std::endl;
+        std::cerr<<"d(a) = "<<d[0]<<"  "
+                 <<"d(b) = "<<d[1]<<"  "
+                 <<"d(c) = "<<d[2]<<std::endl; 
+        std::cerr<<"a = "<<s[0]<<"  "
+                 <<"b = "<<s[1]<<"  "
+                 <<"c = "<<s[2]<<std::endl; 
         std::abort();
     }
 
     //
-    real sOpt = s[1] + 0.23;
+    real sOpt = s[1];
     real dOpt = pointSqDist(cartPoint, sOpt);
     real sOptOld = 99;
 

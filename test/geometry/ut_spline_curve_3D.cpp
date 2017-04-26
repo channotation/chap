@@ -524,24 +524,9 @@ TEST_F(SplineCurve3DTest, blah)
         // find closest control point:
         int idxClosest = Spl.closestCtrlPoint(f.at(i));
 
-        // prepare initial guess:
-        std::vector<int> initParams;
-        if( idxClosest == 0 )
-        {
-            initParams = {idxClosest + 1, idxClosest, idxClosest + 2};
-        }
-        else if( idxClosest == f.size() - 1 )
-        {
-            initParams = {idxClosest - 1, idxClosest, idxClosest - 2};
-        }
-        else
-        {
-            initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
-        }
-
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
-                                                     initParams,
+                                                     idxClosest,
                                                      eps);
 
         // check identity with analytical solution:
@@ -553,46 +538,34 @@ TEST_F(SplineCurve3DTest, blah)
     std::cout<<std::endl<<std::endl<<std::endl;
 
     // prepare a set of test points:
-    // TODO: include extrpolation case in here!
     std::vector<gmx::RVec> pts = {gmx::RVec(0.0,  0.0, -0.5),
-                                  gmx::RVec(0.0,  0.0,  1.5),
+                                  gmx::RVec(0.0,  0.0,  1.257689),
                                   gmx::RVec(1.0,  0.0, -1.0),
-                                  gmx::RVec(0.0, -1.0,  1.0)};
+                                  gmx::RVec(0.0, -1.0,  1.0),
+                                  gmx::RVec(0.0,  0.0,  5.0),
+                                  gmx::RVec(2.0,  2.0, -6.3)};
     std::vector<real> sTrue = {-0.5,
-                                1.5,
+                                1.257689,
                                -1.0,
-                                1.0};
+                                1.0,
+                                5.0,
+                               -6.3};
     std::vector<real> dTrue = { 0.0,
                                 0.0,
                                 1.0,
-                                1.0};
+                                1.0,
+                                0.0,
+                                8.0};
     
-    //
+    // loop over all test points:
     for(unsigned int i = 0; i < pts.size(); i++)
     {
         // find closest control point:
-        int idxClosest = Spl.closestCtrlPoint(f.at(i));
-
-        // prepare initial guess:
-        std::vector<int> initParams;
-        if( idxClosest == 0 )
-        {
-            initParams = {idxClosest + 1, idxClosest, idxClosest + 2};
-        }
-        else if( idxClosest == f.size() - 1 )
-        {
-            initParams = {idxClosest - 1, idxClosest, idxClosest - 2};
-        }
-        else
-        {
-            initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
-        }
+        int idxClosest = Spl.closestCtrlPoint(pts.at(i));
    
-        initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
-    
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
-                                                     initParams,
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
+                                                     idxClosest,
                                                      eps);
 
         std::cout<<"i = "<<i<<"  "
@@ -603,11 +576,14 @@ TEST_F(SplineCurve3DTest, blah)
                  <<"S(sOpt) = "<<"("<<Spl(curvi[0], 0, eSplineEvalDeBoor)[0]<<" , "
                                     <<Spl(curvi[0], 0, eSplineEvalDeBoor)[1]<<" , "
                                     <<Spl(curvi[0], 0, eSplineEvalDeBoor)[2]<<")"<<"  "
+                 <<"S_true = "<<"("<<pts[i][0]<<" , "
+                                   <<pts[i][1]<<" , "
+                                   <<pts[i][2]<<")"<<"  "
                  <<std::endl;
 
         // check identity with analytical solution:
-//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//      ASSERT_NEAR(dTrue[i], curvi[1], eps);    
+        ASSERT_NEAR(sTrue[i], curvi[0], eps);
+        ASSERT_NEAR(dTrue[i], curvi[1], eps);    
     
     }
 
