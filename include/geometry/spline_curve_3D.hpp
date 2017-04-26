@@ -41,8 +41,15 @@ class SplineCurve3D : public AbstractSplineCurve
  
         gmx::RVec tangentVec(real &evalPoint);
         
-
         real speed(real &evalPoint);
+
+        // map points onto curve:
+        real pointSqDist(gmx::RVec &point, real &eval);
+        int closestCtrlPoint(gmx::RVec &point);
+        gmx::RVec cartesianToCurvilinear(gmx::RVec &cartPoint,
+                                         std::vector<int> &initParams,
+                                         real tol);
+ 
         
         
     private:
@@ -57,6 +64,7 @@ class SplineCurve3D : public AbstractSplineCurve
         real arcLengthBoole(real &lo, real &hi);
         void prepareArcLengthTable();
         real arcLengthToParam(real &arcLength);
+
 
 
 };

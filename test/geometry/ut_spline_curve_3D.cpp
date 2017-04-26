@@ -484,3 +484,211 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
     }     
 }
 
+
+/*
+ *
+ */
+TEST_F(SplineCurve3DTest, blah)
+{
+
+    // floating point comparison threshold:
+    real eps = std::sqrt(std::numeric_limits<real>::epsilon());
+
+    // linear spline:
+    int degree = 1;
+
+    // define data points for linear relation (in xy-plane):
+    std::vector<real> t = {-2.0, -1.0, 0.0, 1.0, 2.0};
+    std::vector<gmx::RVec> f = {gmx::RVec( 0.0,  0.0, -2.0),
+                                gmx::RVec( 0.0,  0.0, -1.0),
+                                gmx::RVec( 0.0,  0.0,  0.0),
+                                gmx::RVec( 0.0,  0.0,  1.0),
+                                gmx::RVec( 0.0,  0.0,  2.0)};
+
+    // create appropriate knot vector for linear interpolation:
+    std::vector<real> knots;
+    knots.push_back(t.front());
+    for(unsigned int i = 0; i < t.size(); i++)
+    {
+        knots.push_back(t[i]);
+    }
+    knots.push_back(t.back());
+    
+    // create corresponding spline curve:
+    // (linear, so no need to reparameterise)
+    SplineCurve3D Spl(degree, knots, f);
+
+    // check that all original points are found to lie on the curve:
+    for(unsigned int i = 0; i < f.size(); i++)
+    {
+        // find closest control point:
+        int idxClosest = Spl.closestCtrlPoint(f.at(i));
+
+        // prepare initial guess:
+        std::vector<int> initParams;
+        if( idxClosest == 0 )
+        {
+            initParams = {idxClosest + 1, idxClosest, idxClosest + 2};
+        }
+        else if( idxClosest == f.size() - 1 )
+        {
+            initParams = {idxClosest - 1, idxClosest, idxClosest - 2};
+        }
+        else
+        {
+            initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
+        }
+
+        // evaluate curvilinear coordinates of given point:
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
+                                                     initParams,
+                                                     eps);
+
+        // check identity with analytical solution:
+        ASSERT_NEAR(t[i], curvi[0], eps);
+        ASSERT_NEAR(0.0, curvi[1], eps);    
+    }
+   
+
+    std::cout<<std::endl<<std::endl<<std::endl;
+
+    // prepare a set of test points:
+    // TODO: include extrpolation case in here!
+    std::vector<gmx::RVec> pts = {gmx::RVec(0.0,  0.0, -0.5),
+                                  gmx::RVec(0.0,  0.0,  1.5),
+                                  gmx::RVec(1.0,  0.0, -1.0),
+                                  gmx::RVec(0.0, -1.0,  1.0)};
+    std::vector<real> sTrue = {-0.5,
+                                1.5,
+                               -1.0,
+                                1.0};
+    std::vector<real> dTrue = { 0.0,
+                                0.0,
+                                1.0,
+                                1.0};
+    
+    //
+    for(unsigned int i = 0; i < pts.size(); i++)
+    {
+        // find closest control point:
+        int idxClosest = Spl.closestCtrlPoint(f.at(i));
+
+        // prepare initial guess:
+        std::vector<int> initParams;
+        if( idxClosest == 0 )
+        {
+            initParams = {idxClosest + 1, idxClosest, idxClosest + 2};
+        }
+        else if( idxClosest == f.size() - 1 )
+        {
+            initParams = {idxClosest - 1, idxClosest, idxClosest - 2};
+        }
+        else
+        {
+            initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
+        }
+   
+        initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
+    
+        // evaluate curvilinear coordinates of given point:
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
+                                                     initParams,
+                                                     eps);
+
+        std::cout<<"i = "<<i<<"  "
+                 <<"sOpt = "<<curvi[0]<<"  "
+                 <<"sTrue = "<<sTrue[i]<<"  "
+                 <<"dOpt = "<<curvi[1]<<"  "
+                 <<"dTrue = "<<dTrue[i]<<"  "
+                 <<"S(sOpt) = "<<"("<<Spl(curvi[0], 0, eSplineEvalDeBoor)[0]<<" , "
+                                    <<Spl(curvi[0], 0, eSplineEvalDeBoor)[1]<<" , "
+                                    <<Spl(curvi[0], 0, eSplineEvalDeBoor)[2]<<")"<<"  "
+                 <<std::endl;
+
+        // check identity with analytical solution:
+//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
+//      ASSERT_NEAR(dTrue[i], curvi[1], eps);    
+    
+    }
+
+
+
+/*
+    // floating point comparison threshold:
+    real eps = 1e-5;
+
+    // cubic spline:
+    int degree = 3;
+
+    // define helix parameters:
+    const real PI = std::acos(-1.0);
+    real tStart = 0.0;
+    real tEnd = 2.0*PI;
+    real a = 1.0;
+
+    // create a point set describing a circle:
+    int nParams = 25;
+    real paramStep = (tEnd - tStart) / (nParams - 1);
+    std::vector<real> params;
+    std::vector<gmx::RVec> points;
+    for(unsigned int i = 0; i < nParams; i++)
+    {
+        // setup parameter vector:
+        params.push_back(i*paramStep + tStart);
+
+        // set up curve:
+        points.push_back(gmx::RVec(a*std::cos(params.back()),
+                                   a*std::sin(params.back()),
+                                   0.0)); 
+    }
+
+    // create spline by interpolation:
+    // (this will already be arc length parameterised)
+    CubicSplineInterp3D Interp;
+    SplineCurve3D Spl = Interp(params, points, eSplineInterpBoundaryHermite);
+
+
+    real eval = 0.0;
+    std::cout<<"speed = "<<Spl.speed(eval)<<std::endl;
+
+
+    // define a set of test points:
+    real t = PI/2.0;
+    std::vector<gmx::RVec> pts = {gmx::RVec(a*std::cos(t), a*std::sin(t), 0.0),
+                                  gmx::RVec(a*std::cos(t), a*std::sin(t), -2.5),
+                                  gmx::RVec(2.0*a*std::cos(t), 2.0*a*std::sin(t), 0.0),
+                                  gmx::RVec(0.5*a*std::cos(t), 0.5*a*std::sin(t), 0.0),
+                                  gmx::RVec(a*std::cos(2.0*t), a*std::sin(2.0*t), 0.0)};
+
+    // corresponding spline coordinates:
+    std::vector<real> sTrue = {t, t, t, t, 2.0*t};
+    std::vector<real> dTrue = {0.0, -2.5, a, 0.5*a, 0.0};
+
+    // check that test points are evaluated correctly:
+    for(unsigned int i = 0; i < pts.size(); i++)
+    {
+        // find closest control point:
+        int idxClosest = Spl.closestCtrlPoint(pts.at(i));
+
+        // assume that we are far from the endpoints:
+        std::vector<int> initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
+
+        // evaluate curvilinear coordinates of given point:
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
+                                                     initParams,
+                                                     eps);
+
+        std::cout<<"i = "<<i<<"  "
+                 <<"sOpt = "<<curvi[0]<<"  "
+                 <<"sTrue = "<<sTrue[i]<<"  "
+                 <<"dOpt = "<<curvi[1]<<"  "
+                 <<"dTrue = "<<dTrue[i]<<"  "
+                 <<std::endl;
+
+        // check identity with analytical solution:
+//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
+//        ASSERT_NEAR(dTrue[i], curvi[1], eps);
+    }
+    */
+}
+

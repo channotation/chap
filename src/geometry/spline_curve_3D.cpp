@@ -230,6 +230,260 @@ SplineCurve3D::speed(real &evalPoint)
 
 
 /*
+ *
+ */
+int
+SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
+{
+    // index of closest ctrlPoint:
+    int idx;
+
+    // initialise shortest distance:
+    real shortestDist = std::numeric_limits<real>::infinity();
+
+    // loop over all control points:
+    for(int i = 0; i < ctrlPoints_.size(); i++)
+    {
+        // calculate distance to this point:
+        real sqDist = (ctrlPoints_[i][0] - point[0])*(ctrlPoints_[i][0] - point[0]) +
+                      (ctrlPoints_[i][1] - point[1])*(ctrlPoints_[i][1] - point[1]) +
+                      (ctrlPoints_[i][2] - point[2])*(ctrlPoints_[i][2] - point[2]);
+
+        
+        // smaller distance found?
+        if( sqDist < shortestDist )
+        {
+            idx = i;
+            shortestDist = sqDist;
+        }
+    }
+
+    // return index to closest point:
+    return idx;
+}
+
+
+/*
+ * Takes point in cartesian coordinates and returns that points coordinates in
+ * the curvilinear system defined by the spline curve. Return value is an RVec,
+ * which contains the following information:
+ *
+ *      [0] - distance along the arc of the curve
+ *      [1] - distance from the curve at closest point
+ *      [2] - angular coordinate; this is not yet implemented
+ *
+ * Note that this function assumes that the curve is parameterised by arc 
+ * length!
+ *
+ * TODO: implement angular coordinate!
+ */
+gmx::RVec 
+SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
+                                      std::vector<int> &initParams,
+                                      real tol)
+{
+    int maxIter = 100;
+    real eps = std::numeric_limits<real>::epsilon();
+
+    gmx::RVec curvPoint;
+
+
+
+
+    // initialise evaluation points:
+    // TODO: implement this properly!
+    std::vector<real> s = {knotVector_[degree_ + initParams[0]], 
+                           knotVector_[degree_ + initParams[1]], 
+                           knotVector_[degree_ + initParams[2]]};
+
+    // sanity check on initial points:
+    // TODO: this should also check weather variables are well ordered!
+    if( std::abs(s[0] - s[1]) < eps || 
+        std::abs(s[1] - s[2]) < eps || 
+        std::abs(s[2] - s[0]) < eps )
+    {
+        std::cerr<<"ERROR: Initial points are degenerate!"<<std::endl;
+        std::abort();
+    }
+
+    // evaluate difference at trial points:
+    std::vector<real> d = {pointSqDist(cartPoint, s[0]),
+                           pointSqDist(cartPoint, s[1]),
+                           pointSqDist(cartPoint, s[2])};
+
+    // sanity check on bracketing:
+    if( d[0] <= d[1] || d[2] <= d[1] )
+    {
+        std::cerr<<"Warning: Initial guess does not bracket the minimum!"<<std::endl;
+        std::cerr<<"Require d(a) > d(b) and d(c) > d(b)."<<std::endl;
+        std::abort();
+    }
+
+    //
+    real sOpt = s[1] + 0.23;
+    real dOpt = pointSqDist(cartPoint, sOpt);
+    real sOptOld = 99;
+
+
+    std::cout<<std::endl<<std::endl;
+
+    int iter = 0;
+    while( iter < maxIter )
+    {
+        std::cout<<"  iter = "<<iter<<"  "
+                 <<"a = "<<s[0]<<"  "
+                 <<"b = "<<s[1]<<"  "
+                 <<"c = "<<s[2]<<"  "
+                 <<"sOpt = "<<sOpt<<"  "
+                 <<"f(a) = "<<d[0]<<"  "
+                 <<"f(b) = "<<d[1]<<"  "
+                 <<"f(c) = "<<d[2]<<"  "
+                 <<"dOpt = "<<dOpt<<"  "
+                 <<std::endl;
+
+
+        // golden search step:
+        real mi = (s[0] + s[2])/2.0;
+        const real GOLD = 0.38196;
+        if( s[1] > mi )
+        {
+            sOpt = s[1] + GOLD*(s[0] - s[1]);
+        }
+        else 
+        {
+            sOpt = s[1] + GOLD*(s[2] - s[1]);
+        }
+
+
+        // evaluate distance at new trial point:
+        dOpt = pointSqDist(cartPoint, sOpt);
+
+
+        // narrow down interval:
+        if( dOpt < d[1]  )
+        {
+            if( sOpt > s[1] )
+            {
+                s[0] = s[1];
+            }
+            else
+            {
+                s[2] = s[1];
+            }
+            s[1] = sOpt;
+            d[1] = dOpt;
+        }
+        else
+        {
+            if( sOpt < s[1] )
+            {
+                s[0] = sOpt;
+            }
+            else
+            {
+                s[2] = sOpt;
+            }
+        }
+
+        // check convergence criterion:
+        // TODO: cast this in terms of bracketing
+        if( std::abs(sOpt - sOptOld) < tol )
+        {
+            break;
+        }
+        sOptOld = sOpt;
+
+        // increment loop counter:
+        iter++;
+    }
+
+
+
+/*
+    // quadratic minimisation iteration:
+    int iter = 0;
+    while( iter < maxIter )
+    {
+        std::cout<<"  iter = "<<iter<<"  "
+                 <<"s1 = "<<s[0]<<"  "
+                 <<"s2 = "<<s[1]<<"  "
+                 <<"s3 = "<<s[2]<<"  "
+                 <<"sOpt = "<<sOpt<<"  "
+                 <<"d1 = "<<d[0]<<"  "
+                 <<"d2 = "<<d[1]<<"  "
+                 <<"d3 = "<<d[2]<<"  "
+                 <<"dOpt = "<<dOpt<<"  "
+                 <<std::endl;
+    
+
+        // calculate cyclically permutated differences:
+        real s12 = s[0] - s[1];
+        real s23 = s[1] - s[2];
+        real s31 = s[2] - s[0];
+
+        // calculate cyclically permutated squared differences:
+        real q12 = s[0]*s[0] - s[1]*s[1];
+        real q23 = s[1]*s[1] - s[2]*s[2];
+        real q31 = s[2]*s[2] - s[0]*s[0];
+
+        // find minimum of parabola and evaluate distance:
+        sOpt = 1.0/2.0*(q23*d[0] + q31*d[1] + q12*d[2])/(s23*d[0] + s31*d[1] + s12*d[2]); 
+        dOpt = pointSqDist(cartPoint, sOpt);
+
+        // check convergence:
+        if( std::abs(sOpt - sOptOld) < tol )
+        {
+            break;
+        }
+
+        // handle degenerate case:
+        if( std::abs(s[0] - sOpt) < eps || 
+            std::abs(s[1] - sOpt) < eps || 
+            std::abs(s[2] - sOpt) < eps )
+        {
+            const real GOLD = 0.38196;
+        }
+ 
+        // find support point with largest distance:
+        int idxMax = std::max_element(d.begin(), d.end()) - d.begin();
+
+        // replace this support point by optimum:
+        s[idxMax] = sOpt;
+        d[idxMax] = dOpt;
+
+        // keep track of previous optimum:
+        sOptOld = sOpt;
+
+        // increment loop counter:
+        iter++;
+    }
+        std::cout<<"  iter = "<<iter<<"  "
+                 <<"s1 = "<<s[0]<<"  "
+                 <<"s2 = "<<s[1]<<"  "
+                 <<"s3 = "<<s[2]<<"  "
+                 <<"sOpt = "<<sOpt<<"  "
+                 <<"d1 = "<<d[0]<<"  "
+                 <<"d2 = "<<d[1]<<"  "
+                 <<"d3 = "<<d[2]<<"  "
+                 <<"dOpt = "<<dOpt<<"  "
+                 <<std::endl;
+
+    // throw non-convergence warning:
+    if( iter == maxIter )
+    {
+        std::cerr<<"WARNING: Could not reach convergence within the prescribed "
+                 <<iter<<" steps!"<<std::endl;
+    }
+*/
+    curvPoint[0] = sOpt;
+    curvPoint[1] = dOpt;
+    curvPoint[2] = std::nan("");
+
+    return curvPoint;
+}
+
+
+/*
  * Uses Newton-Cotes quadrature of curve speed to determine the length of the 
  * arc between two given parameter values. The specific quadrature rule applied
  * is Boole's rule.
@@ -347,5 +601,23 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
 
     // return bisection result:
     return tMi;
+}
+
+
+/*
+ * Computes the squared Euclidean distance between some point and the point 
+ * on the spline curve with the given parameter value. For efficiency, the
+ * square root is not drawn, hence the squared distance is returned.
+ */
+real
+SplineCurve3D::pointSqDist(gmx::RVec &point, real &eval)
+{
+    // evaluate spline:
+    gmx::RVec splPoint = evaluate(eval, 0, eSplineEvalDeBoor);
+
+    // return squared distance:
+    return (splPoint[0] - point[0])*(splPoint[0] - point[0]) +
+           (splPoint[1] - point[1])*(splPoint[1] - point[1]) +
+           (splPoint[2] - point[2])*(splPoint[2] - point[2]);
 }
 
