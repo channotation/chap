@@ -7,8 +7,9 @@
 #include "geometry/spline_curve_1D.hpp"
 
 
-/*
- * Functor class for performing cubic spline interpolation in one dimension.
+/*!
+ * \brief Functor class for performing cubic spline interpolation in one 
+ * dimension.
  */
 class CubicSplineInterp1D : public AbstractCubicSplineInterp
 {

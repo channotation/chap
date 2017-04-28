@@ -7,8 +7,9 @@
 #include "geometry/spline_curve_3D.hpp"
 
 
-/*
- *
+/*!
+ * \brief Functor class for performing cubic spline interpolation in three 
+ * dimensions.
  */
 class CubicSplineInterp3D : public AbstractCubicSplineInterp
 {

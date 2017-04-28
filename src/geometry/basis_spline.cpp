@@ -26,8 +26,10 @@ BasisSpline::~BasisSpline()
 }
 
 
-/*
- * Evaluation function.
+/*!
+ * This function prepares the evaluation of the basis spline via the 
+ * Cox-de-Boor recursion. In particular it handles the edge case of the
+ * evaluation point coinciding with the final knot.
  */
 inline real 
 BasisSpline::evaluate(std::vector<real> &knotVector, 
@@ -46,6 +48,7 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
     evalPoint_ = evalPoint;
 
     // clear internal knot vector:
+    // TODO: internal knot vector needed?
     knotVector_.clear();
 
     // copy internal knots:
@@ -80,7 +83,7 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
 }
 
 
-/*
+/*!
  * Evaluation function as operator. Refers to evaluate() method.
  */
 real
@@ -94,11 +97,12 @@ BasisSpline::operator()(std::vector<real> &knotVector,
 }
 
 
-/*
- * Function recursively calculates value of basis spline of degree k in 
- * knot interval i, where the evaluation point x and knot vector t are 
- * maintained as state members of the class. This is the Cox-de Boor recursion
- * that is sometimes used as the definition of basis splines.
+/*!
+ * This function recursively calculates value of basis spline of degree 
+ * \f$ k \f$ in knot interval \f$ i \f$, where the evaluation point \f$ x  \f$
+ * and knot vector \f$ \mathbf{t} \f$ are maintained as state members of the 
+ * class. This implements the Cox-de Boor recursion that is sometimes used as 
+ * the definition of basis splines.
  */
 real
 BasisSpline::recursion(int k, int i)
@@ -176,15 +180,9 @@ BasisSplineDerivative::~BasisSplineDerivative()
 }
 
 
-/*
+/*!
  * Function to evaluate derivative of basis spline of given degree and at given
- * evaluation point. Makes use of the relation
- *
- * dB_[i,k] / dx = k*( B_[i,k-1]/(t_[i+k] - t_i) - B_[i+1, k-1]/(t_[i+k+1] - t_[i+1]) )
- *
- * where t is the knot vector. The value of the lowe degree basis splines is 
- * found using the functor defined above for this purpose.
- */
+ * evaluation point. */
 real
 BasisSplineDerivative::evaluate(std::vector<real> &knotVector,
                                 int degree,
@@ -251,7 +249,7 @@ BasisSplineDerivative::evaluate(std::vector<real> &knotVector,
 }
 
 
-/*
+/*!
  * Evaluation function as operator. Refers to evaluate() method.
  */
 real

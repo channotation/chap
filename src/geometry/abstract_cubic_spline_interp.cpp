@@ -21,8 +21,10 @@ AbstractCubicSplineInterp::~AbstractCubicSplineInterp()
 }
 
 
-/*
- *
+/*!
+ * This function assembles the nonzero entries of the system matrix occurring
+ * in spline interpolation. Currently, only Hermite boundary conditions are 
+ * implemented.
  */
 void
 AbstractCubicSplineInterp::assembleDiagonals(std::vector<real> &knotVector,
@@ -86,8 +88,10 @@ AbstractCubicSplineInterp::assembleDiagonals(std::vector<real> &knotVector,
 }
 
 
-/*
- *
+/*!
+ * This function assembles the right hand side vector of the tridiagonal 
+ * system occurring in cubic spline interpolation. Currently only Hermite 
+ * boundary conditions are implemented.
  */
 void
 AbstractCubicSplineInterp::assembleRhs(std::vector<real> &x,
@@ -140,10 +144,10 @@ AbstractCubicSplineInterp::assembleRhs(std::vector<real> &x,
 }
 
 
-/*
+/*!
  * Internal helper function for creating a knot vector from a vector of input 
  * data. The knot vector is essentially a copy of the data vector with its 
- * first and last element repeated four times.
+ * first and last element each repeated four times.
  */
 std::vector<real> 
 AbstractCubicSplineInterp::prepareKnotVector(std::vector<real> &x)
@@ -174,8 +178,8 @@ AbstractCubicSplineInterp::prepareKnotVector(std::vector<real> &x)
 }
 
 
-/*
- * This function estimates the derivatives (of the data) at the endpoints of
+/*!
+ * This function estimates the derivatives of \f$ f(x) \f$ at the endpoints of
  * the given data range. Estimation can be done with a simple finite difference
  * or via a parabolic fit with a ghost node assumption.
  */
