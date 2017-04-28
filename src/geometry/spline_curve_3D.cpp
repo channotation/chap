@@ -287,7 +287,6 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
 
     gmx::RVec curvPoint;
 
-
     // shift index to take into account repeated knots:
     int idx = idxCtrlPoint + degree_;
 
@@ -340,29 +339,14 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
         std::abort();
     }
 
-    //
+    // initialise optimal position and distance:
     real sOpt = s[1];
     real dOpt = pointSqDist(cartPoint, sOpt);
-    real sOptOld = 99;
-
-
-    std::cout<<std::endl<<std::endl;
+    real sOptOld = sOpt + 3*tol;
 
     int iter = 0;
     while( iter < maxIter )
     {
-        std::cout<<"  iter = "<<iter<<"  "
-                 <<"a = "<<s[0]<<"  "
-                 <<"b = "<<s[1]<<"  "
-                 <<"c = "<<s[2]<<"  "
-                 <<"sOpt = "<<sOpt<<"  "
-                 <<"f(a) = "<<d[0]<<"  "
-                 <<"f(b) = "<<d[1]<<"  "
-                 <<"f(c) = "<<d[2]<<"  "
-                 <<"dOpt = "<<dOpt<<"  "
-                 <<std::endl;
-
-
         // golden search step:
         real mi = (s[0] + s[2])/2.0;
         const real GOLD = 0.38196;
@@ -418,7 +402,12 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
         iter++;
     }
 
-
+    // check on convergence:
+    if( iter == maxIter )
+    {
+        std::cerr<<"WARNING: Could not reach convergence in mapping point onto spline!"<<std::endl;
+        std::abort();
+    }
 
 /*
     // quadratic minimisation iteration:

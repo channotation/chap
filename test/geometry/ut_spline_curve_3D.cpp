@@ -486,7 +486,13 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 
 
 /*
- *
+ * Test for the projection of points in cartesian coordinatas onto a spline 
+ * curve. Two cases are considered: a linear spline curve and a spline curve 
+ * interpolating points sampled from a planar circle. For the linear spline,
+ * an extrapolation case is considered as well. Agreement between numerical 
+ * procedure and theoretical expectation is accepted if bot the position along
+ * the curve and the distance from the curve agree to within the square root
+ * of the machine precision.
  */
 TEST_F(SplineCurve3DTest, blah)
 {
@@ -533,9 +539,6 @@ TEST_F(SplineCurve3DTest, blah)
         ASSERT_NEAR(t[i], curvi[0], eps);
         ASSERT_NEAR(0.0, curvi[1], eps);    
     }
-   
-
-    std::cout<<std::endl<<std::endl<<std::endl;
 
     // prepare a set of test points:
     std::vector<gmx::RVec> pts = {gmx::RVec(0.0,  0.0, -0.5),
@@ -568,33 +571,14 @@ TEST_F(SplineCurve3DTest, blah)
                                                      idxClosest,
                                                      eps);
 
-        std::cout<<"i = "<<i<<"  "
-                 <<"sOpt = "<<curvi[0]<<"  "
-                 <<"sTrue = "<<sTrue[i]<<"  "
-                 <<"dOpt = "<<curvi[1]<<"  "
-                 <<"dTrue = "<<dTrue[i]<<"  "
-                 <<"S(sOpt) = "<<"("<<Spl(curvi[0], 0, eSplineEvalDeBoor)[0]<<" , "
-                                    <<Spl(curvi[0], 0, eSplineEvalDeBoor)[1]<<" , "
-                                    <<Spl(curvi[0], 0, eSplineEvalDeBoor)[2]<<")"<<"  "
-                 <<"S_true = "<<"("<<pts[i][0]<<" , "
-                                   <<pts[i][1]<<" , "
-                                   <<pts[i][2]<<")"<<"  "
-                 <<std::endl;
-
         // check identity with analytical solution:
         ASSERT_NEAR(sTrue[i], curvi[0], eps);
         ASSERT_NEAR(dTrue[i], curvi[1], eps);    
     
     }
 
-
-
-/*
-    // floating point comparison threshold:
-    real eps = 1e-5;
-
     // cubic spline:
-    int degree = 3;
+    degree = 3;
 
     // define helix parameters:
     const real PI = std::acos(-1.0);
@@ -621,24 +605,43 @@ TEST_F(SplineCurve3DTest, blah)
     // create spline by interpolation:
     // (this will already be arc length parameterised)
     CubicSplineInterp3D Interp;
-    SplineCurve3D Spl = Interp(params, points, eSplineInterpBoundaryHermite);
+    Spl = Interp(params, points, eSplineInterpBoundaryHermite);
 
+    // check that all original points are found to lie on the curve:
+    for(unsigned int i = 0; i < points.size(); i++)
+    {
+        // find closest control point:
+        int idxClosest = Spl.closestCtrlPoint(points.at(i));
 
-    real eval = 0.0;
-    std::cout<<"speed = "<<Spl.speed(eval)<<std::endl;
+        // evaluate curvilinear coordinates of given point:
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
+                                                     idxClosest,
+                                                     eps);
 
+        // check identity with analytical solution:
+        ASSERT_NEAR(params[i], curvi[0], eps);
+        ASSERT_NEAR(0.0, curvi[1], eps);    
+    }
 
-    // define a set of test points:
-    real t = PI/2.0;
-    std::vector<gmx::RVec> pts = {gmx::RVec(a*std::cos(t), a*std::sin(t), 0.0),
-                                  gmx::RVec(a*std::cos(t), a*std::sin(t), -2.5),
-                                  gmx::RVec(2.0*a*std::cos(t), 2.0*a*std::sin(t), 0.0),
-                                  gmx::RVec(0.5*a*std::cos(t), 0.5*a*std::sin(t), 0.0),
-                                  gmx::RVec(a*std::cos(2.0*t), a*std::sin(2.0*t), 0.0)};
+    // define a new set of test points:
+    real par = PI/2.0;
+    pts = {gmx::RVec(a*std::cos(par), a*std::sin(par), 0.0),
+           gmx::RVec(a*std::cos(par), a*std::sin(par), -2.5),
+           gmx::RVec(2.0*a*std::cos(par), 2.0*a*std::sin(par), 0.0),
+           gmx::RVec(0.5*a*std::cos(par), 0.5*a*std::sin(par), 0.0),
+           gmx::RVec(a*std::cos(2.0*par), a*std::sin(2.0*par), 0.0)};
 
     // corresponding spline coordinates:
-    std::vector<real> sTrue = {t, t, t, t, 2.0*t};
-    std::vector<real> dTrue = {0.0, -2.5, a, 0.5*a, 0.0};
+    sTrue = {par, 
+             par, 
+             par, 
+             par, 
+             2.0*par};
+    dTrue = {0.0, 
+             2.5*2.5, 
+             a*a, 
+             (0.5*a)*(0.5*a), 
+             0.0};
 
     // check that test points are evaluated correctly:
     for(unsigned int i = 0; i < pts.size(); i++)
@@ -646,25 +649,15 @@ TEST_F(SplineCurve3DTest, blah)
         // find closest control point:
         int idxClosest = Spl.closestCtrlPoint(pts.at(i));
 
-        // assume that we are far from the endpoints:
-        std::vector<int> initParams = {idxClosest - 1, idxClosest, idxClosest + 1};
-
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
-                                                     initParams,
+                                                     idxClosest,
                                                      eps);
 
-        std::cout<<"i = "<<i<<"  "
-                 <<"sOpt = "<<curvi[0]<<"  "
-                 <<"sTrue = "<<sTrue[i]<<"  "
-                 <<"dOpt = "<<curvi[1]<<"  "
-                 <<"dTrue = "<<dTrue[i]<<"  "
-                 <<std::endl;
-
         // check identity with analytical solution:
-//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//        ASSERT_NEAR(dTrue[i], curvi[1], eps);
+        ASSERT_NEAR(sTrue[i], curvi[0], eps);
+        ASSERT_NEAR(dTrue[i], curvi[1], eps);
     }
-    */
+    
 }
 
