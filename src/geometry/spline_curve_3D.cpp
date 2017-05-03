@@ -181,6 +181,12 @@ SplineCurve3D::arcLengthParam()
 real
 SplineCurve3D::length(real &lo, real &hi)
 { 
+    // do we need to form a lookup table:
+    if( arcLengthTableAvailable_ == false )
+    {
+       prepareArcLengthTable(); 
+    }
+
     // initialise length as zero::
     real length = 0.0;   
   
@@ -202,11 +208,11 @@ SplineCurve3D::length(real &lo, real &hi)
     // if necessary, loop over intermediate spline segments and sum up lengths:
     if( idxHi - idxLo > 1 )
     {
-        for(unsigned int i = idxLo + 1; i < idxHi; i++)
+        for(int i = idxLo + 1; i < idxHi; i++)
         {
-            // add length of current segment:
-            length += arcLengthBoole(knotVector_[i], knotVector_[i + 1]);
-         }
+            // add length of current segment from lookup table:
+            length += arcLengthTable_[i + 1] - arcLengthTable_[i];
+        }
     }
    
     return length;
