@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <limits>
 
+#include <ctime> // TODO: temove this
+
 #include "geometry/spline_curve_3D.hpp"
 #include "geometry/cubic_spline_interp_3D.hpp"
 
@@ -42,6 +44,15 @@ SplineCurve3D::SplineCurve3D(int degree,
     // assign knot vector and control points:
     knotVector_ = knotVector;
     ctrlPoints_ = ctrlPoints;
+}
+
+
+/*
+ * Default constructor for initialiser lists.
+ */
+SplineCurve3D::SplineCurve3D()
+{
+
 }
 
 
@@ -121,9 +132,15 @@ SplineCurve3D::arcLengthParam()
     std::vector<real> newParams;
     std::vector<gmx::RVec> newPoints;
 
+    std::cout<<"parameterising new points ... ";
+    clock_t t1 = std::clock();
+
     // loop over uniformly spaced arc length intervals:
     for(int i = 0; i < nNew; i++)
     {
+        //
+    //    std::cout<<"  i = "<<i<<std::endl;
+
         // calculate target arc length:
         real newParam = i*arcLenStep;
         newParams.push_back(newParam);
@@ -134,12 +151,19 @@ SplineCurve3D::arcLengthParam()
         //  evaluate spline to get new point:
         newPoints.push_back(this -> evaluate(oldParam, 0, eSplineEvalDeBoor));
     }
+
+    std::cout<<"done in "<<(std::clock() - t1)/CLOCKS_PER_SEC<<" sec"<<std::endl;
      
+    std::cout<<"interpolating new spline ... ";
+    clock_t t2 = std::clock();
+
     // interpolate new points to get arc length parameterised curve:
     CubicSplineInterp3D Interp;
     SplineCurve3D newSpl = Interp(newParams, 
                                   newPoints, 
                                   eSplineInterpBoundaryHermite);
+
+    std::cout<<"done in "<<(std::clock() - t2)/CLOCKS_PER_SEC<<" sec"<<std::endl;
 
     // update own parameters:
     this -> knotVector_ = newSpl.knotVector_;
@@ -526,12 +550,22 @@ SplineCurve3D::arcLengthBoole(real &lo, real &hi)
 void
 SplineCurve3D::prepareArcLengthTable()
 {
-    // build arc length lookup table:
-    for(unsigned int i = 0; i < knotVector_.size(); i++)
+    std::cout<<"preparing arc length table ...";
+    std::clock_t t = std::clock();
+  
+    arcLengthTable_.resize(knotVector_.size());
+    real segmentLength;
+    for(unsigned int i = 0; i < knotVector_.size() - 1; i++)
     {
-        arcLengthTable_.push_back(length(knotVector_.front(), knotVector_.at(i)));
+        // calculate length of current segment:
+        segmentLength = arcLengthBoole(knotVector_[i], knotVector_[i+1]);
+
+        // add to arc length table:
+        arcLengthTable_[i + 1] = arcLengthTable_[i] + segmentLength;
     }
- 
+
+    std::cout<<" done in "<<(std::clock() - t)/CLOCKS_PER_SEC<<" sec"<<std::endl;
+
     // set flag:
     arcLengthTableAvailable_ = true;
 }
