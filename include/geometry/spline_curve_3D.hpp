@@ -22,6 +22,7 @@ class SplineCurve3D : public AbstractSplineCurve
         SplineCurve3D(int degree,
                       std::vector<real> knotVector,
                       std::vector<gmx::RVec> ctrlPoints);
+        SplineCurve3D();
         ~SplineCurve3D();
 
         // public interface for spline evaluation:
@@ -61,9 +62,14 @@ class SplineCurve3D : public AbstractSplineCurve
         std::vector<real> arcLengthTable_;
 
         // utility functions:
-        real arcLengthBoole(real &lo, real &hi);
+        real arcLengthBoole(real lo, real hi);
         void prepareArcLengthTable();
+        
         real arcLengthToParam(real &arcLength);
+        bool term(real lo, real hi);
+        real obj(real lo, real hi, real target);
+
+       
 
 
 

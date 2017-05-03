@@ -52,21 +52,31 @@ add_definitions(${GROMACS_DEFINITIONS})
 # find LAPACK:
 find_package(LAPACK REQUIRED)
 
-message("lapack = " ${LAPACK_LIBRARIES})
+#message("lapack = " ${LAPACK_LIBRARIES})
+
+
+# Find Boost Library
+#------------------------------------------------------------------------------
+
+find_package(Boost REQUIRED)
+
+#message("boost = " ${LAPACK_LIBRARIES})
+
 
 
 # Compile Instructions
 #------------------------------------------------------------------------------
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp) 
-message("CHAP_SRC = " ${SRC_FILES})
+#message("CHAP_SRC = " ${SRC_FILES})
 
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
-message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
+#message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
-message(STATUS "libs = " ${GROMACS_LIBRARIES})
+#message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
+target_link_libraries(chap ${BOOST_LIBRARIES})
 
 
 # Compile Tests

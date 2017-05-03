@@ -13,8 +13,8 @@ include_directories(${GTEST_INCLUDE_DIRS})
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
-message("SRC = " ${SRC_FILES})
-message("TEST_SRC = " ${TEST_SRC_FILES})
+#message("SRC = " ${SRC_FILES})
+#message("TEST_SRC = " ${TEST_SRC_FILES})
 
 # create executable to run all tests:
 add_executable(runAllTests runAllTests.cpp ${SRC_FILES} ${TEST_SRC_FILES})

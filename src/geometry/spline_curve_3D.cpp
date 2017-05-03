@@ -5,6 +5,10 @@
 
 #include <ctime> // TODO: temove this
 
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/math/tools/roots.hpp>
+
 #include "geometry/spline_curve_3D.hpp"
 #include "geometry/cubic_spline_interp_3D.hpp"
 
@@ -120,7 +124,7 @@ void
 SplineCurve3D::arcLengthParam()
 {
     // number of uniformly spaced arc length parameters:
-    int nNew = 10*nCtrlPoints_;
+    int nNew = 7*nCtrlPoints_;
 
     // create lookup table for arc length at knots:
     prepareArcLengthTable();
@@ -139,7 +143,7 @@ SplineCurve3D::arcLengthParam()
     for(int i = 0; i < nNew; i++)
     {
         //
-    //    std::cout<<"  i = "<<i<<std::endl;
+//        std::cout<<"i = "<<i<<std::endl;
 
         // calculate target arc length:
         real newParam = i*arcLenStep;
@@ -529,7 +533,7 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
  * is Boole's rule.
  */
 real
-SplineCurve3D::arcLengthBoole(real &lo, real &hi)
+SplineCurve3D::arcLengthBoole(real lo, real hi)
 {
     // determine intermediate evaluation points:
     real h = (hi - lo)/4.0;
@@ -585,8 +589,8 @@ SplineCurve3D::prepareArcLengthTable()
 real
 SplineCurve3D::arcLengthToParam(real &arcLength)
 {
-    int maxIter = 100;
-    real absTol = 10*std::numeric_limits<real>::epsilon();
+    int maxIter = 1000;
+    real absTol = 0.1*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // sanity check for arc length table:
     if( arcLengthTableAvailable_ != true )
@@ -614,6 +618,33 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     
     // target arc length within this interval:
     real targetIntervalLength = arcLength - arcLengthTable_[idxLo];
+
+   
+
+//    clock_t tboost = std::clock();
+
+
+    boost::uintmax_t max_iter = 100;
+
+    boost::function<bool(real, real)> termCond = boost::bind(&SplineCurve3D::term, this, _1, _2);
+
+    boost::function<real(real)> objFun = boost::bind(&SplineCurve3D::obj, this, tLi, _1, targetIntervalLength);
+ 
+    std::pair<real, real> pair;
+    pair = boost::math::tools::toms748_solve(objFun,
+                                       tLo, 
+                                       tHi,
+                                       termCond,
+                                       max_iter);
+
+
+//    std::cout<<"max_iter = "<<max_iter<<std::endl;
+/*
+//    tboost = std::clock() - tboost;
+
+    std::cout<<"boost res = "<<0.5*(pair.first + pair.second)<<std::endl;
+//    std::cout<<"boost time = "<<tboost/CLOCKS_PER_SEC<<std::endl;
+    
 
     // bisection:
     int iter = 0;
@@ -648,9 +679,36 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
         // increment loop counter:
         iter++;
     }
+    std::cout<<"  iter = "<<iter<<"  "
+             <<"  tMi = "<<tMi<<"  "
+             <<"  boostres = "<<0.5*(pair.first + pair.second)<<"  "
+             <<std::endl;
 
     // return bisection result:
-    return tMi;
+//    return tMi;
+   */ 
+
+    return 0.5*(pair.first + pair.second);
+}
+
+
+/*
+ *
+ */
+real
+SplineCurve3D::obj(real lo, real hi, real target)
+{
+    return arcLengthBoole(lo, hi) - target;
+}
+
+
+/*
+ *
+ */
+bool
+SplineCurve3D::term(real lo, real hi)
+{
+    return std::abs(hi - lo) <= 0.1*std::sqrt(std::numeric_limits<real>::epsilon());
 }
 
 
