@@ -61,13 +61,14 @@ class SplineCurve3D : public AbstractSplineCurve
         bool arcLengthTableAvailable_;
         std::vector<real> arcLengthTable_;
 
-        // utility functions:
+        // curve length utilities:
         real arcLengthBoole(real lo, real hi);
         void prepareArcLengthTable();
         
+        // arc length reparameterisation utilities:
         real arcLengthToParam(real &arcLength);
-        bool term(real lo, real hi);
-        real obj(real lo, real hi, real target);
+        bool arcLengthToParamTerm(real lo, real hi, real tol);
+        real arcLengthToParamObj(real lo, real hi, real target);
 
        
 

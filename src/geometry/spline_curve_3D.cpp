@@ -124,7 +124,7 @@ void
 SplineCurve3D::arcLengthParam()
 {
     // number of uniformly spaced arc length parameters:
-    int nNew = 7*nCtrlPoints_;
+    int nNew = 10*nCtrlPoints_;
 
     // create lookup table for arc length at knots:
     prepareArcLengthTable();
@@ -136,7 +136,7 @@ SplineCurve3D::arcLengthParam()
     std::vector<real> newParams;
     std::vector<gmx::RVec> newPoints;
 
-    std::cout<<"parameterising new points ... ";
+    std::cout<<"parameterising "<<nNew<<" new points ... ";
     clock_t t1 = std::clock();
 
     // loop over uniformly spaced arc length intervals:
@@ -186,7 +186,7 @@ real
 SplineCurve3D::length(real &lo, real &hi)
 { 
     // do we need to form a lookup table:
-    if( arcLengthTableAvailable_ == false )
+    if( arcLengthTableAvailable_ == false || arcLengthTable_.size() == 0 )
     {
        prepareArcLengthTable(); 
     }
@@ -208,7 +208,8 @@ SplineCurve3D::length(real &lo, real &hi)
         length += arcLengthBoole(lo, knotVector_[idxLo + 1]);
         length += arcLengthBoole(knotVector_[idxHi], hi);
     }
-
+std::cout<<"blah"<<std::endl;
+std::cout<<"lat = "<<arcLengthTable_.size()<<std::endl;
     // if necessary, loop over intermediate spline segments and sum up lengths:
     if( idxHi - idxLo > 1 )
     {
@@ -218,7 +219,7 @@ SplineCurve3D::length(real &lo, real &hi)
             length += arcLengthTable_[i + 1] - arcLengthTable_[i];
         }
     }
-   
+std::cout<<"blah23"<<std::endl;
     return length;
 }
 
@@ -589,8 +590,8 @@ SplineCurve3D::prepareArcLengthTable()
 real
 SplineCurve3D::arcLengthToParam(real &arcLength)
 {
-    int maxIter = 1000;
-    real absTol = 0.1*std::sqrt(std::numeric_limits<real>::epsilon());
+    boost::uintmax_t maxIter = 100;
+    real absTol = 0.01*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // sanity check for arc length table:
     if( arcLengthTableAvailable_ != true )
@@ -613,92 +614,37 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     // initialise bisection interval and lower limit:
     real tLo = knotVector_[idxLo];
     real tHi = knotVector_[idxHi];
-    real tMi = (tHi - tLo)/2.0;
     real tLi = tLo;
     
     // target arc length within this interval:
     real targetIntervalLength = arcLength - arcLengthTable_[idxLo];
 
-   
+    // termination condition binding:
+    boost::function<bool(real, real)> termCond;
+    termCond = boost::bind(&SplineCurve3D::arcLengthToParamTerm, 
+                           this, 
+                           _1, 
+                           _2,
+                           absTol);
 
-//    clock_t tboost = std::clock();
-
-
-    boost::uintmax_t max_iter = 100;
-
-    boost::function<bool(real, real)> termCond = boost::bind(&SplineCurve3D::term, this, _1, _2);
-
-    boost::function<real(real)> objFun = boost::bind(&SplineCurve3D::obj, this, tLi, _1, targetIntervalLength);
+    // objective functionbinding:
+    boost::function<real(real)> objFun;
+    objFun = boost::bind(&SplineCurve3D::arcLengthToParamObj, 
+                         this, 
+                         tLi, 
+                         _1, 
+                         targetIntervalLength);
  
-    std::pair<real, real> pair;
-    pair = boost::math::tools::toms748_solve(objFun,
-                                       tLo, 
-                                       tHi,
-                                       termCond,
-                                       max_iter);
+    // find root via TOMS748 bracketing algorithm:
+    std::pair<real, real> result;
+    result = boost::math::tools::toms748_solve(objFun,
+                                               tLo, 
+                                               tHi,
+                                               termCond,
+                                               maxIter);
 
-
-//    std::cout<<"max_iter = "<<max_iter<<std::endl;
-/*
-//    tboost = std::clock() - tboost;
-
-    std::cout<<"boost res = "<<0.5*(pair.first + pair.second)<<std::endl;
-//    std::cout<<"boost time = "<<tboost/CLOCKS_PER_SEC<<std::endl;
-    
-
-    // bisection:
-    int iter = 0;
-    while( iter < maxIter )
-    {
-        // update interval midpoint:
-        tMi = (tLo + tHi)/2.0;
-
-        // evaluate length of arc:
-        real intervalLength = arcLengthBoole(tLi, tMi);
-
-        // calculate error:
-        real signedError = intervalLength - targetIntervalLength;
-        real error = std::abs(signedError);
-
-        // break out of loop once error tolerance has been achieved:
-        if( error < absTol )
-        {
-            break;
-        }
-        
-        // determine new interval:
-        if( signedError > 0.0 )
-        {
-            tHi = tMi;
-        }
-        else
-        {
-            tLo = tMi;
-        }
-
-        // increment loop counter:
-        iter++;
-    }
-    std::cout<<"  iter = "<<iter<<"  "
-             <<"  tMi = "<<tMi<<"  "
-             <<"  boostres = "<<0.5*(pair.first + pair.second)<<"  "
-             <<std::endl;
-
-    // return bisection result:
-//    return tMi;
-   */ 
-
-    return 0.5*(pair.first + pair.second);
-}
-
-
-/*
- *
- */
-real
-SplineCurve3D::obj(real lo, real hi, real target)
-{
-    return arcLengthBoole(lo, hi) - target;
+    // best guess if middle of bracketing interval:
+    return 0.5*(result.first + result.second);
 }
 
 
@@ -706,9 +652,19 @@ SplineCurve3D::obj(real lo, real hi, real target)
  *
  */
 bool
-SplineCurve3D::term(real lo, real hi)
+SplineCurve3D::arcLengthToParamTerm(real lo, real hi, real tol)
 {
-    return std::abs(hi - lo) <= 0.1*std::sqrt(std::numeric_limits<real>::epsilon());
+    return std::abs(hi - lo) <= tol;
+}
+
+
+/*
+ *
+ */
+real
+SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
+{
+    return arcLengthBoole(lo, hi) - target;
 }
 
 

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <ctime>
 
 #include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
@@ -11,10 +12,16 @@
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
+#include "geometry/spline_curve_1D.hpp"
+#include "geometry/spline_curve_3D.hpp"
+#include "geometry/cubic_spline_interp_1D.hpp"
+#include "geometry/cubic_spline_interp_3D.hpp"
+
 #include "trajectory-analysis/simulated_annealing_module.hpp"
 #include "trajectory-analysis/path_finding_module.hpp"
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
+
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
@@ -431,7 +438,50 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }   
 
     // run path finding algorithm on current frame:
+    std::cout<<"finding permeation pathway ... ";
+    clock_t tPathFinding = std::clock();
     pfm -> findPath();
+    tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
+    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
+
+
+    // extract path points:
+    std::vector<gmx::RVec> pathPoints = pfm -> getPath();
+
+    // find centre line spline by interpolation:
+    std::cout<<"interpolating centreline ... ";
+    clock_t tInterp = std::clock();
+    CubicSplineInterp3D Interp3D;
+    SplineCurve3D centreLine = Interp3D(pathPoints, eSplineInterpBoundaryHermite);
+    tInterp = (std::clock() - tInterp)/CLOCKS_PER_SEC;
+    std::cout<<"done in "<<tInterp<<" sec"<<std::endl;
+
+    // reparameterise by arc length:
+    std::cout<<"reparameterising by arc length ... ";
+    clock_t tReparam = std::clock();
+    centreLine.arcLengthParam();
+    tReparam = (std::clock() - tReparam)/CLOCKS_PER_SEC;
+    std::cout<<"done in "<<tReparam<<" sec"<<std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // ADD DATA TO PARALLELISABLE CONTAINER
