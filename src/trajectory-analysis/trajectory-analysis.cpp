@@ -157,9 +157,9 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .required()
                          .description("Seed for RNG used in simulated annealing."));
     options -> addOption(IntegerOption("sa-max-cool")
-                         .store(&saMaxCoolingIter_)
-                         .defaultValue(1000)
-                         .description("Maximum number of cooling iterations in one simulated annealing run. Defaults to 1000."));
+                          .store(&saMaxCoolingIter_)
+                          .defaultValue(1000)
+                          .description("Maximum number of cooling iterations in one simulated annealing run. Defaults to 1000."));
     options -> addOption(IntegerOption("sa-cost-samples")
                          .store(&saNumCostSamples_)
                          .defaultValue(10)
@@ -218,7 +218,27 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     pdbplotm -> setFileName(poreParticleFileName);
     data_.addModule(pdbplotm);
 
- 
+
+    // PREPARE SELECTIONS FOR MAPPING
+    //-------------------------------------------------------------------------
+
+    gmx::SelectionCollection poreComCollection; 
+    poreComCollection.setReferencePosType("res_com");
+    poreComCollection.setOutputPosType("res_com");
+
+    gmx::Selection test = poreComCollection.parseFromString("resname SOL")[0];
+
+    poreComCollection.setTopology(top.topology(), 0);
+    poreComCollection.compile();
+
+
+    std::cout<<std::endl<<std::endl;
+    std::cout<<"atomCount = "<<test.atomCount()<<"  "
+             <<"posCount = "<<test.posCount()<<"  "
+             <<std::endl;
+    std::cout<<std::endl<<std::endl;
+
+    
 
 
     
@@ -438,6 +458,47 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }   
 
 
+
+
+
+
+
+
+
+
+    const gmx::Selection &test = pdata -> parallelSelection(refsel_);
+
+
+    std::cout<<"atomCount = "<<test.atomCount()<<"  "
+             <<std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
     std::cout<<"================================================="<<std::endl;
     std::cout<<std::endl;
     std::cout<<std::endl;
@@ -486,7 +547,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<std::endl;
     std::cout<<"================================================="<<std::endl;
 
-
+*/
 
 
 
