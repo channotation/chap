@@ -6,6 +6,8 @@
 #include <gromacs/trajectoryanalysis.h>
 
 #include "path-finding/abstract_path_finder.hpp"
+#include "path-finding/molecular_path.hpp"
+
 
 /*
  * Abstract class that implements infrastructure used by all probe-based path
@@ -15,6 +17,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
 {
     public:
 
+        // constructor:
         AbstractProbePathFinder(real probeStepLength, 
                                 real probeRadius,
                                 real maxFreeDist,
@@ -32,7 +35,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
                                 real saStepLengthFactor,
                                 bool saUseAdaptiveCandGen);
 
-//    protected:
+    protected:
 
         int maxProbeSteps_;
 

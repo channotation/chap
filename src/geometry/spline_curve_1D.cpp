@@ -42,6 +42,15 @@ SplineCurve1D::SplineCurve1D(int degree,
 
 
 /*
+ *
+ */
+SplineCurve1D::SplineCurve1D()
+{
+    
+}
+
+
+/*
  * Destructor.
  */
 SplineCurve1D::~SplineCurve1D()

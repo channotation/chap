@@ -47,7 +47,6 @@ AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
 
 }
 
-
 /*
  * Finds the minimal free distance, i.e. the shortest distance between the 
  * probe and the closest van-der-Waals surface.

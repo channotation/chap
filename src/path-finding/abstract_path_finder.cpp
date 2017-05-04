@@ -9,3 +9,13 @@ AbstractPathFinder::AbstractPathFinder()
 {
 
 }
+
+/*
+ *
+ */
+MolecularPath
+AbstractPathFinder::getMolecularPath()
+{
+    return MolecularPath(path_, radii_);
+}
+

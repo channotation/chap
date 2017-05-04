@@ -23,6 +23,7 @@ class SplineCurve3D : public AbstractSplineCurve
                       std::vector<real> knotVector,
                       std::vector<gmx::RVec> ctrlPoints);
         SplineCurve3D();
+        SplineCurve3D(const SplineCurve3D &other);
         ~SplineCurve3D();
 
         // public interface for spline evaluation:
@@ -47,7 +48,7 @@ class SplineCurve3D : public AbstractSplineCurve
         // map points onto curve:
         real pointSqDist(gmx::RVec &point, real &eval);
         int closestCtrlPoint(gmx::RVec &point);
-        gmx::RVec cartesianToCurvilinear(gmx::RVec &cartPoint,
+        gmx::RVec cartesianToCurvilinear(gmx::RVec cartPoint,
                                          int idxCtrlPoint,
                                          real tol);
  

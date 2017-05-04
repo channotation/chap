@@ -437,6 +437,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                             saUseAdaptiveCandGen_));
     }   
 
+
+    std::cout<<"================================================="<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+
+
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
     clock_t tPathFinding = std::clock();
@@ -445,38 +451,40 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
 
-    // extract path points:
-    std::vector<gmx::RVec> pathPoints = pfm -> getPath();
+    // retrieve molecular path object:
+    std::cout<<"preparing pathway object ... ";
+    clock_t tMolPath = std::clock();
+    MolecularPath molPath = pfm -> getMolecularPath();
+    tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
+    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
 
-    // find centre line spline by interpolation:
-    std::cout<<"interpolating centreline ... ";
-    clock_t tInterp = std::clock();
-    CubicSplineInterp3D Interp3D;
-    SplineCurve3D centreLine = Interp3D(pathPoints, eSplineInterpBoundaryHermite);
-    tInterp = (std::clock() - tInterp)/CLOCKS_PER_SEC;
-    std::cout<<"done in "<<tInterp<<" sec"<<std::endl;
+    
+    // map residues onto pathway:
+    std::cout<<"mapping residues onto pathway ... ";
+    clock_t tMapRes = std::clock();
+    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
+    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
+    tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
+    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
 
-    // reparameterise by arc length:
-    std::cout<<"reparameterising by arc length ... ";
-    clock_t tReparam = std::clock();
-    centreLine.arcLengthParam();
-    tReparam = (std::clock() - tReparam)/CLOCKS_PER_SEC;
-    std::cout<<"done in "<<tReparam<<" sec"<<std::endl;
-
-
+    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
 
 
+    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
+    {
+        std::cout<<"refID = "<<it -> first<<"  "
+                 <<"s = "<<it -> second[0]<<"  "
+                 <<"rho = "<<it -> second[1]<<"  "
+                 <<"phi = "<<it -> second[2]<<"  "
+                 <<std::endl;
+    }
 
 
+    
 
-
-
-
-
-
-
-
-
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"================================================="<<std::endl;
 
 
 
@@ -486,7 +494,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // ADD DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
-   
+  /* 
     // access path finding module result:
     std::vector<gmx::RVec> path = pfm -> getPath();
     std::vector<real> radii = pfm -> getRadii();
@@ -509,7 +517,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // TODO: Is this necessary and parallel compatible?
     pfm.reset();
 
-
+*/
 
 
 

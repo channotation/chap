@@ -24,6 +24,7 @@ class SplineCurve1D : public AbstractSplineCurve
         SplineCurve1D(int degree, 
                       std::vector<real> knotVector,
                       std::vector<real> ctrlPoints);
+        SplineCurve1D();
         ~SplineCurve1D();
 
         // public interfact for spline evaluation:

@@ -61,6 +61,22 @@ SplineCurve3D::SplineCurve3D()
 
 
 /*
+ *
+ */
+SplineCurve3D::SplineCurve3D(const SplineCurve3D &other)
+{
+    nCtrlPoints_ = other.nCtrlPoints_;
+    nKnots_ = other.nKnots_;
+    degree_ = other.degree_;
+
+    ctrlPoints_ = other.ctrlPoints_;
+
+    arcLengthTableAvailable_ = other.arcLengthTableAvailable_;
+    arcLengthTable_ = other.arcLengthTable_;
+}
+
+
+/*
  * Destructor.
  */
 SplineCurve3D::~SplineCurve3D()
@@ -300,7 +316,7 @@ SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
  * TODO: implement angular coordinate!
  */
 gmx::RVec 
-SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
+SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                       int idxCtrlPoint,
                                       real tol)
 {
