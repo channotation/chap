@@ -136,15 +136,10 @@ SplineCurve3D::arcLengthParam()
     std::vector<real> newParams;
     std::vector<gmx::RVec> newPoints;
 
-    std::cout<<"parameterising "<<nNew<<" new points ... ";
-    clock_t t1 = std::clock();
 
     // loop over uniformly spaced arc length intervals:
     for(int i = 0; i < nNew; i++)
     {
-        //
-//        std::cout<<"i = "<<i<<std::endl;
-
         // calculate target arc length:
         real newParam = i*arcLenStep;
         newParams.push_back(newParam);
@@ -156,18 +151,11 @@ SplineCurve3D::arcLengthParam()
         newPoints.push_back(this -> evaluate(oldParam, 0, eSplineEvalDeBoor));
     }
 
-    std::cout<<"done in "<<(std::clock() - t1)/CLOCKS_PER_SEC<<" sec"<<std::endl;
-     
-    std::cout<<"interpolating new spline ... ";
-    clock_t t2 = std::clock();
-
     // interpolate new points to get arc length parameterised curve:
     CubicSplineInterp3D Interp;
     SplineCurve3D newSpl = Interp(newParams, 
                                   newPoints, 
                                   eSplineInterpBoundaryHermite);
-
-    std::cout<<"done in "<<(std::clock() - t2)/CLOCKS_PER_SEC<<" sec"<<std::endl;
 
     // update own parameters:
     this -> knotVector_ = newSpl.knotVector_;
@@ -208,8 +196,7 @@ SplineCurve3D::length(real &lo, real &hi)
         length += arcLengthBoole(lo, knotVector_[idxLo + 1]);
         length += arcLengthBoole(knotVector_[idxHi], hi);
     }
-std::cout<<"blah"<<std::endl;
-std::cout<<"lat = "<<arcLengthTable_.size()<<std::endl;
+
     // if necessary, loop over intermediate spline segments and sum up lengths:
     if( idxHi - idxLo > 1 )
     {
@@ -219,7 +206,7 @@ std::cout<<"lat = "<<arcLengthTable_.size()<<std::endl;
             length += arcLengthTable_[i + 1] - arcLengthTable_[i];
         }
     }
-std::cout<<"blah23"<<std::endl;
+
     return length;
 }
 
@@ -444,82 +431,6 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec &cartPoint,
         std::abort();
     }
 
-/*
-    // quadratic minimisation iteration:
-    int iter = 0;
-    while( iter < maxIter )
-    {
-        std::cout<<"  iter = "<<iter<<"  "
-                 <<"s1 = "<<s[0]<<"  "
-                 <<"s2 = "<<s[1]<<"  "
-                 <<"s3 = "<<s[2]<<"  "
-                 <<"sOpt = "<<sOpt<<"  "
-                 <<"d1 = "<<d[0]<<"  "
-                 <<"d2 = "<<d[1]<<"  "
-                 <<"d3 = "<<d[2]<<"  "
-                 <<"dOpt = "<<dOpt<<"  "
-                 <<std::endl;
-    
-
-        // calculate cyclically permutated differences:
-        real s12 = s[0] - s[1];
-        real s23 = s[1] - s[2];
-        real s31 = s[2] - s[0];
-
-        // calculate cyclically permutated squared differences:
-        real q12 = s[0]*s[0] - s[1]*s[1];
-        real q23 = s[1]*s[1] - s[2]*s[2];
-        real q31 = s[2]*s[2] - s[0]*s[0];
-
-        // find minimum of parabola and evaluate distance:
-        sOpt = 1.0/2.0*(q23*d[0] + q31*d[1] + q12*d[2])/(s23*d[0] + s31*d[1] + s12*d[2]); 
-        dOpt = pointSqDist(cartPoint, sOpt);
-
-        // check convergence:
-        if( std::abs(sOpt - sOptOld) < tol )
-        {
-            break;
-        }
-
-        // handle degenerate case:
-        if( std::abs(s[0] - sOpt) < eps || 
-            std::abs(s[1] - sOpt) < eps || 
-            std::abs(s[2] - sOpt) < eps )
-        {
-            const real GOLD = 0.38196;
-        }
- 
-        // find support point with largest distance:
-        int idxMax = std::max_element(d.begin(), d.end()) - d.begin();
-
-        // replace this support point by optimum:
-        s[idxMax] = sOpt;
-        d[idxMax] = dOpt;
-
-        // keep track of previous optimum:
-        sOptOld = sOpt;
-
-        // increment loop counter:
-        iter++;
-    }
-        std::cout<<"  iter = "<<iter<<"  "
-                 <<"s1 = "<<s[0]<<"  "
-                 <<"s2 = "<<s[1]<<"  "
-                 <<"s3 = "<<s[2]<<"  "
-                 <<"sOpt = "<<sOpt<<"  "
-                 <<"d1 = "<<d[0]<<"  "
-                 <<"d2 = "<<d[1]<<"  "
-                 <<"d3 = "<<d[2]<<"  "
-                 <<"dOpt = "<<dOpt<<"  "
-                 <<std::endl;
-
-    // throw non-convergence warning:
-    if( iter == maxIter )
-    {
-        std::cerr<<"WARNING: Could not reach convergence within the prescribed "
-                 <<iter<<" steps!"<<std::endl;
-    }
-*/
     curvPoint[0] = sOpt;
     curvPoint[1] = dOpt;
     curvPoint[2] = std::nan("");
@@ -561,9 +472,6 @@ SplineCurve3D::arcLengthBoole(real lo, real hi)
 void
 SplineCurve3D::prepareArcLengthTable()
 {
-    std::cout<<"preparing arc length table ...";
-    std::clock_t t = std::clock();
-  
     arcLengthTable_.resize(knotVector_.size());
     real segmentLength;
     for(unsigned int i = 0; i < knotVector_.size() - 1; i++)
@@ -574,8 +482,6 @@ SplineCurve3D::prepareArcLengthTable()
         // add to arc length table:
         arcLengthTable_[i + 1] = arcLengthTable_[i] + segmentLength;
     }
-
-    std::cout<<" done in "<<(std::clock() - t)/CLOCKS_PER_SEC<<" sec"<<std::endl;
 
     // set flag:
     arcLengthTableAvailable_ = true;
