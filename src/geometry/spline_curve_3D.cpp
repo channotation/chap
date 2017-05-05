@@ -23,6 +23,7 @@ SplineCurve3D::SplineCurve3D(int degree,
     nCtrlPoints_ = ctrlPoints.size();
     nKnots_ = knotVector.size();
     degree_ = degree;
+    arcLengthTableAvailable_ = false;
 
     // ensure minimal number of control points for given degree:
     if( nCtrlPoints_ < degree_ + 1 )
@@ -501,6 +502,27 @@ SplineCurve3D::prepareArcLengthTable()
 
     // set flag:
     arcLengthTableAvailable_ = true;
+}
+
+
+/*
+ * Returns arc length value at the control points by simply removing the 
+ * repeated knot values from the arc length lookup lookup table.
+ */
+std::vector<real>
+SplineCurve3D::ctrlPointArcLength()
+{
+    // check availability:
+    if( arcLengthTableAvailable_ == false )
+    {
+        prepareArcLengthTable();
+    }
+
+    // create copy of table and remove redundant elements:
+    std::vector<real> arcLength(arcLengthTable_.begin() + degree_, 
+                                arcLengthTable_.end() - degree_);
+
+    return arcLength;
 }
 
 

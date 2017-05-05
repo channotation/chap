@@ -40,10 +40,12 @@ class SplineCurve3D : public AbstractSplineCurve
         // calculate properties of curve:
         real length(real &lo, real &hi);
         real length();
- 
+     
         gmx::RVec tangentVec(real &evalPoint);
         
         real speed(real &evalPoint);
+
+        std::vector<real> ctrlPointArcLength();
 
         // map points onto curve:
         real pointSqDist(gmx::RVec &point, real &eval);
