@@ -76,6 +76,30 @@ SplineCurve1D::evaluate(real &evalPoint,
                         unsigned int derivOrder, 
                         eSplineEvalMethod method)
 {
+    // use constant extrapolation here:
+    if( evalPoint <= knotVector_.front() )
+    {
+        if( derivOrder > 0 )
+        {
+            return 0.0;
+        }
+        else
+        {
+            return ctrlPoints_.front();
+        }
+    }
+    if(  evalPoint >= knotVector_.back() )
+    {
+        if( derivOrder > 0 )
+        {
+            return 0.0;
+        }
+        else
+        {
+            return ctrlPoints_.back();
+        }
+    }
+
     // one-dimensional case is just evaluation of spline function:
     return evaluateSplineFun(evalPoint, ctrlPoints_, derivOrder, method);
 }
