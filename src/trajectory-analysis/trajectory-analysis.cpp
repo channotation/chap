@@ -24,6 +24,7 @@
 
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
+#include "path-finding/naive_cylindrical_path_finder.hpp"
 
 using namespace gmx;
 
@@ -461,6 +462,16 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                             saCoolingFactor_, saStepLengthFactor_, 
                                             saUseAdaptiveCandGen_));
     }   
+    else if( pfMethod_ == "naive-cylindrical" )
+    {
+    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
+    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
+        pfm.reset(new NaiveCylindricalPathFinder(pfProbeStepLength_,
+                                                 pfMaxProbeSteps_,
+                                                 pfMaxFreeDist_,
+                                                 initProbePos,
+                                                 chanDirVec));        
+    }
 
 
 
@@ -524,7 +535,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
 
-    
+   /* 
     // map residues onto pathway:
     std::cout<<"mapping residues onto pathway ... ";
     clock_t tMapRes = std::clock();
@@ -544,7 +555,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                  <<"phi = "<<it -> second[2]<<"  "
                  <<std::endl;
     }
-
+*/
 
     
 
@@ -567,7 +578,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
     // access path finding module result:
-    real extrapDist = 0.0;
+    real extrapDist = 1.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
