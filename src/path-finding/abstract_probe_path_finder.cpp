@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 
 #include "path-finding/abstract_probe_path_finder.hpp"
 
@@ -57,8 +58,14 @@ AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
    // internal variables:
     real pairDist;              // distance between probe and pore atom
     real poreAtomVdwRadius;     // van-der-Waals radius of pore atom
-    // TODO: infinity
-    real minimalFreeDistance = 99;            // radius of maximal non-overlapping sphere
+    // TODO: using infinity here will cause a LAPACK error later in the code
+    // IF the search cutoff is too small. Terminating the code in the case
+    // may be a good idea overall, but better error handling is needed. Note 
+    // that if an arbitraty value is chosen here the optimisation will still 
+    // work evn with too small a cutoff, but that will cause problems later,
+    // when the path points are interpolated: The very non-smooth spacing of
+    // points will then lead to kinks in the spline!
+    real minimalFreeDistance = std::numeric_limits<real>::infinity();            // radius of maximal non-overlapping sphere
 
     // convert point in optimisation space to point in configuration space:
     gmx::AnalysisNeighborhoodPositions probePos(optimToConfig(optimSpacePos).as_vec());
