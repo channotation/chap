@@ -52,7 +52,11 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     bool                             ippselIsSet_;
 	SelectionList                    sel_;			// selection of the small particle groups
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
-	AnalysisData                     data_;			// raw data container
+
+    AnalysisData                     data_;			// raw data container
+    AnalysisData                     dataResMapping_;
+
+
 	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
