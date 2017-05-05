@@ -45,7 +45,10 @@ class SplineCurve3D : public AbstractSplineCurve
         
         real speed(real &evalPoint);
 
+        // utilities for accessing arc length at the control points:
         std::vector<real> ctrlPointArcLength();
+        real frstPointArcLength();
+        real lastPointArcLength();
 
         // map points onto curve:
         real pointSqDist(gmx::RVec &point, real &eval);

@@ -56,6 +56,10 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
+
+    int                              nOutPoints_;   // number of points on path sample
+
+
     std::string pfMethod_;
 
     real pfProbeStepLength_;

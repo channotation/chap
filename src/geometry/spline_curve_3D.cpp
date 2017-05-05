@@ -527,6 +527,38 @@ SplineCurve3D::ctrlPointArcLength()
 
 
 /*
+ * Returns arc length value at first control point.
+ */
+real
+SplineCurve3D::frstPointArcLength()
+{
+    // check availability:
+    if( arcLengthTableAvailable_ == false )
+    {
+        prepareArcLengthTable();
+    }
+
+    return arcLengthTable_.front();
+}
+
+
+/*
+ * Returns arc length value at last control point.
+ */
+real
+SplineCurve3D::lastPointArcLength()
+{
+    // check availability:
+    if( arcLengthTableAvailable_ == false )
+    {
+        prepareArcLengthTable();
+    }
+
+    return arcLengthTable_.back();
+}
+
+
+/*
  * Returns the parameter value (in the current parameterisation, typically 
  * chord length) that corresponds to a given value of arc length. This is done
  * via bisection.

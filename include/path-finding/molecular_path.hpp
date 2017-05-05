@@ -27,6 +27,18 @@ class MolecularPath
         std::map<int, gmx::RVec> mapSelection(gmx::Selection mapSel,
                                               t_pbc *nbhSearchPbc);
 
+        // access properties of path:
+        real length();
+
+        // sample points on centreline:
+        std::vector<real> sampleArcLength(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> samplePoints(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);
+        std::vector<real> sampleRadii(int nPoints, real extrapDist);
+        std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
+
+
+
     private:
 
         // original path points and corresponding radii:
@@ -36,6 +48,11 @@ class MolecularPath
         // pore centre line and corresponding radius:
         SplineCurve3D centreLine_;
         SplineCurve1D poreRadius_;
+
+        // properties of path:
+        real openingLo_;
+        real openingHi_;
+        real length_;
 };
 
 

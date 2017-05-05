@@ -120,6 +120,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&poreProfileFileName_)
                          .defaultValue("pore_profile.dat")
                          .description("Name of file containing pore radius, small particle density, and small particle energy as function of the permeation coordinate."));
+    options -> addOption(IntegerOption("num-out-pts")
+                         .store(&nOutPoints_)
+                         .defaultValue(1000)
+                         .description("Number of sample points of pore centre line that are written to output."));
+
 
 
     // get parameters of path-finding agorithm:
@@ -497,7 +502,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-/*
+
 
     std::cout<<"================================================="<<std::endl;
     std::cout<<std::endl;
@@ -547,7 +552,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<std::endl;
     std::cout<<"================================================="<<std::endl;
 
-*/
+
+    // reset smart pointer:
+    // TODO: Is this necessary and parallel compatible?
+    pfm.reset();
 
 
 
@@ -555,30 +563,31 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // ADD DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
-  /* 
+
+
+
     // access path finding module result:
-    std::vector<gmx::RVec> path = pfm -> getPath();
-    std::vector<real> radii = pfm -> getRadii();
+    real extrapDist = 0.0;
+    std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
+    std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
+    std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
  
     // loop over all support points of path:
-    for(int i = 0; i < radii.size(); i++)
+    for(int i = 0; i < nOutPoints_; i++)
     {
         //std::cout<<"i = "<<i<<std::endl;
         // add to container:
-        dh.setPoint(0, path[i][0]);     // x
-        dh.setPoint(1, path[i][1]);     // y
-        dh.setPoint(2, path[i][2]);     // z
-        dh.setPoint(3, i);              // TODO: this should be s!
-        dh.setPoint(4, radii[i]);       // r
+        dh.setPoint(0, pointSample[i][0]);     // x
+        dh.setPoint(1, pointSample[i][1]);     // y
+        dh.setPoint(2, pointSample[i][2]);     // z
+        dh.setPoint(3, arcLengthSample[i]);    // s
+        dh.setPoint(4, radiusSample[i]);       // r
 
         dh.finishPointSet(); 
     }
   
-    // reset smart pointer:
-    // TODO: Is this necessary and parallel compatible?
-    pfm.reset();
 
-*/
+
 
 
 
