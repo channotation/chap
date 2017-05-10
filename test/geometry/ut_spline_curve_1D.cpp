@@ -231,10 +231,10 @@ TEST_F(SplineCurve1DTest, SplineCurve1DExtrapolationTest)
 
     // check evaluation below data range:
     real evalPoint = -4.0;
-    ASSERT_NEAR(8.0,
+    ASSERT_NEAR(4.0,
                 SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor),
                 eps);
-    ASSERT_NEAR(-2.0,
+    ASSERT_NEAR(0.0,
                 SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor),
                 eps);
     ASSERT_NEAR(0.0,
@@ -243,10 +243,10 @@ TEST_F(SplineCurve1DTest, SplineCurve1DExtrapolationTest)
 
     // check evaluation above data range:
     evalPoint = 4.0;
-    ASSERT_NEAR(-8.0,
+    ASSERT_NEAR(-4.0,
                 SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor),
                 eps);
-    ASSERT_NEAR(-2.0,
+    ASSERT_NEAR(0.0,
                 SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor),
                 eps);
     ASSERT_NEAR(0.0,
