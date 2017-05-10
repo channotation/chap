@@ -180,7 +180,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
     SplineCurve1D SplC(degree, knots, y);
 
     // check if spline is evaluates to control points at original data points:
-    for(unsigned int i = 0; i < x.size(); i++)
+    for(unsigned int i = 1; i < x.size() - 1; i++)
     {
         real frstDeriv = SplC.evaluate(x[i], 1, eSplineEvalDeBoor);
         real scndDeriv = SplC.evaluate(x[i], 2, eSplineEvalDeBoor);
