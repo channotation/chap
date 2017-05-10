@@ -4,8 +4,11 @@
 #include <vector>
 #include <map>
 
-#include <gromacs/utility/real.h>                                               
-#include <gromacs/math/vec.h> 
+
+#include <gromacs/math/vec.h>
+#include <gromacs/pbcutil/pbc.h>
+#include <gromacs/utility/real.h>
+#include <gromacs/selection/selection.h>
 
 #include "geometry/spline_curve_1D.hpp"
 #include "geometry/spline_curve_3D.hpp"
@@ -32,17 +35,25 @@ class MolecularPath
 
         // access properties of path:
         real length();
+        real radius(real param){return 1.0;};
 
         // sample points from centreline:
         std::vector<real> sampleArcLength(int nPoints, real extrapDist);
         std::vector<gmx::RVec> samplePoints(int nPoints, real extrapDist);
         std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);
+        std::vector<gmx::RVec> sampleTangents(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleTangents(std::vector<real> arcLengthSample);
+        std::vector<gmx::RVec> sampleNormals(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleNormals(std::vector<real> arcLengthSample);
         std::vector<real> sampleRadii(int nPoints, real extrapDist);
         std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
 
 
 
     private:
+
+        // utilities for sampling functions:
+        inline real sampleArcLenStep(int nPoints, real extrapDist); 
 
         // original path points and corresponding radii:
         std::vector<gmx::RVec> pathPoints_;

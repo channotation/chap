@@ -96,6 +96,8 @@ SplineCurve3D::evaluate(real &evalPoint,
                         unsigned int derivOrder,
                         eSplineEvalMethod method)
 {
+    std::cout<<"evaluate"<<std::endl;
+
     // initialise return value:
     gmx::RVec value(0.0, 0.0, 0.0);
 
@@ -110,11 +112,22 @@ SplineCurve3D::evaluate(real &evalPoint,
         ctrlCoefsY.push_back(ctrlPoints_.at(i)[1]);
         ctrlCoefsZ.push_back(ctrlPoints_.at(i)[2]);
     }
+    std::cout<<"coefs created"<<std::endl;
+    std::cout<<"evalPoint = "<<evalPoint<<std::endl;
+    std::cout<<"derivOrder = "<<derivOrder<<std::endl;
+    std::cout<<"knotVector.size = "<<knotVector_.size()<<std::endl;
+    std::cout<<"minKnot = "<<knotVector_[0]<<std::endl;
+
+
+ 
 
     // evaluate spline function in each dimension:
     real valueX = evaluateSplineFun(evalPoint, ctrlCoefsX, derivOrder, method);
+    std::cout<<"evalX"<<std::endl;
     real valueY = evaluateSplineFun(evalPoint, ctrlCoefsY, derivOrder, method);
+    std::cout<<"evalY"<<std::endl;
     real valueZ = evaluateSplineFun(evalPoint, ctrlCoefsZ, derivOrder, method);
+    std::cout<<"evalZ"<<std::endl;
 
     // return result in vectorial form:
     return gmx::RVec(valueX, valueY, valueZ);
@@ -247,8 +260,21 @@ SplineCurve3D::length()
 gmx::RVec
 SplineCurve3D::tangentVec(real &evalPoint)
 {
+    std::cout<<"evalPoint = "<<evalPoint<<std::endl;
+
     return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
 }
+
+/*
+ * TODO: implement this!
+ */
+/*
+gmx::RVec
+SplineCurve3D::normalVec(real &evalPoint)
+{
+    return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
+}
+*/
 
 
 /*

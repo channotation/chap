@@ -17,6 +17,8 @@
 #include "geometry/cubic_spline_interp_1D.hpp"
 #include "geometry/cubic_spline_interp_3D.hpp"
 
+#include "io/molecular_path_obj_exporter.hpp"
+
 #include "trajectory-analysis/simulated_annealing_module.hpp"
 #include "trajectory-analysis/path_finding_module.hpp"
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
@@ -568,22 +570,22 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // map residues onto pathway:
 //    std::cout<<"mapping residues onto pathway ... ";
     clock_t tMapRes = std::clock();
-    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
-    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
+//    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
+//    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
     tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
 //    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
 
-    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
+ //   std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
 
 
     // check if points lie inside pore:
 //    std::cout<<"checking if particles are inside pore ... ";
-    clock_t tCheckInside = std::clock();
-    std::map<int, bool> isInside = molPath.checkIfInside(mappedCoords);
-    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
+//    clock_t tCheckInside = std::clock();
+//    std::map<int, bool> isInside = molPath.checkIfInside(mappedCoords);
+//    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
 //    std::cout<<"done in  "<<tCheckInside<<" sec"<<std::endl;
 
-
+/*
     for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
          dhResMapping.setPoint(0, it -> first);         // refId
@@ -592,7 +594,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhResMapping.setPoint(3, it -> second[3]);     // phi
          dhResMapping.finishPointSet();
     }
-
+*/
     
 
     
@@ -612,9 +614,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // ADD PATH DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
-
-
-
+/*
     // access path finding module result:
     real extrapDist = 1.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
@@ -633,10 +633,21 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
         dh.finishPointSet(); 
     }
-  
+  */
+
+    // WRITE PORE TO OBJ FILE
+    //-------------------------------------------------------------------------
+
+    std::cout<<"molPath.length = "<<molPath.length()<<std::endl;
 
 
+    MolecularPathObjExporter molPathExp;
+    molPathExp("pore.obj",
+               molPath);
 
+
+    // FINISH FRAME
+    //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
     dh.finishFrame();
