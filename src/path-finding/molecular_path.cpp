@@ -64,8 +64,8 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
     gmx::AnalysisNeighborhoodPositions centreLinePos(pathPoints_);
 
     // prepare neighborhood search:
-    real nbhSearchCutoff = 0.5;
-    real mapTol = 1e-3;
+    real nbhSearchCutoff = 0.2;
+    real mapTol = 1e-1;
     gmx::AnalysisNeighborhood nbh;
     nbh.setCutoff(nbhSearchCutoff);
 
@@ -89,7 +89,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
         gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(mapSel.position(i).x(),
                                                                    pair.refIndex(),
                                                                    mapTol);
-
+        
         // TODO: check if this is within the local pore radius!
 
         // add to list of mapped coordinates:
@@ -98,6 +98,29 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
 
     return mappedCoords;
 }
+
+
+/*
+ * Checks if points described by a set of mapped coordinates lie within the 
+ * pre radius.
+ */
+std::map<int, bool>
+MolecularPath::checkIfInside(std::map<int, gmx::RVec> mappedCoords)
+{
+    // create map for check results:
+    std::map<int, bool> isInside;
+
+    std::map<int, gmx::RVec>::iterator it;
+    for(it = mappedCoords.begin(); it != mappedCoords.end(); it++)
+    {
+        real evalPoint = it -> second[0];
+        isInside[it -> first] = (it -> second[1] < poreRadius_(evalPoint, 0, eSplineEvalDeBoor));
+    }
+
+    // return assessment:
+    return isInside;
+}
+
 
 
 /*

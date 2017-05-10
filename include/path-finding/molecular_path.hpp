@@ -26,11 +26,14 @@ class MolecularPath
         // interface for mapping particles onto pathway:
         std::map<int, gmx::RVec> mapSelection(gmx::Selection mapSel,
                                               t_pbc *nbhSearchPbc);
+        
+        // check if points lie inside pore:
+        std::map<int, bool> checkIfInside(std::map<int, gmx::RVec> mappedCoords);
 
         // access properties of path:
         real length();
 
-        // sample points on centreline:
+        // sample points from centreline:
         std::vector<real> sampleArcLength(int nPoints, real extrapDist);
         std::vector<gmx::RVec> samplePoints(int nPoints, real extrapDist);
         std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);

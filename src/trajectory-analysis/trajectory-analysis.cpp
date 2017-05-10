@@ -52,7 +52,7 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saUseAdaptiveCandGen_(false)
 {
     //
-    registerAnalysisDataset(&data_, "yomama");
+    registerAnalysisDataset(&data_, "somedata");
     data_.setMultipoint(true);              // mutliple support points 
     
        // register dataset:
@@ -586,15 +586,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
-    /*
-        std::cout<<"refID = "<<it -> first<<"  "
-                 <<"s = "<<it -> second[0]<<"  "
-                 <<"rho = "<<it -> second[1]<<"  "
-                 <<"phi = "<<it -> second[2]<<"  "
-                 <<"inside = "<<isInside[it -> first]<<"  "
-                 <<std::endl;*/
-
-
          dhResMapping.setPoint(0, it -> first);         // refId
          dhResMapping.setPoint(1, it -> second[0]);     // s
          dhResMapping.setPoint(2, it -> second[1]);     // rho
