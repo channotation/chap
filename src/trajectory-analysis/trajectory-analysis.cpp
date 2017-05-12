@@ -516,6 +516,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     const gmx::Selection &test = pdata -> parallelSelection(refsel_);
 
 
+    std::cout<<"initProbePos ="<<" "
+             <<pfInitProbePos_[0]<<" "
+             <<pfInitProbePos_[1]<<" "
+             <<pfInitProbePos_[2]<<" "
+             <<std::endl;
+
 //    std::cout<<"atomCount = "<<test.atomCount()<<"  "
 //             <<std::endl;
 
