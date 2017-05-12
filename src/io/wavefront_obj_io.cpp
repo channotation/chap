@@ -55,6 +55,78 @@ WavefrontObjObject::addGroup(std::string name, std::vector<std::vector<int>> fac
 }
 
 
+/*
+ *
+ */
+void
+WavefrontObjObject::scale(real fac)
+{
+    // find centre of geometry:
+    gmx::RVec cog = calculateCog();
+    gmx::RVec negCog;
+    negCog[0] = -cog[0];
+    negCog[1] = -cog[1];
+    negCog[2] = -cog[2];
+
+    // shift vertices to be centred around origin:
+    this -> shift(negCog);
+
+    // scale all position vectors:
+    std::vector<gmx::RVec>::iterator it;
+    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    {
+        (*it)[0] *= fac;
+        (*it)[1] *= fac;
+        (*it)[2] *= fac;
+    }
+
+    // shift vertices back to original centre of geometry:
+    this -> shift(cog);
+}
+
+
+/*
+ *
+ */
+void WavefrontObjObject::shift(gmx::RVec shift)
+{
+    std::vector<gmx::RVec>::iterator it;
+    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    {
+        (*it)[0] += shift[0];
+        (*it)[1] += shift[1];
+        (*it)[2] += shift[2];
+    }    
+}
+
+
+/*
+ *
+ */
+gmx::RVec
+WavefrontObjObject::calculateCog()
+{
+    gmx::RVec cog(0.0, 0.0, 0.0);
+
+    std::vector<gmx::RVec>::iterator it;
+    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    {
+        cog[0] += (*it)[0];
+        cog[1] += (*it)[1];
+        cog[2] += (*it)[2];
+    }
+
+    cog[0] /= vertices_.size();
+    cog[1] /= vertices_.size();
+    cog[2] /= vertices_.size();
+
+
+    std::cout<<"cog = "<<cog[0]<<"  "<<cog[1]<<"  "<<cog[2]<<std::endl;
+
+    return cog;
+}
+
+
 /*!
  * Writes an OBJ object to a file of the given name. 
  */

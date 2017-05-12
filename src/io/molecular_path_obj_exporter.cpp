@@ -114,7 +114,8 @@ MolecularPathObjExporter::operator()(char *filename,
     obj.addVertices(vertices);
     obj.addGroup("inner_surface", faces);
 
-
+    // scale object by factor of 10 to convert nm to Ang:
+    obj.scale(10.0);
 
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;

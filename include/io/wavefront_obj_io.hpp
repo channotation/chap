@@ -47,6 +47,13 @@ class WavefrontObjObject
         void addVertices(std::vector<gmx::RVec> vertices);
         void addGroup(std::string name, std::vector<std::vector<int>> faces);
 
+        // functions to manipulate data:
+        void scale(real fac);
+        void shift(gmx::RVec shift);
+
+        // functions to query data:
+        gmx::RVec calculateCog();
+
         // data:
         std::string name_;
         std::vector<gmx::RVec> vertices_;
