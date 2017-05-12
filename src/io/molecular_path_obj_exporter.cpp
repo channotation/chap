@@ -31,8 +31,8 @@ MolecularPathObjExporter::operator()(char *filename,
 
     real extrapDist = 1.0;
 
-    int nLen = 50;
-    int nPhi = 25;
+    int nLen = 100;
+    int nPhi = 50;
 
 
     real deltaLen = molPath.length() / (nLen - 1);
@@ -41,7 +41,8 @@ MolecularPathObjExporter::operator()(char *filename,
 
 
     // get tangents and points on centre line to centre line:
-    std::vector<gmx::RVec> tangents = molPath.sampleTangents(nLen, extrapDist);
+    std::vector<gmx::RVec> tangents = molPath.sampleNormTangents(nLen, extrapDist);
+
     std::vector<gmx::RVec> centrePoints = molPath.samplePoints(nLen, extrapDist);
     std::vector<real> radii = molPath.sampleRadii(nLen, extrapDist);
 
@@ -178,7 +179,7 @@ MolecularPathObjExporter::orthogonalVector(gmx::RVec vec)
     int idxNonZero = -1;
     for(int i = 0; i < 3; i++)
     {
-        if( vec[i] > std::numeric_limits<real>::epsilon() )
+        if( std::abs(vec[i]) > std::numeric_limits<real>::epsilon() )
         {
             idxNonZero = i;
             break;
@@ -189,6 +190,7 @@ MolecularPathObjExporter::orthogonalVector(gmx::RVec vec)
     if( idxNonZero == -1 )
     {
         std::cerr<<"ERROR: Can not find orthogonal to null vector!"<<std::endl;
+        std::cerr<<"vec = "<<vec[0]<<" "<<vec[1]<<" "<<vec[2]<<std::endl;
         std::abort();
     }
 

@@ -199,8 +199,10 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
 }
 
 
-/*
- *
+/*!
+ * Returns vector of \p nPoints tangents to the centre line. The samples are 
+ * taken from equidistant points along the spline, extending \p extrapDist into 
+ * the extrapolation range on either side. 
  */
 std::vector<gmx::RVec>
 MolecularPath::sampleTangents(int nPoints, real extrapDist)
@@ -213,8 +215,9 @@ MolecularPath::sampleTangents(int nPoints, real extrapDist)
 }
 
 
-/*
- *
+/*!
+ * Returns vector of tangents to the centre line. These are calculate at the 
+ * evaluation points given on \p arcLengthSample.
  */
 std::vector<gmx::RVec>
 MolecularPath::sampleTangents(std::vector<real> arcLengthSample)
@@ -226,6 +229,57 @@ MolecularPath::sampleTangents(std::vector<real> arcLengthSample)
     {
         // evaluate spline at this point:
         tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
+    }
+
+    // return vector of points:
+    return tangents;
+}
+
+
+/*!
+ * Returns vector of \p nPoints tangents to the centre line. The samples are 
+ * taken from equidistant points along the spline, extending \p extrapDist into 
+ * the extrapolation range on either side. All tangents are explicitly 
+ * normalised in this function.
+ */
+
+std::vector<gmx::RVec>
+MolecularPath::sampleNormTangents(int nPoints, real extrapDist)
+{
+    // sample equidistant arc length values:
+    std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
+
+    // return vector of tangents at these values:
+    std::vector<gmx::RVec> tangents = sampleTangents(arcLengthSteps);
+
+    // normalise all tangent vectors:
+    std::vector<gmx::RVec>::iterator it;
+    for(it = tangents.begin(); it != tangents.end(); it++)
+    {
+        unitv(*it, *it);
+    }
+
+    return tangents;
+}
+
+/*!
+ * Returns vector of tangents to the centre line. These are calculate at the 
+ * evaluation points given on \p arcLengthSample. All tangents are explicitly
+ * normalised in this function.
+ */
+std::vector<gmx::RVec>
+MolecularPath::sampleNormTangents(std::vector<real> arcLengthSample)
+{    
+    // evaluate spline to obtain sample points:
+    std::vector<gmx::RVec> tangents;
+    tangents.reserve(arcLengthSample.size());
+    for(int i = 0; i < arcLengthSample.size(); i++)
+    {
+        // evaluate spline at this point:
+        tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
+
+        // normalise tangent vector:
+        unitv(tangents.back(), tangents.back());
     }
 
     // return vector of points:

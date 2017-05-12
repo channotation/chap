@@ -43,6 +43,8 @@ class MolecularPath
         std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);
         std::vector<gmx::RVec> sampleTangents(int nPoints, real extrapDist);
         std::vector<gmx::RVec> sampleTangents(std::vector<real> arcLengthSample);
+        std::vector<gmx::RVec> sampleNormTangents(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleNormTangents(std::vector<real> arcLengthSample);
         std::vector<gmx::RVec> sampleNormals(int nPoints, real extrapDist);
         std::vector<gmx::RVec> sampleNormals(std::vector<real> arcLengthSample);
         std::vector<real> sampleRadii(int nPoints, real extrapDist);
