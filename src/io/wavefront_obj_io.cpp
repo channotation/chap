@@ -55,21 +55,22 @@ WavefrontObjObject::addGroup(std::string name, std::vector<std::vector<int>> fac
 }
 
 
-/*
- *
+/*!
+ * Scales the shape by a given factor. To this end, all vertex positions are 
+ * shifted so that the centre of geometry is the origin. Then all position 
+ * vectors are multiplied by a given factor before finally the positions are
+ * shifted back again with the scaling factor also applied to the the shift
+ * vector.
  */
 void
 WavefrontObjObject::scale(real fac)
 {
-    // find centre of geometry:
-    gmx::RVec cog = calculateCog();
-    gmx::RVec negCog;
-    negCog[0] = -cog[0];
-    negCog[1] = -cog[1];
-    negCog[2] = -cog[2];
-
     // shift vertices to be centred around origin:
-    this -> shift(negCog);
+    gmx::RVec shift = calculateCog();
+    shift[0] = -shift[0];
+    shift[1] = -shift[1];
+    shift[2] = -shift[2];
+    this -> shift(shift);
 
     // scale all position vectors:
     std::vector<gmx::RVec>::iterator it;
@@ -81,12 +82,15 @@ WavefrontObjObject::scale(real fac)
     }
 
     // shift vertices back to original centre of geometry:
-    this -> shift(cog);
+    shift[0] *= -fac;
+    shift[1] *= -fac;
+    shift[2] *= -fac;
+    this -> shift(shift);
 }
 
 
-/*
- *
+/*!
+ * Shifts all vertex positions by the given vector.
  */
 void WavefrontObjObject::shift(gmx::RVec shift)
 {
@@ -100,8 +104,8 @@ void WavefrontObjObject::shift(gmx::RVec shift)
 }
 
 
-/*
- *
+/*!
+ * Calculates the centre of geometry of all vertices.
  */
 gmx::RVec
 WavefrontObjObject::calculateCog()
@@ -119,9 +123,6 @@ WavefrontObjObject::calculateCog()
     cog[0] /= vertices_.size();
     cog[1] /= vertices_.size();
     cog[2] /= vertices_.size();
-
-
-    std::cout<<"cog = "<<cog[0]<<"  "<<cog[1]<<"  "<<cog[2]<<std::endl;
 
     return cog;
 }

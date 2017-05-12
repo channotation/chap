@@ -116,6 +116,7 @@ MolecularPathObjExporter::operator()(char *filename,
 
     // scale object by factor of 10 to convert nm to Ang:
     obj.scale(10.0);
+    obj.calculateCog();
 
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
