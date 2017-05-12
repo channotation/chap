@@ -20,7 +20,7 @@ enum eSplineEvalMethod {eSplineEvalNaive = 901, eSplineEvalDeBoor = 902};
 class AbstractSplineCurve
 { 
     protected:
-
+        
         // internal variables:
         int degree_;
         int nCtrlPoints_;

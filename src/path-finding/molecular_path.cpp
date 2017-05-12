@@ -20,8 +20,6 @@ MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints,
     : centreLine_()
     , poreRadius_()
 {
-    std::cout<<"mol path constructor"<<std::endl;
-
     // assign internal containers for original path data:
     pathPoints_ = pathPoints;
     pathRadii_ = pathRadii;
@@ -42,10 +40,6 @@ MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints,
 
     // reparameterise centre line spline by arc length:
     centreLine_.arcLengthParam();
-
-
-    
-    std::cout<<"end mol path constructor"<<std::endl;
 }
 
 
@@ -211,8 +205,6 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
 std::vector<gmx::RVec>
 MolecularPath::sampleTangents(int nPoints, real extrapDist)
 {
-    std::cout<<"sample tangents"<<std::endl;
-
     // sample equidistant arc length values:
     std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
 
@@ -226,23 +218,15 @@ MolecularPath::sampleTangents(int nPoints, real extrapDist)
  */
 std::vector<gmx::RVec>
 MolecularPath::sampleTangents(std::vector<real> arcLengthSample)
-{
-    std::cout<<"sample tangents inner"<<std::endl;
-    std::cout<<"size = "<<arcLengthSample.size()<<std::endl;
-    std::cout<<" pathPoints_.size = "<<pathPoints_.size()<<std::endl;
-    
+{    
     // evaluate spline to obtain sample points:
     std::vector<gmx::RVec> tangents;
-//    tangents.reserve(arcLengthSample.size());
+    tangents.reserve(arcLengthSample.size());
     for(int i = 0; i < arcLengthSample.size(); i++)
     {
-        std::cout<<" i = "<<i<<std::endl;
-
         // evaluate spline at this point:
         tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
     }
-
-    std::cout<<"sample tangents end"<<std::endl;
 
     // return vector of points:
     return tangents;

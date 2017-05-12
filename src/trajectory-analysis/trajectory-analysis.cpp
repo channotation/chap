@@ -638,8 +638,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
 
-    std::cout<<"molPath.length = "<<molPath.length()<<std::endl;
-
 
     MolecularPathObjExporter molPathExp;
     molPathExp("pore.obj",
