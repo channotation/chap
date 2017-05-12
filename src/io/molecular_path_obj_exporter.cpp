@@ -29,10 +29,10 @@ MolecularPathObjExporter::operator()(char *filename,
     real d = 0.1;
     real r = 1;
 
-    real extrapDist = 0.0;
+    real extrapDist = 1.0;
 
-    int nLen = 10;
-    int nPhi = 50;
+    int nLen = 50;
+    int nPhi = 25;
 
 
     real deltaLen = molPath.length() / (nLen - 1);
@@ -43,33 +43,47 @@ MolecularPathObjExporter::operator()(char *filename,
     // get tangents and points on centre line to centre line:
     std::vector<gmx::RVec> tangents = molPath.sampleTangents(nLen, extrapDist);
     std::vector<gmx::RVec> centrePoints = molPath.samplePoints(nLen, extrapDist);
+    std::vector<real> radii = molPath.sampleRadii(nLen, extrapDist);
 
-
-    // construct orthogonal vector:
-    // TODO: this one needs to be updated for every tangent!
-    gmx::RVec normal = orthogonalVector(tangents[0]);
- 
-
-    //
+    // preallocate output vertices:
     std::vector<gmx::RVec> vertices;
-    for(unsigned int i = 0; i < tangents.size(); i++)
+    vertices.reserve(tangents.size()*nPhi);
+
+
+    // construct vertices around first point:
+    gmx::RVec normal = orthogonalVector(tangents[0]);
+    std::vector<gmx::RVec> newVertices = vertexRing(centrePoints[0],
+                                                    tangents[0],
+                                                    normal,
+                                                    radii[0],
+                                                    deltaPhi,
+                                                    nPhi);
+    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
+
+
+    // follow spline curve and construct vertices around all other points:
+    for(unsigned int i = 1; i < tangents.size(); i++)
     {
+        // find axis of tangent rotation:
+        gmx::RVec tangentRotAxis;
+        cprod(tangents[i - 1], tangents[i], tangentRotAxis);
+
+        // find tangent angle of rotation:
+        real tangentRotCos = iprod(tangents[i], tangents[i - 1]);
+        real tangentRotAxisLen = norm(tangentRotAxis);
+        real tangentRotAngle = std::atan2(tangentRotAxisLen, tangentRotCos);
+
+        // update normal by rotating it like the tangent:
+        normal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
 
         // construct sample points:
-        for(unsigned int j = 0; j < nPhi; j++)
-        {
-
-            // rotate normal vector:
-            gmx::RVec rotNormal = rotateAboutAxis(normal, tangents[i], j*deltaPhi);
-            std::cout<<"rotNormal = "<<rotNormal[0]<<"  "<<rotNormal[1]<<" "<<rotNormal[2]<<std::endl;
-
-            // generate vertex:
-            gmx::RVec vertex = centrePoints[i];
-            vertex[XX] += rotNormal[XX];
-            vertex[YY] += rotNormal[YY];
-            vertex[ZZ] += rotNormal[ZZ];
-            vertices.push_back(vertex);
-        }
+        newVertices = vertexRing(centrePoints[i],
+                                 tangents[i],
+                                 normal,
+                                 radii[i],
+                                 deltaPhi,
+                                 nPhi);
+        vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
     }
 
 
@@ -102,14 +116,9 @@ MolecularPathObjExporter::operator()(char *filename,
 
 
 
-    // create OBJ exporter:
+    // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
     objExp.write(filename, obj);
-
-    // write this to obj file:
-//    this -> write(filename, vertices, faces);
-
-    std::cout<<"molpath"<<std::endl;
 }
 
 
@@ -120,6 +129,40 @@ int
 MolecularPathObjExporter::numPlanarVertices(real &d, real &r)
 {
     return std::max(static_cast<int>(std::ceil(PI_/(2.0*std::acos(1.0 - d*d/(2.0*r*r))))), 4);
+}
+
+
+/*
+ *
+ */
+std::vector<gmx::RVec> 
+MolecularPathObjExporter::vertexRing(gmx::RVec base,
+                                     gmx::RVec tangent,
+                                     gmx::RVec normal,
+                                     real radius,
+                                     real angleIncrement,
+                                     int nIncrements)
+{
+    // preallocate vertex vector:
+    std::vector<gmx::RVec> vertices;
+    vertices.reserve(nIncrements);
+
+    // sample vertices in a ring around the base point: 
+    for(unsigned int j = 0; j < nIncrements; j++)
+    {
+        // rotate normal vector:
+        gmx::RVec rotNormal = rotateAboutAxis(normal, tangent, j*angleIncrement);
+
+        // generate vertex:
+        gmx::RVec vertex = base;
+        vertex[XX] += radius*rotNormal[XX];
+        vertex[YY] += radius*rotNormal[YY];
+        vertex[ZZ] += radius*rotNormal[ZZ];
+        vertices.push_back(vertex);
+    }
+
+    // return ring of vertices:
+    return vertices;
 }
 
 
