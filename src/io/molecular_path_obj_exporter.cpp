@@ -5,6 +5,7 @@
 #include <gromacs/utility/real.h> 
 
 #include "io/molecular_path_obj_exporter.hpp"
+#include "io/wavefront_obj_io.hpp"
 
 
 /*
@@ -72,15 +73,6 @@ MolecularPathObjExporter::operator()(char *filename,
     }
 
 
-
-
-
-
-
-
-
-
-
     // construct triangular faces:
     std::vector<std::vector<int>> faces;
     for(int i = 0; i < nLen - 1; i++)
@@ -103,8 +95,19 @@ MolecularPathObjExporter::operator()(char *filename,
         }
     }
 
+    // create an OBJ object:
+    WavefrontObjObject obj("pore");
+    obj.addVertices(vertices);
+    obj.addGroup("inner_surface", faces);
+
+
+
+    // create OBJ exporter:
+    WavefrontObjExporter objExp;
+    objExp.write(filename, obj);
+
     // write this to obj file:
-    this -> write(filename, vertices, faces);
+//    this -> write(filename, vertices, faces);
 
     std::cout<<"molpath"<<std::endl;
 }

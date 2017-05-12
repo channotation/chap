@@ -3,14 +3,13 @@
 
 #include <gtest/gtest.h>
 
-#include "io/obj_exporter.hpp"
 #include "path-finding/molecular_path.hpp"
 
 
 /*
  *
  */
-class MolecularPathObjExporter : public ObjExporter
+class MolecularPathObjExporter
 {
     friend class MolecularPathObjExporterTest;
     FRIEND_TEST(MolecularPathObjExporterTest, MolecularPathObjExporterOrthogonalVectorTest);
