@@ -109,7 +109,7 @@ SplineCurve3D::evaluate(real &evalPoint,
         ctrlCoefsX.push_back(ctrlPoints_.at(i)[0]);
         ctrlCoefsY.push_back(ctrlPoints_.at(i)[1]);
         ctrlCoefsZ.push_back(ctrlPoints_.at(i)[2]);
-    }
+    } 
 
     // evaluate spline function in each dimension:
     real valueX = evaluateSplineFun(evalPoint, ctrlCoefsX, derivOrder, method);
@@ -249,6 +249,17 @@ SplineCurve3D::tangentVec(real &evalPoint)
 {
     return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
 }
+
+/*
+ * TODO: implement this!
+ */
+/*
+gmx::RVec
+SplineCurve3D::normalVec(real &evalPoint)
+{
+    return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
+}
+*/
 
 
 /*

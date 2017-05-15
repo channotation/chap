@@ -42,6 +42,7 @@ class SplineCurve3D : public AbstractSplineCurve
         real length();
      
         gmx::RVec tangentVec(real &evalPoint);
+//        gmx::RVec normalVec(real &evalPoints);
         
         real speed(real &evalPoint);
 
@@ -75,11 +76,6 @@ class SplineCurve3D : public AbstractSplineCurve
         real arcLengthToParam(real &arcLength);
         bool arcLengthToParamTerm(real lo, real hi, real tol);
         real arcLengthToParamObj(real lo, real hi, real target);
-
-       
-
-
-
 };
 
 #endif

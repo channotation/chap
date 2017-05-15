@@ -122,6 +122,25 @@ MolecularPath::checkIfInside(std::map<int, gmx::RVec> mappedCoords)
 }
 
 
+/*
+ * Simple getter function for access to original path points.
+ */
+std::vector<gmx::RVec>
+MolecularPath::pathPoints()
+{
+    return pathPoints_;
+}
+
+
+/*
+ * Simple getter function for access to original radii.
+ */
+std::vector<real>
+MolecularPath::pathRadii()
+{
+    return pathRadii_;
+}
+
 
 /*
  * Returns length of the pathway, defined as the the arc length distance 
@@ -144,12 +163,11 @@ MolecularPath::sampleArcLength(int nPoints,
                                real extrapDist)
 {
     // get spacing of points in arc length:
-    real innerLength = length();
-    real totalLength = innerLength + 2.0*extrapDist;
-    real arcLenStep = totalLength/(nPoints - 1);
+    real arcLenStep = sampleArcLenStep(nPoints, extrapDist);
 
     // evaluate spline to obtain sample points:
     std::vector<real> arcLengthSample;
+    arcLengthSample.reserve(nPoints);
     for(int i = 0; i < nPoints; i++)
     {
         // calculate evaluation point:
@@ -171,24 +189,11 @@ std::vector<gmx::RVec>
 MolecularPath::samplePoints(int nPoints,
                             real extrapDist)
 {
-    // get spacing of points in arc length:
-    real innerLength = length();
-    real totalLength = innerLength + 2.0*extrapDist;
-    real arcLenStep = totalLength/(nPoints - 1);
+    // sample equidistant arc length values:
+    std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
 
-    // evaluate spline to obtain sample points:
-    std::vector<gmx::RVec> points;
-    for(int i = 0; i < nPoints; i++)
-    {
-        // calculate evaluation point:
-        real evalPoint = openingLo_ - extrapDist + i*arcLenStep;  
-
-        // evaluate spline at this point:
-        points.push_back( centreLine_(evalPoint, 0, eSplineEvalDeBoor) );
-    }
-
-    // return vector of points:
-    return points;
+    // return vector of points at these values:
+    return samplePoints(arcLengthSteps);
 }
 
 
@@ -201,6 +206,7 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
 {
     // evaluate spline to obtain sample points:
     std::vector<gmx::RVec> points;
+    points.reserve(arcLengthSample.size());
     for(int i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
@@ -209,6 +215,122 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
 
     // return vector of points:
     return points;
+}
+
+
+/*!
+ * Returns vector of \p nPoints tangents to the centre line. The samples are 
+ * taken from equidistant points along the spline, extending \p extrapDist into 
+ * the extrapolation range on either side. 
+ */
+std::vector<gmx::RVec>
+MolecularPath::sampleTangents(int nPoints, real extrapDist)
+{
+    // sample equidistant arc length values:
+    std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
+
+    // return vector of tangents at these values:
+    return sampleTangents(arcLengthSteps);
+}
+
+
+/*!
+ * Returns vector of tangents to the centre line. These are calculate at the 
+ * evaluation points given on \p arcLengthSample.
+ */
+std::vector<gmx::RVec>
+MolecularPath::sampleTangents(std::vector<real> arcLengthSample)
+{    
+    // evaluate spline to obtain sample points:
+    std::vector<gmx::RVec> tangents;
+    tangents.reserve(arcLengthSample.size());
+    for(int i = 0; i < arcLengthSample.size(); i++)
+    {
+        // evaluate spline at this point:
+        tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
+    }
+
+    // return vector of points:
+    return tangents;
+}
+
+
+/*!
+ * Returns vector of \p nPoints tangents to the centre line. The samples are 
+ * taken from equidistant points along the spline, extending \p extrapDist into 
+ * the extrapolation range on either side. All tangents are explicitly 
+ * normalised in this function.
+ */
+
+std::vector<gmx::RVec>
+MolecularPath::sampleNormTangents(int nPoints, real extrapDist)
+{
+    // sample equidistant arc length values:
+    std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
+
+    // return vector of tangents at these values:
+    std::vector<gmx::RVec> tangents = sampleTangents(arcLengthSteps);
+
+    // normalise all tangent vectors:
+    std::vector<gmx::RVec>::iterator it;
+    for(it = tangents.begin(); it != tangents.end(); it++)
+    {
+        unitv(*it, *it);
+    }
+
+    return tangents;
+}
+
+/*!
+ * Returns vector of tangents to the centre line. These are calculate at the 
+ * evaluation points given on \p arcLengthSample. All tangents are explicitly
+ * normalised in this function.
+ */
+std::vector<gmx::RVec>
+MolecularPath::sampleNormTangents(std::vector<real> arcLengthSample)
+{    
+    // evaluate spline to obtain sample points:
+    std::vector<gmx::RVec> tangents;
+    tangents.reserve(arcLengthSample.size());
+    for(int i = 0; i < arcLengthSample.size(); i++)
+    {
+        // evaluate spline at this point:
+        tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
+
+        // normalise tangent vector:
+        unitv(tangents.back(), tangents.back());
+    }
+
+    // return vector of points:
+    return tangents;
+}
+
+
+/*
+ *
+ */
+std::vector<gmx::RVec>
+MolecularPath::sampleNormals(int nPoints, real extrapDist)
+{
+    // sample equidistant arc length values:
+    std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
+
+    // return vector of normals at these values:
+    return sampleNormals(arcLengthSteps);
+}
+
+
+/*
+ * TODO: implement this
+ */
+std::vector<gmx::RVec>
+MolecularPath::sampleNormals(std::vector<real> arcLengthSample)
+{
+    // evaluate spline to obtain sample points:
+    std::vector<gmx::RVec> normals;
+
+    // return vector of points:
+    return normals;
 }
 
 
@@ -221,9 +343,7 @@ MolecularPath::sampleRadii(int nPoints,
                            real extrapDist)
 {
     // get spacing of points in arc length:
-    real innerLength = length();
-    real totalLength = innerLength + 2.0*extrapDist;
-    real arcLenStep = totalLength/(nPoints - 1);
+    real arcLenStep = sampleArcLenStep(nPoints, extrapDist);
 
     // evaluate spline to obtain sample points:
     std::vector<real> radii;
@@ -260,9 +380,15 @@ MolecularPath::sampleRadii(std::vector<real> arcLengthSample)
 }
 
 
-
-
-
+/*
+ *
+ */
+real
+MolecularPath::sampleArcLenStep(int nPoints, real extrapDist)
+{
+    // get spacing of points in arc length:
+    return (this -> length() + 2.0*extrapDist)/(nPoints - 1);
+}
 
 
 
