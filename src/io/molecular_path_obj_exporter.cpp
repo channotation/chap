@@ -53,6 +53,7 @@ MolecularPathObjExporter::operator()(char *filename,
 
     // construct vertices around first point:
     gmx::RVec normal = orthogonalVector(tangents[0]);
+    unitv(normal, normal);
     std::vector<gmx::RVec> newVertices = vertexRing(centrePoints[0],
                                                     tangents[0],
                                                     normal,
@@ -146,6 +147,9 @@ MolecularPathObjExporter::vertexRing(gmx::RVec base,
                                      real angleIncrement,
                                      int nIncrements)
 {
+    // make sure input normal vector is normalised:
+    unitv(normal, normal);
+
     // preallocate vertex vector:
     std::vector<gmx::RVec> vertices;
     vertices.reserve(nIncrements);
