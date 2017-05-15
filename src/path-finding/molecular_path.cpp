@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <iostream>
+#include <ctime>
 
 #include <gromacs/pbcutil/pbc.h>
 #include <gromacs/selection/nbsearch.h>
@@ -59,38 +61,45 @@ std::map<int, gmx::RVec>
 MolecularPath::mapSelection(gmx::Selection mapSel,
                             t_pbc *nbhSearchPbc)
 {
+    real mapTol = std::numeric_limits<real>::epsilon();
+
     // create a set of reference positions on the pore centre line:
-    // TODO: fine grain the reference point set
-    gmx::AnalysisNeighborhoodPositions centreLinePos(pathPoints_);
-
-    // prepare neighborhood search:
-    real nbhSearchCutoff = 0.2;
-    real mapTol = 1e-1;
-    gmx::AnalysisNeighborhood nbh;
-    nbh.setCutoff(nbhSearchCutoff);
-
-    // create a neighborhood search with centre line points as reference:
-    gmx::AnalysisNeighborhoodSearch nbhSearch = nbh.initSearch(nbhSearchPbc, centreLinePos);
+    int nPathSamples = 1000;
+    real extrapDist = 50.0;
+    std::vector<real> arcLenSample = this -> sampleArcLength(nPathSamples, extrapDist);
+    const std::vector<gmx::RVec> pathSample = this -> samplePoints(arcLenSample);
+    gmx::AnalysisNeighborhoodPositions centreLinePos(pathSample);
 
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
     for(int i = 0; i < mapSel.posCount(); i++)
     {
-        // find closest reference point on centre line:
-        gmx::AnalysisNeighborhoodPair pair = nbhSearch.nearestPoint(mapSel.position(i));
+        // cartesian coordinates of test position:
+        gmx::RVec cartCoord = mapSel.position(i).x();
 
-        // check if reference point was found within cutoff distance:
-        if( pair.isValid() == false )
+        // find closest sample point:
+        std::vector<real> distances;
+        distances.reserve(pathSample.size());
+        for(unsigned int j = 0; j < pathSample.size(); j++)
         {
-            continue;
+            distances.push_back( distance2(cartCoord, pathSample[j]) );
         }
+        int idxMinDist = std::min_element(distances.begin(), distances.end()) - distances.begin();
 
-        // refine mapping:
-        gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(mapSel.position(i).x(),
-                                                                   pair.refIndex(),
+        // refine mapping by distance minimisation:
+        int idx = idxMinDist;
+        gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(cartCoord,
+                                                                   arcLenSample[idx - 1],
+                                                                   arcLenSample[idx + 1],
                                                                    mapTol);
-        
-        // TODO: check if this is within the local pore radius!
+
+        // check that all points have been mapped to the interior of the spline sample:
+        if( idxMinDist == 0 || idxMinDist == (pathSample.size() - 1) )
+        {
+            std::cerr<<"ERROR: Some particles mapped onto spline sample endpoints."<<std::endl;
+            std::cerr<<"Increase extrapolation distance!"<<std::endl;
+            std::abort();
+        }
 
         // add to list of mapped coordinates:
         mappedCoords[mapSel.position(i).refId()] = mappedCoord;
