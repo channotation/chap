@@ -33,6 +33,10 @@ class MolecularPath
         // check if points lie inside pore:
         std::map<int, bool> checkIfInside(std::map<int, gmx::RVec> mappedCoords);
 
+        // access original points:
+        std::vector<gmx::RVec> pathPoints();
+        std::vector<real> pathRadii();
+
         // access properties of path:
         real length();
         real radius(real param){return 1.0;};

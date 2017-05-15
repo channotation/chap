@@ -122,6 +122,25 @@ MolecularPath::checkIfInside(std::map<int, gmx::RVec> mappedCoords)
 }
 
 
+/*
+ * Simple getter function for access to original path points.
+ */
+std::vector<gmx::RVec>
+MolecularPath::pathPoints()
+{
+    return pathPoints_;
+}
+
+
+/*
+ * Simple getter function for access to original radii.
+ */
+std::vector<real>
+MolecularPath::pathRadii()
+{
+    return pathRadii_;
+}
+
 
 /*
  * Returns length of the pathway, defined as the the arc length distance 
