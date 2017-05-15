@@ -7,6 +7,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/math/tools/minima.hpp>
 #include <boost/math/tools/roots.hpp>
 
 #include "geometry/spline_curve_3D.hpp"
@@ -332,10 +333,52 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                       int idxCtrlPoint,
                                       real tol)
 {
-    int maxIter = 100;
+//    int maxIter = 100;
     real eps = std::numeric_limits<real>::epsilon();
 
+
+    std::cout<<"cartPoint = "<<cartPoint[0]<<"  "
+                             <<cartPoint[1]<<"  "
+                             <<cartPoint[2]<<"  "
+                             <<std::endl;
+    std::cout<<"idxCtrlPoint = "<<idxCtrlPoint<<std::endl;
+
     gmx::RVec curvPoint;
+
+
+
+
+    const boost::uintmax_t maxIter = 100;
+    boost::uintmax_t nIter = maxIter;
+        
+   /* 
+    boost::math::tools::bracket_and_solve_root(fun,
+                                               guess,
+                                               factor,
+                                               is_rising,
+                                               tol,
+                                               nIter);
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // shift index to take into account repeated knots:
     int idx = idxCtrlPoint + degree_;
@@ -354,18 +397,41 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                            pointSqDist(cartPoint, s[1]),
                            pointSqDist(cartPoint, s[2])};
  
+    time_t tBracket = std::clock();
+
+    std::cout<<"   s_0 = "<<s[0]<<"  "
+             <<"s_1 = "<<s[1]<<"  "
+             <<"s_2 = "<<s[2]<<"  "
+             <<"d_0 = "<<d[0]<<"  "
+             <<"d_1 = "<<d[1]<<"  "
+             <<"d_2 = "<<d[2]<<std::endl;
+
+
     // try out new points until local minimum is bracketed:
     // TODO: this may be slow for points far outside the interpolation interval
+    int iBracketLo = 0;
+    int iBracketHi = 0;
     while( d[0] <= d[1] )
     {
         s[0] -= paramStep;
         d[0] = pointSqDist(cartPoint, s[0]);
+        iBracketLo++;
     }
     while( d[2] <= d[1] )
     {
+
         s[2] += paramStep;
         d[2] = pointSqDist(cartPoint, s[2]);
+        iBracketHi++;
     }
+
+    std::cout<<"-->"<<std::endl;
+    std::cout<<"   s_0 = "<<s[0]<<"  "
+             <<"s_1 = "<<s[1]<<"  "
+             <<"s_2 = "<<s[2]<<"  "
+             <<"d_0 = "<<d[0]<<"  "
+             <<"d_1 = "<<d[1]<<"  "
+             <<"d_2 = "<<d[2]<<std::endl;
 
     // sanity check on initial points:
     if( s[1] - s[0] < eps || s[2] - s[1] < eps )
@@ -393,6 +459,46 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
     real sOpt = s[1];
     real dOpt = pointSqDist(cartPoint, sOpt);
     real sOptOld = sOpt + 3*tol;
+
+    tBracket = std::clock() - tBracket;
+
+
+/*
+    boot::math::tools::toms748_solve(fun,
+                                     a,
+                                     b,
+                                     fa,
+                                     fb,
+                                     tol, 
+                                     max);
+*/
+
+   
+
+    time_t tBrent = std::clock();
+
+    // objective functionbinding:
+    boost::function<real(real)> objFun;
+    objFun = boost::bind(&SplineCurve3D::pointSqDist, 
+                         this, 
+                         cartPoint, 
+                         _1);
+ 
+    // find root via TOMS748 bracketing algorithm:
+    real sLo = s[0];
+    real sHi = s[2];
+    int bits = std::numeric_limits<real>::digits;
+    std::pair<real, real> result;
+    result = boost::math::tools::brent_find_minima(objFun,
+                                                   sLo, 
+                                                   sHi,
+                                                   bits);
+
+    tBrent = std::clock() - tBrent;
+
+
+
+    time_t tIter = std::clock();
 
     int iter = 0;
     while( iter < maxIter )
@@ -455,9 +561,20 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
     // check on convergence:
     if( iter == maxIter )
     {
-        std::cerr<<"WARNING: Could not reach convergence in mapping point onto spline!"<<std::endl;
-        std::abort();
+//        std::cerr<<"WARNING: Could not reach convergence in mapping point onto spline!"<<std::endl;
     }
+
+    tIter = std::clock() - tIter;
+    std::cout<<"iBracketLo = "<<iBracketLo<<"  "
+             <<"iBracketHi = "<<iBracketHi<<"  "
+             <<"tBracket = "<<tBracket<<"  "
+             <<"tBrent = "<<tBrent<<"  "
+             <<"tIter = "<<tIter<<std::endl;
+
+    std::cout<<"sOpt = "<<sOpt<<"  "
+             <<"sBrent = "<<result.first<<std::endl;
+
+
 
     curvPoint[0] = sOpt;
     curvPoint[1] = dOpt;
@@ -661,7 +778,7 @@ SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
  * square root is not drawn, hence the squared distance is returned.
  */
 real
-SplineCurve3D::pointSqDist(gmx::RVec &point, real &eval)
+SplineCurve3D::pointSqDist(gmx::RVec point, real eval)
 {
     // evaluate spline:
     gmx::RVec splPoint = evaluate(eval, 0, eSplineEvalDeBoor);
