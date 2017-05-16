@@ -61,11 +61,12 @@ std::map<int, gmx::RVec>
 MolecularPath::mapSelection(gmx::Selection mapSel,
                             t_pbc *nbhSearchPbc)
 {
-    real mapTol = std::numeric_limits<real>::epsilon();
+    real mapTol = 1e-3;
 
     // create a set of reference positions on the pore centre line:
+    // TODO: how to select these parameters automatically?
     int nPathSamples = 1000;
-    real extrapDist = 50.0;
+    real extrapDist = 100.0;
     std::vector<real> arcLenSample = this -> sampleArcLength(nPathSamples, extrapDist);
     const std::vector<gmx::RVec> pathSample = this -> samplePoints(arcLenSample);
     gmx::AnalysisNeighborhoodPositions centreLinePos(pathSample);
@@ -97,6 +98,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
         if( idxMinDist == 0 || idxMinDist == (pathSample.size() - 1) )
         {
             std::cerr<<"ERROR: Some particles mapped onto spline sample endpoints."<<std::endl;
+            std::cerr<<"idxMinDist = "<<idxMinDist<<std::endl;
             std::cerr<<"Increase extrapolation distance!"<<std::endl;
             std::abort();
         }
@@ -114,7 +116,8 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
  * pre radius.
  */
 std::map<int, bool>
-MolecularPath::checkIfInside(std::map<int, gmx::RVec> mappedCoords)
+MolecularPath::checkIfInside(std::map<int, gmx::RVec> mappedCoords,
+                             real margin)
 {
     // create map for check results:
     std::map<int, bool> isInside;
@@ -123,7 +126,7 @@ MolecularPath::checkIfInside(std::map<int, gmx::RVec> mappedCoords)
     for(it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
         real evalPoint = it -> second[0];
-        isInside[it -> first] = (it -> second[1] < poreRadius_(evalPoint, 0, eSplineEvalDeBoor));
+        isInside[it -> first] = (it -> second[1] < (poreRadius_(evalPoint, 0, eSplineEvalDeBoor)) + margin);
     }
 
     // return assessment:

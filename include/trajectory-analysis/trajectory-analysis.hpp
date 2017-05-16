@@ -2,6 +2,7 @@
 #define TRAJECTORYANALYSIS_HPP
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -49,16 +50,33 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	double                           cutoff_;		// cutoff for grid search
 	Selection                        refsel_;   	// selection of the reference group
 	Selection                        ippsel_;   	// selection of the initial probe position group
+
+    // internal selections for pore mapping:
+    SelectionCollection              poreMappingSelCol_;
+    Selection                        poreMappingSelCal_;
+    Selection                        poreMappingSelCog_;
+
     bool                             ippselIsSet_;
 	SelectionList                    sel_;			// selection of the small particle groups
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
 
     AnalysisData                     data_;			// raw data container
     AnalysisData                     dataResMapping_;
+    AnalysisData                     dataResMappingPdb_;
 
 
 	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
+
+
+    // pore particle and group indices:
+    std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
+    std::vector<int> residueIndices_;                       // all resIds
+    std::vector<int> poreResidueIndices_;                   // resIds of pore selection
+    std::vector<int> poreAtomIndices_;                      // atomIds of pore selection
+    std::map<int, int> atomResidueMapping_;                 // maps atomId onto resId
+    std::map<int, std::vector<int>> residueAtomMapping_;    // maps resId onto atomId
+
 
 
     int                              nOutPoints_;   // number of points on path sample

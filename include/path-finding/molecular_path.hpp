@@ -31,7 +31,8 @@ class MolecularPath
                                               t_pbc *nbhSearchPbc);
         
         // check if points lie inside pore:
-        std::map<int, bool> checkIfInside(std::map<int, gmx::RVec> mappedCoords);
+        std::map<int, bool> checkIfInside(std::map<int, gmx::RVec> mappedCoords,
+                                          real margin);
 
         // access original points:
         std::vector<gmx::RVec> pathPoints();

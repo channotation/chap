@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <cstring>
 #include <ctime>
 
 #include <gromacs/topology/atomprop.h>
@@ -109,7 +110,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .storeIsSet(&ippselIsSet_)
 	                     .description("Reference group from which to determine the initial probe position for the pore finding algorithm. If unspecified, this defaults to the overall pore forming group. Will be overridden if init-probe-pos is set explicitly."));
  
-
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
 	                     .store(&cutoff_)
@@ -239,58 +239,100 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     // set dataset properties:
     dataResMapping_.setDataSetCount(1);
-    dataResMapping_.setColumnCount(0, 4);   // refID s rho phi 
+    dataResMapping_.setColumnCount(0, 6);   // refID s rho phi 
     dataResMapping_.setMultipoint(true);
 
     // add long format plot module:
     int j = 1;
     AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
     const char *fnResMapping = "res_mapping.dat";
-    std::vector<char*> headerResMapping = {"t", "refId", "s", "rho", "phi"};
+    std::vector<char*> headerResMapping = {"t", "mappedId", "s", "rho", "phi", "poreLining", "poreFacing"};
     lfpltResMapping -> setFileName(fnResMapping);
     lfpltResMapping -> setHeader(headerResMapping);
-    lfpltResMapping -> setPrecision(15);    // TODO: different treatment for integers?
+    lfpltResMapping -> setPrecision(5);    // TODO: different treatment for integers?
     dataResMapping_.addModule(lfpltResMapping);
 
+
+    // set pdb data set properties:
+    dataResMappingPdb_.setDataSetCount(1);
+    dataResMappingPdb_.setColumnCount(0, 7);
+
+    // add PDB plot module:
+    AnalysisDataPdbPlotModulePointer plotResMappingPdb(new AnalysisDataPdbPlotModule(3));
+    plotResMappingPdb -> setFileName("res_mapping.pdb");
+    dataResMappingPdb_.addModule(plotResMappingPdb);
+    
 
 
     // PREPARE SELECTIONS FOR MAPPING
     //-------------------------------------------------------------------------
 
-    gmx::SelectionCollection poreComCollection; 
-    poreComCollection.setReferencePosType("res_com");
-    poreComCollection.setOutputPosType("res_com");
+    // prepare a centre of geometry selection collection:
+    poreMappingSelCol_.setReferencePosType("res_cog");
+    poreMappingSelCol_.setOutputPosType("res_cog");
 
-    gmx::Selection test = poreComCollection.parseFromString("resname SOL")[0];
-
-    poreComCollection.setTopology(top.topology(), 0);
-    poreComCollection.compile();
-
-
-    std::cout<<std::endl<<std::endl;
-    std::cout<<"atomCount = "<<test.atomCount()<<"  "
-             <<"posCount = "<<test.posCount()<<"  "
-             <<std::endl;
-    std::cout<<std::endl<<std::endl;
-
+    // selection strings:
+    // TODO: move this to a config file!
+    std::string poreMappingSelCalString = "name CA";
+    std::string poreMappingSelCogString = "resname ALA or" 
+                                          "resname ARG or"
+                                          "resname ASN or"
+                                          "resname ASP or"
+                                          "resname ASX or"
+                                          "resname CYS or"
+                                          "resname GLU or"
+                                          "resname GLN or"
+                                          "resname GLX or"
+                                          "resname GLY or"
+                                          "resname HIS or"
+                                          "resname ILE or"
+                                          "resname LEU or"
+                                          "resname LYS or"
+                                          "resname MET or"
+                                          "resname PHE or"
+                                          "resname PRO or"
+                                          "resname SER or"
+                                          "resname THR or"
+                                          "resname TRP or"
+                                          "resname TYR or"
+                                          "resname VAL";
     
 
+    // create selections as defined above:
+    poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
+    poreMappingSelCog_ = poreMappingSelCol_.parseFromString(poreMappingSelCogString)[0];
+    poreMappingSelCol_.setTopology(top.topology(), 0);
+    poreMappingSelCol_.compile();
+
+    // validate that there is a c-alpha for each residue:
+    if( poreMappingSelCal_.posCount() != poreMappingSelCog_.posCount() )
+    {
+        std::cerr<<"ERROR: Could not find a C-alpha for each residue in pore forming group."
+                 <<std::endl<<"Is your pore a protein?"<<std::endl;
+        std::abort();
+    }
 
     
-    // GET ATOM RADII FROM TOPOLOGY
+    // PREPARE TOPOLOGY QUERIES
     //-------------------------------------------------------------------------
-	
+
 	// load full topology:
 	t_topology *topol = top.topology();	
 
 	// access list of all atoms:
 	t_atoms atoms = topol -> atoms;
+    
+	// create atomprop struct:
+	gmx_atomprop_t aps = gmx_atomprop_init();
+
+    
+    // GET ATOM RADII FROM TOPOLOGY
+    //-------------------------------------------------------------------------
+	
 
 	// create vector of van der Waals radii and allocate memory:
 	vdwRadii_.reserve(atoms.nr);
 
-	// create atomprop struct:
-	gmx_atomprop_t aps = gmx_atomprop_init();
 
 	// loop over all atoms in system and get vdW-radii:
 	for(int i=0; i<atoms.nr; i++)
@@ -315,11 +357,73 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 		vdwRadii_.push_back(vdwRadius);
 	}
 
-	// delete atomprop struct:
-	gmx_atomprop_destroy(aps);
 
 	// find largest van der Waals radius in system:
 	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
+
+
+    // TRACK C-ALPHAS and RESIDUE INDECES
+    //-------------------------------------------------------------------------
+   
+    // loop through all atoms, get index lists for c-alphas and residues:
+    for(int i = 0; i < atoms.nr; i++)
+    {
+        // check for calpha:
+        if( std::strcmp(*atoms.atomname[i], "CA") == 0 )
+        {
+           poreCAlphaIndices_.push_back(i); 
+        }
+
+        // track residue ID of atoms: 
+        residueIndices_.push_back(atoms.atom[i].resind);
+        atomResidueMapping_[i] = atoms.atom[i].resind;
+        residueAtomMapping_[atoms.atom[i].resind].push_back(i);
+    }
+
+    // remove duplicate residue indices:
+    std::vector<int>::iterator it;
+    it = std::unique(residueIndices_.begin(), residueIndices_.end());
+    residueIndices_.resize(std::distance(residueIndices_.begin(), it));
+
+    //
+    ConstArrayRef<int> refselAtomIdx = refsel_.atomIndices();
+    for(it = residueIndices_.begin(); it != residueIndices_.end(); it++)
+    {
+        // current residue id:
+        int resId = *it;
+    
+        // get vector of all atom indices in this residue:
+        std::vector<int> atomIdx = residueAtomMapping_[resId];
+
+        // for each atom in residue, check if it belongs to pore selection:
+        bool addResidue = false;
+        std::vector<int>::iterator jt;
+        for(jt = atomIdx.begin(); jt != atomIdx.end(); jt++)
+        {
+            // check if atom belongs to pore selection:
+            if( std::find(refselAtomIdx.begin(), refselAtomIdx.end(), *jt) != refselAtomIdx.end() )
+            {
+                // add atom to list of pore atoms:
+                poreAtomIndices_.push_back(*jt);
+
+                // if at least one atom belongs to pore group, the whole residue will be considered:
+                addResidue = true;
+            }
+        }
+
+        // add residue, if at least one atom is part of pore:
+        if( addResidue == true )
+        {
+            poreResidueIndices_.push_back(resId);
+        }
+    }
+
+
+    // FINALISE ATOMPROP QUERIES
+    //-------------------------------------------------------------------------
+    
+	// delete atomprop struct:
+	gmx_atomprop_destroy(aps);
 }
 
 
@@ -537,71 +641,45 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //    std::cout<<"================================================="<<std::endl;
 //    std::cout<<std::endl;
 //    std::cout<<std::endl;
 
 
     // run path finding algorithm on current frame:
-//    std::cout<<"finding permeation pathway ... ";
+    std::cout<<"finding permeation pathway ... ";
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
+    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
 
     // retrieve molecular path object:
-//    std::cout<<"preparing pathway object ... ";
+    std::cout<<"preparing pathway object ... ";
     clock_t tMolPath = std::clock();
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
-
-    
-    // map residues onto pathway:
-//    std::cout<<"mapping residues onto pathway ... ";
-    clock_t tMapRes = std::clock();
-//    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
-//    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
-    tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
-
- //   std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
+    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
 
 
-    // check if points lie inside pore:
-//    std::cout<<"checking if particles are inside pore ... ";
-//    clock_t tCheckInside = std::clock();
-//    std::map<int, bool> isInside = molPath.checkIfInside(mappedCoords);
-//    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tCheckInside<<" sec"<<std::endl;
+    std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
+    std::vector<real> pathRadii = molPath.pathRadii();
 
-/*
-    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
+    std::fstream pathfile;
+    pathfile.open("pathfile.dat", std::fstream::out);
+    pathfile<<"x y z r"<<std::endl;
+    for(int i = 0; i < pathRadii.size(); i++)
     {
-         dhResMapping.setPoint(0, it -> first);         // refId
-         dhResMapping.setPoint(1, it -> second[0]);     // s
-         dhResMapping.setPoint(2, it -> second[1]);     // rho
-         dhResMapping.setPoint(3, it -> second[3]);     // phi
-         dhResMapping.finishPointSet();
+        pathfile<<pathPoints[i][0]<<" "
+                <<pathPoints[i][1]<<" "
+                <<pathPoints[i][2]<<" "
+                <<pathRadii[i]<<std::endl;
     }
-*/
-    
+    pathfile.close();
+
+
+
+
 
     
 
@@ -620,7 +698,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // ADD PATH DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
-/*
+
     // access path finding module result:
     real extrapDist = 1.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
@@ -639,19 +717,98 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
         dh.finishPointSet(); 
     }
-  */
+  
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
-
 
     MolecularPathObjExporter molPathExp;
     molPathExp("pore.obj",
                molPath);
 
 
+    // MAP PORE PARTICLES ONTO PATHWAY
+    //-------------------------------------------------------------------------
+
+    std::cout<<std::endl;
+
+    // evaluate pore mapping selection for this frame:
+    t_trxframe frame = fr;
+    poreMappingSelCol_.evaluate(&frame, pbc);
+    const gmx::Selection poreMappingSelCal = pdata -> parallelSelection(poreMappingSelCal_);    
+    const gmx::Selection poreMappingSelCog = pdata -> parallelSelection(poreMappingSelCog_);    
+
+    // map pore residue COG onto pathway:
+    std::cout<<"mapping pore residue COG onto pathway ... ";
+    clock_t tMapResCog = std::clock();
+    std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(poreMappingSelCog, pbc);
+    tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
+    std::cout<<"mapped "<<poreCogMappedCoords.size()
+             <<" particles in "<<1000*tMapResCog<<" ms"<<std::endl;
+
+    // map pore residue C-alpha onto pathway:
+    std::cout<<"mapping pore residue C-alpha onto pathway ... ";
+    clock_t tMapResCal = std::clock();
+    std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(poreMappingSelCal, pbc);
+    tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
+    std::cout<<"mapped "<<poreCalMappedCoords.size()
+             <<" particles in "<<1000*tMapResCal<<" ms"<<std::endl;
+
+    
+    // check if particles are pore-lining:
+    std::cout<<"checking which residues are pore-lining ... ";
+    clock_t tResPoreLining = std::clock();
+    real margin = 1.0;
+    std::map<int, bool> poreLining = molPath.checkIfInside(poreCogMappedCoords, margin);
+    int nPoreLining = 0;
+    std::map<int, bool>::iterator jt;
+    for(jt = poreLining.begin(); jt != poreLining.end(); jt++)
+    {
+        if( jt -> second == true )
+        {
+            nPoreLining++;
+        }
+    }
+    tResPoreLining = (std::clock() - tResPoreLining)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<nPoreLining<<" pore lining residues in "
+             <<1000*tResPoreLining<<" ms"<<std::endl;
+
+    // check if residues are pore-facing:
+    // TODO: make this conditional on whether C-alphas are available
+    std::cout<<"checking which residues are pore-facing ... ";
+    clock_t tResPoreFacing = std::clock();
+    std::map<int, bool> poreFacing;
+    std::map<int, gmx::RVec>::iterator it;
+    for(it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+        if( it -> second[1] < poreCalMappedCoords[it->first][1] )
+        {
+            poreFacing[it->first] = true;
+        }
+    }
+    tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
+    std::cout<<"done in "<<1000*tResPoreFacing<<" ms"<<std::endl;
+
+    // add points inside to data frame:
+    for(it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+        SelectionPosition pos = poreMappingSelCog.position(it->first);
+        
+        // add points to dataset:
+        dhResMapping.setPoint(0, pos.mappedId());                    // refId
+        dhResMapping.setPoint(1, it -> second[0]); // s
+        dhResMapping.setPoint(2, it -> second[1]); // rho
+        dhResMapping.setPoint(3, it -> second[2]);// phi
+        dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
+        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
+        dhResMapping.finishPointSet();
+    }
+
+
     // FINISH FRAME
     //-------------------------------------------------------------------------
+
+    std::cout<<std::endl;
 
 	// finish analysis of current frame:
     dh.finishFrame();
