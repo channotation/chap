@@ -109,7 +109,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&ippsel_)
                          .storeIsSet(&ippselIsSet_)
 	                     .description("Reference group from which to determine the initial probe position for the pore finding algorithm. If unspecified, this defaults to the overall pore forming group. Will be overridden if init-probe-pos is set explicitly."));
+
+    
+    // get (optional) selection option for the neighbourhood search cutoff:
+    options -> addOption(RealOption("margin")
+	                     .store(&poreMappingMargin_)
+                         .defaultValue(1.0)
+                         .description("Margin for residue mapping."));
  
+
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
 	                     .store(&cutoff_)
@@ -758,8 +766,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // check if particles are pore-lining:
     std::cout<<"checking which residues are pore-lining ... ";
     clock_t tResPoreLining = std::clock();
-    real margin = 1.0;
-    std::map<int, bool> poreLining = molPath.checkIfInside(poreCogMappedCoords, margin);
+    std::map<int, bool> poreLining = molPath.checkIfInside(poreCogMappedCoords, poreMappingMargin_);
     int nPoreLining = 0;
     std::map<int, bool>::iterator jt;
     for(jt = poreLining.begin(); jt != poreLining.end(); jt++)
@@ -778,16 +785,26 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<"checking which residues are pore-facing ... ";
     clock_t tResPoreFacing = std::clock();
     std::map<int, bool> poreFacing;
+    int nPoreFacing = 0;
     std::map<int, gmx::RVec>::iterator it;
     for(it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         if( it -> second[1] < poreCalMappedCoords[it->first][1] )
         {
             poreFacing[it->first] = true;
+            nPoreFacing++;
+        }
+        else
+        {
+            std::cout<<"r_cal = "<<poreCalMappedCoords[it->first][1]<<"  "
+                     <<"r_cog = "<<it->second[1]<<std::endl;
+
+            poreFacing[it->first] = false;            
         }
     }
     tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
-    std::cout<<"done in "<<1000*tResPoreFacing<<" ms"<<std::endl;
+    std::cout<<"found "<<nPoreFacing<<" pore facing residues in "
+             <<1000*tResPoreFacing<<" ms"<<std::endl;
 
     // add points inside to data frame:
     for(it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
