@@ -27,18 +27,37 @@ class NelderMeadModule
 
         // setting parameters and initial point:
         void setParams(std::map<std::string, real> params);
+        void setObjFun(ObjectiveFunction objFun);
+        void setInitGuess(std::vector<real> guess);
 
         // optimisation and result retrieval:
         void optimise();
+        OptimSpacePoint getOptimPoint();
         
     private:
 
-        // parameters:
+        // control parameters:
         int maxIter_;
+        real initShiftFac_;
 
+        // internal parameters:
+        real contractionPar_;
+        real expansionPar_;
+        real reflectionPar_;
+        real shrinkagePar_;
+
+        // objective function:
+        ObjectiveFunction objFun_;
 
         // internal optimisation state:
-        std::vector<OptimSpacePoint> crntSimplex_;
+        std::vector<OptimSpacePoint> simplex_;
+        OptimSpacePoint centroid_; 
+
+        // comparison functor:
+        CompOptimSpacePoints comparison_;
+
+        // internal functions:
+        void calcCentroid();
 };
 
 #endif

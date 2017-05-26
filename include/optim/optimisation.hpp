@@ -1,6 +1,7 @@
 #ifndef OPTIMISATION_HPP
 #define OPTIMISATION_HPP
 
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -17,7 +18,10 @@ class OptimSpacePoint : public std::pair<std::vector<real>, real>
     public:
 
         void add(OptimSpacePoint other);
+        void addScaled(OptimSpacePoint other, real fac);
         void scale(real fac);
+
+        real dist2(OptimSpacePoint other);
 };
 
 
@@ -29,9 +33,16 @@ typedef struct CompOptimSpacePoints
 {
     bool operator()(OptimSpacePoint pointA, OptimSpacePoint pointB)
     {
-        return pointB.second < pointB.second;
+        return pointA.second < pointB.second;
     }
 } CompOptimSpacePoints;
+
+
+/*
+ *
+ */
+typedef std::function<real(std::vector<real>)> ObjectiveFunction;
+
 
 #endif
 
