@@ -9,9 +9,14 @@
 
 
 /*!
+ * \brief Representation of a point in optimisation space and its corresponding
+ * objective function value.
+ *
  * Representation of a point in optimisation space as a pair of a vector of
  * coordinates in the optimisation space and the corresponding value of the
- * objective function at this point.
+ * objective function at this point. The class also provides a few convenience
+ * functions for manipulating optimisation space point coordinates that are
+ * utilised by the various optimisation modules.
  */
 class OptimSpacePoint : public std::pair<std::vector<real>, real>
 {
@@ -27,7 +32,9 @@ class OptimSpacePoint : public std::pair<std::vector<real>, real>
 
 /*!
  * Functor for comparing two points in optimisation space by their respective
- * function value. 
+ * function value. Returns true if the value of the objective function is lower
+ * at the first point than at the second point. This allows sorting a vector of
+ * OptimSpacePoints using standard library functions.
  */
 typedef struct CompOptimSpacePoints
 {
@@ -38,8 +45,9 @@ typedef struct CompOptimSpacePoints
 } CompOptimSpacePoints;
 
 
-/*
- *
+/*!
+ * Shorthand notation for an objective function as used by the Nelder-Mead
+ * optimisation method.
  */
 typedef std::function<real(std::vector<real>)> ObjectiveFunction;
 
