@@ -46,7 +46,7 @@ typedef struct CompOptimSpacePoints
 
 
 /*!
- * Shorthand notation for an objective function as used by the Nelder-Mead
+ * \typedef Shorthand notation for an objective function as used by the Nelder-Mead
  * optimisation method.
  */
 typedef std::function<real(std::vector<real>)> ObjectiveFunction;

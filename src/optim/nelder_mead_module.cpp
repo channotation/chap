@@ -8,8 +8,9 @@
 
 
 
-/*
- * Constructor.
+/*!
+ * Constructor. Creates a NelderMeadModule object, but does not set any of its
+ * properties.
  */
 NelderMeadModule::NelderMeadModule()
 {
@@ -17,7 +18,7 @@ NelderMeadModule::NelderMeadModule()
 }
 
 
-/*
+/*!
  * Destructor.
  */
 NelderMeadModule::~NelderMeadModule()
@@ -30,9 +31,17 @@ NelderMeadModule::~NelderMeadModule()
  * \brief Setter function for parameters.
  *
  * Takes a standard map as input, from which it tries to extract the parameters
- * required by the Nelder-Mead algorithm. Unrecognised entries will be ignored
- * and an error will be thrown if required parameters without default are 
- * missing.
+ * required by the Nelder-Mead algorithm. Parameters are specified by using 
+ * their name (as a string) as map key and their value as map value. 
+ * Unrecognised entries will be ignored and an error will be thrown if required 
+ * parameters without default are missing. Available options are:
+ *
+ *   - maxIter: the maximum number of iterations to perform (required)
+ *   - initShift: shift of initial vertex coordinates with respect to guess point (required)
+ *   - contractionPar: factor used in contraction step (defaults to 0.5)
+ *   - expansionPar: factor used in expansion step (defaults to 2.0)
+ *   - reflectionPar: factor used in reflection step (defaults to 1.0)
+ *   - shrinkagePar: factor used in shrinkage step (defaults to  0.5)
  */
 void
 NelderMeadModule::setParams(std::map<std::string, real> params)
@@ -101,8 +110,9 @@ NelderMeadModule::setParams(std::map<std::string, real> params)
 }
 
 
-/*
- *
+/*!
+ * Sets the objective function to be maximised. An objective function takes a 
+ * vector of reals as its only argument and returns a single real.
  */
 void
 NelderMeadModule::setObjFun(ObjectiveFunction objFun)
@@ -111,8 +121,18 @@ NelderMeadModule::setObjFun(ObjectiveFunction objFun)
 }
 
 
-/*
+/*!
+ * Creates the initial simplex from one guess point. The first vertex of the 
+ * initial simplex will simply be the guess point itself. All other vertices
+ * are calculated by perturbing one coordinate of the guess vector, i.e.
  *
+ * \f[
+ *      \mathbf{x}_i = \mathbf{x}_1 + h\mathbf{e}_i
+ * \f]
+ *
+ * where \f$\mathbf{e}_i\f$ is the \f$i\f$-th unit vector and \f$h\f$ is a 
+ * small shift that can be set as a parameter. The objective function is not
+ * evaluated at any vertex.
  */
 void
 NelderMeadModule::setInitGuess(std::vector<real> guess)
@@ -135,8 +155,9 @@ NelderMeadModule::setInitGuess(std::vector<real> guess)
 }
 
 
-/*
- *
+/*!
+ * Performs the Nelder-Mead optimisation loop. Should only be called once
+ * parameters, objective function, and initial point have been set.
  */
 void
 NelderMeadModule::optimise()
@@ -252,7 +273,7 @@ NelderMeadModule::optimise()
 
 
 /*!
- * Returns the best point in optimisation space. Only meaningfull if called
+ * Returns the best point in optimisation space. Only meaningful if called
  * after optimise().
  */
 OptimSpacePoint

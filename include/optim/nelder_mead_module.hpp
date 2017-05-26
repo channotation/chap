@@ -11,7 +11,22 @@
 #include "optim/optimisation.hpp"
 
 
-/*
+/*! 
+ * \brief Derivative-free optimisation using the Nelder-Mead downhill simplex
+ * method.
+ *
+ * This class provides functionality for derivative-free optimisation of a
+ * real-valued function in \f$N\f$ dimensions. After creating a 
+ * NelderMeadModule, the algorithms parameters should be set with setParams() 
+ * and an initial point needs to be specified with setInitGuess(). 
+ * Additionally, the objective function must be set using setObjFun. After 
+ * these setup steps, the optimisation procedure is started with optimise() and 
+ * the best value found can be retrieved with getOptimPoint(). Note that this 
+ * module performs maximisation rather than the canonical minimisation.
+ *
+ * The Nelder-Mead method is based on heuristically refining the vertex 
+ * positions of a simplex in the optimisation space. In the \f$i\f$-th
+ *
  *
  */
 class NelderMeadModule
