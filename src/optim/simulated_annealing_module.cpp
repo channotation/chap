@@ -209,6 +209,8 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
         real tmp = params["useAdaptiveCandidateGeneration"];
         if( tmp == 1 )
         {
+            std::cerr<<"ERROR: Adaptive candidate generation no longer supported!"<<std::endl;
+            std::abort();
             useAdaptiveCandidateGeneration_ = true;
         }
         else if (tmp == 0)
@@ -517,7 +519,7 @@ SimulatedAnnealingModule::annealAdaptive()
 }
 
 
-/*
+/*!
  * Reduces temperature of SA module. Currently only simple exponential 
  * cooling is implemented.
  */

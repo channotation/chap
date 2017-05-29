@@ -82,106 +82,49 @@ class SimulatedAnnealingModuleTest : public ::testing::Test
 };
 
 
-
-/*
- * Tests the constructor of the simulated annealing class.
- */
-TEST_F(SimulatedAnnealingModuleTest, ConstructorTest)
-{
-    /*
-
-	// set parameters:
-	int stateDim = 2;
-	real initTemp = 300;
-	real coolingFactor = 0.98;
-	real stepLengthFactor = 0.01;
-	real initState[stateDim] = {3.5, -2.0};
-
-	// create simulated annealing module:
-	SimulatedAnnealingModule sam(stateDim, 
-								 randomSeed_, 
-								 maxCoolingIter_,
-								 numCostSamples_,
-								 xi_,
-								 convRelTol_,
-								 initTemp, 
-	                             coolingFactor, 
-								 stepLengthFactor, 
-								 initState,
-								 rosenbrockFunction,
-								 useAdaptiveCandidateGeneration_);
-	
-	// check if integer parameters have been set correctly:
-	ASSERT_EQ(stateDim, sam.getStateDim());
-	ASSERT_EQ(randomSeed_, sam.getSeed());
-	ASSERT_EQ(maxCoolingIter_, sam.getMaxCoolingIter());
-	ASSERT_EQ(numCostSamples_, sam.getNumCandSamples());
-
-	// check of real parameters have been set correctly:
-	ASSERT_FLOAT_EQ(initTemp, sam.getTemp());
-	ASSERT_FLOAT_EQ(coolingFactor, sam.getCoolingFactor());
-	ASSERT_FLOAT_EQ(stepLengthFactor, sam.getStepLengthFactor());
-	
-	// check that state variables have been set correctly:
-	for(int i = 0; i < stateDim; i++)
-	{
-		ASSERT_FLOAT_EQ(initState[i], sam.getCrntStateAt(i));
-	}
-
-	// check that correct energy is computed for initial states:
-	ASSERT_FLOAT_EQ(rosenbrockFunction(initState), sam.getCrntCost());
-	ASSERT_FLOAT_EQ(rosenbrockFunction(initState), sam.getCandCost());
-	ASSERT_FLOAT_EQ(rosenbrockFunction(initState), sam.getBestCost());	
-
-    */
-}
-
-
 /*
  * Check that the cooling schedule works correctly.
  */
 TEST_F(SimulatedAnnealingModuleTest, CoolingTest)
 {
-    /*
+    // create simulated annealing module:
+    SimulatedAnnealingModule sam;
 
 	// set parameters:
-	int stateDim = 2;
-	real initTemp = 300;
-	real coolingFactor = 0.98;
-	real stepLengthFactor = 0.01;
-	real initState[stateDim] = {3.5, -2.0};
+    std::map<std::string, real> params;
+	params["useAdaptiveCandidateGeneration"] = 0;
+    params["randomSeed"] = randomSeed_;
+	params["maxCoolingIter"] = 10000;
+	params["numCostSamples"] = 500;
+    params["xi"] = xi_;
+	params["convRelTol"] = 1e-14;
+	params["initTemp"] = 300;
+	params["coolingFactor"] = 0.98;
+	params["stepLengthFactor"] = 0.001;
+    sam.setParams(params);
 
-	// create simulated annealing module:
-	SimulatedAnnealingModule sam(stateDim, 
-								 randomSeed_, 
-								 maxCoolingIter_,
-								 numCostSamples_,
-								 xi_,
-								 convRelTol_,
-								 initTemp, 
-	                             coolingFactor, 
-								 stepLengthFactor, 
-								 initState,
-								 rosenbrockFunction,
-								 useAdaptiveCandidateGeneration_);
+    // set initial state:
+	std::vector<real> guess = {3.5, -2.0};
+    sam.setInitGuess(guess);
+
+    // set objective function:
+    sam.setObjFun(rosenbrock);
 	
 	// perform cooling step:
 	sam.cool();
 
 	// check that temperature has decreased by correct amount:
-	ASSERT_FLOAT_EQ(sam.getTemp(), initTemp*coolingFactor);
+	ASSERT_FLOAT_EQ(sam.getTemp(), params["initTemp"]*params["coolingFactor"]);
 
 	// perform 9 more cooling steps:
-	int additionalCoolingSteps = 0;
+	int additionalCoolingSteps = 9;
 	for(int i = 0; i < additionalCoolingSteps; i++)
 	{
 		sam.cool();
 	}
 
 	// check that successive cooling also works:
-	ASSERT_FLOAT_EQ(sam.getTemp(), initTemp*std::pow(coolingFactor, additionalCoolingSteps + 1));
-
-    */
+	ASSERT_FLOAT_EQ(sam.getTemp(), params["initTemp"]*std::pow(params["coolingFactor"], additionalCoolingSteps + 1));
 }
 
 
@@ -204,7 +147,7 @@ TEST_F(SimulatedAnnealingModuleTest, IsotropicRosenbrockTest)
 	// set parameters:
     std::map<std::string, real> params;
 	params["useAdaptiveCandidateGeneration"] = 0;
-    params["randomSeed"] = randomSeed_ + 1;
+    params["randomSeed"] = randomSeed_;
 	params["maxCoolingIter"] = 10000;
 	params["numCostSamples"] = 500;
     params["xi"] = xi_;
@@ -243,70 +186,4 @@ TEST_F(SimulatedAnnealingModuleTest, IsotropicRosenbrockTest)
     ASSERT_NEAR(1.0, res.first[0], errTol);
     ASSERT_NEAR(1.0, res.first[1], errTol);
 }
-
-
-
-/*
- * Tests the adaptive annealing algorithm on the two-dimensional Rosenbrock
- * problem. This is done by asserting tolerance thresholds for the error and
- * residual of the maximisation problem.
- */
-TEST_F(SimulatedAnnealingModuleTest, AdaptiveRosenbrockTest)
-{
-    /*
-
-	// set tolerance for floating point comparison:
-	real resTol = 1e-4;
-	real errTol = 1e-3;
-
-	// set parameters:
-	useAdaptiveCandidateGeneration_ = true;
-	randomSeed_ = 15011991;
-	maxCoolingIter_ = 1e4;
-	numCostSamples_ = 60;
-	convRelTol_ = 4.5e-5;
-	xi_ = 3.0f;
-	real temp = 10.0;
-	real coolingFactor = 0.95;
-	real stepLengthFactor = 1.0;
-
-	// set initial state:
-	real initState[stateDim_] = {0.0, 1.0};
-
-	// construct a simulated annealing module:
-	SimulatedAnnealingModule sam(stateDim_, 
-								 randomSeed_,
-								 maxCoolingIter_,
-								 numCostSamples_,
-								 xi_,
-								 convRelTol_,
-								 temp,
-								 coolingFactor,
-								 stepLengthFactor,
-								 initState,
-								 rosenbrockFunction,
-								 useAdaptiveCandidateGeneration_);
-
-	// perform annealing:
-	eSimAnTerm status = sam.anneal();
-
-	// assert convergence:
-	EXPECT_TRUE(status != MAX_COOLING_ITER);
-
-	// assert residual:
-	real residual = sam.getBestCost() - 0.0;
-	ASSERT_NEAR(residual, 0.0, resTol);
-
-	// assert error:
-	real error = 0.0;
-	for(int i = 0; i < stateDim_; i++)
-	{
-		error += (sam.getBestStateAt(i) - 1.0) * (sam.getBestStateAt(i) - 1.0);
-	}
-	error = std::sqrt(error);
-	ASSERT_NEAR(error, 0.0, errTol);
-
-    */
-}
-
 
