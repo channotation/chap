@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "trajectory-analysis/simulated_annealing_module.hpp"
+#include "optim/simulated_annealing_module.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
 /*

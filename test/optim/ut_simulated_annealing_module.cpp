@@ -3,7 +3,7 @@
 
 #include <lapacke.h>
 
-#include "trajectory-analysis/simulated_annealing_module.hpp"
+#include "optim/simulated_annealing_module.hpp"
 
 #include <gtest/gtest.h>
 
