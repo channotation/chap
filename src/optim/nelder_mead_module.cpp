@@ -3,11 +3,6 @@
 #include "optim/nelder_mead_module.hpp"
 
 
-
-
-
-
-
 /*!
  * Constructor. Creates a NelderMeadModule object, but does not set any of its
  * properties.
