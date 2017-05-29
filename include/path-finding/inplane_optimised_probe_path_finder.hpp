@@ -41,7 +41,7 @@ class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
         void optimiseInitialPos();
         void advanceAndOptimise(bool forward);
 
-        gmx::RVec optimToConfig(real *optimSpacePos);
+        gmx::RVec optimToConfig(std::vector<real> optimSpacePos);
 };
 
 #endif

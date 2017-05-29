@@ -92,15 +92,15 @@ TEST_F(SimulatedAnnealingModuleTest, CoolingTest)
 
 	// set parameters:
     std::map<std::string, real> params;
-	params["useAdaptiveCandidateGeneration"] = 0;
-    params["randomSeed"] = randomSeed_;
-	params["maxCoolingIter"] = 10000;
-	params["numCostSamples"] = 500;
-    params["xi"] = xi_;
-	params["convRelTol"] = 1e-14;
-	params["initTemp"] = 300;
-	params["coolingFactor"] = 0.98;
-	params["stepLengthFactor"] = 0.001;
+	params["saUseAdaptiveCandidateGeneration"] = 0;
+    params["saRandomSeed"] = randomSeed_;
+	params["saMaxCoolingIter"] = 10000;
+	params["saNumCostSamples"] = 500;
+    params["saXi"] = xi_;
+	params["saConvRelTol"] = 1e-14;
+	params["saInitTemp"] = 300;
+	params["saCoolingFactor"] = 0.98;
+	params["saStepLengthFactor"] = 0.001;
     sam.setParams(params);
 
     // set initial state:
@@ -114,7 +114,7 @@ TEST_F(SimulatedAnnealingModuleTest, CoolingTest)
 	sam.cool();
 
 	// check that temperature has decreased by correct amount:
-	ASSERT_FLOAT_EQ(sam.getTemp(), params["initTemp"]*params["coolingFactor"]);
+	ASSERT_FLOAT_EQ(sam.getTemp(), params["saInitTemp"]*params["saCoolingFactor"]);
 
 	// perform 9 more cooling steps:
 	int additionalCoolingSteps = 9;
@@ -124,7 +124,7 @@ TEST_F(SimulatedAnnealingModuleTest, CoolingTest)
 	}
 
 	// check that successive cooling also works:
-	ASSERT_FLOAT_EQ(sam.getTemp(), params["initTemp"]*std::pow(params["coolingFactor"], additionalCoolingSteps + 1));
+	ASSERT_FLOAT_EQ(sam.getTemp(), params["saInitTemp"]*std::pow(params["saCoolingFactor"], additionalCoolingSteps + 1));
 }
 
 
@@ -146,15 +146,15 @@ TEST_F(SimulatedAnnealingModuleTest, IsotropicRosenbrockTest)
 
 	// set parameters:
     std::map<std::string, real> params;
-	params["useAdaptiveCandidateGeneration"] = 0;
-    params["randomSeed"] = randomSeed_;
-	params["maxCoolingIter"] = 10000;
-	params["numCostSamples"] = 500;
-    params["xi"] = xi_;
-	params["convRelTol"] = 1e-14;
-	params["initTemp"] = 3000;
-	params["coolingFactor"] = 0.99;
-	params["stepLengthFactor"] = 0.001;
+	params["saUseAdaptiveCandidateGeneration"] = 0;
+    params["saRandomSeed"] = randomSeed_;
+	params["saMaxCoolingIter"] = 10000;
+	params["saNumCostSamples"] = 500;
+    params["saXi"] = xi_;
+	params["saConvRelTol"] = 1e-14;
+	params["saInitTemp"] = 3000;
+	params["saCoolingFactor"] = 0.99;
+	params["saStepLengthFactor"] = 0.001;
     sam.setParams(params);
   
 	// set initial state:

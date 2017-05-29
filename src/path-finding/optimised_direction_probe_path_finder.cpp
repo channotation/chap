@@ -60,6 +60,8 @@ OptimisedDirectionProbePathFinder::findPath()
 void
 OptimisedDirectionProbePathFinder::optimiseInitialPos()
 {
+    /*
+
     std::cout<<"OPTIMISING INITIAL POSITION"<<std::endl;
 
     // FIRST OPTIMISATION: WITHIN A CIRCLE OF GIVEN RADIUS
@@ -112,6 +114,8 @@ OptimisedDirectionProbePathFinder::optimiseInitialPos()
     // add to path vector:
     path_.push_back(optimToConfig(samOnCircle.getBestState()));
     radii_.push_back(samOnCircle.getBestCost());
+
+    */
 }
 
 
@@ -123,6 +127,8 @@ OptimisedDirectionProbePathFinder::optimiseInitialPos()
 void
 OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
 {
+    /*
+
     std::cout<<"Advance and optimise"<<std::endl;
 
     // initialise direction vector and probe position:
@@ -179,6 +185,7 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
             break;
         }
     }
+    */
 }
 
 
@@ -199,6 +206,8 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
 void
 OptimisedDirectionProbePathFinder::updateInverseRotationMatrix(gmx::RVec direction)
 {
+    /*
+
     // internal tolerance for floating point comparison:
     real zeroTol = 1e-7;
 
@@ -258,7 +267,9 @@ OptimisedDirectionProbePathFinder::updateInverseRotationMatrix(gmx::RVec directi
 
         // transpose this:
         transpose(rotationMatrix, inverseRotationMatrix_);
-    }    
+    }   
+
+    */
 }
 
 
@@ -277,8 +288,10 @@ OptimisedDirectionProbePathFinder::updateInverseRotationMatrix(gmx::RVec directi
  * step to obtain the new configuration space position of the probe.
  */
 gmx::RVec
-OptimisedDirectionProbePathFinder::optimToConfig(real *optimSpacePos)
+OptimisedDirectionProbePathFinder::optimToConfig(std::vector<real> optimSpacePos)
 {
+    /*
+
     // declare result vector:
     gmx::RVec configSpacePos;
 
@@ -296,5 +309,6 @@ OptimisedDirectionProbePathFinder::optimToConfig(real *optimSpacePos)
 
     // return configuration space position:
     return(configSpacePos);
+    */
 }
 

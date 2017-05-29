@@ -48,12 +48,13 @@ AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
 
 }
 
+
 /*
  * Finds the minimal free distance, i.e. the shortest distance between the 
  * probe and the closest van-der-Waals surface.
  */
 real
-AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
+AbstractProbePathFinder::findMinimalFreeDistance(std::vector<real> optimSpacePos)
 {
    // internal variables:
     real pairDist;              // distance between probe and pore atom
@@ -99,3 +100,4 @@ AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
     // return radius of maximal free sphere:
     return minimalFreeDistance; 
 }
+

@@ -43,7 +43,7 @@ class OptimisedDirectionProbePathFinder : public AbstractProbePathFinder
         void advanceAndOptimise(gmx::RVec initDirection);
         void updateInverseRotationMatrix(gmx::RVec direction);
 
-        gmx::RVec optimToConfig(real *optimSpacePos);
+        gmx::RVec optimToConfig(std::vector<real> optimSpacePos);
 };
 
 #endif

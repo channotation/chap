@@ -129,9 +129,9 @@ void
 SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
 {
     // PRNG seed:
-    if( params.find("seed") != params.end() )
+    if( params.find("saSeed") != params.end() )
     {
-        seed_ = params["seed"];
+        seed_ = params["saSeed"];
     }
     else
     {
@@ -139,9 +139,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
     
     // number of cooling iterations:
-    if( params.find("maxCoolingIter") != params.end() )
+    if( params.find("saMaxCoolingIter") != params.end() )
     {
-        maxCoolingIter_ = params["maxCoolingIter"];
+        maxCoolingIter_ = params["saMaxCoolingIter"];
     }
     else
     {
@@ -150,9 +150,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // number of cost samples:
-    if( params.find("numCostSamples") != params.end() )
+    if( params.find("saNumCostSamples") != params.end() )
     {
-        numCostSamples_ = params["numCostSamples"];
+        numCostSamples_ = params["saNumCostSamples"];
     }
     else
     {
@@ -161,9 +161,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // convergence tolerance parameter:
-    if( params.find("convRelTol") != params.end() )
+    if( params.find("saConvRelTol") != params.end() )
     {
-        convRelTol_ = params["convRelTol"];
+        convRelTol_ = params["saConvRelTol"];
     }
     else
     {
@@ -171,9 +171,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // initial temperature:
-    if( params.find("initTemp") != params.end() )
+    if( params.find("saInitTemp") != params.end() )
     {
-        temp_ = params["initTemp"];
+        temp_ = params["saInitTemp"];
     }
     else
     {
@@ -182,9 +182,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // cooling factor:
-    if( params.find("coolingFactor") != params.end() )
+    if( params.find("saCoolingFactor") != params.end() )
     {
-        coolingFactor_ = params["coolingFactor"];
+        coolingFactor_ = params["saCoolingFactor"];
     }
     else
     {
@@ -193,9 +193,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // step length factor:
-    if( params.find("stepLengthFactor") != params.end() )
+    if( params.find("saStepLengthFactor") != params.end() )
     {
-        stepLengthFactor_ = params["stepLengthFactor"];
+        stepLengthFactor_ = params["saStepLengthFactor"];
     }
     else
     {
@@ -204,9 +204,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // adaptive adaptive candidate generation:
-    if( params.find("useAdaptiveCandidateGeneration") != params.end() )
+    if( params.find("saUseAdaptiveCandidateGeneration") != params.end() )
     {
-        real tmp = params["useAdaptiveCandidateGeneration"];
+        real tmp = params["saUseAdaptiveCandidateGeneration"];
         if( tmp == 1 )
         {
             std::cerr<<"ERROR: Adaptive candidate generation no longer supported!"<<std::endl;
@@ -229,9 +229,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // adaptive sampling beta parameter:
-    if( params.find("beta") != params.end() )
+    if( params.find("saBeta") != params.end() )
     {
-        beta_ = params["beta"];
+        beta_ = params["saBeta"];
     }
     else
     {
@@ -239,9 +239,9 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     }
 
     // adaptive sampling xi parameter:
-    if( params.find("xi") != params.end() )
+    if( params.find("saXi") != params.end() )
     {
-        xi_ = params["xi"];
+        xi_ = params["saXi"];
     }
     else
     {

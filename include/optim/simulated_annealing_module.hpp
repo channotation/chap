@@ -47,7 +47,6 @@ class SimulatedAnnealingModule
         SimulatedAnnealingModule();
 		~SimulatedAnnealingModule();
 
-		eSimAnTerm anneal();
 
         // public interface:
         void setParams(std::map<std::string, real> params);
@@ -79,6 +78,9 @@ class SimulatedAnnealingModule
 		real getBestCost(){return bestCost_;};
 
 	private:
+
+        // internal driver for annealing procedure:
+        eSimAnTerm anneal();
 
 		// parameters:
 		bool useAdaptiveCandidateGeneration_;

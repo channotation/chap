@@ -61,8 +61,8 @@ TEST_F(NelderMeadModuleTest, NelderMeadModuleSphereTest)
 
     // set optimisation parameters:
     std::map<std::string, real> params;
-    params["maxIter"] = 100;
-    params["initShift"] = 1.0;
+    params["nmMaxIter"] = 100;
+    params["nmInitShift"] = 1.0;
     nmm.setParams(params);
 
     // prepare initial guess:
@@ -97,8 +97,8 @@ TEST_F(NelderMeadModuleTest, NelderMeadModuleRosenbrockTest)
 
     // set optimisation parameters:
     std::map<std::string, real> params;
-    params["maxIter"] = 200;
-    params["initShift"] = 1.0;
+    params["nmMaxIter"] = 200;
+    params["nmInitShift"] = 1.0;
     nmm.setParams(params);
 
     // prepare initial guess:
