@@ -19,7 +19,6 @@
 
 #include "io/molecular_path_obj_exporter.hpp"
 
-#include "trajectory-analysis/path_finding_module.hpp"
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
 
