@@ -150,6 +150,16 @@ NelderMeadModule::setInitGuess(std::vector<real> guess)
 }
 
 
+/*
+ *
+
+void
+NelderMeadModule::setInitGuess(gmx::RVec guess)
+{
+    setInitGuess();
+}
+*/
+
 /*!
  * Performs the Nelder-Mead optimisation loop. Should only be called once
  * parameters, objective function, and initial point have been set.

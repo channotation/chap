@@ -3,6 +3,8 @@
 #include <gromacs/math/vec.h>
 
 #include "optim/simulated_annealing_module.hpp"
+#include "optim/nelder_mead_module.hpp"
+
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 
 /*
@@ -236,7 +238,18 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
           
         // current position becomes best position in plane: 
         crntProbePos_ = optimToConfig(sam.getBestState());
+       
         
+
+        NelderMeadModule nmm;
+        std::vector<real> guess(std::begin(crntProbePos_.as_vec()),
+                                std::end(crntProbePos_.as_vec()));
+//        nmm.setParams();
+        nmm.setInitGuess(guess);
+//        nmm.set
+
+
+
         // add result to path container: 
         path_.push_back(crntProbePos_);
         radii_.push_back(sam.getBestCost());     

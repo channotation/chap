@@ -1,6 +1,10 @@
 #include "optim/optimisation.hpp"
 
 
+/******************************************************************************
+ * OptimSpacePoint
+ *****************************************************************************/
+
 /*!
  * Adds another point to the point, but does not update the value of the
  * objective function at the new coordinates.
@@ -59,3 +63,24 @@ OptimSpacePoint::dist2(OptimSpacePoint other)
     return d;
 }
 
+
+/******************************************************************************
+ * OptimisationModule
+ *****************************************************************************/
+
+/*!
+ * Constructor.
+ */
+OptimisationModule::OptimisationModule()
+{
+
+}
+
+
+/*!
+ * Destructor.
+ */
+OptimisationModule::~OptimisationModule()
+{
+
+}

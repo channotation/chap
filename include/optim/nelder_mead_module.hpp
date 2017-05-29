@@ -85,7 +85,7 @@
  * where the parameter \f$ \delta \f$ is typically set to 0.5. The algorithm is
  * terminated after a maximum number of iterations.
  */
-class NelderMeadModule
+class NelderMeadModule : public OptimisationModule
 {
     friend class NelderMeadModuleTest;
     FRIEND_TEST(NelderMeadModuleTest, NelderMeadModuleRosenbrockTest);
@@ -100,6 +100,7 @@ class NelderMeadModule
         void setParams(std::map<std::string, real> params);
         void setObjFun(ObjectiveFunction objFun);
         void setInitGuess(std::vector<real> guess);
+//        void setInitGuess(gmx::RVec guess);
 
         // optimisation and result retrieval:
         void optimise();

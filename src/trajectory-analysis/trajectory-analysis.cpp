@@ -556,28 +556,28 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
     // run path finding algorithm on current frame:
-//    std::cout<<"finding permeation pathway ... ";
+    std::cout<<"finding permeation pathway ... ";
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
+    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
 
     // retrieve molecular path object:
-//    std::cout<<"preparing pathway object ... ";
+    std::cout<<"preparing pathway object ... ";
     clock_t tMolPath = std::clock();
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
+    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
 
     
     // map residues onto pathway:
-//    std::cout<<"mapping residues onto pathway ... ";
+    std::cout<<"mapping residues onto pathway ... ";
     clock_t tMapRes = std::clock();
-//    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
-//    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
+    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
+    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
     tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
+    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
 
  //   std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
 
@@ -618,13 +618,17 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // ADD PATH DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
-/*
+
     // access path finding module result:
     real extrapDist = 1.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
- 
+
+
+    std::cout<<"nPoints = "<<radiusSample.size()<<std::endl;
+
+
     // loop over all support points of path:
     for(int i = 0; i < nOutPoints_; i++)
     {
@@ -637,7 +641,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
         dh.finishPointSet(); 
     }
-  */
+  
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------

@@ -2,6 +2,8 @@
 #define OPTIMISATION_HPP
 
 #include <functional>
+#include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -51,6 +53,27 @@ typedef struct CompOptimSpacePoints
  */
 typedef std::function<real(std::vector<real>)> ObjectiveFunction;
 
+
+/*! \brief Abstract base class for optimisation modules.
+ *
+ * Specifies public interface that needs to be implemented by an optimisation 
+ * module.
+ */
+class OptimisationModule
+{
+    public:
+
+        // constructor and destructor:
+        OptimisationModule();
+        ~OptimisationModule();
+
+        // public interface for optimisation classes:
+        virtual void setParams(std::map<std::string, real>) = 0;
+        virtual void setObjFun(ObjectiveFunction objFun) = 0;
+        virtual void setInitGuess(std::vector<real> guess) = 0;
+        virtual void optimise() = 0;
+        virtual OptimSpacePoint getOptimPoint() = 0;
+};
 
 #endif
 

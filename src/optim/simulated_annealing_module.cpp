@@ -41,7 +41,7 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 	, rng_(seed_)
 	, candGenDistr_(-std::sqrt(3.0f), std::sqrt(3.0f))
 	, candAccDistr_(0.0, 1.0)
-	, evaluateCost(cf)
+//	, evaluateCost(cf)
 	, calculateCovarianceMatrix()
 {
 	// allocate memory for internal state vectors:
@@ -55,12 +55,13 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 	cblas_scopy(stateDim_, initState, 1, bestState_, 1);
 
 	// get cost of inital states:
-	crntCost_ = evaluateCost(crntState_);
-	candCost_ = evaluateCost(candState_);
-	bestCost_ = evaluateCost(bestState_);
+//	crntCost_ = evaluateCost(crntState_);
+//	candCost_ = evaluateCost(candState_);
+//	bestCost_ = evaluateCost(bestState_);
 
 	// allocate candidate cost vector:
 	costSamples_ = new real[numCostSamples_];
+
 	// should adaptive candidate generation be used:
 	if( useAdaptiveCandidateGeneration_ == true )
 	{
@@ -87,7 +88,17 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 }
 
 
-/*
+/*!
+ * Simple constructor. Creates an SimulatedAnnealingModule object, but does
+ * not set any of its properties.
+ */
+SimulatedAnnealingModule::SimulatedAnnealingModule()
+{
+
+}
+
+
+/*!
  * Custom destructor to free memory.
  */
 SimulatedAnnealingModule::~SimulatedAnnealingModule()
@@ -109,6 +120,217 @@ SimulatedAnnealingModule::~SimulatedAnnealingModule()
 }
 
 
+/*!
+ * Sets parameters of the simulated annealing algorithm. Will throw an error
+ * if any required parameter without defaults is not set. Ignores unknown 
+ * parameters.
+ */
+void
+SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
+{
+    // PRNG seed:
+    if( params.find("seed") != params.end() )
+    {
+        seed_ = params["seed"];
+    }
+    else
+    {
+        // TODO: random seed!
+    }
+    
+    // number of cooling iterations:
+    if( params.find("maxCoolingIter") != params.end() )
+    {
+        maxCoolingIter_ = params["maxCoolingIter"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No maximum number of cooling iterations given!"<<std::endl;
+        std::abort();
+    }
+
+    // number of cost samples:
+    if( params.find("numCostSamples") != params.end() )
+    {
+        numCostSamples_ = params["numCostSamples"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No number of cost samples given!"<<std::endl;
+        std::abort();
+    }
+
+    // convergence tolerance parameter:
+    if( params.find("convRelTol") != params.end() )
+    {
+        convRelTol_ = params["convRelTol"];
+    }
+    else
+    {
+        convRelTol_ = std::sqrt(std::numeric_limits<real>::epsilon());
+    }
+
+    // initial temperature:
+    if( params.find("initTemp") != params.end() )
+    {
+        temp_ = params["initTemp"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No initial temperature given!"<<std::endl;
+        std::abort();
+    }
+
+    // cooling factor:
+    if( params.find("coolingFactor") != params.end() )
+    {
+        coolingFactor_ = params["coolingFactor"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No cooling factor given!"<<std::endl;
+        std::abort();
+    }
+
+    // step length factor:
+    if( params.find("stepLengthFactor") != params.end() )
+    {
+        stepLengthFactor_ = params["stepLengthFactor"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No step length factor given!"<<std::endl;
+        std::abort();
+    }
+
+    // adaptive adaptive candidate generation:
+    if( params.find("useAdaptiveCandidateGeneration") != params.end() )
+    {
+        real tmp = params["useAdaptiveCandidateGeneration"];
+        if( tmp == 1 )
+        {
+            useAdaptiveCandidateGeneration_ = true;
+        }
+        else if (tmp == 0)
+        {
+            useAdaptiveCandidateGeneration_ = false;
+        }
+        else
+        {
+            std::cerr<<"ERROR: Parameter useAdaptiveCandidateGeneration may only be 0 or 1!"<<std::endl;
+            std::abort();
+        }
+    }
+    else
+    {
+        useAdaptiveCandidateGeneration_ = false;
+    }
+
+    // adaptive sampling beta parameter:
+    if( params.find("beta") != params.end() )
+    {
+        beta_ = params["beta"];
+    }
+    else
+    {
+        beta_ = 0.11f;
+    }
+
+    // adaptive sampling xi parameter:
+    if( params.find("xi") != params.end() )
+    {
+        xi_ = params["xi"];
+    }
+    else
+    {
+        xi_ = 3.0f;
+    }
+}
+
+
+/*!
+ * Sets the objective function object.
+ */
+void
+SimulatedAnnealingModule::setObjFun(ObjectiveFunction objFun)
+{
+     this -> objFun_ = objFun;
+}
+
+
+/*!
+ * Sets the initial point in optimisation space from which simulated annealing
+ * is started. This function also allocates the memory needed by the arrays
+ * containing the internal state.
+ */
+void
+SimulatedAnnealingModule::setInitGuess(std::vector<real> guess)
+{
+    // set optimisation space dimension:
+    stateDim_ = guess.size();
+
+    // allocate memory for internal state vectors:
+	crntState_ = new real[stateDim_];
+	candState_ = new real[stateDim_];
+	bestState_ = new real[stateDim_];
+
+	// initialise state vectors:
+    std::copy(guess.begin(), guess.end(), crntState_);
+    std::copy(guess.begin(), guess.end(), candState_);
+    std::copy(guess.begin(), guess.end(), bestState_);
+
+	// should adaptive candidate generation be used:
+	if( useAdaptiveCandidateGeneration_ == true )
+	{
+		// allocate memory for covariance and adaptation matrix:
+		stateSampleMatrix_ = new real[stateDim_ * numCostSamples_];
+		adaptationMatrix_ = new real[stateDim_ * stateDim_];
+
+		// initialise adaptation matrix as identity matrix:
+		for(int i=0; i<stateDim_; i++)
+		{
+			for(int j=0; j<stateDim_; j++)
+			{
+				if(i == j)
+				{
+					adaptationMatrix_[i*stateDim_ + j] = 1.0f;
+				}
+				else
+				{
+					adaptationMatrix_[i*stateDim_ + j] = 0.0f;
+				}
+			}
+		}
+	}
+}
+
+
+/*!
+ * Implements the optimisation class interface. Wraps around the anneal() 
+ * function, which stems from the original version if this class.
+ */
+void
+SimulatedAnnealingModule::optimise()
+{
+    anneal();
+}
+
+
+/*!
+ * Returns the optimisation result (i.e. the best point found) and the 
+ * corresponding objective function value as am OptimSpacePoint.
+ */
+OptimSpacePoint
+SimulatedAnnealingModule::getOptimPoint()
+{
+    OptimSpacePoint res;
+    res.first.assign(bestState_, bestState_ + stateDim_);
+    res.second = bestCost_;
+
+    return res;
+}
+
+
 /*
  * Public interface for the annealing function. Basically handles the 
  * distinction between isotropic and adaptive annealing.
@@ -116,6 +338,18 @@ SimulatedAnnealingModule::~SimulatedAnnealingModule()
 eSimAnTerm
 SimulatedAnnealingModule::anneal()
 {
+    // allocate memory for cost samples:
+    costSamples_ = new real[numCostSamples_];
+
+   	// get cost of inital states:
+    std::vector<real> crntStateVec(crntState_, crntState_ + stateDim_);
+    std::vector<real> candStateVec(candState_, candState_ + stateDim_);
+    std::vector<real> bestStateVec(bestState_, bestState_ + stateDim_);
+    crntCost_ = objFun_(crntStateVec);
+    candCost_ = objFun_(candStateVec);
+    bestCost_ = objFun_(bestStateVec);
+
+    // choose annealing procedure:
 	if( useAdaptiveCandidateGeneration_ == true )
 	{
 		return annealAdaptive();
@@ -141,7 +375,6 @@ SimulatedAnnealingModule::annealIsotropic()
 	// start annealing loop:
 	while(true)
 	{
- //   std::cout<<"nCoolingIter = "<<nCoolingIter<<std::endl;
 		// start sampling loop:
 		for(int i = 0; i < numCostSamples_; i++)
 		{
@@ -152,7 +385,9 @@ SimulatedAnnealingModule::annealIsotropic()
 			// TODO: check boundary conditions!
 			
 			// evaluate cost function:
-			candCost_ = evaluateCost(candState_);
+            std::vector<real> candStateVec;
+            candStateVec.assign(candState_, candState_ + stateDim_);
+			candCost_ = objFun_(candStateVec);
 
             // accept candidate?
 			if( acceptCandidateState() == true )
@@ -160,7 +395,6 @@ SimulatedAnnealingModule::annealIsotropic()
 				// candidate state becomes current state:
 				cblas_scopy(stateDim_, candState_, 1, crntState_, 1);
 				crntCost_ = candCost_;
-				
 				// is new state also the best state?
 				if( candCost_ > bestCost_ )
 				{
@@ -175,8 +409,6 @@ SimulatedAnnealingModule::annealIsotropic()
 			// reduce temperature:
 			cool();
 			nCoolingIter++;
-//    std::cout<<"candCost = "<<candCost_<<std::endl;
-//    std::cout<<"bestCost = "<<bestCost_<<std::endl;
 
 			// maximum step number reached?
 			if( nCoolingIter >= maxCoolingIter_ )
@@ -224,7 +456,9 @@ SimulatedAnnealingModule::annealAdaptive()
 			// TODO: check boundary conditions!
 			
 			// evaluate cost function:
-			candCost_ = evaluateCost(candState_);
+            std::vector<real> candStateVec;
+            candStateVec.assign(candState_, candState_ + stateDim_);
+			candCost_ = objFun_(candStateVec);
 			costSamples_[i] = candCost_;
 
 			// accept candidate?
