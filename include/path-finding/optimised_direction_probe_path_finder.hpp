@@ -1,3 +1,5 @@
+#ifdef NOTDEFINED
+
 #ifndef OPTIMISED_DIRECTION_PROBE_PATH_FINDER_HPP
 #define OPTIMESED_DIRECTION_PROBE_PATH_FINDER_HPP
 
@@ -48,3 +50,4 @@ class OptimisedDirectionProbePathFinder : public AbstractProbePathFinder
 
 #endif
 
+#endif

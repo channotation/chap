@@ -26,8 +26,8 @@ class AbstractPathFinder
         MolecularPath getMolecularPath();
 
 
-//        virtual std::vector<gmx::RVec> getPath(){return path_;};
-//        virtual std::vector<real> getRadii(){return radii_;};
+        virtual std::vector<gmx::RVec> pathPoints(){return path_;};
+        virtual std::vector<real> pathRadii(){return radii_;};
 
 
     protected:

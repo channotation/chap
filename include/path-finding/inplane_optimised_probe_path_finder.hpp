@@ -1,9 +1,14 @@
 #ifndef INPLANE_OPTIMISED_PROBE_PATH_FINDER_HPP
 #define INPLANE_OPTIMISED_PROBE_PATH_FINDER_HPP
 
+#include <map>
+#include <string>
+#include <vector>
+
 #include <gromacs/trajectoryanalysis.h>
 
 #include "path-finding/abstract_probe_path_finder.hpp"
+
 
 /*
  *
@@ -12,23 +17,14 @@ class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
 {
     public:
 
-        InplaneOptimisedProbePathFinder(real probeStepLength,
-                                        real probeRadius,
-                                        real maxFreeDist,
-                                        int maxProbeSteps,
+        // constructor
+        InplaneOptimisedProbePathFinder(std::map<std::string, real> params,
                                         gmx::RVec initProbePos,
                                         gmx::RVec chanDirVec,
-                                        std::vector<real> vdwRadii,
-                                        gmx::AnalysisNeighborhoodSearch *nbSearch,
-                                        int saRandomSeed,
-                                        int saMaxCoolingIter,
-                                        int saNumCostSamples,
-                                        real saXi,
-                                        real saConvRelTol,
-                                        real saInitTemp,
-                                        real saCoolingFactor,
-                                        real saStepLengthFactor,
-                                        bool saUseAdaptiveCandGen);
+//                                        gmx::AnalysisNeighborhoodSearch *nbSearch,
+                                        t_pbc pbc,
+                                        gmx::AnalysisNeighborhoodPositions porePos,
+                                        std::vector<real> vdwRadii);
 
         void findPath();
 

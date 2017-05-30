@@ -465,6 +465,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::unique_ptr<AbstractPathFinder> pfm;
     if( pfMethod_ == "inplane-optim" )
     {
+    /*
     	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
     	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
         pfm.reset(new InplaneOptimisedProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
@@ -474,12 +475,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                             saMaxCoolingIter_, saNumCostSamples_, 
                                             saXi_, saConvRelTol_, saInitTemp_, 
                                             saCoolingFactor_, saStepLengthFactor_, 
-                                            saUseAdaptiveCandGen_));
+                                            saUseAdaptiveCandGen_));*/
     }
     else if( pfMethod_ == "optim-direction" )
     {
         std::cout<<"OPTIM-DIRECTION"<<std::endl;
-
+/*
     	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
     	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
         pfm.reset(new OptimisedDirectionProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
@@ -489,17 +490,18 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                             saMaxCoolingIter_, saNumCostSamples_, 
                                             saXi_, saConvRelTol_, saInitTemp_, 
                                             saCoolingFactor_, saStepLengthFactor_, 
-                                            saUseAdaptiveCandGen_));
+                                            saUseAdaptiveCandGen_));*/
     }   
     else if( pfMethod_ == "naive-cylindrical" )
     {
+/*    
     	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
     	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
         pfm.reset(new NaiveCylindricalPathFinder(pfProbeStepLength_,
                                                  pfMaxProbeSteps_,
                                                  pfMaxFreeDist_,
                                                  initProbePos,
-                                                 chanDirVec));        
+                                                 chanDirVec));        */
     }
 
 

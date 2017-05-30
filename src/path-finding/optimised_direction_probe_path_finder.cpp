@@ -1,3 +1,5 @@
+#ifdef NOTDEFINED
+
 #include <iostream>
 #include <cmath>
 
@@ -311,4 +313,6 @@ OptimisedDirectionProbePathFinder::optimToConfig(std::vector<real> optimSpacePos
     return(configSpacePos);
     */
 }
+
+#endif
 
