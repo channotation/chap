@@ -17,7 +17,7 @@ class AbstractPathFinder
     public:
 
         // constructor:
-        AbstractPathFinder();
+        AbstractPathFinder(std::map<std::string, real> params);
        
         // interface for path finding method:
         virtual void findPath() = 0;
@@ -32,6 +32,7 @@ class AbstractPathFinder
 
     protected:
 
+        std::map<std::string, real> params_;
  
         std::vector<gmx::RVec> path_;
         std::vector<real> radii_;

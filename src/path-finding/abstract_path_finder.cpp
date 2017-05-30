@@ -1,14 +1,20 @@
+#include <map>
+#include <string>
+
 #include "path-finding/abstract_path_finder.hpp"
+
 
 /*
  * Constructor to be used in initialiser list of derived classes.
  */
-AbstractPathFinder::AbstractPathFinder()
+AbstractPathFinder::AbstractPathFinder(std::map<std::string, real> params)
     : path_()
     , radii_()
+    , params_(params)
 {
 
 }
+
 
 /*
  *
