@@ -101,8 +101,6 @@ InplaneOptimisedProbePathFinder::findPath()
     
     // advance backward:
     advanceAndOptimise(false);
-
-    std::cout<<"nPOINTS = "<<path_.size()<<std::endl;
 }
 
 
@@ -249,19 +247,19 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         
         // increment probe step counter:
         numProbeSteps++;
-        std::cout<<"probe step = "<<numProbeSteps<<std::endl;
-        std::cout<<"sa best cost = "<<sam.getOptimPoint().second<<std::endl;
-        std::cout<<"nm best cost = "<<nmm.getOptimPoint().second<<std::endl;
-        std::cout<<"crntProbePos = "<<crntProbePos_[XX]<<"  "
-                                    <<crntProbePos_[YY]<<"  "
-                                    <<crntProbePos_[ZZ]<<"  "<<std::endl;
+//        std::cout<<"probe step = "<<numProbeSteps<<std::endl;
+//        std::cout<<"sa best cost = "<<sam.getOptimPoint().second<<std::endl;
+//        std::cout<<"nm best cost = "<<nmm.getOptimPoint().second<<std::endl;
+//        std::cout<<"crntProbePos = "<<crntProbePos_[XX]<<"  "
+//                                    <<crntProbePos_[YY]<<"  "
+//                                    <<crntProbePos_[ZZ]<<"  "<<std::endl;
 
        
         if( numProbeSteps >= maxProbeSteps_ )
         {
             break;
         }
-        if( sam.getBestCost() > maxProbeRadius_ )
+        if( nmm.getOptimPoint().second > maxProbeRadius_ )
         {
             break;
         }
