@@ -3,8 +3,10 @@
 #include "path-finding/naive_cylindrical_path_finder.hpp"
 
 
-/*
- * Test ficture for testing a naive cylindrical path finding module.
+/*!
+ * \brief Test fixture for NaiveCylindricalPathFinder.
+ *
+ * Provides no functionality except that inherited from Google test.
  */
 class NaiveCylindricalPathFinderTest : public ::testing::Test
 {
@@ -15,8 +17,12 @@ class NaiveCylindricalPathFinderTest : public ::testing::Test
 };
 
 
-/*
- * Tests the correct construction of a cylinder aligned with the x-axis.
+/*!
+ * \brief Tests the correct construction of a cylinder aligned with the 
+ * \f$ x \f$-axis.
+ *
+ * The test asserts that both the centre line points and path radii are correct
+ * to within one machine epsilon.
  */
 TEST_F(NaiveCylindricalPathFinderTest, NaiveCylindricalPathFinderXDirTest)
 {
@@ -73,9 +79,12 @@ TEST_F(NaiveCylindricalPathFinderTest, NaiveCylindricalPathFinderXDirTest)
 }
 
 
-/*
- * Tests the correct construction of a cylinder aligned with the y-axis.
- * Also tests different cylinder parameters and centrepoint off the origin.
+/*!
+ * \brief Tests the correct construction of a cylinder aligned with the 
+ * \f$ y \f$-axis.
+ *
+ * The test asserts that both the centre line points and path radii are correct
+ * to within one machine epsilon.
  */
 TEST_F(NaiveCylindricalPathFinderTest, NaiveCylindricalPathFinderYDirTest)
 {
@@ -132,9 +141,12 @@ TEST_F(NaiveCylindricalPathFinderTest, NaiveCylindricalPathFinderYDirTest)
 }
 
 
-/*
- * Tests the correct construction of a cylinder aligned with the z-axis.
- * Also tests non-normalised direction vector input.
+/*!
+ * \brief Tests the correct construction of a cylinder aligned with the 
+ * \f$ z \f$-axis.
+ *
+ * The test asserts that both the centre line points and path radii are correct
+ * to within one machine epsilon.
  */
 TEST_F(NaiveCylindricalPathFinderTest, NaiveCylindricalPathFinderZDirTest)
 {
