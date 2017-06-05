@@ -7,7 +7,6 @@
 #include <gromacs/math/3dtransforms.h> 
 
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
-#include "path-finding/mock_pore_maker.hpp"
 
 
 /*!
@@ -218,7 +217,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
                              std::pow(poreCentreRadius, 2.0)) - poreVdwRadius;
 
     // create pore pointing in the z-direction:
-    MockPoreMaker mpm;
     std::vector<gmx::RVec> particleCentres = makePore(poreLength,
                                                       poreCentreRadius,
                                                       poreVdwRadius,
@@ -339,7 +337,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
                              std::pow(poreCentreRadius, 2.0)) - poreVdwRadius;
 
     // create pore pointing in the z-direction:
-    MockPoreMaker mpm;
     std::vector<gmx::RVec> particleCentres = makePore(poreLength,
                                                       poreCentreRadius,
                                                       poreVdwRadius,
@@ -461,7 +458,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirT
                              std::pow(poreCentreRadius, 2.0)) - poreVdwRadius;
 
     // create pore pointing in the z-direction:
-    MockPoreMaker mpm;
     std::vector<gmx::RVec> particleCentres = makePore(poreLength,
                                                       poreCentreRadius,
                                                       poreVdwRadius,
