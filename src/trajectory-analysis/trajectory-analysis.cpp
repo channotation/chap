@@ -140,15 +140,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue("inplane-optim")
                          .description("Path finding method. Only inplane-optim is implemented so far."));
     options -> addOption(RealOption("probe-step")
-                         .store(&pfProbeStepLength_)
+                         .store(&pfParams_["pfProbeStepLength"])
                          .defaultValue(0.025)
                          .description("Step length for probe movement. Defaults to 0.025 nm."));
     options -> addOption(RealOption("probe-radius")
-                         .store(&pfProbeRadius_)
+                         .store(&pfParams_["pfProbeRadius"])
                          .defaultValue(0.0)
                          .description("Radius of probe. Defaults to 0.0, buggy for other values!"));
     options -> addOption(RealOption("max-free-dist")
-                         .store(&pfMaxFreeDist_)
+                         .store(&pfParams_["pfProbeMaxRadius"])
                          .defaultValue(1.0)
                          .description("Maximum radius of pore. Defaults to 1.0, buggy for larger values."));
     options -> addOption(IntegerOption("max-probe-steps")
@@ -177,21 +177,29 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue(10)
                          .description("NOT IMPLEMENTED! Number of cost samples considered for convergence tolerance. Defaults to 10."));
     options -> addOption(RealOption("sa-conv-tol")
-                         .store(&saConvRelTol_)
+                         .store(&pfParams_["saConvTol"])
                          .defaultValue(1e-3)
                          .description("Relative tolerance for simulated annealing."));
     options -> addOption(RealOption("sa-init-temp")
-                         .store(&saInitTemp_)
+                         .store(&pfParams_["saInitTemp"])
                          .defaultValue(0.1)
                          .description("Initital temperature for simulated annealing. Defaults to 0.1."));
     options -> addOption(RealOption("sa-cooling-fac")
-                         .store(&saCoolingFactor_)
+                         .store(&pfParams_["saCoolingFactor"])
                          .defaultValue(0.98)
                          .description("Cooling factor using in simulated annealing. Defaults to 0.98."));
     options -> addOption(RealOption("sa-step")
-                         .store(&saStepLengthFactor_)
+                         .store(&pfParams_["saStepLengthFactor"])
                          .defaultValue(0.001)
                          .description("Step length factor used in candidate generation. Defaults to 0.001.")) ;
+    options -> addOption(IntegerOption("nm-max-iter")
+                         .store(&nmMaxIter_)
+                         .defaultValue(100)
+                         .description("Number of Nelder-Mead simplex iterations.")) ;
+    options -> addOption(RealOption("nm-init-shift")
+                         .store(&pfParams_["nmInitShift"])
+                         .defaultValue(0.1)
+                         .description("Distance of vertices in initial Nelder-Mead simplex.")) ;
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
@@ -207,9 +215,34 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                  const TopologyInformation &top)
 {
+    // set parameters in parameter map:
+    //-------------------------------------------------------------------------
+
+    pfParams_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
+
+    pfParams_["pfCylRad"] = pfParams_["pfProbeMaxRadius"];
+    pfParams_["pfCylNumSteps"] = pfParams_["pfProbeMaxSteps"];
+    pfParams_["pfCylStepLength"] = pfParams_["pfProbeStepLength"];
+
+    pfParams_["saMaxCoolingIter"] = saMaxCoolingIter_;
+    pfParams_["saRandomSeed"] = saRandomSeed_;
+    pfParams_["saNumCostSamples"] = saNumCostSamples_;
+
+    pfParams_["nmMaxIter"] = nmMaxIter_;
+
+
+
+
+
+
+
 	// set cutoff distance for grid search as specified in user input:
 	nb_.setCutoff(cutoff_);
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
+
+
+    //
+    //-------------------------------------------------------------------------
 
 	// prepare data container:
 	data_.setDataSetCount(1);               // one data set for water   
@@ -460,48 +493,33 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
              <<"saUseAdaptiveCandGen = "<<saUseAdaptiveCandGen_<<std::endl;
     */
 
+    // vectors as RVec:
+    RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
+    RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]); 
 
     // create path finding module:
     std::unique_ptr<AbstractPathFinder> pfm;
     if( pfMethod_ == "inplane-optim" )
     {
-    /*
-    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-        pfm.reset(new InplaneOptimisedProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
-                                            pfMaxFreeDist_, pfMaxProbeSteps_, 
-                                            initProbePos, chanDirVec, selVdwRadii, 
-                                            &nbSearch, saRandomSeed_, 
-                                            saMaxCoolingIter_, saNumCostSamples_, 
-                                            saXi_, saConvRelTol_, saInitTemp_, 
-                                            saCoolingFactor_, saStepLengthFactor_, 
-                                            saUseAdaptiveCandGen_));*/
+        // create inplane-optimised path finder:
+        pfm.reset(new InplaneOptimisedProbePathFinder(pfParams_,
+                                                      initProbePos,
+                                                      chanDirVec,
+                                                      *pbc,
+                                                      refSelection,
+                                                      selVdwRadii));
     }
     else if( pfMethod_ == "optim-direction" )
     {
-        std::cout<<"OPTIM-DIRECTION"<<std::endl;
-/*
-    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-        pfm.reset(new OptimisedDirectionProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
-                                            pfMaxFreeDist_, pfMaxProbeSteps_, 
-                                            initProbePos, selVdwRadii, 
-                                            &nbSearch, saRandomSeed_, 
-                                            saMaxCoolingIter_, saNumCostSamples_, 
-                                            saXi_, saConvRelTol_, saInitTemp_, 
-                                            saCoolingFactor_, saStepLengthFactor_, 
-                                            saUseAdaptiveCandGen_));*/
+        std::cerr<<"ERROR: Optimised direction path finding is not implemented!"<<std::endl;
+        std::abort();
     }   
     else if( pfMethod_ == "naive-cylindrical" )
-    {
-/*    
-    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-        pfm.reset(new NaiveCylindricalPathFinder(pfProbeStepLength_,
-                                                 pfMaxProbeSteps_,
-                                                 pfMaxFreeDist_,
+    {        
+        // create the naive cylindrical path finder:
+        pfm.reset(new NaiveCylindricalPathFinder(pfParams_,
                                                  initProbePos,
-                                                 chanDirVec));        */
+                                                 chanDirVec));
     }
 
 
@@ -555,7 +573,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    std::cout<<"================================================="<<std::endl;
 //    std::cout<<std::endl;
 //    std::cout<<std::endl;
-
 
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
@@ -612,7 +629,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // reset smart pointer:
     // TODO: Is this necessary and parallel compatible?
-    pfm.reset();
+//    pfm.reset();
 
 
 
@@ -647,7 +664,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
-
 
     MolecularPathObjExporter molPathExp;
     molPathExp("pore.obj",

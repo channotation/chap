@@ -2,6 +2,7 @@
 #define TRAJECTORYANALYSIS_HPP
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -64,32 +65,39 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     int                              nOutPoints_;   // number of points on path sample
 
 
+    // path finding method parameters:
     std::string pfMethod_;
-
     real pfProbeStepLength_;
     real pfProbeRadius_;
     real pfMaxFreeDist_;
-
     int pfMaxProbeSteps_;
-
     std::vector<real> pfInitProbePos_;
     bool pfInitProbePosIsSet_;
     std::vector<real> pfChanDirVec_;
     bool pfChanDirVecIsSet_;
 
+    // simulated annealing parameters:
     int saRandomSeed_;
     int saMaxCoolingIter_;
     int saNumCostSamples_;
-
     real saXi_;
     real saConvRelTol_;
     real saInitTemp_;
     real saCoolingFactor_;
     real saStepLengthFactor_;
-
     bool saUseAdaptiveCandGen_;
 
+    // Nelder-Mead parameters:
+    int nmMaxIter_;
+
+
+
+
+
     bool debug_output_;
+
+    // map for path finding parameters:
+    std::map<std::string, real> pfParams_;
 
 	// calculate the radius of a spherical void with given centre: 
 	real calculateVoidRadius(RVec centre,
