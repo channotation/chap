@@ -1,0 +1,20 @@
+{
+    "remark": "Adapted from 'simple.rad' used in HOLE program.",
+
+    "reference": {
+        "citation": "Weiner et al. (1984), JACS, vol 106 pp765-768"
+        },
+
+    "vdwradii": [
+        {"atomname": "C", "resname": "???", "vdwr": 1.85},
+        {"atomname": "H", "resname": "???", "vdwr": 1.00},
+        {"atomname": "N", "resname": "???", "vdwr": 1.75},
+        {"atomname": "O", "resname": "???", "vdwr": 1.65},
+        {"atomname": "P", "resname": "???", "vdwr": 2.10},
+        {"atomname": "S", "resname": "???", "vdwr": 2.00},
+        {"atomname": "E2", "resname": "GLN", "vdwr": 1.00},
+        {"atomname": "D2", "resname": "ASN", "vdwr": 1.00},
+        {"atomname": "LP", "resname": "???", "vdwr": 0.00},
+        {"atomname": "MW", "resname": "???", "vdwr": 0.00}
+    ]
+}
