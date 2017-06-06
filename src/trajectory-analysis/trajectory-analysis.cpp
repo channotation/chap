@@ -77,6 +77,9 @@ void
 trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                 TrajectoryAnalysisSettings *settings)
 {
+    // HELP TEXT
+    //-------------------------------------------------------------------------
+
 	// set help text:
 	static const char *const desc[] = {
 		"This is a first prototype for the CHAP tool.",
@@ -84,12 +87,28 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 	};
     settings -> setHelpText(desc);
 
-    // hardcoded defaults for multivalue options:
-    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
 
+    // SETTINGS
+    //-------------------------------------------------------------------------
 
 	// require the user to provide a topology file input:
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
+
+    // will not use periodic boundary conditions:
+    settings -> setPBC(false);
+    settings -> setFlag(TrajectoryAnalysisSettings::efNoUserPBC);
+
+    // will make molecules whole:
+    settings -> setRmPBC(true);
+    settings -> setFlag(TrajectoryAnalysisSettings::efNoUserRmPBC);
+
+
+
+    // OPTIONS
+    //-------------------------------------------------------------------------
+
+    // hardcoded defaults for multivalue options:
+    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
 
 	// get (required) selection option for the reference group: 
 	options -> addOption(SelectionOption("reference")
@@ -241,6 +260,26 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
 
 
+    // PREPARE SELECTION FOR INITIAL PROBE POSITION
+    //-------------------------------------------------------------------------
+
+    // prepare selection collection:
+    gmx::SelectionCollection initProbePosCollection;
+    initProbePosCollection_.setReferencePosType("atom");
+    initProbePosCollection_.setOutputPosType("atom");
+
+    // parse selection:
+    initProbePosSelection_ = initProbePosCollection.parseFromString("resname SOL")[0];
+
+    // set topology and compile:
+    initProbePosCollection_.setTopology(top.topology(), 0);
+    initProbePosCollection_.compile();
+
+    std::cout<<"ipp.text = "<<initProbePosSelection_.selectionText()<<std::endl;
+    std::cout<<"ipp.isvalid = "<<initProbePosSelection_.isValid()<<std::endl;
+    std::cout<<"ipp.posCount = "<<initProbePosSelection_.posCount()<<std::endl;
+
+
     //
     //-------------------------------------------------------------------------
 
@@ -369,6 +408,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 	// get thread-local selection of reference particles:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
+    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
@@ -378,9 +418,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
     //-------------------------------------------------------------------------
 
-    // recalculate initial probe position based on reference group COM:
+    // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
     {  
+
+
         // helper variable for conditional assignment of selection:
         Selection tmpsel;
   
@@ -395,8 +437,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             // default to overall group of pore forming particles:
             tmpsel = refsel_;
         }
+
+
+        
+
+
+        std::cout<<"============================================="<<std::endl;
+//        std::cout<<"ipp.text = "<<initProbePosSelection.selectionText()<<std::endl;
+        std::cout<<"ipp.isvalid = "<<initProbePosSelection.isValid()<<std::endl;
+        std::cout<<"ipp.posCount = "<<initProbePosSelection.posCount()<<std::endl;
+
+
      
         // load data into initial position selection:
+//initProbePosCollection_.evaluate(&fr, pbc);
         const gmx::Selection &initPosSelection = pdata -> parallelSelection(tmpsel);
  
         // initialse total mass and COM vector:
@@ -429,6 +483,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[1] = centreOfMass[1];
         pfInitProbePos_[2] = centreOfMass[2];
     }
+
+
+
+
 
     // inform user:
     if( debug_output_ == true )
@@ -467,8 +525,18 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
 
+
+    std::cout<<"ePBC = "<<pbc -> ePBC<<std::endl
+             <<"ndim_ePBC = "<<pbc -> ndim_ePBC<<std::endl
+             <<"dim = "<<pbc -> dim<<std::endl
+             <<std::endl;
+
+
+
+
+
 	// initialise neighbourhood search:
-	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
+//	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
 
    /* 
     std::cout<<"pfMethod = "<<pfMethod_<<std::endl

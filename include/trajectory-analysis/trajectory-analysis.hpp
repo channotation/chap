@@ -65,6 +65,11 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     int                              nOutPoints_;   // number of points on path sample
 
 
+
+    // selection and topology for initial probe position:
+    gmx::SelectionCollection initProbePosCollection_;
+    gmx::Selection initProbePosSelection_;
+
     // path finding method parameters:
     std::string pfMethod_;
     real pfProbeStepLength_;
