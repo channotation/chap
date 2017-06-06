@@ -10,6 +10,9 @@
 #include <gromacs/random/uniformrealdistribution.h>
 #include <gromacs/fileio/confio.h>
 
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
 #include "geometry/spline_curve_1D.hpp"
@@ -310,20 +313,79 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     poreComCollection.setTopology(top.topology(), 0);
     poreComCollection.compile();
 
-
+/*
     std::cout<<std::endl<<std::endl;
     std::cout<<"atomCount = "<<test.atomCount()<<"  "
              <<"posCount = "<<test.posCount()<<"  "
              <<std::endl;
     std::cout<<std::endl<<std::endl;
-
+*/
     
 
 
     
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
-	
+
+
+    std::cerr<<"================= BEGIN JSON ===================="<<std::endl;
+  
+    std::stringstream ss;
+
+    std::ifstream file;
+    file.open("../data/vdwradii/simple.json");
+
+    ss<<file.rdbuf();    
+
+    file.close();
+
+//    ss << "{\"hello\": \"world\"}";
+
+    // parse JSON string into document: 
+    rapidjson::Document vdwRadiiDoc;
+    vdwRadiiDoc.Parse<0>(ss.str().c_str());
+
+    // ensure that root of JSON is object:
+    assert( vdwRadiiDoc.IsObject() );
+
+    // ensure that JSON contains vdwradii array:
+    assert( vdwRadiiDoc.HasMember("vdwradii") );
+    assert( vdwRadiiDoc["vdwradii"].IsArray());
+
+    const rapidjson::Value &vdwRadiiEntries = vdwRadiiDoc["vdwradii"];
+    rapidjson::Value::ConstValueIterator it;
+    for(it = vdwRadiiEntries.Begin(); it != vdwRadiiEntries.End(); it++)
+    {
+        // check that required entries are present and have correct type:
+        assert( it -> HasMember("atomname") );
+        assert( (*it)["atomname"].IsString() );
+
+        assert( it -> HasMember("resname") );
+        assert( (*it)["resname"].IsString() );
+    
+        assert( it -> HasMember("vdwr") );
+        assert( (*it)["vdwr"].IsNumber() );
+
+        std::string atmName = (*it)["atomname"].GetString();
+        std::string resName = (*it)["resname"].GetString();
+        real vdwr = (*it)["vdwr"].GetDouble();
+
+        std::cout<<"atom name = "<<atmName<<"  "
+                 <<"res name = "<<resName<<"  "
+                 <<"vdW Radius = "<<vdwr<<std::endl;
+    }
+
+
+    std::cout<<"---"<<std::endl;
+    std::cout<<"ss = "<<ss.str()<<std::endl;
+//    std::cout<<"Doc[array] = "<<vdwRadiiDoc["hello"].GetString()<<std::endl;
+
+
+
+    std::cerr<<"================= END JSON ===================="<<std::endl;
+
+
+
 	// load full topology:
 	t_topology *topol = top.topology();	
 
@@ -340,6 +402,11 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	for(int i=0; i<atoms.nr; i++)
 	{
 		real vdwRadius;
+/*
+        std::cout<<"atoms.atomname[i] = "<<*atoms.atomname[i]<<"   "
+                 <<"atoms.resinfo.name = "<<*(atoms.resinfo[atoms.atom[i].resind].name)<<"  "
+                 <<std::endl;
+  */      
 
 		// query vdW radius of current atom:
 		if(gmx_atomprop_query(aps, 
