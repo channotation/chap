@@ -99,7 +99,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserPBC);
 
     // will make molecules whole:
-    settings -> setRmPBC(true);
+    settings -> setRmPBC(false);
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserRmPBC);
 
 
@@ -402,6 +402,14 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
+    if( pbc == NULL )
+    {
+        std::cerr<<std::endl;
+        std::cerr<<"pbc pointer is NULL"<<std::endl;
+        std::cerr<<std::endl;
+    }
+
+
 	// get data handles for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
