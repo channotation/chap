@@ -95,7 +95,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
 
     // will not use periodic boundary conditions:
-    settings -> setPBC(false);
+    settings -> setPBC(true);
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserPBC);
 
     // will make molecules whole:
@@ -249,35 +249,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     pfParams_["nmMaxIter"] = nmMaxIter_;
 
-
-
-
-
-
-
 	// set cutoff distance for grid search as specified in user input:
 	nb_.setCutoff(cutoff_);
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
-
-
-    // PREPARE SELECTION FOR INITIAL PROBE POSITION
-    //-------------------------------------------------------------------------
-
-    // prepare selection collection:
-    gmx::SelectionCollection initProbePosCollection;
-    initProbePosCollection_.setReferencePosType("atom");
-    initProbePosCollection_.setOutputPosType("atom");
-
-    // parse selection:
-    initProbePosSelection_ = initProbePosCollection.parseFromString("resname SOL")[0];
-
-    // set topology and compile:
-    initProbePosCollection_.setTopology(top.topology(), 0);
-    initProbePosCollection_.compile();
-
-    std::cout<<"ipp.text = "<<initProbePosSelection_.selectionText()<<std::endl;
-    std::cout<<"ipp.isvalid = "<<initProbePosSelection_.isValid()<<std::endl;
-    std::cout<<"ipp.posCount = "<<initProbePosSelection_.posCount()<<std::endl;
 
 
     //
@@ -402,21 +376,13 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
-    if( pbc == NULL )
-    {
-        std::cerr<<std::endl;
-        std::cerr<<"pbc pointer is NULL"<<std::endl;
-        std::cerr<<std::endl;
-    }
-
-
-	// get data handles for this frame:
-	AnalysisDataHandle dh = pdata -> dataHandle(data_);
-    AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
-
-	// get thread-local selection of reference particles:
+	// get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
     const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
+
+    // get data handles for this frame:
+	AnalysisDataHandle dh = pdata -> dataHandle(data_);
+    AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
@@ -429,8 +395,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
     {  
-
-
         // helper variable for conditional assignment of selection:
         Selection tmpsel;
   
@@ -445,20 +409,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             // default to overall group of pore forming particles:
             tmpsel = refsel_;
         }
-
-
-        
-
-
-        std::cout<<"============================================="<<std::endl;
-//        std::cout<<"ipp.text = "<<initProbePosSelection.selectionText()<<std::endl;
-        std::cout<<"ipp.isvalid = "<<initProbePosSelection.isValid()<<std::endl;
-        std::cout<<"ipp.posCount = "<<initProbePosSelection.posCount()<<std::endl;
-
-
      
         // load data into initial position selection:
-//initProbePosCollection_.evaluate(&fr, pbc);
         const gmx::Selection &initPosSelection = pdata -> parallelSelection(tmpsel);
  
         // initialse total mass and COM vector:
@@ -493,21 +445,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
 
 
-
-
-
-    // inform user:
-    if( debug_output_ == true )
-    {
-        std::cout<<std::endl
-                 <<"Initial probe position for this frame is:  "
-                 <<pfInitProbePos_[0]<<", "
-                 <<pfInitProbePos_[1]<<", "
-                 <<pfInitProbePos_[2]<<". "
-                 <<std::endl;
-    }
-
-
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
     // TODO: Move this to separate class and test!
@@ -516,9 +453,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
 	selVdwRadii.reserve(refSelection.atomCount());
-    std::cout<<"selVdwRadii.size() = "<<selVdwRadii.size()<<std::endl;
 
-	// loop over all atoms in system and get vdW-radii:
+    // loop over all atoms in system and get vdW-radii:
 	for(int i=0; i<refSelection.atomCount(); i++)
     {
         // get global index of i-th atom in selection:
@@ -532,42 +468,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
-
-
-    std::cout<<"ePBC = "<<pbc -> ePBC<<std::endl
-             <<"ndim_ePBC = "<<pbc -> ndim_ePBC<<std::endl
-             <<"dim = "<<pbc -> dim<<std::endl
-             <<std::endl;
-
-
-
-
-
-	// initialise neighbourhood search:
-//	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
-
-   /* 
-    std::cout<<"pfMethod = "<<pfMethod_<<std::endl
-             <<"pfProbeStepLength = "<<pfProbeStepLength_<<std::endl
-             <<"pfProbeRadius = "<<pfProbeRadius_<<std::endl
-             <<"pfMaxFreeDist = "<<pfMaxFreeDist_<<std::endl
-             <<"pfMaxProbeSteps = "<<pfMaxProbeSteps_<<std::endl
-             <<"pfInitProbePos = "<<pfInitProbePos_[0]<<"  "
-                                  <<pfInitProbePos_[1]<<"  "
-                                  <<pfInitProbePos_[2]<<std::endl
-             <<"pfChanDirVec = "<<pfChanDirVec_[0]<<"  "
-                                <<pfChanDirVec_[1]<<"  "
-                                <<pfChanDirVec_[2]<<std::endl
-             <<"saRandomSeed = "<<saRandomSeed_<<std::endl
-             <<"saMaxCoolingIter = "<<saMaxCoolingIter_<<std::endl
-             <<"saNumCostSamples = "<<saNumCostSamples_<<std::endl
-             <<"saXi = "<<saXi_<<std::endl
-             <<"saConvRelTol = "<<saConvRelTol_<<std::endl
-             <<"saInitTemp = "<<saInitTemp_<<std::endl
-             <<"saCoolingFactor = "<<saCoolingFactor_<<std::endl
-             <<"saStepLengthFactor = "<<saStepLengthFactor_<<std::endl
-             <<"saUseAdaptiveCandGen = "<<saUseAdaptiveCandGen_<<std::endl;
-    */
 
     // vectors as RVec:
     RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
@@ -607,9 +507,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-    const gmx::Selection &test = pdata -> parallelSelection(refsel_);
 
-
+    std::cout<<std::endl;
     std::cout<<"initProbePos ="<<" "
              <<pfInitProbePos_[0]<<" "
              <<pfInitProbePos_[1]<<" "
