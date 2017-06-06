@@ -31,20 +31,20 @@ NelderMeadModule::~NelderMeadModule()
  * Unrecognised entries will be ignored and an error will be thrown if required 
  * parameters without default are missing. Available options are:
  *
- *   - maxIter: the maximum number of iterations to perform (required)
- *   - initShift: shift of initial vertex coordinates with respect to guess point (required)
- *   - contractionPar: factor used in contraction step (defaults to 0.5)
- *   - expansionPar: factor used in expansion step (defaults to 2.0)
- *   - reflectionPar: factor used in reflection step (defaults to 1.0)
- *   - shrinkagePar: factor used in shrinkage step (defaults to  0.5)
+ *   - nmMaxIter: the maximum number of iterations to perform (required)
+ *   - nmInitShift: shift of initial vertex coordinates with respect to guess point (required)
+ *   - nmContractionPar: factor used in contraction step (defaults to 0.5)
+ *   - nmExpansionPar: factor used in expansion step (defaults to 2.0)
+ *   - nmReflectionPar: factor used in reflection step (defaults to 1.0)
+ *   - nmShrinkagePar: factor used in shrinkage step (defaults to  0.5)
  */
 void
 NelderMeadModule::setParams(std::map<std::string, real> params)
 {
     // number of iterations:
-    if( params.find("maxIter") != params.end() )
+    if( params.find("nmMaxIter") != params.end() )
     {
-        maxIter_ = params["maxIter"];
+        maxIter_ = params["nmMaxIter"];
     }
     else
     {
@@ -53,9 +53,9 @@ NelderMeadModule::setParams(std::map<std::string, real> params)
     }
 
     // shift factor:
-    if( params.find("initShift") != params.end() )
+    if( params.find("nmInitShift") != params.end() )
     {
-        initShiftFac_ = params["initShift"];
+        initShiftFac_ = params["nmInitShift"];
     }
     else
     {
@@ -64,9 +64,9 @@ NelderMeadModule::setParams(std::map<std::string, real> params)
     }
 
     // contraction parameter:
-    if( params.find("contractionPar") != params.end() )
+    if( params.find("nmContractionPar") != params.end() )
     {
-        contractionPar_ = params["contractionPar"];
+        contractionPar_ = params["nmContractionPar"];
     }
     else
     {
@@ -74,9 +74,9 @@ NelderMeadModule::setParams(std::map<std::string, real> params)
     }
 
     // expansion parameter:
-    if( params.find("expansionPar") != params.end() )
+    if( params.find("nmExpansionPar") != params.end() )
     {
-        expansionPar_ = params["expansionPar"];
+        expansionPar_ = params["nmExpansionPar"];
     }
     else
     {
@@ -84,9 +84,9 @@ NelderMeadModule::setParams(std::map<std::string, real> params)
     }
 
     // reflection parameter:
-    if( params.find("reflectionPar") != params.end() )
+    if( params.find("nmReflectionPar") != params.end() )
     {
-        reflectionPar_ = params["reflectionPar"];
+        reflectionPar_ = params["nmReflectionPar"];
     }
     else
     {
@@ -94,9 +94,9 @@ NelderMeadModule::setParams(std::map<std::string, real> params)
     }
 
     // reflection parameter:
-    if( params.find("shrinkagePar") != params.end() )
+    if( params.find("nmShrinkagePar") != params.end() )
     {
-        shrinkagePar_ = params["shrinkagePar"];
+        shrinkagePar_ = params["nmShrinkagePar"];
     }
     else
     {
@@ -149,6 +149,16 @@ NelderMeadModule::setInitGuess(std::vector<real> guess)
     }
 }
 
+
+/*
+ *
+
+void
+NelderMeadModule::setInitGuess(gmx::RVec guess)
+{
+    setInitGuess();
+}
+*/
 
 /*!
  * Performs the Nelder-Mead optimisation loop. Should only be called once

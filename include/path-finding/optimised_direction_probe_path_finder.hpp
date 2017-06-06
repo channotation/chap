@@ -1,3 +1,5 @@
+#ifdef NOTDEFINED
+
 #ifndef OPTIMISED_DIRECTION_PROBE_PATH_FINDER_HPP
 #define OPTIMESED_DIRECTION_PROBE_PATH_FINDER_HPP
 
@@ -43,8 +45,9 @@ class OptimisedDirectionProbePathFinder : public AbstractProbePathFinder
         void advanceAndOptimise(gmx::RVec initDirection);
         void updateInverseRotationMatrix(gmx::RVec direction);
 
-        gmx::RVec optimToConfig(real *optimSpacePos);
+        gmx::RVec optimToConfig(std::vector<real> optimSpacePos);
 };
 
 #endif
 
+#endif

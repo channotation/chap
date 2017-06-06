@@ -1,17 +1,28 @@
+#include <map>
+#include <string>
+
 #include "path-finding/abstract_path_finder.hpp"
 
-/*
- * Constructor to be used in initialiser list of derived classes.
+
+/*!
+ * \brief Constructor to be used in initialiser list of derived classes. 
+ *
+ * Initialises containers for path points and radii and sets internal map of
+ * parameters.
  */
-AbstractPathFinder::AbstractPathFinder()
+AbstractPathFinder::AbstractPathFinder(std::map<std::string, real> params)
     : path_()
     , radii_()
+    , params_(params)
 {
 
 }
 
-/*
- *
+
+/*!
+ * Returns a MolecularPath object constructed from the path finder's path 
+ * points and radii. Basically jsut a wrapper around the constructor of 
+ * MolecularPath.
  */
 MolecularPath
 AbstractPathFinder::getMolecularPath()
