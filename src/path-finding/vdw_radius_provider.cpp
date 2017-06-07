@@ -34,20 +34,13 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
     // ensure that root of JSON is object:
     if( jsonDoc.IsObject() == false )
     {
-        std::cerr<<"ERROR: Provided JSON document does not contain valid object."<<std::endl;
-        std::abort();
+        throw std::runtime_error("No valid JSON object provided.");
     }
 
     // ensure that JSON contains vdwradii array:
-    if( jsonDoc.HasMember("vdwradii") == false )
+    if( jsonDoc.HasMember("vdwradii") == false || jsonDoc["vdwradii"].IsArray() == false )
     {
-        std::cerr<<"ERROR: Provided JSON document does not contain 'vdwradii' object."<<std::endl;
-        std::abort();
-    }
-    if( jsonDoc["vdwradii"].IsArray() == false )
-    {
-        std::cerr<<"ERROR: 'vdwradii' object in provided JSON document is not array type."<<std::endl;
-        std::abort();
+        throw std::runtime_error("Provided JSON does not contain vdwradii array.");
     }
 
     // extract vdw radius data:

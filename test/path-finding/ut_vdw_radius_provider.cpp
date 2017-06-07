@@ -20,20 +20,56 @@ class VdwRadiusProviderTest : public ::testing::Test
  */
 TEST_F(VdwRadiusProviderTest, VdwRadiusProviderSimpleTest)
 {
-    // read JSON document from file:    
-    JsonDocImporter ImportJson;
-    rapidjson::Document jsonDoc = ImportJson("../data/vdwradii/simple.json");
-
-    // prepare radius provider: 
+    // create radius provider:
     VdwRadiusProvider rp;
-    rp.lookupTableFromJson(jsonDoc);
+
+    // BROKEN DOCUMENT CASE
+    //-------------------------------------------------------------------------
+
+    // using invalid JSON object should fail:
+    rapidjson::Document jsonDocMissingData;
+    rapidjson::Document::AllocatorType& allocMissingData = jsonDocMissingData.GetAllocator();
+    ASSERT_THROW(rp.lookupTableFromJson(jsonDocMissingData), std::runtime_error);
+
+    // using empty JSON object should fail:
+    jsonDocMissingData.SetObject();
+    ASSERT_THROW(rp.lookupTableFromJson(jsonDocMissingData), std::runtime_error);
+
+    // using JSON with wrong type vdwradii should fail:
+    jsonDocMissingData.AddMember("vdwradii", "wrong type", allocMissingData);
+    ASSERT_THROW(rp.lookupTableFromJson(jsonDocMissingData), std::runtime_error);
 
 
-   
+    // BROKEN RADIUS RECORDS CASE
+    //-------------------------------------------------------------------------
+    
+    // TODO: this!
+
     
 
 
 
+    // WORKING CASE
+    //-------------------------------------------------------------------------
 
-    std::cout<<"rad = "<<rp.vdwRadiusForAtom("C", "??")<<std::endl;
+    rapidjson::Document jsonDocNoThrow;
+    rapidjson::Document::AllocatorType& allocNoThrow = jsonDocNoThrow.GetAllocator();
+
+    // create an object with correct entries:
+    rapidjson::Value record;
+    record.SetObject();
+    record.AddMember("atomname", "CA", allocNoThrow);
+    record.AddMember("resname", "ARG", allocNoThrow);
+    record.AddMember("vdwr", 1.0, allocNoThrow);
+    
+    // add object to an array:
+    rapidjson::Value vdwradii(rapidjson::kArrayType);
+    vdwradii.PushBack(record, allocNoThrow);
+
+    // add array to document:
+    jsonDocNoThrow.SetObject();
+    jsonDocNoThrow.AddMember("vdwradii", vdwradii, allocNoThrow);
+
+    // proper document should not throw:
+    ASSERT_NO_THROW(rp.lookupTableFromJson(jsonDocNoThrow));
 }
