@@ -54,44 +54,18 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
     rapidjson::Value::ConstValueIterator it;
     for(it = vdwRadiiEntries.Begin(); it != vdwRadiiEntries.End(); it++)
     {
-        // TODO make this exceptions
-
         // check that required entries are present and have correct type:
-        if( it -> HasMember("atomname") == false )
+        if( it -> HasMember("atomname") == false || (*it)["atomname"].IsString() == false )
         {
-            std::cerr<<"ERROR: Van der Waals radius record invalid."<<std::endl;
-            std::cerr<<"Attribute 'atomname' not found."<<std::endl;
-            std::abort();
+            throw std::runtime_error("No 'atomname' attribute of type 'string' in van der Waals radius record.");
         }
-        if( (*it)["atomname"].IsString() == false )
+        if( it -> HasMember("resname") == false || (*it)["resname"].IsString() == false )
         {
-            std::cerr<<"ERROR: Van der Waals radius record invalid."<<std::endl;
-            std::cerr<<"Attribute 'atomname' must be of type string."<<std::endl;
-            std::abort();
+            throw std::runtime_error("No 'resname' attribute of type 'string' in van der Waals radius record.");
         }
-        if( it -> HasMember("resname") == false )
+        if( it -> HasMember("vdwr") == false || (*it)["vdwr"].IsNumber() == false )
         {
-            std::cerr<<"ERROR: Van der Waals radius record invalid."<<std::endl;
-            std::cerr<<"Attribute 'resname' not found."<<std::endl;
-            std::abort();
-        }
-        if( (*it)["resname"].IsString() == false )
-        {
-            std::cerr<<"ERROR: van der Waals radius record invalid."<<std::endl;
-            std::cerr<<"Attribute 'resname' must be of type string.."<<std::endl;
-            std::abort();
-        }
-        if( it -> HasMember("vdwr") == false )
-        {
-            std::cerr<<"ERROR: Van der Waals radius record invalid."<<std::endl;
-            std::cerr<<"Attribute 'vdwr' not found."<<std::endl;
-            std::abort();
-        }
-        if( (*it)["vdwr"].IsNumber() == false )
-        {
-            std::cerr<<"ERROR: Van der Waals radius record invalid."<<std::endl;
-            std::cerr<<"Attribute 'vdwr' must be of type number."<<std::endl;
-            std::abort();
+            throw std::runtime_error("No 'vdwr' attribute of type 'number' in van der Waals radius record.");
         }
 
         // create a vdW radius record struct from JSON:

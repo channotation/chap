@@ -28,7 +28,8 @@ typedef struct VdwRadiusRecord
 class VdwRadiusProvider
 {
     friend class VdwRadiusProviderTest;
-    FRIEND_TEST(VdwRadiusProviderTest, VdwRadiusProviderSimpleTest);
+    FRIEND_TEST(VdwRadiusProviderTest, VdwRadiusProviderJsonTest);
+    FRIEND_TEST(VdwRadiusProviderTest, VdwRadiusProviderLookupTest);
 
     public:
 
