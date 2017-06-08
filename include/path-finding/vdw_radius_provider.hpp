@@ -14,7 +14,7 @@
 /*
  *
  */
-typedef struct VdwRadiusRecord
+struct VdwRadiusRecord
 {
     std::string atmName_;
     std::string resName_;
@@ -55,7 +55,13 @@ class VdwRadiusProvider
         std::vector<VdwRadiusRecord> vdwRadiusLookupTable_;
 
         // function for associating a vdW radius with an atom and residue name:
-        real vdwRadiusForAtom(std::string atmName, std::string resName);
+        real vdwRadiusForAtom(std::string atmName, 
+                              std::string resName,
+                              std::string elemSym);
+        std::vector<VdwRadiusRecord> matchAtmName(std::string atmName);
+        std::vector<VdwRadiusRecord>::const_iterator matchResName(
+            std::string resName,
+            const std::vector<VdwRadiusRecord> &records);
 
         // function to validate and return default radius:
         inline real returnDefaultRadius(std::string atmName, std::string resName);

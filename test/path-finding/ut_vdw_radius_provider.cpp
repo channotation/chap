@@ -1,3 +1,5 @@
+#include <limits>
+
 #include <gtest/gtest.h>
 
 #include "gromacs/topology/topology.h"
@@ -6,8 +8,10 @@
 #include "path-finding/vdw_radius_provider.hpp"
 
 
-/*
+/*!
+ * \brief Test fixture for VdwRadiusProvider. 
  *
+ * Only used to group test cases.
  */
 class VdwRadiusProviderTest : public ::testing::Test
 {
@@ -150,11 +154,91 @@ TEST_F(VdwRadiusProviderTest, VdwRadiusProviderJsonTest)
 }
 
 
-/*
+/*!
+ * This test case checks that the van der Waals radius provider finds the 
+ * correct radius for any possible type of combination of input atom name, 
+ * residue name, and element name. It starts by building a lookup table for
+ * a few atom and residue name combinations and then checks that the correct
+ * radius is returned in the following cases:
  *
+ *  - match for atom name and exact residue name
+ *  - match for atom name and generic residue name
+ *  - match for element name and exact residue name
+ *  - match for element name and generic residue name
+ *  - no match for atom or residue name, but default radius set
+ *
+ * The test also makes sure that an exception is thrown in the following cases:
+ *
+ *  - match for atom name, but no match for residue name and no default set
+ *  - match for element name, but noch match for residue name and no default set
+ *  - no match for atom or alement name, and no default set
  */
 TEST_F(VdwRadiusProviderTest, VdwRadiusProviderLookupTest)
 {
+    // floating point comparison threshold:
+    real eps = std::numeric_limits<real>::epsilon();
 
+    // test value for radii:
+    std::vector<std::string> atomNames = {"C", "C", "O", "CL", "N", "FE"};
+    std::vector<std::string> resNames = {"ARG", "???", "ARG", "CL", "???", "???"};
+    std::vector<real> vdwRadii = {1.1, 2.2, 3.3, 4.4, 6.6, 1.7};
+
+    // create JSON document and allocator:
+    rapidjson::Document radii;
+    radii.SetObject();
+    rapidjson::Document::AllocatorType& alloc = radii.GetAllocator();
+   
+    // add array of radius value to document:
+    rapidjson::Value vdwrarray(rapidjson::kArrayType);
+    for(size_t i = 0; i < vdwRadii.size(); i++)
+    {
+        rapidjson::Value record;
+        record.SetObject();
+        rapidjson::Value atomName;
+        rapidjson::Value resName; 
+        atomName.SetString(atomNames[i].c_str(), atomNames[i].size(), alloc);
+        resName.SetString(resNames[i].c_str(), resNames[i].size(), alloc);
+        record.AddMember("atomname", atomName, alloc);
+        record.AddMember("resname", resName, alloc);
+        record.AddMember("vdwr", vdwRadii[i], alloc);
+        vdwrarray.PushBack(record, alloc);
+    }
+    radii.AddMember("vdwradii", vdwrarray, alloc);
+
+    // create radius provider and build lookup table:
+    VdwRadiusProvider rp;
+    rp.lookupTableFromJson(radii);
+
+    // check exact match for atom and residu name:
+    ASSERT_NEAR(1.1, rp.vdwRadiusForAtom("C", "ARG", "C"), eps);
+    ASSERT_NEAR(4.4, rp.vdwRadiusForAtom("CL", "CL", "Cl"), eps);
+
+    // check exact match for atom name only:
+    ASSERT_NEAR(2.2, rp.vdwRadiusForAtom("C", "TYR", "C"), eps);
+    ASSERT_NEAR(6.6, rp.vdwRadiusForAtom("N", "ALA", "N"), eps);
+
+    // check exact match for atom name only with no default residue:
+    ASSERT_THROW(rp.vdwRadiusForAtom("O", "TYR", "O"), std::runtime_error);
+    ASSERT_THROW(rp.vdwRadiusForAtom("NA", "NA", "Na"), std::runtime_error);
+
+    // check case with element name and exact residue name match: 
+    ASSERT_NEAR(1.1, rp.vdwRadiusForAtom("CA", "ARG", "C"), eps);
+    ASSERT_NEAR(1.1, rp.vdwRadiusForAtom("CB", "ARG", "C"), eps);
+
+    // check case with element name and generic residue match:
+    ASSERT_NEAR(2.2, rp.vdwRadiusForAtom("CA", "TYR", "C"), eps);
+    ASSERT_NEAR(1.7, rp.vdwRadiusForAtom("FE2", "TYR", "Fe"), eps);
+
+    // check case with element name match but no residue name match:
+    ASSERT_THROW(rp.vdwRadiusForAtom("OW", "TYR", "O"), std::runtime_error);
+
+    // check no match with no default radius set:
+    ASSERT_THROW(rp.vdwRadiusForAtom("E2", "ARG", "H"), std::runtime_error);
+    ASSERT_THROW(rp.vdwRadiusForAtom("MW", "SOL", ""), std::runtime_error);
+    ASSERT_THROW(rp.vdwRadiusForAtom("LP", "SOL", ""), std::runtime_error);
+
+    // check no match with default radius set:
+    rp.setDefaultVdwRadius(5.5);
+    ASSERT_NEAR(5.5, rp.vdwRadiusForAtom("E2", "ARG", "H"), eps);
 }
 

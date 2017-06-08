@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 //#include <gromacs/topology/atomprop.h> 
@@ -29,6 +30,16 @@ VdwRadiusProvider::~VdwRadiusProvider()
  *
  */
 void
+VdwRadiusProvider::setDefaultVdwRadius(real defRad)
+{
+    defRad_ = defRad;
+}
+
+
+/*
+ *
+ */
+void
 VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
 {
     // ensure that root of JSON is object:
@@ -48,7 +59,6 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
 
     // prepare loopup table for vdW radii:
     vdwRadiusLookupTable_.clear();
-//    vdwRadiusLookupTable_.reserve(vdwRadiusEntries.Size());
 
     // loop over array and extract vdW radius lookup table:
     rapidjson::Value::ConstValueIterator it;
@@ -94,14 +104,15 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top)
     vdwRadii.reserve(atoms.nr);
 
     // loop over all atoms in topology and find vdW radii:
-    for(int i = 0; i < atoms.nr; i++)
+    for(size_t i = 0; i < atoms.nr; i++)
     {
         // get atom and residue names:
         std::string atmName = *(atoms.atomname[i]);
         std::string resName = *(atoms.resinfo[atoms.atom[i].resind].name);
+        std::string elemSym(atoms.atom[i].elem);
 
         // add radius for this atom to results vector:
-        vdwRadii[i] = vdwRadiusForAtom(atmName, resName);
+        vdwRadii[i] = vdwRadiusForAtom(atmName, resName, elemSym);
     }
 
     // return vector of vdW radii:
@@ -113,7 +124,93 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top)
  *
  */
 real
-VdwRadiusProvider::vdwRadiusForAtom(std::string atmName, std::string resName)
+VdwRadiusProvider::vdwRadiusForAtom(std::string atmName, 
+                                    std::string resName,
+                                    std::string elemSym)
+{
+    // build vector of atom name matches:
+    std::vector<VdwRadiusRecord> atmNameMatches = matchAtmName(atmName);
+
+    // have any atom name matches been found:
+    if( atmNameMatches.size() > 0 )
+    {
+        // try to find exact residue name match:
+        std::vector<VdwRadiusRecord>::const_iterator it;
+        it = matchResName(resName, atmNameMatches);
+
+        // handle case where no match was found:
+        if( it == atmNameMatches.end() )
+        {
+            // try to find generic residue match:
+            it = matchResName("???", atmNameMatches);
+
+            // any matches found?
+            if( it == atmNameMatches.end() )
+            {
+                // if no match, return default radius:
+                return returnDefaultRadius(atmName, resName);
+            }
+            else
+            {
+                // if match found return corresponding radius:
+                return(it -> vdwRad_);
+            }
+        }
+        else
+        {
+            return(it -> vdwRad_);
+        }
+    }
+    else
+    {
+        // try to find element name matches:
+        std::transform(elemSym.begin(), elemSym.end(), elemSym.begin(), ::toupper);
+        std::vector<VdwRadiusRecord> elemNameMatches = matchAtmName(elemSym);
+
+        // any matches found?
+        if( elemNameMatches.size() > 0 )
+        {
+            // try to find exact residue name match:
+            std::vector<VdwRadiusRecord>::const_iterator it;
+            it = matchResName(resName, elemNameMatches);
+
+            // handle case where no match was found:
+            if( it == elemNameMatches.end() )
+            {
+                // try to find generic residue match:
+                it = matchResName("???", elemNameMatches);
+
+                // any matches found?
+                if( it == elemNameMatches.end() )
+                {
+                    // if no match, return default radius:
+                    return returnDefaultRadius(atmName, resName);
+                }
+                else
+                {
+                    // if match found return corresponding radius:
+                    return(it -> vdwRad_);
+                }
+            }
+            else
+            {
+                return(it -> vdwRad_);
+            }
+        }
+        else
+        {
+            // if no match found, try default radius:
+            return returnDefaultRadius(atmName, resName);
+        }
+    }
+}
+
+
+/*
+ *
+ */
+std::vector<VdwRadiusRecord>
+VdwRadiusProvider::matchAtmName(std::string atmName)
 {
     // build vector of atom name matches:
     std::vector<VdwRadiusRecord> matches;
@@ -125,30 +222,32 @@ VdwRadiusProvider::vdwRadiusForAtom(std::string atmName, std::string resName)
             matches.push_back(*it);
         }
     }
-   
-    // have any atom name matches been found:
-    if( matches.size() > 0 )
-    {
-        // find rasidue name match:
-        std::vector<VdwRadiusRecord>::iterator jt;
-        for(jt = matches.begin(); jt != matches.end(); jt++)
-        {
-            if( jt -> resName_ == resName )
-            {
-                return( jt -> vdwRad_);
-            }
-        }
 
-        // handle case where no match was found:
-        if( jt == matches.end() )
+    // return vector of matches:
+    return matches;
+}
+
+
+/*
+ *
+ */
+std::vector<VdwRadiusRecord>::const_iterator
+VdwRadiusProvider::matchResName(std::string resName,
+                                const std::vector<VdwRadiusRecord> &records)
+{
+    // loop over entries and try to match residue name:
+    std::vector<VdwRadiusRecord>::const_iterator it;
+    for(it = records.begin(); it != records.end(); it++)
+    {
+        if( it -> resName_ == resName )
         {
-            return returnDefaultRadius(atmName, resName);
+            return(it);
         }
     }
-    else
-    {
-        return returnDefaultRadius(atmName, resName);
-    }
+
+    // if no match was found, point iterator to end of vector:
+    it = records.end();
+    return(it);
 }
 
 
@@ -166,10 +265,7 @@ VdwRadiusProvider::returnDefaultRadius(std::string atmName, std::string resName)
     }
     else
     {
-        std::cerr<<"ERROR: Could not find van der Waals radius for atom "
-                 <<"with atom name "<<atmName<<" and residue name "
-                 <<resName<<" and default radius is not set."<<std::endl;
-        std::abort();
+        throw std::runtime_error("ERROR: Could not find van der Waals radius for atom with atom name "+atmName+" and residue name "+resName+" and default radius is not set.");
     } 
 }
 
