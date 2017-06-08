@@ -21,6 +21,7 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 #include "io/molecular_path_obj_exporter.hpp"
+#include "io/json_doc_importer.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -28,6 +29,7 @@
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 #include "path-finding/naive_cylindrical_path_finder.hpp"
+#include "path-finding/vdw_radius_provider.hpp"
 
 using namespace gmx;
 
@@ -330,55 +332,26 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     std::cerr<<"================= BEGIN JSON ===================="<<std::endl;
   
-    std::stringstream ss;
-
-    std::ifstream file;
-    file.open("../data/vdwradii/simple.json");
-
-    ss<<file.rdbuf();    
-
-    file.close();
-
-//    ss << "{\"hello\": \"world\"}";
-
-    // parse JSON string into document: 
-    rapidjson::Document vdwRadiiDoc;
-    vdwRadiiDoc.Parse<0>(ss.str().c_str());
-
-    // ensure that root of JSON is object:
-    assert( vdwRadiiDoc.IsObject() );
-
-    // ensure that JSON contains vdwradii array:
-    assert( vdwRadiiDoc.HasMember("vdwradii") );
-    assert( vdwRadiiDoc["vdwradii"].IsArray());
-
-    const rapidjson::Value &vdwRadiiEntries = vdwRadiiDoc["vdwradii"];
-    rapidjson::Value::ConstValueIterator it;
-    for(it = vdwRadiiEntries.Begin(); it != vdwRadiiEntries.End(); it++)
-    {
-        // check that required entries are present and have correct type:
-        assert( it -> HasMember("atomname") );
-        assert( (*it)["atomname"].IsString() );
-
-        assert( it -> HasMember("resname") );
-        assert( (*it)["resname"].IsString() );
+    std::string filepath = "../data/vdwradii/simple.json";
     
-        assert( it -> HasMember("vdwr") );
-        assert( (*it)["vdwr"].IsNumber() );
+    JsonDocImporter jdi;
+    rapidjson::Document radiiDoc = jdi(filepath.c_str());
+   
+    // create radius provider and build lookup table:
+    VdwRadiusProvider vrp;
+    vrp.lookupTableFromJson(radiiDoc);
 
-        std::string atmName = (*it)["atomname"].GetString();
-        std::string resName = (*it)["resname"].GetString();
-        real vdwr = (*it)["vdwr"].GetDouble();
-
-        std::cout<<"atom name = "<<atmName<<"  "
-                 <<"res name = "<<resName<<"  "
-                 <<"vdW Radius = "<<vdwr<<std::endl;
+    // set user-defined default radius?
+    if( true )
+    {
+        vrp.setDefaultVdwRadius(0.0);
     }
 
 
-    std::cout<<"---"<<std::endl;
-    std::cout<<"ss = "<<ss.str()<<std::endl;
-//    std::cout<<"Doc[array] = "<<vdwRadiiDoc["hello"].GetString()<<std::endl;
+    std::unordered_map<int, real> r = vrp.vdwRadiiForTopology(top);
+   
+    std::cout<<"r[100] = "<<r[100]<<std::endl;
+    std::cout<<"r[100000] = "<<r[100000]<<std::endl;
 
 
 
@@ -402,13 +375,28 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	for(int i=0; i<atoms.nr; i++)
 	{
 		real vdwRadius;
+
+        std::string elem;
+        elem += (atoms.atom[i].elem[0]);
+        elem += (atoms.atom[i].elem[1]);
+        elem += (atoms.atom[i].elem[2]);
+        elem += (atoms.atom[i].elem[3]);
+
+        std::transform(elem.begin(), elem.end(), elem.begin(), ::toupper);
+
 /*
         std::cout<<"atoms.atomname[i] = "<<*atoms.atomname[i]<<"   "
                  <<"atoms.resinfo.name = "<<*(atoms.resinfo[atoms.atom[i].resind].name)<<"  "
+                 <<"atoms.elem = "<<elem<<"  "
                  <<std::endl;
-  */      
+       
+        if( i > 1e9 )
+        {
+            break;
+        }
+*/
 
-		// query vdW radius of current atom:
+        // query vdW radius of current atom:
 		if(gmx_atomprop_query(aps, 
 		                      epropVDW, 
 							  *(atoms.resinfo[atoms.atom[i].resind].name),
@@ -527,6 +515,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         // get global index of i-th atom in selection:
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
+
+        std::cout<<"mapped ID = "<<atom.mappedId()<<std::endl;
+        std::cout<<"ref ID = "<<atom.refId()<<std::endl;
+        break;
 
 		// add radius to vector of radii:
 		selVdwRadii.push_back(vdwRadii_[idx]);
