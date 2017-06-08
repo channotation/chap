@@ -342,17 +342,27 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     vrp.lookupTableFromJson(radiiDoc);
 
     // set user-defined default radius?
-    if( true )
+    if( false )
     {
         vrp.setDefaultVdwRadius(0.0);
     }
 
 
-    std::unordered_map<int, real> r = vrp.vdwRadiiForTopology(top);
-   
-    std::cout<<"r[100] = "<<r[100]<<std::endl;
-    std::cout<<"r[100000] = "<<r[100000]<<std::endl;
+//    std::vector<int> poreMappedIds = refsel_.mappedIds();
 
+
+    std::unordered_map<int, real> r = vrp.vdwRadiiForTopology(top,
+                                                              refsel_.mappedIds());
+   
+
+    for(int i = 0; i < refsel_.posCount(); i++)
+    {
+        int mad = refsel_.position(i).mappedId();
+
+        std::cout<<"mappedId = "<<mad<<"  "
+                 <<"radius = "<<r[mad]
+                 <<std::endl;
+    }
 
 
     std::cerr<<"================= END JSON ===================="<<std::endl;

@@ -111,7 +111,8 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
  *
  */
 std::unordered_map<int, real>
-VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top)
+VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
+                                       gmx::ConstArrayRef<int> mappedIds)
 {
     // get list of all atoms:
     t_atoms atoms = top.topology() -> atoms;
@@ -121,15 +122,15 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top)
     vdwRadii.reserve(atoms.nr);
 
     // loop over all atoms in topology and find vdW radii:
-    for(size_t i = 0; i < atoms.nr; i++)
+    for(size_t i = 0; i < mappedIds.size(); i++)
     {
         // get atom and residue names:
-        std::string atmName = *(atoms.atomname[i]);
-        std::string resName = *(atoms.resinfo[atoms.atom[i].resind].name);
-        std::string elemSym(atoms.atom[i].elem);
+        std::string atmName = *(atoms.atomname[mappedIds[i]]);
+        std::string resName = *(atoms.resinfo[atoms.atom[mappedIds[i]].resind].name);
+        std::string elemSym(atoms.atom[mappedIds[i]].elem);
 
         // add radius for this atom to results vector:
-        vdwRadii[i] = vdwRadiusForAtom(atmName, resName, elemSym);
+        vdwRadii[mappedIds[i]] = vdwRadiusForAtom(atmName, resName, elemSym);
     }
 
     // return vector of vdW radii:

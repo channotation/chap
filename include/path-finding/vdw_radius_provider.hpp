@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <gromacs/trajectoryanalysis/analysissettings.h>
+#include <gromacs/utility/arrayref.h>
 
 #include "rapidjson/document.h"
 
@@ -48,7 +49,9 @@ class VdwRadiusProvider
         void lookupTableFromJson(rapidjson::Document &jsonDoc);
 
         // public interface for obtaining vdwRadii for given topology:
-        std::unordered_map<int, real> vdwRadiiForTopology(const gmx::TopologyInformation &top);
+        std::unordered_map<int, real> vdwRadiiForTopology(
+            const gmx::TopologyInformation &top,
+            gmx::ConstArrayRef<int> mappedIds);
 
     private:
 
