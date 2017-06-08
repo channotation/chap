@@ -8,8 +8,10 @@
 #include "path-finding/vdw_radius_provider.hpp"
 
 
-/*
+/*!
+ * \brief Constructor.
  *
+ * Initialises defRad_ as -1.0.
  */
 VdwRadiusProvider::VdwRadiusProvider()
     : defRad_(-1.0)
@@ -17,8 +19,9 @@ VdwRadiusProvider::VdwRadiusProvider()
 
 }
 
-/*
- *
+/*!
+ * \brief 
+ * Destructor.
  */
 VdwRadiusProvider::~VdwRadiusProvider()
 {
@@ -26,13 +29,27 @@ VdwRadiusProvider::~VdwRadiusProvider()
 }
 
 
-/*
+/*!
+ *  \brief Setter function for defRad_ member.
  *
+ *  Unless this function is called prior to lookupTableFromJson(), defRad_ will
+ *  be -1.0 and an exception is thrown if VdwRadiusProvider can not find a 
+ *  record for a specific atom and residue name combination.
+ *
+ *  Note that defRad_ can only be set to values greater or equal zero. Any 
+ *  attempt at setting a negative value will cause an exception to be thrown.
  */
 void
 VdwRadiusProvider::setDefaultVdwRadius(real defRad)
 {
-    defRad_ = defRad;
+    if( defRad >= 0 )
+    {
+        defRad_ = defRad;
+    }
+    else
+    {
+        throw std::runtime_error("Default van der Waals radius may not be negative.");
+    }
 }
 
 
@@ -120,8 +137,13 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top)
 }
 
 
-/*
+/*!
+ * \brief Driver for van der Waals radius lookups.
  *
+ * Given a combination of atom name, residue name, and element, name, this 
+ * function tries return the corresponding van der Waals radius. If 
+ * setDefaultVdwRadius() has not been called, an exception will be thrown is
+ * no match is found in the internal lookup table.
  */
 real
 VdwRadiusProvider::vdwRadiusForAtom(std::string atmName, 
@@ -206,8 +228,12 @@ VdwRadiusProvider::vdwRadiusForAtom(std::string atmName,
 }
 
 
-/*
+/*!
+ * \brief Internal utility function for matching atom names.
  *
+ * Searches internal lookup table for records with matching atom names and 
+ * returns a vector of all such records. If no matching record was found, the
+ * returned vector will be empty.
  */
 std::vector<VdwRadiusRecord>
 VdwRadiusProvider::matchAtmName(std::string atmName)
@@ -228,8 +254,13 @@ VdwRadiusProvider::matchAtmName(std::string atmName)
 }
 
 
-/*
+/*!
+ * \brief Internal utility function for matching residue names.
  *
+ * Searches the records vector for an element with matching residue name. If 
+ * successful, the function returns an iterator pointing to the VdwRadiusRecord
+ * with matching residue name. If no matching residue name can be found, the
+ * iterator will point to the end of the vector.
  */
 std::vector<VdwRadiusRecord>::const_iterator
 VdwRadiusProvider::matchResName(std::string resName,
@@ -251,8 +282,11 @@ VdwRadiusProvider::matchResName(std::string resName,
 }
 
 
-/*
+/*!
+ * \brief Internal utility function for returning the default radius.
  *
+ * If setDefaultVdwRadius() has been called, this function returns the value
+ * defRad_ has been set to. Otherwise it throws an exception.
  */
 real
 VdwRadiusProvider::returnDefaultRadius(std::string atmName, std::string resName)

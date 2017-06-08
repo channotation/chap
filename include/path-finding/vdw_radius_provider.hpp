@@ -10,9 +10,11 @@
 #include "rapidjson/document.h"
 
 
-
-/*
+/*!
+ * \brief Abstract data type for van der Waals radius records.
  *
+ * Bundles together atom name, residue name, and van der Waals radius and is 
+ * using to build a lookup table in VdwRadiusProvider.
  */
 struct VdwRadiusRecord
 {
@@ -22,7 +24,9 @@ struct VdwRadiusRecord
 };
 
 
-/*
+/*!
+ * \brief Class for uniformly specifying van der Waals radii.
+ *
  *
  */
 class VdwRadiusProvider
