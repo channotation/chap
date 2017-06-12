@@ -80,6 +80,7 @@ class VdwRadiusProvider
                               std::string resName,
                               std::string elemSym);
         std::vector<VdwRadiusRecord> matchAtmName(std::string atmName);
+        std::vector<VdwRadiusRecord> matchPartAtmName(std::string atmName);
         std::vector<VdwRadiusRecord>::const_iterator matchResName(
             std::string resName,
             const std::vector<VdwRadiusRecord> &records);

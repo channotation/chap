@@ -190,78 +190,39 @@ VdwRadiusProvider::vdwRadiusForAtom(std::string atmName,
     // build vector of atom name matches:
     std::vector<VdwRadiusRecord> atmNameMatches = matchAtmName(atmName);
 
-    // have any atom name matches been found:
-    if( atmNameMatches.size() > 0 )
+    // try to find residue name match:
+    std::vector<VdwRadiusRecord>::const_iterator it;
+    it = matchResName(resName, atmNameMatches);
+
+    // if match found, return corresponding value:
+    if( it != atmNameMatches.end() )
     {
-        // try to find exact residue name match:
-        std::vector<VdwRadiusRecord>::const_iterator it;
-        it = matchResName(resName, atmNameMatches);
-
-        // handle case where no match was found:
-        if( it == atmNameMatches.end() )
-        {
-            // try to find generic residue match:
-            it = matchResName("???", atmNameMatches);
-
-            // any matches found?
-            if( it == atmNameMatches.end() )
-            {
-                // if no match, return default radius:
-                return returnDefaultRadius(atmName, resName);
-            }
-            else
-            {
-                // if match found return corresponding radius:
-                return(it -> vdwRad_);
-            }
-        }
-        else
-        {
-            return(it -> vdwRad_);
-        }
+        return(it -> vdwRad_);
     }
-    else
+
+    // if no exact atom name match, try partial atom name match:
+    atmNameMatches = matchPartAtmName(atmName);
+    it = matchResName(resName, atmNameMatches);
+    
+    // if match found, return corresponding value:
+    if( it != atmNameMatches.end() )
     {
-        // try to find element name matches:
-        std::transform(elemSym.begin(), elemSym.end(), elemSym.begin(), ::toupper);
-        std::vector<VdwRadiusRecord> elemNameMatches = matchAtmName(elemSym);
-
-        // any matches found?
-        if( elemNameMatches.size() > 0 )
-        {
-            // try to find exact residue name match:
-            std::vector<VdwRadiusRecord>::const_iterator it;
-            it = matchResName(resName, elemNameMatches);
-
-            // handle case where no match was found:
-            if( it == elemNameMatches.end() )
-            {
-                // try to find generic residue match:
-                it = matchResName("???", elemNameMatches);
-
-                // any matches found?
-                if( it == elemNameMatches.end() )
-                {
-                    // if no match, return default radius:
-                    return returnDefaultRadius(atmName, resName);
-                }
-                else
-                {
-                    // if match found return corresponding radius:
-                    return(it -> vdwRad_);
-                }
-            }
-            else
-            {
-                return(it -> vdwRad_);
-            }
-        }
-        else
-        {
-            // if no match found, try default radius:
-            return returnDefaultRadius(atmName, resName);
-        }
+        return(it -> vdwRad_);
     }
+
+    // if no exact or partial atom name match, try matching element names:
+    std::transform(elemSym.begin(), elemSym.end(), elemSym.begin(), ::toupper);
+    atmNameMatches = matchAtmName(elemSym);
+    it = matchResName(resName, atmNameMatches);
+
+    // if match found, return corresponding value:
+    if( it != atmNameMatches.end() )
+    {
+        return(it -> vdwRad_);
+    }
+
+    // if not exact, partial, or element name match found, return default radius:
+    return returnDefaultRadius(atmName, resName); 
 }
 
 
@@ -279,8 +240,47 @@ VdwRadiusProvider::matchAtmName(std::string atmName)
     std::vector<VdwRadiusRecord> matches;
     std::vector<VdwRadiusRecord>::iterator it;
     for(it = vdwRadiusLookupTable_.begin(); it != vdwRadiusLookupTable_.end(); it++)
-    {
+    {       
         if(it -> atmName_ == atmName )
+        {
+            matches.push_back(*it);
+        }
+    }
+
+    // return vector of matches:
+    return matches;
+}
+
+
+/*
+ *
+ */
+std::vector<VdwRadiusRecord>
+VdwRadiusProvider::matchPartAtmName(std::string atmName)
+{    
+    // build vector of atom name matches:
+    std::vector<VdwRadiusRecord> matches;
+    std::vector<VdwRadiusRecord>::iterator it;
+    for(it = vdwRadiusLookupTable_.begin(); it != vdwRadiusLookupTable_.end(); it++)
+    {     
+        // skip values where name in lookup table is shorter than trial name:
+        if( it -> atmName_.size() < atmName.size() )
+        {
+            continue;
+        }
+
+        // check for wildcard match:
+        bool comp = true;        
+        for(size_t i = 0; i < atmName.size(); i++ )
+        {
+            if( it -> atmName_[i] != atmName[i] && it -> atmName_[i] != '?' )
+            {
+                comp = false;
+            }
+        }
+
+        // if wildcard match, add this record to vector of matches:
+        if( comp == true )
         {
             matches.push_back(*it);
         }
@@ -303,8 +303,16 @@ std::vector<VdwRadiusRecord>::const_iterator
 VdwRadiusProvider::matchResName(std::string resName,
                                 const std::vector<VdwRadiusRecord> &records)
 {
-    // loop over entries and try to match residue name:
     std::vector<VdwRadiusRecord>::const_iterator it;
+
+    // save a bit of effort, if records is empty:
+    if( records.empty() )
+    {
+        it = records.end();
+        return it;
+    }
+
+    // loop over entries and try to match residue name:
     for(it = records.begin(); it != records.end(); it++)
     {
         if( it -> resName_ == resName )
@@ -313,8 +321,19 @@ VdwRadiusProvider::matchResName(std::string resName,
         }
     }
 
+    // if no exact res name match found, look for wildcard match:
+    if( it == records.end() )
+    {
+        for(it = records.begin(); it != records.end(); it++)
+        {
+            if( it -> resName_ == std::string("???") )
+            {
+                return(it);
+            }
+        } 
+    }   
+
     // if no match was found, point iterator to end of vector:
-    it = records.end();
     return(it);
 }
 

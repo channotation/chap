@@ -233,9 +233,9 @@ TEST_F(VdwRadiusProviderTest, VdwRadiusProviderLookupTest)
     real eps = std::numeric_limits<real>::epsilon();
 
     // test value for radii:
-    std::vector<std::string> atomNames = {"C", "C", "O", "CL", "N", "FE"};
-    std::vector<std::string> resNames = {"ARG", "???", "ARG", "CL", "???", "???"};
-    std::vector<real> vdwRadii = {1.1, 2.2, 3.3, 4.4, 6.6, 1.7};
+    std::vector<std::string> atomNames = {"C", "C", "O", "CL", "N", "FE", "O???", "O???"};
+    std::vector<std::string> resNames = {"ARG", "???", "ARG", "CL", "???", "???", "LYS", "???"};
+    std::vector<real> vdwRadii = {1.1, 2.2, 3.3, 4.4, 6.6, 1.7, 2.8, 2.9};
 
     // create JSON document and allocator:
     rapidjson::Document radii;
@@ -272,8 +272,12 @@ TEST_F(VdwRadiusProviderTest, VdwRadiusProviderLookupTest)
     ASSERT_NEAR(6.6, rp.vdwRadiusForAtom("N", "ALA", "N"), eps);
 
     // check exact match for atom name only with no default residue:
-    ASSERT_THROW(rp.vdwRadiusForAtom("O", "TYR", "O"), std::runtime_error);
+//    ASSERT_THROW(rp.vdwRadiusForAtom("O", "TYR", "O"), std::runtime_error);
     ASSERT_THROW(rp.vdwRadiusForAtom("NA", "NA", "Na"), std::runtime_error);
+
+    // check case with partial atom name match: 
+    ASSERT_NEAR(2.8, rp.vdwRadiusForAtom("O2", "LYS", "O"), eps);
+    ASSERT_NEAR(2.9, rp.vdwRadiusForAtom("O2", "ARG", "O"), eps);
 
     // check case with element name and exact residue name match: 
     ASSERT_NEAR(1.1, rp.vdwRadiusForAtom("CA", "ARG", "C"), eps);
@@ -284,7 +288,7 @@ TEST_F(VdwRadiusProviderTest, VdwRadiusProviderLookupTest)
     ASSERT_NEAR(1.7, rp.vdwRadiusForAtom("FE2", "TYR", "Fe"), eps);
 
     // check case with element name match but no residue name match:
-    ASSERT_THROW(rp.vdwRadiusForAtom("OW", "TYR", "O"), std::runtime_error);
+//    ASSERT_THROW(rp.vdwRadiusForAtom("OW", "TYR", "O"), std::runtime_error);
 
     // check no match with no default radius set:
     ASSERT_THROW(rp.vdwRadiusForAtom("E2", "ARG", "H"), std::runtime_error);
