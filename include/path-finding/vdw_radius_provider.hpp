@@ -25,6 +25,13 @@ struct VdwRadiusRecord
 };
 
 
+/*
+ *
+ */
+typedef enum eVdwRadiusDatabase {eVdwRadiusDatabaseHoleSimple, 
+                                 eVdwRadiusDatabaseUser};
+
+
 /*!
  * \brief Class for uniformly specifying van der Waals radii.
  *

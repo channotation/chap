@@ -159,11 +159,21 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
 
     // get parameters of path-finding agorithm:
-    options -> addOption(RealOption("pf-default-vdwr")
+    options -> addOption(RealOption("pf-vdwr-fallback")
                          .store(&pfDefaultVdwRadius_)
                          .storeIsSet(&pfDefaultVdwRadiusIsSet_)
                          .defaultValue(-1.0)
-                         .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database."));
+                         .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database"));
+    const char * const allowedVdwRadiusDatabase[] = {"hole_simple", "user"};
+    pfVdwRadiusDatabase_ = eVdwRadiusDatabaseHoleSimple;
+    options -> addOption(EnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
+                         .enumValue(allowedVdwRadiusDatabase)
+                         .store(&pfVdwRadiusDatabase_)
+                         .description("Database of van-der-Waals radii to be used in pore finding."));
+    options -> addOption(StringOption("pf-vdwr-json")
+                         .store(&pfVdwRadiusJson_)
+                         .storeIsSet(&pfVdwRadiusJsonIsSet_)
+                         .description("User-defined set of van-der-Waals records in JSON format. Will be ignored unless -pf-vdwr-database is set to 'user'."));
     options -> addOption(StringOption("pf-method")
                          .store(&pfMethod_)
                          .defaultValue("inplane-optim")
@@ -336,11 +346,26 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 
     std::cerr<<"================= BEGIN JSON ===================="<<std::endl;
-  
-    std::string filepath = "../data/vdwradii/simple.json";
-    
+ 
+    // select appropriate database file:
+    // TODO: this will not work for arbitrary binary dirctory!
+    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
+    {
+        pfVdwRadiusJson_ = "../data/vdwradii/simple.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
+    {
+        // has user provided a file name?
+        if( !pfVdwRadiusJsonIsSet_ )
+        {
+            std::cerr<<"ERROR: Option pfVdwRadiusDatabase set to 'user', but no custom van-der-Waals radii specified with pfVdwRadiusJson."<<std::endl;
+            std::abort();
+        }
+    }
+
+    // 
     JsonDocImporter jdi;
-    rapidjson::Document radiiDoc = jdi(filepath.c_str());
+    rapidjson::Document radiiDoc = jdi(pfVdwRadiusJson_.c_str());
    
     // create radius provider and build lookup table:
     VdwRadiusProvider vrp;

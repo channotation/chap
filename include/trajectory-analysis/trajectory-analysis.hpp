@@ -9,6 +9,8 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
+#include "path-finding/vdw_radius_provider.hpp"
+
 using namespace gmx;
 
 
@@ -74,6 +76,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     // path finding method parameters:
     real pfDefaultVdwRadius_;
     bool pfDefaultVdwRadiusIsSet_;
+    eVdwRadiusDatabase pfVdwRadiusDatabase_;
+    std::string pfVdwRadiusJson_;
+    bool pfVdwRadiusJsonIsSet_;
     std::string pfMethod_;
     real pfProbeStepLength_;
     real pfProbeRadius_;
