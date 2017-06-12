@@ -103,7 +103,10 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
 
         // add record to lookup table:
         vdwRadiusLookupTable_.push_back(rec);
-    } 
+    }
+
+    // check sanity of input table:
+    validateLookupTable();
 }
 
 
@@ -135,6 +138,32 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
 
     // return vector of vdW radii:
     return vdwRadii;
+}
+
+
+/*
+ *
+ */
+void
+VdwRadiusProvider::validateLookupTable()
+{
+    // iterators over lookup table:
+    std::vector<VdwRadiusRecord>::iterator it;
+    std::vector<VdwRadiusRecord>::iterator jt;
+
+    // loop over all entries in lookup table:
+    for(it = vdwRadiusLookupTable_.begin(); it != vdwRadiusLookupTable_.end(); it++)
+    {
+        // loop over remaining entries and try to find exact matches:
+        for(jt = it + 1; jt != vdwRadiusLookupTable_.end(); jt++)
+        {
+            if( jt -> atmName_ == it -> atmName_ && jt -> resName_ == it -> resName_ )
+            {
+                // throw exceptions if identical records are found:
+                throw std::runtime_error("Van der Waals radius record with atom name "+it->atmName_+" and residue name "+it -> resName_+" appears more than once in lookup table.");
+            }
+        }
+    }
 }
 
 

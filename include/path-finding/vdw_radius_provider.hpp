@@ -61,6 +61,9 @@ class VdwRadiusProvider
         // lookup table for vdW radii:
         std::vector<VdwRadiusRecord> vdwRadiusLookupTable_;
 
+        // function to perform sanity checks on lookup table:
+        void validateLookupTable();
+
         // function for associating a vdW radius with an atom and residue name:
         real vdwRadiusForAtom(std::string atmName, 
                               std::string resName,

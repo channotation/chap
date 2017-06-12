@@ -20,11 +20,12 @@ class VdwRadiusProviderTest : public ::testing::Test
 
 
 /*!
- * This test checks that the radius provider has the correct behaviout in case
+ * This test checks that the radius provider has the correct behaviour in case
  * of broken input. In particular it checks that an exception is thrown if the
  * provided JSON document is broken, if it is missing an array containing the
  * van der Waals radius records, or if these records do not have the correct
- * entries with the correct types.
+ * entries with the correct types. It also checks that an exception is thworn 
+ * if a lookup table with duplicate entries is created.
  */
 TEST_F(VdwRadiusProviderTest, VdwRadiusProviderJsonTest)
 {
@@ -126,6 +127,59 @@ TEST_F(VdwRadiusProviderTest, VdwRadiusProviderJsonTest)
     jsonDocBrokenRecord["vdwradii"].PushBack(brokenRecord6, allocBrokenRecord);
     ASSERT_THROW(rp.lookupTableFromJson(jsonDocBrokenRecord), std::runtime_error);
     jsonDocBrokenRecord["vdwradii"].Clear();
+
+
+    // DUPLICATE RECORD CASE
+    //-------------------------------------------------------------------------
+
+    rapidjson::Document jsonDocDuplicate;
+    rapidjson::Document::AllocatorType& allocDuplicate = jsonDocDuplicate.GetAllocator();
+
+    // create correct, but duplicate entries:
+    rapidjson::Value duplicateRecord1;
+    duplicateRecord1.SetObject();
+    duplicateRecord1.AddMember("atomname", "C", allocDuplicate);
+    duplicateRecord1.AddMember("resname", "ARG", allocDuplicate);
+    duplicateRecord1.AddMember("vdwr", 1.0, allocDuplicate);
+
+    rapidjson::Value duplicateRecord2;
+    duplicateRecord2.SetObject();
+    duplicateRecord2.AddMember("atomname", "CA", allocDuplicate);
+    duplicateRecord2.AddMember("resname", "ARG", allocDuplicate);
+    duplicateRecord2.AddMember("vdwr", 1.0, allocDuplicate);
+
+    rapidjson::Value duplicateRecord3;
+    duplicateRecord3.SetObject();
+    duplicateRecord3.AddMember("atomname", "N", allocDuplicate);
+    duplicateRecord3.AddMember("resname", "GLY", allocDuplicate);
+    duplicateRecord3.AddMember("vdwr", 1.0, allocDuplicate);
+
+    rapidjson::Value duplicateRecord4;
+    duplicateRecord4.SetObject();
+    duplicateRecord4.AddMember("atomname", "C", allocDuplicate);
+    duplicateRecord4.AddMember("resname", "ARG", allocDuplicate);
+    duplicateRecord4.AddMember("vdwr", 1.0, allocDuplicate);
+
+    rapidjson::Value duplicateRecord5;
+    duplicateRecord5.SetObject();
+    duplicateRecord5.AddMember("atomname", "C", allocDuplicate);
+    duplicateRecord5.AddMember("resname", "GLY", allocDuplicate);
+    duplicateRecord5.AddMember("vdwr", 1.0, allocDuplicate);
+    
+    // add object to an array:
+    rapidjson::Value vdwradiiDuplicate(rapidjson::kArrayType);
+    vdwradiiDuplicate.PushBack(duplicateRecord1, allocDuplicate);
+    vdwradiiDuplicate.PushBack(duplicateRecord2, allocDuplicate);
+    vdwradiiDuplicate.PushBack(duplicateRecord3, allocDuplicate);
+    vdwradiiDuplicate.PushBack(duplicateRecord4, allocDuplicate);
+    vdwradiiDuplicate.PushBack(duplicateRecord5, allocDuplicate);
+
+    // add array to document:
+    jsonDocDuplicate.SetObject();
+    jsonDocDuplicate.AddMember("vdwradii", vdwradiiDuplicate, allocDuplicate);
+
+    // proper document should not throw:
+    ASSERT_THROW(rp.lookupTableFromJson(jsonDocDuplicate), std::runtime_error);
 
 
     // WORKING CASE
