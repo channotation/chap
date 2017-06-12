@@ -64,7 +64,7 @@ VdwRadiusProvider::setDefaultVdwRadius(real defRad)
  * will be set and vdwRadiiForTopology() can be called to extract van-der-Waals
  * radii for a given set of atoms.
  *
- * A valid JSON document as input to this functio will be of the following
+ * A valid JSON document as input to this function will be of the following
  * form:
  *
  *  \code{.java} 
