@@ -159,6 +159,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
 
     // get parameters of path-finding agorithm:
+    options -> addOption(RealOption("pf-default-vdwr")
+                         .store(&pfDefaultVdwRadius_)
+                         .storeIsSet(&pfDefaultVdwRadiusIsSet_)
+                         .defaultValue(-1.0)
+                         .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database."));
     options -> addOption(StringOption("pf-method")
                          .store(&pfMethod_)
                          .defaultValue("inplane-optim")
@@ -345,18 +350,16 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     }
     catch( std::exception& e )
     {
+        std::cerr<<"ERROR while creating van der Waals radius lookup table:"<<std::endl;
         std::cerr<<e.what()<<std::endl; 
         std::abort();
     }
 
     // set user-defined default radius?
-    if( false )
+    if( pfDefaultVdwRadiusIsSet_ )
     {
-        vrp.setDefaultVdwRadius(0.0);
+        vrp.setDefaultVdwRadius(pfDefaultVdwRadius_);
     }
-
-
-//    std::vector<int> poreMappedIds = refsel_.mappedIds();
 
     // build vdw radius lookup map:
     try
@@ -365,6 +368,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     }
     catch( std::exception& e )
     {
+        std::cerr<<"ERROR in van der Waals radius lookup:"<<std::endl;
         std::cerr<<e.what()<<std::endl;
         std::abort();
     }

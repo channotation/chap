@@ -72,6 +72,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     gmx::Selection initProbePosSelection_;
 
     // path finding method parameters:
+    real pfDefaultVdwRadius_;
+    bool pfDefaultVdwRadiusIsSet_;
     std::string pfMethod_;
     real pfProbeStepLength_;
     real pfProbeRadius_;

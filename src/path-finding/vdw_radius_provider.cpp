@@ -336,7 +336,7 @@ VdwRadiusProvider::returnDefaultRadius(std::string atmName, std::string resName)
     }
     else
     {
-        throw std::runtime_error("ERROR: Could not find van der Waals radius for atom with atom name "+atmName+" and residue name "+resName+" and default radius is not set.");
+        throw std::runtime_error("Could not find van der Waals radius for atom with atom name "+atmName+" and residue name "+resName+" and default radius is not set.");
     } 
 }
 
