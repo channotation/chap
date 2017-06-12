@@ -1,0 +1,52 @@
+{
+    "remark": "Adapted from 'amberuni.rad' used in HOLE program.",
+
+    "reference": {
+        "citation": "Weiner et al. (1984), JACS, vol 106 pp765-768"
+        },
+
+    "vdwradii": [
+        {"atomname": "CB", "resname": "ALA", "vdwr": 0.2000},
+        {"atomname": "CB", "resname": "THR", "vdwr": 0.1850},
+        {"atomname": "CB", "resname": "VAL", "vdwr": 0.1850},
+        {"atomname": "CB", "resname": "ILE", "vdwr": 0.1850},
+        {"atomname": "CB", "resname": "???", "vdwr": 0.1925},
+        
+        {"atomname": "CA", "resname": "GLY", "vdwr": 0.1925},
+        {"atomname": "CG", "resname": "GLU", "vdwr": 0.1925},
+        {"atomname": "CG", "resname": "LYS", "vdwr": 0.1925},
+        {"atomname": "CD", "resname": "LYS", "vdwr": 0.1925},
+        {"atomname": "CE", "resname": "LYS", "vdwr": 0.1925},
+        {"atomname": "CG", "resname": "PRO", "vdwr": 0.1925},
+        {"atomname": "CD", "resname": "PRO", "vdwr": 0.1925},
+        {"atomname": "CG", "resname": "MET", "vdwr": 0.1925},
+        {"atomname": "CG1", "resname": "ILE", "vdwr": 0.1925},
+        {"atomname": "CG", "resname": "GLN", "vdwr": 0.1925},
+        {"atomname": "CG", "resname": "ARG", "vdwr": 0.1925},
+        {"atomname": "CD", "resname": "ARG", "vdwr": 0.1925},
+        
+        {"atomname": "CD?", "resname": "LEU", "vdwr": 0.2000},
+        {"atomname": "CE", "resname": "MET", "vdwr": 0.2000},
+        {"atomname": "CG2", "resname": "THR", "vdwr": 0.2000},
+        {"atomname": "CD1", "resname": "ILE", "vdwr": 0.2000},
+        {"atomname": "CG2", "resname": "ILE", "vdwr": 0.2000},
+        {"atomname": "CG?", "resname": "VAL", "vdwr": 0.2000},
+
+        {"atomname": "NZ", "resname": "LYS", "vdwr": 0.1850},
+
+        {"atomname": "OE1", "resname": "GLN", "vdwr": 0.1600},
+        {"atomname": "O", "resname": "???", "vdwr": 0.1600},
+
+        {"atomname": "CE?", "resname": "GLU", "vdwr": 0.1600},
+        {"atomname": "CD?", "resname": "ASP", "vdwr": 0.1600},
+
+        {"atomname": "C", "resname": "???", "vdwr": 0.185},
+        {"atomname": "H", "resname": "???", "vdwr": 0.100},
+        {"atomname": "N", "resname": "???", "vdwr": 0.175},
+        {"atomname": "O???", "resname": "???", "vdwr": 0.165},
+        {"atomname": "P", "resname": "???", "vdwr": 0.210},
+        {"atomname": "S", "resname": "???", "vdwr": 0.200},
+        {"atomname": "LP", "resname": "???", "vdwr": 0.00},
+        {"atomname": "MW", "resname": "???", "vdwr": 0.00}
+    ]
+}

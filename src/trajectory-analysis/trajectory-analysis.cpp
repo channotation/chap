@@ -164,12 +164,17 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .storeIsSet(&pfDefaultVdwRadiusIsSet_)
                          .defaultValue(-1.0)
                          .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database"));
-    const char * const allowedVdwRadiusDatabase[] = {"hole_simple", "user"};
+    const char * const allowedVdwRadiusDatabase[] = {"hole_amberuni",
+                                                     "hole_bondi",
+                                                     "hole_hardcore",
+                                                     "hole_simple", 
+                                                     "hole_xplor",
+                                                     "user"};
     pfVdwRadiusDatabase_ = eVdwRadiusDatabaseHoleSimple;
     options -> addOption(EnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
                          .enumValue(allowedVdwRadiusDatabase)
                          .store(&pfVdwRadiusDatabase_)
-                         .description("Database of van-der-Waals radii to be used in pore finding."));
+                         .description("Database of van-der-Waals radii to be used in pore finding"));
     options -> addOption(StringOption("pf-vdwr-json")
                          .store(&pfVdwRadiusJson_)
                          .storeIsSet(&pfVdwRadiusJsonIsSet_)
@@ -349,9 +354,25 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
  
     // select appropriate database file:
     // TODO: this will not work for arbitrary binary dirctory!
-    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
+    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
     {
-        pfVdwRadiusJson_ = "../data/vdwradii/simple.json";
+        pfVdwRadiusJson_ = "../data/vdwradii/hole_amberuni.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleBondi )
+    {
+        pfVdwRadiusJson_ = "../data/vdwradii/hole_bondi.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleHardcore )
+    {
+        pfVdwRadiusJson_ = "../data/vdwradii/hole_hardcore.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
+    {
+        pfVdwRadiusJson_ = "../data/vdwradii/hole_simple.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleXplor )
+    {
+        pfVdwRadiusJson_ = "../data/vdwradii/hole_xplor.json";
     }
     else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
     {
@@ -363,7 +384,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
         }
     }
 
-    // 
+    // import vdW radii JSON: 
     JsonDocImporter jdi;
     rapidjson::Document radiiDoc = jdi(pfVdwRadiusJson_.c_str());
    

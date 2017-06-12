@@ -28,7 +28,11 @@ struct VdwRadiusRecord
 /*
  *
  */
-typedef enum eVdwRadiusDatabase {eVdwRadiusDatabaseHoleSimple, 
+typedef enum eVdwRadiusDatabase {eVdwRadiusDatabaseHoleAmberuni,
+                                 eVdwRadiusDatabaseHoleBondi,
+                                 eVdwRadiusDatabaseHoleHardcore,
+                                 eVdwRadiusDatabaseHoleSimple,
+                                 eVdwRadiusDatabaseHoleXplor,
                                  eVdwRadiusDatabaseUser};
 
 
