@@ -53,8 +53,43 @@ VdwRadiusProvider::setDefaultVdwRadius(real defRad)
 }
 
 
-/*
+/*!
+ * \brief Generates a van-der-Waals radius lookup table from a JSON document.
  *
+ * The function first checks that the provided JSON document contains an array
+ * of van-der-Waals radius records and then loops through this array to build
+ * a lookup table. Exceptions are thrown if any record is incomplete or if
+ * any duplicate records are contained within the JSON document. Once this 
+ * function has been called, the internal lookup table of the VdwRadiusProvider
+ * will be set and vdwRadiiForTopology() can be called to extract van-der-Waals
+ * radii for a given set of atoms.
+ *
+ * A valid JSON document as input to this functio will be of the following
+ * form:
+ *
+ *  \code{.java} 
+    {
+        "vdwradii": [
+            {"atomname": "C", "resname": "???", "vdwr": 0.185},
+            {"atomname": "H", "resname": "???", "vdwr": 0.100},
+            {"atomname": "N", "resname": "???", "vdwr": 0.175},
+            {"atomname": "O", "resname": "???", "vdwr": 0.165},
+            {"atomname": "P", "resname": "???", "vdwr": 0.210},
+            {"atomname": "S", "resname": "???", "vdwr": 0.200},
+            {"atomname": "E2", "resname": "GLN", "vdwr": 0.100},
+            {"atomname": "D2", "resname": "ASN", "vdwr": 0.100},
+            {"atomname": "LP", "resname": "???", "vdwr": 0.00},
+            {"atomname": "MW", "resname": "???", "vdwr": 0.00}
+        ]
+    }
+ *  \endcode
+ * 
+ * Note that the order of records does not matter, as lookup will alwys follow
+ * the decision tree shown in the documentation of VdwRadiusProvider. There 
+ * may, however, not be any duplicate entries. It is also worth noting that
+ * for simulation data in particular, virtual particles (such as water model
+ * 'MW') should be assigned a van-der-Waals radius of zero, unless the user
+ * can make sure that these particles will never be looked for.
  */
 void
 VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
@@ -110,8 +145,14 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
 }
 
 
-/*
+/*!
+ * \brief Returns a map of van-der-Waals radii for selected atoms in the given
+ * topology.
  *
+ * This function takes a topology and a set of mapped IDs as an input and 
+ * returns a map of van-der-Waals radii, where the key is the mapped ID of the
+ * atom in question. Will throw a runtime error exception if the highest mapped
+ * ID exceeds the number of atoms available in the topology.
  */
 std::unordered_map<int, real>
 VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
@@ -148,8 +189,8 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
 }
 
 
-/*
- *
+/*!
+ * \brief Validates that a lookup table contains no duplicate entries.
  */
 void
 VdwRadiusProvider::validateLookupTable()
@@ -252,8 +293,15 @@ VdwRadiusProvider::matchAtmName(std::string atmName)
 }
 
 
-/*
+/*!
+ * \brief Internal utility function for partially matching atom names.
  *
+ * Searches internal lookup table for records with matching atom names and 
+ * returns a vector of all such records. In this context, a matching record is 
+ * one where the atom name in the lookup table has at least as many characters
+ * as the trial atom name (passed as argument) and where the \f$ i \f$ -th 
+ * character in the record atom name is either equal to the \f$ i \f$ -th 
+ * character in the trial atom name or is a wildcard character ('?').
  */
 std::vector<VdwRadiusRecord>
 VdwRadiusProvider::matchPartAtmName(std::string atmName)
@@ -358,20 +406,4 @@ VdwRadiusProvider::returnDefaultRadius(std::string atmName, std::string resName)
         throw std::runtime_error("Could not find van der Waals radius for atom with atom name "+atmName+" and residue name "+resName+" and default radius is not set.");
     } 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
