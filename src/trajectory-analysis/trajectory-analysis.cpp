@@ -526,14 +526,14 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-        std::cout<<"mapped ID = "<<atom.mappedId()<<std::endl;
-        std::cout<<"ref ID = "<<atom.refId()<<std::endl;
-        break;
-
 		// add radius to vector of radii:
-		selVdwRadii.push_back(vdwRadii_[idx]);
+		selVdwRadii.push_back(vdwRadii_.at(idx));
 	}
 
+
+    std::cout<<"blah test output"<<std::endl;
+    std::cout<<"selVdwRadii.size = "<<selVdwRadii.size()<<std::endl;
+    std::cout<<"refFelection.atomCount = "<<refSelection.atomCount()<<std::endl;
 
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
@@ -590,7 +590,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-
+    std::cout<<"test output"<<std::endl;
 
 
 
@@ -618,13 +618,18 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    std::cout<<std::endl;
 //    std::cout<<std::endl;
 
+
+    std::cout<<"blub test output"<<std::endl;
+
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
+    std::cout.flush();
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
+    std::cout<<"blubblub test output"<<std::endl;
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";
