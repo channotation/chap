@@ -120,6 +120,13 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
     // get list of all atoms:
     t_atoms atoms = top.topology() -> atoms;
 
+    // sanity check:
+    int maxId = (*std::max_element(mappedIds.begin(), mappedIds.end()));
+    if( maxId > atoms.nr )
+    {
+        throw std::runtime_error(std::string("Requested van der Waals radius for atom with mapped ID ") + std::to_string(maxId) + " but topology contains only " + std::to_string(atoms.nr) + "atoms." ); 
+    }
+
     // allocate memory for results vector:
     std::unordered_map<int, real> vdwRadii;
     vdwRadii.reserve(atoms.nr);
