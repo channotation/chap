@@ -339,7 +339,15 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
    
     // create radius provider and build lookup table:
     VdwRadiusProvider vrp;
-    vrp.lookupTableFromJson(radiiDoc);
+    try
+    {
+        vrp.lookupTableFromJson(radiiDoc);
+    }
+    catch( std::exception& e )
+    {
+        std::cerr<<e.what()<<std::endl; 
+        std::abort();
+    }
 
     // set user-defined default radius?
     if( false )
@@ -350,24 +358,25 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 //    std::vector<int> poreMappedIds = refsel_.mappedIds();
 
-
-    std::unordered_map<int, real> r = vrp.vdwRadiiForTopology(top,
-                                                              refsel_.mappedIds());
-   
-
-    for(int i = 0; i < refsel_.posCount(); i++)
+    // build vdw radius lookup map:
+    try
     {
-        int mad = refsel_.position(i).mappedId();
-
-        std::cout<<"mappedId = "<<mad<<"  "
-                 <<"radius = "<<r[mad]
-                 <<std::endl;
+        vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
     }
+    catch( std::exception& e )
+    {
+        std::cerr<<e.what()<<std::endl;
+        std::abort();
+    }
+  
+
+    std::cerr<<"vdwRadii.size = "<<vdwRadii_.size()<<std::endl;
+
 
 
     std::cerr<<"================= END JSON ===================="<<std::endl;
 
-
+/*
 
 	// load full topology:
 	t_topology *topol = top.topology();	
@@ -394,17 +403,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
         std::transform(elem.begin(), elem.end(), elem.begin(), ::toupper);
 
-/*
-        std::cout<<"atoms.atomname[i] = "<<*atoms.atomname[i]<<"   "
-                 <<"atoms.resinfo.name = "<<*(atoms.resinfo[atoms.atom[i].resind].name)<<"  "
-                 <<"atoms.elem = "<<elem<<"  "
-                 <<std::endl;
-       
-        if( i > 1e9 )
-        {
-            break;
-        }
-*/
 
         // query vdW radius of current atom:
 		if(gmx_atomprop_query(aps, 
@@ -426,9 +424,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 	// delete atomprop struct:
 	gmx_atomprop_destroy(aps);
-
+*/
 	// find largest van der Waals radius in system:
-	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
+//	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
+    maxVdwRadius_ = 1.0;
+
+    std::cout<<"END SETUP"<<std::endl;
 }
 
 
@@ -456,6 +457,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
     //-------------------------------------------------------------------------
+
+    std::cout<<"BEGIN INITIAL PROBE POS"<<std::endl;
 
     // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
@@ -509,11 +512,17 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[2] = centreOfMass[2];
     }
 
+    std::cout<<"END INITIAL PROBE POS"<<std::endl;
+
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
     // TODO: Move this to separate class and test!
     // TODO: Should then also work for coarse-grained situations!
+
+    std::cout<<"BEGIN PREPARE RADII"<<std::endl;
+
+    std::cout<<"vdwRadii_.size = "<<vdwRadii_.size()<<std::endl;
 
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
@@ -526,9 +535,15 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
+        std::cout<<"mappedId = "<<idx<<"  "
+                 <<"vdwR = "<<vdwRadii_.at(idx)
+                 <<std::endl;
+
 		// add radius to vector of radii:
 		selVdwRadii.push_back(vdwRadii_.at(idx));
 	}
+
+    std::cout<<"END PREPARE RADII"<<std::endl;
 
 
     std::cout<<"blah test output"<<std::endl;

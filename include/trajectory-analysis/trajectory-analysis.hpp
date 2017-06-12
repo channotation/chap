@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -58,7 +59,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     AnalysisData                     dataResMapping_;
 
 
-	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
+	std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
 
