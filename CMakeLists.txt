@@ -5,8 +5,36 @@ cmake_minimum_required(VERSION 2.8.8)
 project(CHAP)
 
 
+message("CMAKE_SOURCE_DIR = " ${CMAKE_SOURCE_DIR})
+message("CMAKE_MODULE_PATH = " ${CMAKE_MODULE_PATH})
+
+
+# Prepare Version Header
+#------------------------------------------------------------------------------
+
 # set path to custom cmake modules:
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+
+# include cmake scripts for geting git revisions:
+include(GetGitRevisionDescription)
+
+# get git hash:
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+
+#
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
+
+
+
+message("GIT_SHA1 = " ${GIT_SHA1})
+message("CMAKE_MODULE_PATH = " ${CMAKE_MODULE_PATH})
+message("CMAKE_CURRENT_BINARY_DIR = " ${CMAKE_CURRENT_BINARY_DIR})
+message("SOURCES = " ${SOURCES})
+
+
+# 
+#------------------------------------------------------------------------------
+
 
 # bring header files into build environment:
 include_directories(${CHAP_SOURCE_DIR}/include)
@@ -67,7 +95,8 @@ find_package(Boost REQUIRED)
 # Compile Instructions
 #------------------------------------------------------------------------------
 
-file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp) 
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp")
 #message("CHAP_SRC = " ${SRC_FILES})
 
 # create executable chap from main.cpp:
