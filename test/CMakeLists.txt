@@ -21,6 +21,7 @@ if( GTEST_FOUND )
     target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} pthread)
 
     # make ctest aware of test executable:
+    # (if the color option is not set some test fail)
     add_test(runAllTests runAllTests --gtest_color=yes)
 
     # also explicitly create binary:
