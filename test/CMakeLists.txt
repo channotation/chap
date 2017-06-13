@@ -1,33 +1,31 @@
 # Setup Google Test
 # -----------------------------------------------------------------------------
 
-# find GTest directory:
-find_package(GTest REQUIRED)
+# build tests only if GTest is available:
+find_package(GTest)
+if( GTEST_FOUND )
 
-# add GTest include directories:
-include_directories(${GTEST_INCLUDE_DIRS})
+    # create target for running make check:
+    add_custom_target(check ${CMAKE_CTEST_COMMAND} -V)
 
+    # include Google test directories:
+    include_directories(${GTEST_INCLUDE_DIRS})
 
+    # get list of all source files but ignore main file of chap directory:
+    file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+    file(GLOB_RECURSE TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
+    list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
-# get list of all source file but ignore main file of chap directory:
-file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB_RECURSE TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
-list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
-#message("SRC = " ${SRC_FILES})
-#message("TEST_SRC = " ${TEST_SRC_FILES})
+    # add executable to run all tests and link libraries:
+    add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
+    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} pthread)
 
-# create executable to run all tests:
-add_executable(runAllTests runAllTests.cpp ${SRC_FILES} ${TEST_SRC_FILES})
-target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_LIBRARIES} ${LAPACK_LIBRARIES} pthread)
+    # make ctest aware of test executable:
+    add_test(runAllTests runAllTests --gtest_color=yes)
 
-# create install target for tets runner:
-install(TARGETS runAllTests DESTINATION /sansom/s117/scro2967/repos/chap/bin)
+    # also explicitly create binary:
+    # TODO: remove this in release:
+    install(TARGETS runAllTests DESTINATION /sansom/s117/scro2967/repos/chap/bin)
 
+endif()
 
-
-
-# Move to Test Directories
-# -----------------------------------------------------------------------------
-
-#add_subdirectory(statistics-utilities)
-#add_subdirectory(trajectoryAnalysis)

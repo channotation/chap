@@ -5,9 +5,6 @@ cmake_minimum_required(VERSION 2.8.8)
 project(CHAP)
 
 
-message("CMAKE_SOURCE_DIR = " ${CMAKE_SOURCE_DIR})
-message("CMAKE_MODULE_PATH = " ${CMAKE_MODULE_PATH})
-
 
 # Prepare Version Header
 #------------------------------------------------------------------------------
@@ -23,13 +20,6 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
 #
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
-
-
-
-message("GIT_SHA1 = " ${GIT_SHA1})
-message("CMAKE_MODULE_PATH = " ${CMAKE_MODULE_PATH})
-message("CMAKE_CURRENT_BINARY_DIR = " ${CMAKE_CURRENT_BINARY_DIR})
-message("SOURCES = " ${SOURCES})
 
 
 # 
@@ -110,6 +100,10 @@ target_link_libraries(chap ${BOOST_LIBRARIES})
 
 # Compile Tests
 #------------------------------------------------------------------------------
+
+# include(CTest) rather than enable_testing() to allow calls to make test:
+# (this does not work if called from CMakeLists.txt in test subdirectory)
+include(CTest)
 
 # add test subdirectory:
 add_subdirectory(test)
