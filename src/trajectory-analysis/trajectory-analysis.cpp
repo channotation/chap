@@ -332,8 +332,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     gmx::Selection test = poreComCollection.parseFromString("resname SOL")[0];
 
-    poreComCollection.setTopology(top.topology(), 0);
-    poreComCollection.compile();
+//    poreComCollection.setTopology(top.topology(), 0);
+//    poreComCollection.compile();
 
 /*
     std::cout<<std::endl<<std::endl;

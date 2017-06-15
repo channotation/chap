@@ -11,12 +11,36 @@
 
 #include "path-finding/vdw_radius_provider.hpp"
 
+#include "commandline/chap_traj_ana_runner_common.hpp"
+
 using namespace gmx;
 
 
+//
+class ChapTopologyInformation;
 
 
-class trajectoryAnalysis : public TrajectoryAnalysisModule
+/*
+ *
+ */
+class ChapTrajectoryAnalysisModule : public gmx::TrajectoryAnalysisModule
+{
+    public:
+
+        ~ChapTrajectoryAnalysisModule(){};
+
+        virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+                                  const ChapTopologyInformation &top) = 0;
+
+};
+
+/*
+ *
+ */
+typedef std::unique_ptr<ChapTrajectoryAnalysisModule> ChapTrajectoryAnalysisModulePointer;
+
+
+class trajectoryAnalysis : public ChapTrajectoryAnalysisModule
 {
     public:
 
@@ -30,6 +54,10 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	// ??
 	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
                               const TopologyInformation &top);
+
+    //
+    virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+                              const ChapTopologyInformation &top){};
 	
 	// ??
 	virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,

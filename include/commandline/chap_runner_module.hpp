@@ -4,7 +4,9 @@
 #include <gromacs/commandline/cmdlineoptionsmodule.h>
 #include <gromacs/trajectoryanalysis.h>
 
-
+#include "commandline/chap_topology_provider.hpp"
+#include "commandline/chap_traj_ana_runner_common.hpp"
+#include "trajectory-analysis/trajectory-analysis.hpp"
 
 /*
  *
@@ -14,8 +16,8 @@ class ChapRunnerModule : public gmx::ICommandLineOptionsModule
     public:
 
         //
-        explicit ChapRunnerModule(gmx::TrajectoryAnalysisModulePointer module)
-            : module_(std::move(module)) {};
+        explicit ChapRunnerModule(ChapTrajectoryAnalysisModulePointer module)
+            : module_(std::move(module)), common_(&settings_) {};
 
         // implementation of interface specified by ICommandLineOptionsModule:
         virtual void init(gmx::CommandLineModuleSettings *settings);
@@ -24,11 +26,14 @@ class ChapRunnerModule : public gmx::ICommandLineOptionsModule
         virtual void optionsFinished();
         virtual int run();
    
-        gmx::TrajectoryAnalysisModulePointer module_;
+        ChapTrajectoryAnalysisModulePointer module_;
+        ChapTrajAnaRunnerCommon common_;
         gmx::TrajectoryAnalysisSettings settings_;
-//        extern TrajectoryAnalysisRunnerCommon common_;
         gmx::SelectionCollection selections_;
     
+
+        ChapTopologyProvider topologyProvider_;
+ 
 
 };
 

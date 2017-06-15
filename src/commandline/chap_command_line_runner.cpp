@@ -4,18 +4,6 @@
 // TODO: this is suicide
 //#include "gromacs/"
 
-/*
- *
- */
-/*
-template <class ModuleType>
-int
-ChapTrajAnaCommandLineRunner::runAsMain(int argc, 
-                                        char *argv[])
-{
-    return runAsMain(argc, argv, &createModule<ModuleType>);
-}
-*/
 
 /*
  *
@@ -38,21 +26,8 @@ ChapTrajAnaCommandLineRunner::runAsMain(int argc,
  *
  */
 std::unique_ptr<gmx::ICommandLineOptionsModule>
-ChapTrajAnaCommandLineRunner::createModule(gmx::TrajectoryAnalysisModulePointer module)
+ChapTrajAnaCommandLineRunner::createModule(ChapTrajectoryAnalysisModulePointer module)
 {
     return gmx::ICommandLineOptionsModulePointer(new ChapRunnerModule(std::move(module)));
 }
-
-
-/*
- *
- */
-/*
-template <class ModuleType>
-gmx::TrajectoryAnalysisModulePointer
-ChapTrajAnaCommandLineRunner::createModule()
-{
-    return TrajectoryAnalysisModulePointer(new ModuleType());
-}
-*/
 

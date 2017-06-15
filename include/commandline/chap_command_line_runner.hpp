@@ -7,7 +7,7 @@
 #include <gromacs/commandline/cmdlineoptionsmodule.h>
 #include <gromacs/trajectoryanalysis.h>
 
-
+#include "trajectory-analysis/trajectory-analysis.hpp"
 
 
 /*
@@ -18,7 +18,7 @@ class ChapTrajAnaCommandLineRunner
     public:
 
         //
-        typedef std::function<gmx::TrajectoryAnalysisModulePointer()> ModuleFactoryMethod;
+        typedef std::function<ChapTrajectoryAnalysisModulePointer()> ModuleFactoryMethod;
 
         //
         template <class ModuleType>
@@ -32,7 +32,7 @@ class ChapTrajAnaCommandLineRunner
 
         //
         static std::unique_ptr<gmx::ICommandLineOptionsModule>
-        createModule(gmx::TrajectoryAnalysisModulePointer module);
+        createModule(ChapTrajectoryAnalysisModulePointer module);
 
     private:
 
@@ -41,9 +41,9 @@ class ChapTrajAnaCommandLineRunner
 
         //
         template <class ModuleType>
-        static gmx::TrajectoryAnalysisModulePointer createModule()
+        static ChapTrajectoryAnalysisModulePointer createModule()
         {
-            return TrajectoryAnalysisModulePointer(new ModuleType());
+            return ChapTrajectoryAnalysisModulePointer(new ModuleType());
         }
  
 };
