@@ -16,11 +16,12 @@ class ChapTopologyProvider : public gmx::ITopologyProvider
             return 0;
         }
 
-
+/*
         virtual t_topology *getTopology(bool required)
         {
             
         }
+        */
 };
 
 #endif

@@ -1,6 +1,7 @@
 #include "commandline/chap_command_line_runner.hpp"
 #include "commandline/chap_runner_module.hpp"
 
+
 // TODO: this is suicide
 //#include "gromacs/"
 
@@ -18,7 +19,39 @@ ChapTrajAnaCommandLineRunner::runAsMain(int argc,
         return createModule(factory());
     };
 
+    
+//    gmx::CommandLineOptionsModule module(NULL, NULL, factory);
+
+
+
+    ChapTrajectoryAnalysisModulePointer p(new trajectoryAnalysis);
+
+//    ChapRunnerModule mod(p);
+
+
+
     return gmx::ICommandLineOptionsModule::runAsMain(argc, argv, NULL, NULL, runnerFactory);
+}
+
+
+/*
+ *
+ */
+void
+ChapTrajAnaCommandLineRunner::registerModule(
+        gmx::CommandLineModuleManager *manager,
+        const char *name,
+        const char *description,
+        ModuleFactoryMethod factory)
+{
+    auto runnerFactory = [factory]
+    {
+        return createModule(factory());
+    };
+    ICommandLineOptionsModule::registerModuleFactory(manager,
+                                                     name,
+                                                     description,
+                                                     runnerFactory);
 }
 
 

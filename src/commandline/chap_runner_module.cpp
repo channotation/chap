@@ -22,12 +22,13 @@ void
 ChapRunnerModule::initOptions(gmx::IOptionsContainer *options,
                               gmx::ICommandLineOptionsModuleSettings *settings)
 {
+
     std::cerr<<"BEGIN INIT OPTIONS"<<std::endl;
 
     std::shared_ptr<gmx::TimeUnitBehavior> timeUnitBehavior(
         new gmx::TimeUnitBehavior());
     std::shared_ptr<gmx::SelectionOptionBehavior> selectionOptionBehavior(
-        new gmx::SelectionOptionBehavior(&selections_, &topologyProvider_));
+        new gmx::SelectionOptionBehavior(&selections_, common_.topologyProvider()));
     settings -> addOptionsBehavior(timeUnitBehavior);
     settings -> addOptionsBehavior(selectionOptionBehavior);
    
@@ -38,9 +39,12 @@ ChapRunnerModule::initOptions(gmx::IOptionsContainer *options,
     module_ -> initOptions(&moduleOptions, &settings_);
     common_.initOptions(&commonOptions, timeUnitBehavior.get());
     settings_.setOptionsModuleSettings(nullptr);
+
     selectionOptionBehavior -> initOptions(&commonOptions);
 
     std::cerr<<"END INIT OPTIONS"<<std::endl;
+
+    
 }
 
 
@@ -72,7 +76,7 @@ ChapRunnerModule::run()
 {
     std::cerr<<"BEGIN RUN"<<std::endl;
  
-
+/*
     // initialise analysis:
     //-------------------------------------------------------------------------
 
@@ -164,7 +168,7 @@ std::cout<<"loop over frames"<<std::endl;
     std::cerr<<"END RUN"<<std::endl;
 
     return 0;
-
+*/
 }
 
 

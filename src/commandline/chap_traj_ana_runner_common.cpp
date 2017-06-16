@@ -14,6 +14,8 @@
 #include "commandline/chap_traj_ana_runner_common.hpp"
 #include "commandline/chap_topology_information.hpp"
 
+#include <iostream>
+
 
 /******************************************************************************
  * RUNNER COMMON IMPL
@@ -118,7 +120,6 @@ ChapTrajAnaRunnerCommon::Impl::~Impl()
     {
         output_env_done(oenv_);
     }
-
 }
 
 
@@ -128,6 +129,8 @@ ChapTrajAnaRunnerCommon::Impl::~Impl()
 void
 ChapTrajAnaRunnerCommon::Impl::initTopology(bool required)
 {
+    std::cout<<"COMMON: BEGIN INIT TOPOLOGY"<<std::endl;
+
     // Return immediately if the topology has already been loaded.
     if (topInfo_.hasTopology())
     {
@@ -152,7 +155,8 @@ ChapTrajAnaRunnerCommon::Impl::initTopology(bool required)
             topInfo_.xtop_ = NULL;
         }
     }
-    
+
+    std::cout<<"COMMON: BEGIN INIT TOPOLOGY"<<std::endl;    
 }
 
 
@@ -162,6 +166,8 @@ ChapTrajAnaRunnerCommon::Impl::initTopology(bool required)
 void
 ChapTrajAnaRunnerCommon::Impl::initFirstFrame()
 {
+    std::cout<<"COMMON: BEGIN INIT FIRST FRAME"<<std::endl;
+
     // Return if we have already initialized the trajectory.
     if (fr != NULL)
     {
@@ -304,7 +310,11 @@ ChapTrajAnaRunnerCommon::~ChapTrajAnaRunnerCommon()
 gmx::ITopologyProvider *
 ChapTrajAnaRunnerCommon::topologyProvider()
 {
-    impl_.get();
+    std::cerr<<"BEGIN topologyProvider"<<std::endl;
+
+    return impl_.get();
+
+    std::cerr<<"END topologyProvider"<<std::endl;
 }
 
 
@@ -369,7 +379,7 @@ ChapTrajAnaRunnerCommon::initOptions(gmx::IOptionsContainer *options,
         options->addOption(BooleanOption("pbc").store(&settings.impl_->bPBC)
                                .description("Use periodic boundary conditions for distance calculation"));
     }
-  */  
+    */
 }
 
 

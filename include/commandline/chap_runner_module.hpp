@@ -8,6 +8,10 @@
 #include "commandline/chap_traj_ana_runner_common.hpp"
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
+
+
+
+
 /*
  *
  */
@@ -32,8 +36,8 @@ class ChapRunnerModule : public gmx::ICommandLineOptionsModule
         gmx::SelectionCollection selections_;
     
 
-        ChapTopologyProvider topologyProvider_;
- 
+//        ChapTopologyProvider topologyProvider_;
+//        gmx::ITopologyProvider topologyProvider_; 
 
 };
 

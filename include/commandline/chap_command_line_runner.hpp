@@ -10,6 +10,7 @@
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
 
+
 /*
  *
  */
@@ -29,6 +30,12 @@ class ChapTrajAnaCommandLineRunner
 
         //
         static int runAsMain(int argc, char *argv[], ModuleFactoryMethod factory);
+
+        //
+        static void registerModule(gmx::CommandLineModuleManager *manager,
+                                   const char *name,
+                                   const char *description,
+                                   ModuleFactoryMethod factory);
 
         //
         static std::unique_ptr<gmx::ICommandLineOptionsModule>
