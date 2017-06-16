@@ -155,7 +155,7 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
  * ID exceeds the number of atoms available in the topology.
  */
 std::unordered_map<int, real>
-VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
+VdwRadiusProvider::vdwRadiiForTopology(const ChapTopologyInformation &top,
                                        gmx::ConstArrayRef<int> mappedIds)
 {
     // get list of all atoms:

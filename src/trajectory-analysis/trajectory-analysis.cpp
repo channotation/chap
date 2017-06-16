@@ -56,6 +56,8 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saStepLengthFactor_(0.01)
     , saUseAdaptiveCandGen_(false)
 {
+    std::cout<<"trajectoryAnalysis constructor"<<std::endl;
+
     //
     registerAnalysisDataset(&data_, "somedata");
     data_.setMultipoint(true);              // mutliple support points 
@@ -82,6 +84,8 @@ void
 trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                 TrajectoryAnalysisSettings *settings)
 {
+    std::cout<<"trajectoryAnalysis: BEGIN INIT OPTIONS"<<std::endl;
+    
     // HELP TEXT
     //-------------------------------------------------------------------------
 
@@ -247,6 +251,8 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
+
+    std::cout<<"trajectoryAnalysis: END INIT OPTIONS"<<std::endl;
 }
 
 
@@ -257,8 +263,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
  */
 void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                 const TopologyInformation &top)
+                                 const ChapTopologyInformation &top)
 {
+    std::cout<<"trajectoryAnalysis: BEGIN INIT ANALYSIS"<<std::endl;
+
     // set parameters in parameter map:
     //-------------------------------------------------------------------------
 
@@ -480,6 +488,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     maxVdwRadius_ = 1.0;
 
     std::cout<<"END SETUP"<<std::endl;
+
+
+    std::cout<<"trajectoryAnalysis: END INIT ANALYSIS"<<std::endl;
+
 }
 
 
@@ -492,17 +504,28 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
+    std::cout<<"trajectoryAnalysis: analising frame "<<frnr<<std::endl;
+
 	// get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
     const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
+
+    std::cout<<"trajectoryAnalysis: obtained selections "<<frnr<<std::endl;
+
 
     // get data handles for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
 
+    std::cout<<"trajectoryAnalysis: created data handles "<<frnr<<std::endl;
+
+
 	// get data for frame number frnr into data handle:
-    dh.startFrame(frnr, fr.time);
-    dhResMapping.startFrame(frnr, fr.time);
+//    dh.startFrame(frnr, fr.time);
+//    dhResMapping.startFrame(frnr, fr.time);
+
+    std::cout<<"trajectoryAnalysis: started frame "<<frnr<<std::endl;
+
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -585,9 +608,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-        std::cout<<"mappedId = "<<idx<<"  "
-                 <<"vdwR = "<<vdwRadii_.at(idx)
-                 <<std::endl;
+//        std::cout<<"mappedId = "<<idx<<"  "
+//                 <<"vdwR = "<<vdwRadii_.at(idx)
+//                 <<std::endl;
 
 		// add radius to vector of radii:
 		selVdwRadii.push_back(vdwRadii_.at(idx));
@@ -766,13 +789,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     for(int i = 0; i < nOutPoints_; i++)
     {
         // add to container:
-        dh.setPoint(0, pointSample[i][0]);     // x
-        dh.setPoint(1, pointSample[i][1]);     // y
-        dh.setPoint(2, pointSample[i][2]);     // z
-        dh.setPoint(3, arcLengthSample[i]);    // s
-        dh.setPoint(4, radiusSample[i]);       // r
+//        dh.setPoint(0, pointSample[i][0]);     // x
+//        dh.setPoint(1, pointSample[i][1]);     // y
+//        dh.setPoint(2, pointSample[i][2]);     // z
+//        dh.setPoint(3, arcLengthSample[i]);    // s
+//        dh.setPoint(4, radiusSample[i]);       // r
 
-        dh.finishPointSet(); 
+//        dh.finishPointSet(); 
     }
   
 
@@ -788,8 +811,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
-    dh.finishFrame();
-    dhResMapping.finishFrame();
+//    dh.finishFrame();
+//    dhResMapping.finishFrame();
 }
 
 

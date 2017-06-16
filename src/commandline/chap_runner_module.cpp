@@ -74,15 +74,18 @@ ChapRunnerModule::optionsFinished()
 int
 ChapRunnerModule::run()
 {
-    std::cerr<<"BEGIN RUN"<<std::endl;
+    std::cout<<"BEGIN RUN"<<std::endl;
  
-/*
+
     // initialise analysis:
     //-------------------------------------------------------------------------
 
     common_.initTopology();
     const ChapTopologyInformation &topology = common_.topologyInformation();
+
+    std::cout<<"-------------- before initAnalysis -------------------"<<std::endl;
     module_ -> initAnalysis(settings_, topology);
+    std::cout<<"-------------- after initAnalysis -------------------"<<std::endl;
 
 
     // load first frame:
@@ -126,6 +129,8 @@ std::cout<<"loop over frames"<<std::endl;
         // reevaluate all selections for this frame:
         selections_.evaluate(&frame, ppbc);
 
+        std::cout<<"--> analysing frame: "<<nFrames<<std::endl;
+
         // perform analysis on this frame:
         module_ -> analyzeFrame(nFrames, frame, ppbc, pdata.get());
         module_ -> finishFrameSerial(nFrames);
@@ -134,6 +139,7 @@ std::cout<<"loop over frames"<<std::endl;
         ++nFrames;
     }
     while( common_.readNextFrame() );
+    std::cout<<"finishing frames"<<std::endl;
     module_ -> finishFrames(pdata.get());
 
 
@@ -168,7 +174,7 @@ std::cout<<"loop over frames"<<std::endl;
     std::cerr<<"END RUN"<<std::endl;
 
     return 0;
-*/
+
 }
 
 

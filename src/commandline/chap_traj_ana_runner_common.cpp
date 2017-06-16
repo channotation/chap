@@ -21,7 +21,6 @@
  * RUNNER COMMON IMPL
  *****************************************************************************/
 
-
 /*
  *
  */
@@ -129,7 +128,7 @@ ChapTrajAnaRunnerCommon::Impl::~Impl()
 void
 ChapTrajAnaRunnerCommon::Impl::initTopology(bool required)
 {
-    std::cout<<"COMMON: BEGIN INIT TOPOLOGY"<<std::endl;
+    std::cout<<"COMMON IMPL: BEGIN INIT TOPOLOGY"<<std::endl;
 
     // Return immediately if the topology has already been loaded.
     if (topInfo_.hasTopology())
@@ -156,7 +155,7 @@ ChapTrajAnaRunnerCommon::Impl::initTopology(bool required)
         }
     }
 
-    std::cout<<"COMMON: BEGIN INIT TOPOLOGY"<<std::endl;    
+    std::cout<<"COMMON IMPL: BEGIN INIT TOPOLOGY"<<std::endl;    
 }
 
 
@@ -166,7 +165,7 @@ ChapTrajAnaRunnerCommon::Impl::initTopology(bool required)
 void
 ChapTrajAnaRunnerCommon::Impl::initFirstFrame()
 {
-    std::cout<<"COMMON: BEGIN INIT FIRST FRAME"<<std::endl;
+    std::cout<<"COMMON IMPL: BEGIN INIT FIRST FRAME"<<std::endl;
 
     // Return if we have already initialized the trajectory.
     if (fr != NULL)
@@ -229,6 +228,8 @@ ChapTrajAnaRunnerCommon::Impl::initFirstFrame()
         gpbc_ = gmx_rmpbc_init(&topInfo_.topology()->idef, topInfo_.ePBC(),
                                fr->natoms);
     }
+
+    std::cout<<"COMMON IMPL: END INIT FIRST FRAME"<<std::endl;
 }
 
 
@@ -238,8 +239,11 @@ ChapTrajAnaRunnerCommon::Impl::initFirstFrame()
 void
 ChapTrajAnaRunnerCommon::Impl::initFrameIndexGroup()
 {
+    std::cout<<"COMMON IMPL: BEGIN INIT FRAME INDEX GROUP"<<std::endl;
+
     if (!trajectoryGroup_.isValid())
     {
+        std::cout<<"COMMON IMPL: END INIT FRAME INDEX GROUP"<<std::endl;
         return;
     }
     GMX_RELEASE_ASSERT(bTrajOpen_,
@@ -258,6 +262,7 @@ ChapTrajAnaRunnerCommon::Impl::initFrameIndexGroup()
               trajectoryGroup_.atomIndices().end(),
               fr->index);
 
+    std::cout<<"COMMON IMPL: END INIT FRAME INDEX GROUP"<<std::endl;
 }
 
 
@@ -267,6 +272,8 @@ ChapTrajAnaRunnerCommon::Impl::initFrameIndexGroup()
 void
 ChapTrajAnaRunnerCommon::Impl::finishTrajectory()
 {
+    std::cout<<"COMMON IMPL: BEGIN FINISH TRAJECTORY"<<std::endl;
+
     if (bTrajOpen_)
     {
         close_trx(status_);
@@ -277,6 +284,8 @@ ChapTrajAnaRunnerCommon::Impl::finishTrajectory()
         gmx_rmpbc_done(gpbc_);
         gpbc_ = NULL;
     }
+    
+    std::cout<<"COMMON IMPL: END FINISH TRAJECTORY"<<std::endl;
 }
 
 
@@ -353,33 +362,42 @@ ChapTrajAnaRunnerCommon::initOptions(gmx::IOptionsContainer *options,
                            .timeValue()
                            .description("Only use frame if t MOD dt == first time (%t)"));
 
-/*
+
     // Add time unit option.
     timeUnitBehavior->setTimeUnitFromEnvironment();
-    timeUnitBehavior->addTimeUnitOption(options, "tu");
-    timeUnitBehavior->setTimeUnitStore(&impl_->settings_.impl_->timeUnit);
+//    timeUnitBehavior->addTimeUnitOption(options, "tu");
+//    timeUnitBehavior->setTimeUnitStore(&impl_->settings_.impl_->timeUnit);
 
-    options->addOption(SelectionOption("fgroup")
+
+    options->addOption(gmx::SelectionOption("fgroup")
                            .store(&impl_->trajectoryGroup_)
                            .onlySortedAtoms().onlyStatic()
                            .description("Atoms stored in the trajectory file "
                                         "(if not set, assume first N atoms)"));
 
+
+    // FIXME: the below needs to be implemented:
+
     // Add plot options.
-    settings.impl_->plotSettings.initOptions(options);
+//    settings.impl_->plotSettings.initOptions(options);
 
     // Add common options for trajectory processing.
+    
     if(!settings.hasFlag( gmx::TrajectoryAnalysisSettings::efNoUserRmPBC) )
     {
-        options->addOption(BooleanOption("rmpbc").store(&settings.impl_->bRmPBC)
+        bool bRmPBCtmp;
+        options->addOption(gmx::BooleanOption("rmpbc").store(&bRmPBCtmp)
                                .description("Make molecules whole for each frame"));
+        settings.setRmPBC(bRmPBCtmp);
     }
-    if( !settings.hasFlag(gmx::TrajectoryAnalysisSettings::efNoUserPBC) )
+    if( !settings.hasFlag( gmx::TrajectoryAnalysisSettings::efNoUserPBC) )
     {
-        options->addOption(BooleanOption("pbc").store(&settings.impl_->bPBC)
+        bool bPBCtmp;
+        options->addOption( gmx::BooleanOption("pbc").store(&bPBCtmp)
                                .description("Use periodic boundary conditions for distance calculation"));
+        settings.setPBC(bPBCtmp);
     }
-    */
+    
 }
 
 
@@ -474,10 +492,14 @@ ChapTrajAnaRunnerCommon::readNextFrame()
 void
 ChapTrajAnaRunnerCommon::initFrame()
 {
+    std::cout<<"COMMON: BEGIN INIT FRAME"<<std::endl;
+
     if (impl_->gpbc_ != NULL)
     {
         gmx_rmpbc_trxfr(impl_->gpbc_, impl_->fr);
     }
+
+    std::cout<<"COMMON: END INIT FRAME"<<std::endl;
 }
 
 

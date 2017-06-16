@@ -32,6 +32,13 @@ class ChapTrajectoryAnalysisModule : public gmx::TrajectoryAnalysisModule
         virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
                                   const ChapTopologyInformation &top) = 0;
 
+        virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+                                  const TopologyInformation &top)
+        {
+            std::cout<<"============= I am doing nothing and should not be called ============="<<std::endl;
+            std::abort();
+        };
+
 };
 
 /*
@@ -52,12 +59,12 @@ class trajectoryAnalysis : public ChapTrajectoryAnalysisModule
 							 TrajectoryAnalysisSettings *settings);
 	
 	// ??
-	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                              const TopologyInformation &top);
+//	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+//                              const TopologyInformation &top);
 
     //
     virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                              const ChapTopologyInformation &top){};
+                              const ChapTopologyInformation &top);
 	
 	// ??
 	virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,

@@ -5,7 +5,7 @@
 //#include <gromacs/trajectoryanalysis.h>
 #include <gromacs/commandline/cmdlineinit.h>
 #include <gromacs/commandline/cmdlineprogramcontext.h>
-//#include <gromacs/commandline/cmdlinemodulemanager.h>
+#include <gromacs/commandline.h>
 
 #include "config/version.hpp"
 #include "config/config.hpp"
@@ -13,10 +13,9 @@
 #include "commandline/chap_runner_module.hpp"
 #include "commandline/chap_command_line_runner.hpp"
 
+
+
 using namespace gmx;
-
-
-
 
 
 
@@ -27,13 +26,23 @@ int main(int argc, char **argv)
 	std::cout<<"Hello, beautiful world!"<<std::endl;
 
 
+//    gmx::CommandLineProgramContext &programContext = gmx::initForCommandLine(&argc, &argv);
+
+
 //    ChapRunnerModule();
+
+
+    
+
+    
+
+//	int status =  gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
 
 
 	int status =  ChapTrajAnaCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
 
-/*
 
+/*
     gmx::CommandLineProgramContext &programContext = gmx::initForCommandLine(&argc, &argv);
 
     try
@@ -48,8 +57,8 @@ int main(int argc, char **argv)
         gmx::printFatalErrorMessage(stderr, ex);
         return gmx::processExceptionAtExitForCommandLine(ex);
     }
-  */  
-
+  
+*/
 
 
 /*
