@@ -4,11 +4,13 @@
 #include <iomanip>
 #include <string>
 #include <ctime>
+#include <regex>
 
 #include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
 #include <gromacs/fileio/confio.h>
+#include <gromacs/utility/programcontext.h>
 
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
@@ -263,7 +265,8 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
  */
 void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                 const ChapTopologyInformation &top)
+                                 const ChapTopologyInformation &top,
+                                 const std::string &dataFilePath)
 {
     std::cout<<"trajectoryAnalysis: BEGIN INIT ANALYSIS"<<std::endl;
 
@@ -359,28 +362,47 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 
     std::cerr<<"================= BEGIN JSON ===================="<<std::endl;
- 
+
+    const gmx::IProgramContext &programContext = gmx::getProgramContext();
+
+
+    std::cout<<"fullBinaryPath = "<<std::string(programContext.fullBinaryPath())<<std::endl;
+
+
+    std::string radiusFilePath = programContext.fullBinaryPath();
+
+    auto lastSlash = radiusFilePath.find_last_of('/');
+    radiusFilePath.replace(radiusFilePath.begin() + lastSlash + 1, 
+                           radiusFilePath.end(), 
+                           "data/vdwradii/");
+    
+
+
+    std::cout<<"radiusFilePath = "<<radiusFilePath<<std::endl;
+
+
+    
     // select appropriate database file:
     // TODO: this will not work for arbitrary binary dirctory!
     if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
     {
-        pfVdwRadiusJson_ = "../data/vdwradii/hole_amberuni.json";
+        pfVdwRadiusJson_ = radiusFilePath + "hole_amberuni.json";
     }
     else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleBondi )
     {
-        pfVdwRadiusJson_ = "../data/vdwradii/hole_bondi.json";
+        pfVdwRadiusJson_ = radiusFilePath + "hole_bondi.json";
     }
     else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleHardcore )
     {
-        pfVdwRadiusJson_ = "../data/vdwradii/hole_hardcore.json";
+        pfVdwRadiusJson_ = radiusFilePath + "hole_hardcore.json";
     }
     else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
     {
-        pfVdwRadiusJson_ = "../data/vdwradii/hole_simple.json";
+        pfVdwRadiusJson_ = radiusFilePath + "hole_simple.json";
     }
     else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleXplor )
     {
-        pfVdwRadiusJson_ = "../data/vdwradii/hole_xplor.json";
+        pfVdwRadiusJson_ = radiusFilePath + "hole_xplor.json";
     }
     else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
     {

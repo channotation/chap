@@ -30,7 +30,8 @@ class ChapTrajectoryAnalysisModule : public gmx::TrajectoryAnalysisModule
         ~ChapTrajectoryAnalysisModule(){};
 
         virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                  const ChapTopologyInformation &top) = 0;
+                                  const ChapTopologyInformation &top,
+                                  const std::string &dataFilePath) = 0;
 
         virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
                                   const TopologyInformation &top)
@@ -64,7 +65,8 @@ class trajectoryAnalysis : public ChapTrajectoryAnalysisModule
 
     //
     virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                              const ChapTopologyInformation &top);
+                              const ChapTopologyInformation &top,
+                              const std::string &dataFilePath);
 	
 	// ??
 	virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
