@@ -24,6 +24,7 @@
 
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/json_doc_importer.hpp"
+#include "io/analysis_data_json_exporter.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -302,6 +303,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
     pdbplotm -> setFileName(poreParticleFileName);
     data_.addModule(pdbplotm);
+
+    // add json exporter to data:
+    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
+    std::vector<std::string> dataSetNames = {"test"};
+    jsonExporter -> setDataSetNames(dataSetNames);
+    data_.addModule(jsonExporter);
 
 
     // RESIDUE MAPPING DATA
