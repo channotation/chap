@@ -19,17 +19,6 @@ ChapTrajAnaCommandLineRunner::runAsMain(int argc,
         return createModule(factory());
     };
 
-    
-//    gmx::CommandLineOptionsModule module(NULL, NULL, factory);
-
-
-
-    ChapTrajectoryAnalysisModulePointer p(new trajectoryAnalysis);
-
-//    ChapRunnerModule mod(p);
-
-
-
     return gmx::ICommandLineOptionsModule::runAsMain(argc, argv, NULL, NULL, runnerFactory);
 }
 

@@ -265,8 +265,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
  */
 void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                 const ChapTopologyInformation &top,
-                                 const std::string &dataFilePath)
+                                 const ChapTopologyInformation &top)
 {
     std::cout<<"trajectoryAnalysis: BEGIN INIT ANALYSIS"<<std::endl;
 
