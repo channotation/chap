@@ -306,8 +306,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     // add json exporter to data:
     AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
-    std::vector<std::string> dataSetNames = {"test"};
+    std::vector<std::string> dataSetNames = {"path"};
     jsonExporter -> setDataSetNames(dataSetNames);
+
+    std::vector<std::string> columnNamesProfile = {"x", "y", "z", "s", "r"};
+    std::vector<std::vector<std::string>> columnNames;
+    columnNames.push_back(columnNamesProfile);
+    jsonExporter -> setColumnNames(columnNames);
+
     data_.addModule(jsonExporter);
 
 

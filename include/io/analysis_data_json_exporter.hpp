@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include <gromacs/analysisdata/datamodule.h>
 
@@ -32,6 +33,7 @@ class AnalysisDataJsonExporter : public gmx::AnalysisDataModuleParallel
 
         // setter methods for parameters:
         void setDataSetNames(std::vector<std::string> dataSetNames);
+        void setColumnNames(std::vector<std::vector<std::string>> columnNames);
 
     private:
 
@@ -40,6 +42,7 @@ class AnalysisDataJsonExporter : public gmx::AnalysisDataModuleParallel
 
         // internal parameters:
         std::vector<std::string> dataSetNames_;
+        std::vector<std::vector<std::string>> columnNames_;
 };
 
 

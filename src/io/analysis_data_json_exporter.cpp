@@ -3,6 +3,7 @@
 
 #include <gromacs/utility/programcontext.h>
 #include <gromacs/analysisdata/abstractdata.h>
+#include <gromacs/analysisdata/dataframe.h>
 
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
@@ -56,10 +57,15 @@ AnalysisDataJsonExporter::parallelDataStarted(
     // build object for each data set:
     //-------------------------------------------------------------------------
 
-    // sanity check:
+    // sanity checks:
     if( dataSetNames_.size() != data -> dataSetCount() )
     {
         std::cerr<<"ERROR: Number of data set names must equal data set count!"<<std::endl;
+        std::abort();
+    }
+    if( columnNames_.size() != data -> dataSetCount() )
+    {
+        std::cerr<<"ERROR: Need to provide column names for each data set!"<<std::endl;
         std::abort();
     }
 
@@ -71,10 +77,13 @@ AnalysisDataJsonExporter::parallelDataStarted(
 
         // JSON object for dataset:
         rapidjson::Value dataSet;
-        dataSet.SetObject();
+        dataSet.SetArray();
 
         // add to json document:
         json_.AddMember(dataSetName, dataSet, allocator);
+
+        // create an array internal to this member:
+        rapidjson::Value array(rapidjson::kArrayType);
     }
 
 
@@ -101,7 +110,35 @@ void
 AnalysisDataJsonExporter::pointsAdded(
         const gmx::AnalysisDataPointSetRef &point)
 {
+    std::cout<<"frameIndex = "<<point.frameIndex()<<"  "
+             <<"x = "<<point.x()<<"  "
+             <<"x = "<<point.x()<<"  "
+             <<std::endl;
 
+    // sanity check:
+    if( point.columnCount() != columnNames_[point.dataSetIndex()].size() )
+    {
+        std::cerr<<"ERROR: Number of column names must equal column count!"<<std::endl;
+        std::abort();
+    }
+
+    std::vector<std::string> colNames = columnNames_[point.dataSetIndex()];
+
+    // get an allocator:
+    rapidjson::Document::AllocatorType& allocator = json_.GetAllocator();
+
+    //
+    rapidjson::Value val;
+    val.SetObject();
+    for(size_t i = 0; i < point.columnCount(); i++)
+    {
+        point.values()[i].value();
+        rapidjson::Value colName(colNames[i], allocator);
+        val.AddMember(colName, point.values()[i].value(), allocator);
+    }
+
+    // add record to array:    
+    json_[dataSetNames_[point.dataSetIndex()]].PushBack(val, allocator);
 }
 
 
@@ -155,5 +192,15 @@ void
 AnalysisDataJsonExporter::setDataSetNames(std::vector<std::string> dataSetNames)
 {
     dataSetNames_ = dataSetNames;
+}
+
+
+/*
+ *
+ */
+void
+AnalysisDataJsonExporter::setColumnNames(std::vector<std::vector<std::string>> columnNames)
+{
+    columnNames_ = columnNames;
 }
 
