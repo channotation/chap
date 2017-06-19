@@ -521,8 +521,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 	// get data for frame number frnr into data handle:
-//    dh.startFrame(frnr, fr.time);
-//    dhResMapping.startFrame(frnr, fr.time);
+    dh.startFrame(frnr, fr.time);
+    dhResMapping.startFrame(frnr, fr.time);
 
     std::cout<<"trajectoryAnalysis: started frame "<<frnr<<std::endl;
 
@@ -789,13 +789,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     for(int i = 0; i < nOutPoints_; i++)
     {
         // add to container:
-//        dh.setPoint(0, pointSample[i][0]);     // x
-//        dh.setPoint(1, pointSample[i][1]);     // y
-//        dh.setPoint(2, pointSample[i][2]);     // z
-//        dh.setPoint(3, arcLengthSample[i]);    // s
-//        dh.setPoint(4, radiusSample[i]);       // r
+        dh.setPoint(0, pointSample[i][0]);     // x
+        dh.setPoint(1, pointSample[i][1]);     // y
+        dh.setPoint(2, pointSample[i][2]);     // z
+        dh.setPoint(3, arcLengthSample[i]);    // s
+        dh.setPoint(4, radiusSample[i]);       // r
 
-//        dh.finishPointSet(); 
+        dh.finishPointSet(); 
     }
   
 
@@ -811,8 +811,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
-//    dh.finishFrame();
-//    dhResMapping.finishFrame();
+    dh.finishFrame();
+    dhResMapping.finishFrame();
 }
 
 
