@@ -1,0 +1,19 @@
+{
+    "remark": "Adapted from 'hardcore.rad' used in HOLE program.",
+
+    "reference": {
+        "citation": "Turano, Pear & Busath (1992), Biophysical Journal, vol 63 p152-161"
+        },
+
+    "vdwradii": [
+        {"atomname": "C", "resname": "???", "vdwr": 0.1425},
+        {"atomname": "O", "resname": "???", "vdwr": 0.1404},
+        {"atomname": "N", "resname": "???", "vdwr": 0.1280},
+        {"atomname": "H", "resname": "???", "vdwr": 0.0576},
+        {"atomname": "S", "resname": "???", "vdwr": 0.1540},
+        {"atomname": "P", "resname": "???", "vdwr": 0.1617},
+        {"atomname": "????", "resname": "???", "vdwr": 0.1400},
+        {"atomname": "LP", "resname": "???", "vdwr": 0.00},
+        {"atomname": "MW", "resname": "???", "vdwr": 0.00}
+    ]
+}

@@ -4,11 +4,16 @@
 #include <iomanip>
 #include <string>
 #include <ctime>
+#include <regex>
 
 #include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
 #include <gromacs/fileio/confio.h>
+#include <gromacs/utility/programcontext.h>
+
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
@@ -18,6 +23,7 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 #include "io/molecular_path_obj_exporter.hpp"
+#include "io/json_doc_importer.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -25,6 +31,7 @@
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 #include "path-finding/naive_cylindrical_path_finder.hpp"
+#include "path-finding/vdw_radius_provider.hpp"
 
 using namespace gmx;
 
@@ -76,7 +83,7 @@ trajectoryAnalysis::trajectoryAnalysis()
 void
 trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                 TrajectoryAnalysisSettings *settings)
-{
+{    
     // HELP TEXT
     //-------------------------------------------------------------------------
 
@@ -154,6 +161,26 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
 
     // get parameters of path-finding agorithm:
+    options -> addOption(RealOption("pf-vdwr-fallback")
+                         .store(&pfDefaultVdwRadius_)
+                         .storeIsSet(&pfDefaultVdwRadiusIsSet_)
+                         .defaultValue(-1.0)
+                         .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database"));
+    const char * const allowedVdwRadiusDatabase[] = {"hole_amberuni",
+                                                     "hole_bondi",
+                                                     "hole_hardcore",
+                                                     "hole_simple", 
+                                                     "hole_xplor",
+                                                     "user"};
+    pfVdwRadiusDatabase_ = eVdwRadiusDatabaseHoleSimple;
+    options -> addOption(EnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
+                         .enumValue(allowedVdwRadiusDatabase)
+                         .store(&pfVdwRadiusDatabase_)
+                         .description("Database of van-der-Waals radii to be used in pore finding"));
+    options -> addOption(StringOption("pf-vdwr-json")
+                         .store(&pfVdwRadiusJson_)
+                         .storeIsSet(&pfVdwRadiusJsonIsSet_)
+                         .description("User-defined set of van-der-Waals records in JSON format. Will be ignored unless -pf-vdwr-database is set to 'user'."));
     options -> addOption(StringOption("pf-method")
                          .store(&pfMethod_)
                          .defaultValue("inplane-optim")
@@ -307,63 +334,101 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     gmx::Selection test = poreComCollection.parseFromString("resname SOL")[0];
 
-    poreComCollection.setTopology(top.topology(), 0);
-    poreComCollection.compile();
+//    poreComCollection.setTopology(top.topology(), 0);
+//    poreComCollection.compile();
 
-
+/*
     std::cout<<std::endl<<std::endl;
     std::cout<<"atomCount = "<<test.atomCount()<<"  "
              <<"posCount = "<<test.posCount()<<"  "
              <<std::endl;
     std::cout<<std::endl<<std::endl;
-
+*/
     
 
 
     
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
-	
-	// load full topology:
-	t_topology *topol = top.topology();	
 
-	// access list of all atoms:
-	t_atoms atoms = topol -> atoms;
+    // get location of program binary from program context:
+    const gmx::IProgramContext &programContext = gmx::getProgramContext();
+    std::string radiusFilePath = programContext.fullBinaryPath();
 
-	// create vector of van der Waals radii and allocate memory:
-	vdwRadii_.reserve(atoms.nr);
+    // obtain radius database location as relative path:
+    auto lastSlash = radiusFilePath.find_last_of('/');
+    radiusFilePath.replace(radiusFilePath.begin() + lastSlash + 1, 
+                           radiusFilePath.end(), 
+                           "data/vdwradii/");
+        
+    // select appropriate database file:
+    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_amberuni.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleBondi )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_bondi.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleHardcore )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_hardcore.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_simple.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleXplor )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_xplor.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
+    {
+        // has user provided a file name?
+        if( !pfVdwRadiusJsonIsSet_ )
+        {
+            std::cerr<<"ERROR: Option pfVdwRadiusDatabase set to 'user', but no custom van-der-Waals radii specified with pfVdwRadiusJson."<<std::endl;
+            std::abort();
+        }
+    }
 
-	// create atomprop struct:
-	gmx_atomprop_t aps = gmx_atomprop_init();
+    // import vdW radii JSON: 
+    JsonDocImporter jdi;
+    rapidjson::Document radiiDoc = jdi(pfVdwRadiusJson_.c_str());
+   
+    // create radius provider and build lookup table:
+    VdwRadiusProvider vrp;
+    try
+    {
+        vrp.lookupTableFromJson(radiiDoc);
+    }
+    catch( std::exception& e )
+    {
+        std::cerr<<"ERROR while creating van der Waals radius lookup table:"<<std::endl;
+        std::cerr<<e.what()<<std::endl; 
+        std::abort();
+    }
 
-	// loop over all atoms in system and get vdW-radii:
-	for(int i=0; i<atoms.nr; i++)
-	{
-		real vdwRadius;
+    // set user-defined default radius?
+    if( pfDefaultVdwRadiusIsSet_ )
+    {
+        vrp.setDefaultVdwRadius(pfDefaultVdwRadius_);
+    }
 
-		// query vdW radius of current atom:
-		if(gmx_atomprop_query(aps, 
-		                      epropVDW, 
-							  *(atoms.resinfo[atoms.atom[i].resind].name),
-							  *(atoms.atomname[i]), &vdwRadius)) 
-		{
-			// TODO: include scale factor here?
-		}
-		else
-		{
-			// could not find vdW radius
-			// TODO: handle this case
-		}
+    // build vdw radius lookup map:
+    try
+    {
+        vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
+    }
+    catch( std::exception& e )
+    {
+        std::cerr<<"ERROR in van der Waals radius lookup:"<<std::endl;
+        std::cerr<<e.what()<<std::endl;
+        std::abort();
+    } 
 
-		// add radius to vector of radii:
-		vdwRadii_.push_back(vdwRadius);
-	}
-
-	// delete atomprop struct:
-	gmx_atomprop_destroy(aps);
-
-	// find largest van der Waals radius in system:
-	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
+    // find maximum van der Waals radius:
+    maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
 }
 
 
@@ -391,6 +456,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
     //-------------------------------------------------------------------------
+
+    std::cout<<"BEGIN INITIAL PROBE POS"<<std::endl;
 
     // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
@@ -444,11 +511,17 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[2] = centreOfMass[2];
     }
 
+    std::cout<<"END INITIAL PROBE POS"<<std::endl;
+
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
     // TODO: Move this to separate class and test!
     // TODO: Should then also work for coarse-grained situations!
+
+    std::cout<<"BEGIN PREPARE RADII"<<std::endl;
+
+    std::cout<<"vdwRadii_.size = "<<vdwRadii_.size()<<std::endl;
 
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
@@ -461,10 +534,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
+//        std::cout<<"mappedId = "<<idx<<"  "
+//                 <<"vdwR = "<<vdwRadii_.at(idx)
+//                 <<std::endl;
+
 		// add radius to vector of radii:
-		selVdwRadii.push_back(vdwRadii_[idx]);
+		selVdwRadii.push_back(vdwRadii_.at(idx));
 	}
 
+    std::cout<<"END PREPARE RADII"<<std::endl;
+
+
+    std::cout<<"blah test output"<<std::endl;
+    std::cout<<"selVdwRadii.size = "<<selVdwRadii.size()<<std::endl;
+    std::cout<<"refFelection.atomCount = "<<refSelection.atomCount()<<std::endl;
 
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
@@ -521,7 +604,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-
+    std::cout<<"test output"<<std::endl;
 
 
 
@@ -549,13 +632,18 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    std::cout<<std::endl;
 //    std::cout<<std::endl;
 
+
+    std::cout<<"blub test output"<<std::endl;
+
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
+    std::cout.flush();
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
+    std::cout<<"blubblub test output"<<std::endl;
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";

@@ -3,13 +3,15 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
 #include <gromacs/trajectoryanalysis.h>
 
-using namespace gmx;
+#include "path-finding/vdw_radius_provider.hpp"
 
+using namespace gmx;
 
 
 
@@ -25,7 +27,11 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 							 TrajectoryAnalysisSettings *settings);
 	
 	// ??
-	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+//	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
+//                              const TopologyInformation &top);
+
+    //
+    virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
                               const TopologyInformation &top);
 	
 	// ??
@@ -58,7 +64,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     AnalysisData                     dataResMapping_;
 
 
-	std::vector<real>				 vdwRadii_;		// vdW radii of all atoms
+	std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
 
@@ -71,6 +77,11 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     gmx::Selection initProbePosSelection_;
 
     // path finding method parameters:
+    real pfDefaultVdwRadius_;
+    bool pfDefaultVdwRadiusIsSet_;
+    eVdwRadiusDatabase pfVdwRadiusDatabase_;
+    std::string pfVdwRadiusJson_;
+    bool pfVdwRadiusJsonIsSet_;
     std::string pfMethod_;
     real pfProbeStepLength_;
     real pfProbeRadius_;
