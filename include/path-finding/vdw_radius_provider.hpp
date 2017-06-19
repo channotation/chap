@@ -10,9 +10,6 @@
 
 #include "rapidjson/document.h"
 
-// TODO: maybe instead just pass a t_atoms object for better consistency with Gromacs?
-#include "commandline/chap_topology_information.hpp"
-
 
 /*!
  * \brief Abstract data type for van der Waals radius records.

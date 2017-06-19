@@ -11,8 +11,6 @@
 
 #include "path-finding/vdw_radius_provider.hpp"
 
-#include "commandline/chap_traj_ana_runner_common.hpp"
-
 using namespace gmx;
 
 
