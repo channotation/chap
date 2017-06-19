@@ -36,10 +36,10 @@ int main(int argc, char **argv)
 
     
 
-//	int status =  gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
+	int status =  gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
 
 
-	int status =  ChapTrajAnaCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
+//	int status =  ChapTrajAnaCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
 
 
 /*

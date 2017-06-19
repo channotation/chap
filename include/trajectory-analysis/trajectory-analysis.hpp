@@ -47,7 +47,7 @@ class ChapTrajectoryAnalysisModule : public gmx::TrajectoryAnalysisModule
 typedef std::unique_ptr<ChapTrajectoryAnalysisModule> ChapTrajectoryAnalysisModulePointer;
 
 
-class trajectoryAnalysis : public ChapTrajectoryAnalysisModule
+class trajectoryAnalysis : public TrajectoryAnalysisModule
 {
     public:
 
@@ -64,7 +64,7 @@ class trajectoryAnalysis : public ChapTrajectoryAnalysisModule
 
     //
     virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                              const ChapTopologyInformation &top);
+                              const TopologyInformation &top);
 	
 	// ??
 	virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
