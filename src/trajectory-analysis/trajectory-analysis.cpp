@@ -58,8 +58,6 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saStepLengthFactor_(0.01)
     , saUseAdaptiveCandGen_(false)
 {
-    std::cout<<"trajectoryAnalysis constructor"<<std::endl;
-
     //
     registerAnalysisDataset(&data_, "somedata");
     data_.setMultipoint(true);              // mutliple support points 
@@ -85,9 +83,7 @@ trajectoryAnalysis::trajectoryAnalysis()
 void
 trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                 TrajectoryAnalysisSettings *settings)
-{
-    std::cout<<"trajectoryAnalysis: BEGIN INIT OPTIONS"<<std::endl;
-    
+{    
     // HELP TEXT
     //-------------------------------------------------------------------------
 
@@ -253,8 +249,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
-
-    std::cout<<"trajectoryAnalysis: END INIT OPTIONS"<<std::endl;
 }
 
 
@@ -267,8 +261,6 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                  const TopologyInformation &top)
 {
-    std::cout<<"trajectoryAnalysis: BEGIN INIT ANALYSIS"<<std::endl;
-
     // set parameters in parameter map:
     //-------------------------------------------------------------------------
 
@@ -359,30 +351,17 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
 
-
-    std::cerr<<"================= BEGIN JSON ===================="<<std::endl;
-
+    // get location of program binary from program context:
     const gmx::IProgramContext &programContext = gmx::getProgramContext();
-
-
-    std::cout<<"fullBinaryPath = "<<std::string(programContext.fullBinaryPath())<<std::endl;
-
-
     std::string radiusFilePath = programContext.fullBinaryPath();
 
+    // obtain radius database location as relative path:
     auto lastSlash = radiusFilePath.find_last_of('/');
     radiusFilePath.replace(radiusFilePath.begin() + lastSlash + 1, 
                            radiusFilePath.end(), 
                            "data/vdwradii/");
-    
-
-
-    std::cout<<"radiusFilePath = "<<radiusFilePath<<std::endl;
-
-
-    
+        
     // select appropriate database file:
-    // TODO: this will not work for arbitrary binary dirctory!
     if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
     {
         pfVdwRadiusJson_ = radiusFilePath + "hole_amberuni.json";
@@ -446,73 +425,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
         std::cerr<<"ERROR in van der Waals radius lookup:"<<std::endl;
         std::cerr<<e.what()<<std::endl;
         std::abort();
-    }
-  
+    } 
 
-    std::cerr<<"vdwRadii.size = "<<vdwRadii_.size()<<std::endl;
-
-
-
-    std::cerr<<"================= END JSON ===================="<<std::endl;
-
-/*
-
-	// load full topology:
-	t_topology *topol = top.topology();	
-
-	// access list of all atoms:
-	t_atoms atoms = topol -> atoms;
-
-	// create vector of van der Waals radii and allocate memory:
-	vdwRadii_.reserve(atoms.nr);
-
-	// create atomprop struct:
-	gmx_atomprop_t aps = gmx_atomprop_init();
-
-	// loop over all atoms in system and get vdW-radii:
-	for(int i=0; i<atoms.nr; i++)
-	{
-		real vdwRadius;
-
-        std::string elem;
-        elem += (atoms.atom[i].elem[0]);
-        elem += (atoms.atom[i].elem[1]);
-        elem += (atoms.atom[i].elem[2]);
-        elem += (atoms.atom[i].elem[3]);
-
-        std::transform(elem.begin(), elem.end(), elem.begin(), ::toupper);
-
-
-        // query vdW radius of current atom:
-		if(gmx_atomprop_query(aps, 
-		                      epropVDW, 
-							  *(atoms.resinfo[atoms.atom[i].resind].name),
-							  *(atoms.atomname[i]), &vdwRadius)) 
-		{
-			// TODO: include scale factor here?
-		}
-		else
-		{
-			// could not find vdW radius
-			// TODO: handle this case
-		}
-
-		// add radius to vector of radii:
-		vdwRadii_.push_back(vdwRadius);
-	}
-
-	// delete atomprop struct:
-	gmx_atomprop_destroy(aps);
-*/
-	// find largest van der Waals radius in system:
-//	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
-    maxVdwRadius_ = 1.0;
-
-    std::cout<<"END SETUP"<<std::endl;
-
-
-    std::cout<<"trajectoryAnalysis: END INIT ANALYSIS"<<std::endl;
-
+    // find maximum van der Waals radius:
+    maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
 }
 
 
@@ -525,28 +441,17 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
-    std::cout<<"trajectoryAnalysis: analising frame "<<frnr<<std::endl;
-
 	// get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
     const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
-
-    std::cout<<"trajectoryAnalysis: obtained selections "<<frnr<<std::endl;
-
 
     // get data handles for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
 
-    std::cout<<"trajectoryAnalysis: created data handles "<<frnr<<std::endl;
-
-
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
     dhResMapping.startFrame(frnr, fr.time);
-
-    std::cout<<"trajectoryAnalysis: started frame "<<frnr<<std::endl;
-
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME

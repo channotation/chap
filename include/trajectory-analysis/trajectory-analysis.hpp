@@ -14,36 +14,6 @@
 using namespace gmx;
 
 
-//
-class ChapTopologyInformation;
-
-
-/*
- *
- */
-class ChapTrajectoryAnalysisModule : public gmx::TrajectoryAnalysisModule
-{
-    public:
-
-        ~ChapTrajectoryAnalysisModule(){};
-
-        virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                  const ChapTopologyInformation &top) = 0;
-
-        virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                                  const TopologyInformation &top)
-        {
-            std::cout<<"============= I am doing nothing and should not be called ============="<<std::endl;
-            std::abort();
-        };
-
-};
-
-/*
- *
- */
-typedef std::unique_ptr<ChapTrajectoryAnalysisModule> ChapTrajectoryAnalysisModulePointer;
-
 
 class trajectoryAnalysis : public TrajectoryAnalysisModule
 {
