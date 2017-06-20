@@ -122,12 +122,14 @@ AnalysisDataJsonExporter::pointsAdded(
     // get an allocator:
     rapidjson::Document::AllocatorType& allocator = json_.GetAllocator();
 
-    //
+    // create record for this point and add time stamp:
     rapidjson::Value val;
     val.SetObject();
+    val.AddMember("t", point.x(), allocator);
+
+    // loop over columns in this dataset and add values:
     for(size_t i = 0; i < point.columnCount(); i++)
     {
-        point.values()[i].value();
         rapidjson::Value colName(colNames[i], allocator);
         val.AddMember(colName, point.values()[i].value(), allocator);
     }
