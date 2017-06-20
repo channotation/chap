@@ -5,11 +5,16 @@
 #include <string>
 #include <cstring>
 #include <ctime>
+#include <regex>
 
 #include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
 #include <gromacs/fileio/confio.h>
+#include <gromacs/utility/programcontext.h>
+
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
@@ -19,15 +24,16 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 #include "io/molecular_path_obj_exporter.hpp"
+#include "io/json_doc_importer.hpp"
+#include "io/analysis_data_json_exporter.hpp"
 
-#include "trajectory-analysis/simulated_annealing_module.hpp"
-#include "trajectory-analysis/path_finding_module.hpp"
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
 
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 #include "path-finding/naive_cylindrical_path_finder.hpp"
+#include "path-finding/vdw_radius_provider.hpp"
 
 using namespace gmx;
 
@@ -79,7 +85,10 @@ trajectoryAnalysis::trajectoryAnalysis()
 void
 trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                 TrajectoryAnalysisSettings *settings)
-{
+{    
+    // HELP TEXT
+    //-------------------------------------------------------------------------
+
 	// set help text:
 	static const char *const desc[] = {
 		"This is a first prototype for the CHAP tool.",
@@ -87,12 +96,28 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 	};
     settings -> setHelpText(desc);
 
-    // hardcoded defaults for multivalue options:
-    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
 
+    // SETTINGS
+    //-------------------------------------------------------------------------
 
 	// require the user to provide a topology file input:
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
+
+    // will not use periodic boundary conditions:
+    settings -> setPBC(true);
+    settings -> setFlag(TrajectoryAnalysisSettings::efNoUserPBC);
+
+    // will make molecules whole:
+    settings -> setRmPBC(false);
+    settings -> setFlag(TrajectoryAnalysisSettings::efNoUserRmPBC);
+
+
+
+    // OPTIONS
+    //-------------------------------------------------------------------------
+
+    // hardcoded defaults for multivalue options:
+    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
 
 	// get (required) selection option for the reference group: 
 	options -> addOption(SelectionOption("reference")
@@ -145,20 +170,40 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
 
     // get parameters of path-finding agorithm:
+    options -> addOption(RealOption("pf-vdwr-fallback")
+                         .store(&pfDefaultVdwRadius_)
+                         .storeIsSet(&pfDefaultVdwRadiusIsSet_)
+                         .defaultValue(-1.0)
+                         .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database"));
+    const char * const allowedVdwRadiusDatabase[] = {"hole_amberuni",
+                                                     "hole_bondi",
+                                                     "hole_hardcore",
+                                                     "hole_simple", 
+                                                     "hole_xplor",
+                                                     "user"};
+    pfVdwRadiusDatabase_ = eVdwRadiusDatabaseHoleSimple;
+    options -> addOption(EnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
+                         .enumValue(allowedVdwRadiusDatabase)
+                         .store(&pfVdwRadiusDatabase_)
+                         .description("Database of van-der-Waals radii to be used in pore finding"));
+    options -> addOption(StringOption("pf-vdwr-json")
+                         .store(&pfVdwRadiusJson_)
+                         .storeIsSet(&pfVdwRadiusJsonIsSet_)
+                         .description("User-defined set of van-der-Waals records in JSON format. Will be ignored unless -pf-vdwr-database is set to 'user'."));
     options -> addOption(StringOption("pf-method")
                          .store(&pfMethod_)
                          .defaultValue("inplane-optim")
                          .description("Path finding method. Only inplane-optim is implemented so far."));
     options -> addOption(RealOption("probe-step")
-                         .store(&pfProbeStepLength_)
+                         .store(&pfParams_["pfProbeStepLength"])
                          .defaultValue(0.025)
                          .description("Step length for probe movement. Defaults to 0.025 nm."));
     options -> addOption(RealOption("probe-radius")
-                         .store(&pfProbeRadius_)
+                         .store(&pfParams_["pfProbeRadius"])
                          .defaultValue(0.0)
                          .description("Radius of probe. Defaults to 0.0, buggy for other values!"));
     options -> addOption(RealOption("max-free-dist")
-                         .store(&pfMaxFreeDist_)
+                         .store(&pfParams_["pfProbeMaxRadius"])
                          .defaultValue(1.0)
                          .description("Maximum radius of pore. Defaults to 1.0, buggy for larger values."));
     options -> addOption(IntegerOption("max-probe-steps")
@@ -187,21 +232,29 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue(10)
                          .description("NOT IMPLEMENTED! Number of cost samples considered for convergence tolerance. Defaults to 10."));
     options -> addOption(RealOption("sa-conv-tol")
-                         .store(&saConvRelTol_)
+                         .store(&pfParams_["saConvTol"])
                          .defaultValue(1e-3)
                          .description("Relative tolerance for simulated annealing."));
     options -> addOption(RealOption("sa-init-temp")
-                         .store(&saInitTemp_)
+                         .store(&pfParams_["saInitTemp"])
                          .defaultValue(0.1)
                          .description("Initital temperature for simulated annealing. Defaults to 0.1."));
     options -> addOption(RealOption("sa-cooling-fac")
-                         .store(&saCoolingFactor_)
+                         .store(&pfParams_["saCoolingFactor"])
                          .defaultValue(0.98)
                          .description("Cooling factor using in simulated annealing. Defaults to 0.98."));
     options -> addOption(RealOption("sa-step")
-                         .store(&saStepLengthFactor_)
+                         .store(&pfParams_["saStepLengthFactor"])
                          .defaultValue(0.001)
                          .description("Step length factor used in candidate generation. Defaults to 0.001.")) ;
+    options -> addOption(IntegerOption("nm-max-iter")
+                         .store(&nmMaxIter_)
+                         .defaultValue(100)
+                         .description("Number of Nelder-Mead simplex iterations.")) ;
+    options -> addOption(RealOption("nm-init-shift")
+                         .store(&pfParams_["nmInitShift"])
+                         .defaultValue(0.1)
+                         .description("Distance of vertices in initial Nelder-Mead simplex.")) ;
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
@@ -217,14 +270,57 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                  const TopologyInformation &top)
 {
+    // set parameters in parameter map:
+    //-------------------------------------------------------------------------
+
+    pfParams_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
+
+    pfParams_["pfCylRad"] = pfParams_["pfProbeMaxRadius"];
+    pfParams_["pfCylNumSteps"] = pfParams_["pfProbeMaxSteps"];
+    pfParams_["pfCylStepLength"] = pfParams_["pfProbeStepLength"];
+
+    pfParams_["saMaxCoolingIter"] = saMaxCoolingIter_;
+    pfParams_["saRandomSeed"] = saRandomSeed_;
+    pfParams_["saNumCostSamples"] = saNumCostSamples_;
+
+    pfParams_["nmMaxIter"] = nmMaxIter_;
+
 	// set cutoff distance for grid search as specified in user input:
 	nb_.setCutoff(cutoff_);
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
 
-	// prepare data container:
-	data_.setDataSetCount(1);               // one data set for water   
-    data_.setColumnCount(0, 5);             // x y z s r
 
+    //
+    //-------------------------------------------------------------------------
+
+    // multiple datasets:
+    data_.setDataSetCount(3);
+    DataSetNameList dataSetNames = {"path", "path.agg", "res.map"};
+    ColumnHeaderList columnHeaders;
+
+	// prepare data container for path data:
+    data_.setColumnCount(0, 5);
+    ColumnHeader columnHeaderPath = {"x", "y", "z", "s", "r"};
+    columnHeaders.push_back(columnHeaderPath);
+
+    // prepare data container for aggregate path data:
+    data_.setColumnCount(1, 4);
+    ColumnHeader columnHeaderAggregatePath = {"R.min", "L", "V", "N"};
+    columnHeaders.push_back(columnHeaderAggregatePath);
+
+    //
+    data_.setColumnCount(2, 4);
+    ColumnHeader columnHeaderResMap = {"res.id", "s", "rho", "phi"};
+    columnHeaders.push_back(columnHeaderResMap);
+
+    // add json exporter to data:
+    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
+    jsonExporter -> setDataSetNames(dataSetNames);
+    jsonExporter -> setColumnNames(columnHeaders);
+    data_.addModule(jsonExporter);
+
+
+/*
     // add plot module to analysis data:
     int i = 2;
     AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
@@ -239,7 +335,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
     pdbplotm -> setFileName(poreParticleFileName);
     data_.addModule(pdbplotm);
-
+*/
 
     // RESIDUE MAPPING DATA
     //-------------------------------------------------------------------------
@@ -336,38 +432,67 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
-	
 
-	// create vector of van der Waals radii and allocate memory:
-	vdwRadii_.reserve(atoms.nr);
+    // get location of program binary from program context:
+    const gmx::IProgramContext &programContext = gmx::getProgramContext();
+    std::string radiusFilePath = programContext.fullBinaryPath();
 
+    // obtain radius database location as relative path:
+    auto lastSlash = radiusFilePath.find_last_of('/');
+    radiusFilePath.replace(radiusFilePath.begin() + lastSlash + 1, 
+                           radiusFilePath.end(), 
+                           "data/vdwradii/");
+        
+    // select appropriate database file:
+    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_amberuni.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleBondi )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_bondi.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleHardcore )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_hardcore.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_simple.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleXplor )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_xplor.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
+    {
+        // has user provided a file name?
+        if( !pfVdwRadiusJsonIsSet_ )
+        {
+            std::cerr<<"ERROR: Option pfVdwRadiusDatabase set to 'user', but no custom van-der-Waals radii specified with pfVdwRadiusJson."<<std::endl;
+            std::abort();
+        }
+    }
 
-	// loop over all atoms in system and get vdW-radii:
-	for(int i=0; i<atoms.nr; i++)
-	{
-		real vdwRadius;
-
-		// query vdW radius of current atom:
-		if(gmx_atomprop_query(aps, 
-		                      epropVDW, 
-							  *(atoms.resinfo[atoms.atom[i].resind].name),
-							  *(atoms.atomname[i]), &vdwRadius)) 
-		{
-			// TODO: include scale factor here?
-		}
-		else
-		{
-			// could not find vdW radius
-			// TODO: handle this case
-		}
-
-		// add radius to vector of radii:
-		vdwRadii_.push_back(vdwRadius);
-	}
-
+    // import vdW radii JSON: 
+    JsonDocImporter jdi;
+    rapidjson::Document radiiDoc = jdi(pfVdwRadiusJson_.c_str());
+   
+    // create radius provider and build lookup table:
+    VdwRadiusProvider vrp;
+    try
+    {
+        vrp.lookupTableFromJson(radiiDoc);
+    }
+    catch( std::exception& e )
+    {
+        std::cerr<<"ERROR while creating van der Waals radius lookup table:"<<std::endl;
+        std::cerr<<e.what()<<std::endl; 
+        std::abort();
+    }
 
 	// find largest van der Waals radius in system:
-	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
+//	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
 
 
     // TRACK C-ALPHAS and RESIDUE INDECES
@@ -432,6 +557,27 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     
 	// delete atomprop struct:
 	gmx_atomprop_destroy(aps);
+
+    // set user-defined default radius?
+    if( pfDefaultVdwRadiusIsSet_ )
+    {
+        vrp.setDefaultVdwRadius(pfDefaultVdwRadius_);
+    }
+
+    // build vdw radius lookup map:
+    try
+    {
+        vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
+    }
+    catch( std::exception& e )
+    {
+        std::cerr<<"ERROR in van der Waals radius lookup:"<<std::endl;
+        std::cerr<<e.what()<<std::endl;
+        std::abort();
+    } 
+
+    // find maximum van der Waals radius:
+    maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
 }
 
 
@@ -444,12 +590,13 @@ void
 trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                  TrajectoryAnalysisModuleData *pdata)
 {
-	// get data handles for this frame:
+	// get thread-local selections:
+	const Selection &refSelection = pdata -> parallelSelection(refsel_);
+    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
+
+    // get data handles for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
-
-	// get thread-local selection of reference particles:
-	const Selection &refSelection = pdata -> parallelSelection(refsel_);
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
@@ -459,7 +606,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
     //-------------------------------------------------------------------------
 
-    // recalculate initial probe position based on reference group COM:
+    // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
     {  
         // helper variable for conditional assignment of selection:
@@ -511,17 +658,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[2] = centreOfMass[2];
     }
 
-    // inform user:
-    if( debug_output_ == true )
-    {
-        std::cout<<std::endl
-                 <<"Initial probe position for this frame is:  "
-                 <<pfInitProbePos_[0]<<", "
-                 <<pfInitProbePos_[1]<<", "
-                 <<pfInitProbePos_[2]<<". "
-                 <<std::endl;
-    }
-
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
@@ -531,9 +667,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
 	selVdwRadii.reserve(refSelection.atomCount());
-    std::cout<<"selVdwRadii.size() = "<<selVdwRadii.size()<<std::endl;
 
-	// loop over all atoms in system and get vdW-radii:
+    // loop over all atoms in system and get vdW-radii:
 	for(int i=0; i<refSelection.atomCount(); i++)
     {
         // get global index of i-th atom in selection:
@@ -541,79 +676,40 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         int idx = atom.mappedId();
 
 		// add radius to vector of radii:
-		selVdwRadii.push_back(vdwRadii_[idx]);
+		selVdwRadii.push_back(vdwRadii_.at(idx));
 	}
 
 
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
 
-	// initialise neighbourhood search:
-	AnalysisNeighborhoodSearch nbSearch = nb_.initSearch(pbc, refSelection);
-
-   /* 
-    std::cout<<"pfMethod = "<<pfMethod_<<std::endl
-             <<"pfProbeStepLength = "<<pfProbeStepLength_<<std::endl
-             <<"pfProbeRadius = "<<pfProbeRadius_<<std::endl
-             <<"pfMaxFreeDist = "<<pfMaxFreeDist_<<std::endl
-             <<"pfMaxProbeSteps = "<<pfMaxProbeSteps_<<std::endl
-             <<"pfInitProbePos = "<<pfInitProbePos_[0]<<"  "
-                                  <<pfInitProbePos_[1]<<"  "
-                                  <<pfInitProbePos_[2]<<std::endl
-             <<"pfChanDirVec = "<<pfChanDirVec_[0]<<"  "
-                                <<pfChanDirVec_[1]<<"  "
-                                <<pfChanDirVec_[2]<<std::endl
-             <<"saRandomSeed = "<<saRandomSeed_<<std::endl
-             <<"saMaxCoolingIter = "<<saMaxCoolingIter_<<std::endl
-             <<"saNumCostSamples = "<<saNumCostSamples_<<std::endl
-             <<"saXi = "<<saXi_<<std::endl
-             <<"saConvRelTol = "<<saConvRelTol_<<std::endl
-             <<"saInitTemp = "<<saInitTemp_<<std::endl
-             <<"saCoolingFactor = "<<saCoolingFactor_<<std::endl
-             <<"saStepLengthFactor = "<<saStepLengthFactor_<<std::endl
-             <<"saUseAdaptiveCandGen = "<<saUseAdaptiveCandGen_<<std::endl;
-    */
-
+    // vectors as RVec:
+    RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
+    RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]); 
 
     // create path finding module:
     std::unique_ptr<AbstractPathFinder> pfm;
     if( pfMethod_ == "inplane-optim" )
     {
-    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-        pfm.reset(new InplaneOptimisedProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
-                                            pfMaxFreeDist_, pfMaxProbeSteps_, 
-                                            initProbePos, chanDirVec, selVdwRadii, 
-                                            &nbSearch, saRandomSeed_, 
-                                            saMaxCoolingIter_, saNumCostSamples_, 
-                                            saXi_, saConvRelTol_, saInitTemp_, 
-                                            saCoolingFactor_, saStepLengthFactor_, 
-                                            saUseAdaptiveCandGen_));
+        // create inplane-optimised path finder:
+        pfm.reset(new InplaneOptimisedProbePathFinder(pfParams_,
+                                                      initProbePos,
+                                                      chanDirVec,
+                                                      *pbc,
+                                                      refSelection,
+                                                      selVdwRadii));
     }
     else if( pfMethod_ == "optim-direction" )
     {
-        std::cout<<"OPTIM-DIRECTION"<<std::endl;
-
-    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-        pfm.reset(new OptimisedDirectionProbePathFinder(pfProbeStepLength_, pfProbeRadius_, 
-                                            pfMaxFreeDist_, pfMaxProbeSteps_, 
-                                            initProbePos, selVdwRadii, 
-                                            &nbSearch, saRandomSeed_, 
-                                            saMaxCoolingIter_, saNumCostSamples_, 
-                                            saXi_, saConvRelTol_, saInitTemp_, 
-                                            saCoolingFactor_, saStepLengthFactor_, 
-                                            saUseAdaptiveCandGen_));
+        std::cerr<<"ERROR: Optimised direction path finding is not implemented!"<<std::endl;
+        std::abort();
     }   
     else if( pfMethod_ == "naive-cylindrical" )
-    {
-    	RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    	RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
-        pfm.reset(new NaiveCylindricalPathFinder(pfProbeStepLength_,
-                                                 pfMaxProbeSteps_,
-                                                 pfMaxFreeDist_,
+    {        
+        // create the naive cylindrical path finder:
+        pfm.reset(new NaiveCylindricalPathFinder(pfParams_,
                                                  initProbePos,
-                                                 chanDirVec));        
+                                                 chanDirVec));
     }
 
 
@@ -625,24 +721,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-    const gmx::Selection &test = pdata -> parallelSelection(refsel_);
 
-
+    std::cout<<std::endl;
     std::cout<<"initProbePos ="<<" "
              <<pfInitProbePos_[0]<<" "
              <<pfInitProbePos_[1]<<" "
              <<pfInitProbePos_[2]<<" "
              <<std::endl;
-
-//    std::cout<<"atomCount = "<<test.atomCount()<<"  "
-//             <<std::endl;
-
-
-
-
-
-
-
 
 
 
@@ -654,8 +739,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    std::cout<<std::endl;
 
 
+
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
+    std::cout.flush();
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
@@ -668,27 +755,25 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
-
+    
+    // map residues onto pathway:
+    std::cout<<"mapping residues onto pathway ... ";
+    clock_t tMapRes = std::clock();
+    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
+    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
+    tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
+    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
+    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
 
     std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
     std::vector<real> pathRadii = molPath.pathRadii();
 
-    std::fstream pathfile;
-    pathfile.open("pathfile.dat", std::fstream::out);
-    pathfile<<"x y z r"<<std::endl;
-    for(int i = 0; i < pathRadii.size(); i++)
-    {
-        pathfile<<pathPoints[i][0]<<" "
-                <<pathPoints[i][1]<<" "
-                <<pathPoints[i][2]<<" "
-                <<pathRadii[i]<<std::endl;
-    }
-    pathfile.close();
-
-
-
-
-
+   // check if points lie inside pore:
+//    std::cout<<"checking if particles are inside pore ... ";
+//    clock_t tCheckInside = std::clock();
+//    std::map<int, bool> isInside = molPath.checkIfInside(mappedCoords);
+//    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
+//    std::cout<<"done in  "<<tCheckInside<<" sec"<<std::endl;
     
 
     std::cout<<std::endl;
@@ -698,21 +783,24 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // reset smart pointer:
     // TODO: Is this necessary and parallel compatible?
-    pfm.reset();
+//    pfm.reset();
 
 
 
 
 
-    // ADD PATH DATA TO PARALLELISABLE CONTAINER
+    // ADD DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
+
+    // start with path data:
+    dh.selectDataSet(0);
 
     // access path finding module result:
     real extrapDist = 1.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
- 
+
     // loop over all support points of path:
     for(int i = 0; i < nOutPoints_; i++)
     {
@@ -722,10 +810,32 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dh.setPoint(2, pointSample[i][2]);     // z
         dh.setPoint(3, arcLengthSample[i]);    // s
         dh.setPoint(4, radiusSample[i]);       // r
-
         dh.finishPointSet(); 
     }
-  
+
+    // add aggegate path data:
+    dh.selectDataSet(1);
+
+    // only one point per frame:
+    dh.setPoint(0, molPath.minRadius());
+    dh.setPoint(1, molPath.length());
+    dh.setPoint(2, molPath.volume());
+    dh.setPoint(3, 0);  // TODO: implement number of particles in channel!
+    dh.finishPointSet();
+
+    
+    // now adding mapped residue coordinates:
+    dh.selectDataSet(2);
+    
+    // add mapped residues to data container:
+    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
+    {
+         dh.setPoint(0, it -> first);         // refId
+         dh.setPoint(1, it -> second[0]);     // s
+         dh.setPoint(2, it -> second[1]);     // rho
+         dh.setPoint(3, it -> second[3]);     // phi
+         dh.finishPointSet();
+    }
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------

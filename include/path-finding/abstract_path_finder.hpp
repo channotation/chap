@@ -8,34 +8,38 @@
 #include "path-finding/molecular_path.hpp"
 
 
-/*
- * Abstract base class for all permeation path finding algorithms. Should 
- * provide the public interface.
+/*!
+ * \brief Abstract base class for all permeation path finding algorithms. 
+ *
+ * This specifies an interface for all path finding classes, namely that they
+ * should provide a method findPath that runs the path finding algorithm.
  */
 class AbstractPathFinder
 {
     public:
 
         // constructor:
-        AbstractPathFinder();
+        AbstractPathFinder(std::map<std::string, real> params);
        
         // interface for path finding method:
         virtual void findPath() = 0;
 
         // public interface for path retrieal:
-        MolecularPath getMolecularPath();
+        virtual MolecularPath getMolecularPath();
 
-
-//        virtual std::vector<gmx::RVec> getPath(){return path_;};
-//        virtual std::vector<real> getRadii(){return radii_;};
+        // convenience functions for retrieving path points and radii directly:
+        std::vector<gmx::RVec> pathPoints(){return path_;};
+        std::vector<real> pathRadii(){return radii_;};
 
 
     protected:
 
+        // internal map of parameters:
+        std::map<std::string, real> params_;
  
+        // data containers for path points and corresponding radii:
         std::vector<gmx::RVec> path_;
         std::vector<real> radii_;
-
 };
 
 #endif

@@ -2,35 +2,25 @@
 
 #include <gromacs/math/vec.h>
 
-#include "trajectory-analysis/simulated_annealing_module.hpp"
+#include "optim/simulated_annealing_module.hpp"
+#include "optim/nelder_mead_module.hpp"
+
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 
+
+
 /*
- * Constructor.
+ *
  */
 InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
-        real probeStepLength,
-        real probeRadius,
-        real maxFreeDist,
-        int maxProbeSteps,
+        std::map<std::string, real> params,
         gmx::RVec initProbePos,
         gmx::RVec chanDirVec,
-        std::vector<real> vdwRadii,
-        gmx::AnalysisNeighborhoodSearch *nbSearch,
-        int saRandomSeed,
-        int saMaxCoolingIter,
-        int saNumCostSamples,
-        real saXi,
-        real saConvRelTol,
-        real saInitTemp,
-        real saCoolingFactor,
-        real saStepLengthFactor,
-        bool saUseAdaptiveCandGen)
-    : AbstractProbePathFinder(probeStepLength, probeRadius, maxFreeDist, 
-                              maxProbeSteps, initProbePos, vdwRadii, nbSearch,
-                              saRandomSeed, saMaxCoolingIter, saNumCostSamples,
-                              saXi, saConvRelTol, saInitTemp, saCoolingFactor,
-                              saStepLengthFactor, saUseAdaptiveCandGen)
+//        gmx::AnalysisNeighborhoodSearch *nbSearch,
+        t_pbc pbc,
+        gmx::AnalysisNeighborhoodPositions porePos,
+        std::vector<real> vdwRadii)
+    : AbstractProbePathFinder(params, initProbePos, pbc, porePos, vdwRadii)
     , chanDirVec_(chanDirVec)
     , orthVecU_(0.0, 0.0, 0.0)
     , orthVecW_(0.0, 0.0, 0.0)
@@ -66,7 +56,7 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
             // make sure it is not null vector:
             if( norm(orthVecU_) < nonZeroTol )
             {
-//                std::cout<<"ERROR: could not generate orthogonal vector!"<<std::cerr;
+                std::cerr<<"ERROR: could not generate orthogonal vector!"<<std::endl;
             }
         }
     }
@@ -137,27 +127,33 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
                             <<orthVecW_[2]<<"  "
               <<std::endl;
 */
+
+
     // initial state in optimisation space is always null vector:
-    int stateDim = 2;
-    real initState[stateDim] = {0.0, 0.0};
+    std::vector<real> initState = {0.0, 0.0};
     
     // cost function is minimal free distance function:
-    costFunction cf;
-    cf = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
-                   this, std::placeholders::_1);
-   
-    // create new simulated annealing module:
-    SimulatedAnnealingModule sam(stateDim, saRandomSeed_, saMaxCoolingIter_,
-                                 saNumCostSamples_, saXi_, saConvRelTol_, 
-                                 saInitTemp_, saCoolingFactor_, 
-                                 saStepLengthFactor_, initState, cf,
-                                 saUseAdaptiveCandGen_);
-    
-    // perform simulated annealing:
-    eSimAnTerm status = sam.anneal();
-    
+    ObjectiveFunction objFun;
+    objFun = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
+                       this, std::placeholders::_1);
+
+    // optimise in plane through simulated annealing:
+    SimulatedAnnealingModule sam;
+    sam.setObjFun(objFun);
+    sam.setParams(params_);
+    sam.setInitGuess(initState);
+    sam.optimise();
+
+    // refine with Nelder-Mead optimisation:
+    NelderMeadModule nmm;
+    nmm.setObjFun(objFun);
+    nmm.setParams(params_);
+    nmm.setInitGuess(sam.getOptimPoint().first);
+    nmm.optimise();
+       
     // set initial position to its optimal value:
-    initProbePos_ = optimToConfig(sam.getBestState());
+    initProbePos_ = optimToConfig(nmm.getOptimPoint().first);
+
 
 /*
     std::cout<<"initProbePos = "<<initProbePos_[0]<<"  "
@@ -172,9 +168,13 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
                                 <<crntProbePos_[2]<<"  "
              <<std::endl; 
 */
+
+
     // add path support point and associated radius to container:
     path_.push_back(initProbePos_);
-    radii_.push_back(sam.getBestCost());
+    radii_.push_back(nmm.getOptimPoint().second);
+
+   
 }
 
 
@@ -197,13 +197,13 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
     }
 
     // initial state in optimisation space is always null vector:
-    int stateDim = 2;
-    real initState[stateDim] = {0.0, 0.0};
+    std::vector<real> initState = {0.0, 0.0};
 
     // cost function is minimal free distance function:
-    costFunction cf;
-    cf = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
-                   this, std::placeholders::_1);
+    ObjectiveFunction objFun;
+    objFun = std::bind(&InplaneOptimisedProbePathFinder::findMinimalFreeDistance, 
+                       this, std::placeholders::_1);
+
 
     // advance probe in direction of (inverse) channel direction vector:
     int numProbeSteps = 0;
@@ -224,29 +224,42 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         crntProbePos_[1] = crntProbePos_[1] + probeStepLength_*direction[1];
         crntProbePos_[2] = crntProbePos_[2] + probeStepLength_*direction[2]; 
 
-        // create new simulated annealing module:
-        SimulatedAnnealingModule sam(stateDim, saRandomSeed_, saMaxCoolingIter_,
-                                     saNumCostSamples_, saXi_, saConvRelTol_,
-                                     saInitTemp_, saCoolingFactor_,
-                                     saStepLengthFactor_, initState, cf,
-                                     saUseAdaptiveCandGen_);
+        // optimise in plane through simulated annealing:
+        SimulatedAnnealingModule sam;
+        sam.setObjFun(objFun);
+        sam.setParams(params_);
+        sam.setInitGuess(initState);
+        sam.optimise();
 
-        // optimise in plane:
-        eSimAnTerm status = sam.anneal();
-          
+        // refine with Nelder-Mead optimisation:
+        NelderMeadModule nmm;
+        nmm.setObjFun(objFun);
+        nmm.setParams(params_);
+        nmm.setInitGuess(sam.getOptimPoint().first);
+        nmm.optimise();
+ 
         // current position becomes best position in plane: 
-        crntProbePos_ = optimToConfig(sam.getBestState());
-        
+        crntProbePos_ = optimToConfig(nmm.getOptimPoint().first);
+       
         // add result to path container: 
         path_.push_back(crntProbePos_);
-        radii_.push_back(sam.getBestCost());     
-              
+        radii_.push_back(nmm.getOptimPoint().second);     
+        
+        // increment probe step counter:
+        numProbeSteps++;
+//        std::cout<<"probe step = "<<numProbeSteps<<std::endl;
+//        std::cout<<"sa best cost = "<<sam.getOptimPoint().second<<std::endl;
+//        std::cout<<"nm best cost = "<<nmm.getOptimPoint().second<<std::endl;
+//        std::cout<<"crntProbePos = "<<crntProbePos_[XX]<<"  "
+//                                    <<crntProbePos_[YY]<<"  "
+//                                    <<crntProbePos_[ZZ]<<"  "<<std::endl;
+
        
         if( numProbeSteps >= maxProbeSteps_ )
         {
             break;
         }
-        if( sam.getBestCost() > maxProbeRadius_ )
+        if( nmm.getOptimPoint().second > maxProbeRadius_ )
         {
             break;
         }
@@ -262,7 +275,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
  * to the channel direction vector.
  */
 gmx::RVec
-InplaneOptimisedProbePathFinder::optimToConfig(real *optimSpacePos)
+InplaneOptimisedProbePathFinder::optimToConfig(std::vector<real> optimSpacePos)
 {
     // get configuration space position via orthogonal vectors:
     gmx::RVec configSpacePos;
@@ -276,3 +289,4 @@ InplaneOptimisedProbePathFinder::optimToConfig(real *optimSpacePos)
     // return configuration space position:
     return(configSpacePos);
 }
+

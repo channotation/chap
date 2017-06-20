@@ -1,0 +1,4 @@
+#include "config/config.hpp"
+
+const char g_CHAP_INSTALL_BASE[] = "blah";
+

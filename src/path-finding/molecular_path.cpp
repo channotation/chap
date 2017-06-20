@@ -61,7 +61,15 @@ std::map<int, gmx::RVec>
 MolecularPath::mapSelection(gmx::Selection mapSel,
                             t_pbc *nbhSearchPbc)
 {
+    // create a set of reference positions on the pore centre line:
+    // TODO: fine grain the reference point set
+    gmx::AnalysisNeighborhoodPositions centreLinePos(pathPoints_);
+
+    // prepare neighborhood search:
+    real nbhSearchCutoff = 1.0;
     real mapTol = 1e-3;
+    gmx::AnalysisNeighborhood nbh;
+    nbh.setCutoff(nbhSearchCutoff);
 
     // create a set of reference positions on the pore centre line:
     // TODO: how to select these parameters automatically?
@@ -69,7 +77,6 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
     real extrapDist = 100.0;
     std::vector<real> arcLenSample = this -> sampleArcLength(nPathSamples, extrapDist);
     const std::vector<gmx::RVec> pathSample = this -> samplePoints(arcLenSample);
-    gmx::AnalysisNeighborhoodPositions centreLinePos(pathSample);
 
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
@@ -104,7 +111,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
         }
 
         // add to list of mapped coordinates:
-        mappedCoords[mapSel.position(i).refId()] = mappedCoord;
+        mappedCoords[mapSel.position(i).mappedId()] = mappedCoord;
     }
 
     return mappedCoords;

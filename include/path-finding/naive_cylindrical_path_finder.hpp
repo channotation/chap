@@ -15,15 +15,22 @@ class NaiveCylindricalPathFinder : public AbstractPathFinder
     public:
 
         // constructor and destructor:
-        NaiveCylindricalPathFinder(real stepLength,
-                                   int nSteps,
-                                   real cylRad,
+        NaiveCylindricalPathFinder(std::map<std::string, real> params, 
                                    gmx::RVec centrePoint,
                                    gmx::RVec dirVec);
         ~NaiveCylindricalPathFinder();
 
         // path finding interface:
         virtual void findPath();
+
+    private:
+
+        int nSteps_;
+        real cylRad_;
+        real stepLength_;
+        gmx::RVec centrePoint_;
+        gmx::RVec dirVec_;
+
 };
 
 

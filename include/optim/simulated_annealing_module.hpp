@@ -1,12 +1,16 @@
 #ifndef SIMULATED_ANNEALING_MODULE_HPP
 #define SIMULATED_ANNEALING_MODULE_HPP
 
+#include <map>
+#include <string>
+
 #include <gtest/gtest_prod.h>
 
 #include <gromacs/utility/real.h>
 #include <gromacs/random/threefry.h>
 #include <gromacs/random/uniformrealdistribution.h>
 
+#include "optim/optimisation.hpp"
 #include "statistics-utilities/calculate_covariance_matrix.hpp"
 
 
@@ -40,9 +44,16 @@ class SimulatedAnnealingModule
 								 costFunction cf,
 								 bool useAdaptiveCandidateGeneration);
 
+        SimulatedAnnealingModule();
 		~SimulatedAnnealingModule();
 
-		eSimAnTerm anneal();
+
+        // public interface:
+        void setParams(std::map<std::string, real> params);
+        void setObjFun(ObjectiveFunction objFun);
+        void setInitGuess(std::vector<real> objFun);
+        void optimise();
+        OptimSpacePoint getOptimPoint();
 
 		// getter functions (used in unit tests):
 		int getStateDim(){return stateDim_;};
@@ -68,17 +79,20 @@ class SimulatedAnnealingModule
 
 	private:
 
-		// parameters:
-		const bool useAdaptiveCandidateGeneration_;
+        // internal driver for annealing procedure:
+        eSimAnTerm anneal();
 
-		const int seed_;									// seed for random number generator
-		const int stateDim_;								// dimension of state space
-		const int maxCoolingIter_;							// maximum number of cooling steps
-		const int numCostSamples_;							// candidate states generate per check of convergence criterion
+		// parameters:
+		bool useAdaptiveCandidateGeneration_;
+
+		int seed_;									// seed for random number generator
+		int stateDim_;								// dimension of state space
+		int maxCoolingIter_;							// maximum number of cooling steps
+		int numCostSamples_;							// candidate states generate per check of convergence criterion
 	
-		const real beta_;									// free random walk parameter from Vanderbilt & Louie
-		const real xi_;										// growth factor from Vanderbilt & Louie
-		const real convRelTol_;
+		real beta_;									// free random walk parameter from Vanderbilt & Louie
+		real xi_;										// growth factor from Vanderbilt & Louie
+		real convRelTol_;
 
 		// internal state variables:
 		real temp_;											// temperature
@@ -104,6 +118,7 @@ class SimulatedAnnealingModule
 
 		// funcotrs and function type members:
 		costFunction evaluateCost;
+        ObjectiveFunction objFun_;
 		CalculateCovarianceMatrix calculateCovarianceMatrix;
 
 		// member functions

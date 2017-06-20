@@ -5,8 +5,27 @@ cmake_minimum_required(VERSION 2.8.8)
 project(CHAP)
 
 
+
+# Prepare Version Header and Config Header
+#------------------------------------------------------------------------------
+
 # set path to custom cmake modules:
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+
+# include cmake scripts for geting git revisions:
+include(GetGitRevisionDescription)
+
+# get git hash:
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+
+# configure header files:
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
+
+
+# 
+#------------------------------------------------------------------------------
+
 
 # bring header files into build environment:
 include_directories(${CHAP_SOURCE_DIR}/include)
@@ -20,7 +39,7 @@ link_directories( /usr/local/fftw/lib/ )
 #file(GLOB SOURCES "src/*.cpp")
 
 # set compiler and linker flags:
-set(CMAKE_CXX_FLAGS "-Wall -O3")
+set(CMAKE_CXX_FLAGS "-Wall -O3 -g")
 
 set(LAPACK_LINKER_FLAGS "-llapacke -llapack -lblas")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}" )
@@ -67,7 +86,12 @@ find_package(Boost REQUIRED)
 # Compile Instructions
 #------------------------------------------------------------------------------
 
-file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp) 
+# rapidjson support for std::string:
+add_definitions(-DRAPIDJSON_HAS_STDSTRING)
+
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp")
+list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 #message("CHAP_SRC = " ${SRC_FILES})
 
 # create executable chap from main.cpp:
@@ -82,6 +106,10 @@ target_link_libraries(chap ${BOOST_LIBRARIES})
 # Compile Tests
 #------------------------------------------------------------------------------
 
+# include(CTest) rather than enable_testing() to allow calls to make test:
+# (this does not work if called from CMakeLists.txt in test subdirectory)
+include(CTest)
+
 # add test subdirectory:
 add_subdirectory(test)
 
@@ -89,6 +117,12 @@ add_subdirectory(test)
 # Install Destinations
 #------------------------------------------------------------------------------
 
+# TODO: remove this for release
+set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap/bin")
+
 # where to install executable on the system:
-install(TARGETS chap DESTINATION /sansom/s117/scro2967/repos/chap/bin)
+install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+# also install data:
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_INSTALL_PREFIX})
 

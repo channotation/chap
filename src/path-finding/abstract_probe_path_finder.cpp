@@ -3,6 +3,75 @@
 
 #include "path-finding/abstract_probe_path_finder.hpp"
 
+
+/*
+ *
+ */
+AbstractProbePathFinder::AbstractProbePathFinder(std::map<std::string, real> params,
+                                                 gmx::RVec initProbePos,
+//                                                 gmx::AnalysisNeighborhoodSearch *nbSearch,
+                                                 t_pbc pbc,
+                                                 gmx::AnalysisNeighborhoodPositions porePos,
+                                                 std::vector<real> vdwRadii)
+    : AbstractPathFinder(params)
+//    , nbSearch_(nbSearch)
+    , initProbePos_(initProbePos)
+    , crntProbePos_()
+    , vdwRadii_(vdwRadii)
+    , nbh_()
+{
+    // set parameters:
+    if( params.find("pfProbeRadius") != params.end() )
+    {
+        probeRadius_ = params["pfProbeRadius"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No probe radius given!"<<std::endl;
+        std::abort();
+    }
+
+    if( params.find("pfProbeStepLength") != params.end() )
+    {
+        probeStepLength_ = params["pfProbeStepLength"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: No probe step length given!"<<std::endl;
+        std::abort();
+    }
+
+    if( params.find("pfProbeMaxRadius") != params.end() )
+    {
+        maxProbeRadius_ = params["pfProbeMaxRadius"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: Max probe radius not given!"<<std::endl;
+        std::abort();
+    }
+
+    if( params.find("pfProbeMaxSteps") != params.end() )
+    {
+        maxProbeSteps_ = params["pfProbeMaxSteps"];
+    }
+    else
+    {
+        std::cerr<<"ERROR: max probe steps not given!"<<std::endl;
+        std::abort();
+    } 
+
+    // prepare analysis neighborhood:
+    nbh_.setCutoff(0.0);
+    nbh_.setXYMode(false);
+    nbh_.setMode(gmx::AnalysisNeighborhood::eSearchMode_Automatic);
+
+    // initialise search:
+    nbSearch_ = nbh_.initSearch(&pbc, porePos);
+}
+
+
+
 /*
  * Constructor.
  *
@@ -10,6 +79,7 @@
  * but is also rather not so elegent. Might be better to use a unique_ptr or 
  * shared_ptr? Maybe ask Gromacs mailing list about this?
  */
+/*
 AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
                                                  real probeRadius,
                                                  real maxFreeDist,
@@ -47,15 +117,16 @@ AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
 {
 
 }
+*/
 
 /*
  * Finds the minimal free distance, i.e. the shortest distance between the 
  * probe and the closest van-der-Waals surface.
  */
 real
-AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
+AbstractProbePathFinder::findMinimalFreeDistance(std::vector<real> optimSpacePos)
 {
-   // internal variables:
+    // internal variables:
     real pairDist;              // distance between probe and pore atom
     real poreAtomVdwRadius;     // van-der-Waals radius of pore atom
     // TODO: using infinity here will cause a LAPACK error later in the code
@@ -70,11 +141,11 @@ AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
     // convert point in optimisation space to point in configuration space:
     gmx::AnalysisNeighborhoodPositions probePos(optimToConfig(optimSpacePos).as_vec());
 
-    // prepare neighbourhood search:
-    gmx::AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch_ -> startPairSearch(probePos);
-    gmx::AnalysisNeighborhoodPair pair;
+    // begin a pair search:
+    gmx::AnalysisNeighborhoodPairSearch nbPairSearch = nbSearch_.startPairSearch(probePos);
 
     // loop over all pairs:
+    gmx::AnalysisNeighborhoodPair pair;
     while( nbPairSearch.findNextPair(&pair) )
     {
         // get pair distance:
@@ -94,8 +165,7 @@ AbstractProbePathFinder::findMinimalFreeDistance(real *optimSpacePos)
         }
     }
 
-//    std::cout<<"minimalFreeDistance = "<<minimalFreeDistance<<std::endl;
-
     // return radius of maximal free sphere:
     return minimalFreeDistance; 
 }
+

@@ -40,6 +40,8 @@ class MolecularPath
 
         // access properties of path:
         real length();
+        real minRadius(){return -1.0;};
+        real volume(){return -1.0;};
         real radius(real param){return 1.0;};
 
         // sample points from centreline:
