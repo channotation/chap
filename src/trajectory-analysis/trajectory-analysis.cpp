@@ -296,13 +296,13 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     columnHeaders.push_back(columnHeaderPath);
 
     // prepare data container for aggregate path data:
-    data_.setColumnCount(1, 5);
-    ColumnHeader columnHeaderAggregatePath = {"t", "R.min", "L", "V", "N"};
+    data_.setColumnCount(1, 4);
+    ColumnHeader columnHeaderAggregatePath = {"R.min", "L", "V", "N"};
     columnHeaders.push_back(columnHeaderAggregatePath);
 
     //
-    data_.setColumnCount(2, 3);
-    ColumnHeader columnHeaderResMap = {"res.id", "s.mean", "s.sdev"};
+    data_.setColumnCount(2, 4);
+    ColumnHeader columnHeaderResMap = {"res.id", "s", "rho", "phi"};
     columnHeaders.push_back(columnHeaderResMap);
 
     // add json exporter to data:
@@ -696,7 +696,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
 //    std::cout<<"done in  "<<tCheckInside<<" sec"<<std::endl;
 
-/*
+    // legacy code (currently retained):
     for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
          dhResMapping.setPoint(0, it -> first);         // refId
@@ -705,8 +705,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhResMapping.setPoint(3, it -> second[3]);     // phi
          dhResMapping.finishPointSet();
     }
-*/
-    
+
+
 
     
 
@@ -723,10 +723,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-    // ADD PATH DATA TO PARALLELISABLE CONTAINER
+    // ADD DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
 
-    // select correct data set:
+    // start with path data:
     dh.selectDataSet(0);
 
     // access path finding module result:
@@ -734,10 +734,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
-
-
-    std::cout<<"nPoints = "<<radiusSample.size()<<std::endl;
-
 
     // loop over all support points of path:
     for(int i = 0; i < nOutPoints_; i++)
@@ -748,10 +744,32 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dh.setPoint(2, pointSample[i][2]);     // z
         dh.setPoint(3, arcLengthSample[i]);    // s
         dh.setPoint(4, radiusSample[i]);       // r
-
         dh.finishPointSet(); 
     }
-  
+
+    // add aggegate path data:
+    dh.selectDataSet(1);
+
+    // only one point per frame:
+    dh.setPoint(0, molPath.minRadius());
+    dh.setPoint(1, molPath.length());
+    dh.setPoint(2, molPath.volume());
+    dh.setPoint(3, 0);  // TODO: implement number of particles in channel!
+    dh.finishPointSet();
+
+    
+    // now adding mapped residue coordinates:
+    dh.selectDataSet(2);
+    
+    // add mapped residues to data container:
+    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
+    {
+         dh.setPoint(0, it -> first);         // refId
+         dh.setPoint(1, it -> second[0]);     // s
+         dh.setPoint(2, it -> second[1]);     // rho
+         dh.setPoint(3, it -> second[3]);     // phi
+         dh.finishPointSet();
+    }
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
