@@ -64,8 +64,8 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
     gmx::AnalysisNeighborhoodPositions centreLinePos(pathPoints_);
 
     // prepare neighborhood search:
-    real nbhSearchCutoff = 0.2;
-    real mapTol = 1e-1;
+    real nbhSearchCutoff = 1.0;
+    real mapTol = 1e-3;
     gmx::AnalysisNeighborhood nbh;
     nbh.setCutoff(nbhSearchCutoff);
 
@@ -93,7 +93,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
         // TODO: check if this is within the local pore radius!
 
         // add to list of mapped coordinates:
-        mappedCoords[mapSel.position(i).refId()] = mappedCoord;
+        mappedCoords[mapSel.position(i).mappedId()] = mappedCoord;
     }
 
     return mappedCoords;
