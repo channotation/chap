@@ -482,8 +482,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
     //-------------------------------------------------------------------------
 
-    std::cout<<"BEGIN INITIAL PROBE POS"<<std::endl;
-
     // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
     {  
@@ -536,17 +534,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[2] = centreOfMass[2];
     }
 
-    std::cout<<"END INITIAL PROBE POS"<<std::endl;
-
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
     // TODO: Move this to separate class and test!
     // TODO: Should then also work for coarse-grained situations!
-
-    std::cout<<"BEGIN PREPARE RADII"<<std::endl;
-
-    std::cout<<"vdwRadii_.size = "<<vdwRadii_.size()<<std::endl;
 
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
@@ -559,20 +551,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-//        std::cout<<"mappedId = "<<idx<<"  "
-//                 <<"vdwR = "<<vdwRadii_.at(idx)
-//                 <<std::endl;
-
 		// add radius to vector of radii:
 		selVdwRadii.push_back(vdwRadii_.at(idx));
 	}
 
-    std::cout<<"END PREPARE RADII"<<std::endl;
-
-
-    std::cout<<"blah test output"<<std::endl;
-    std::cout<<"selVdwRadii.size = "<<selVdwRadii.size()<<std::endl;
-    std::cout<<"refFelection.atomCount = "<<refSelection.atomCount()<<std::endl;
 
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
@@ -623,16 +605,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
              <<pfInitProbePos_[2]<<" "
              <<std::endl;
 
-//    std::cout<<"atomCount = "<<test.atomCount()<<"  "
-//             <<std::endl;
-
-
-
-
-    std::cout<<"test output"<<std::endl;
-
-
-
 
 
 
@@ -658,7 +630,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    std::cout<<std::endl;
 
 
-    std::cout<<"blub test output"<<std::endl;
 
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
@@ -668,7 +639,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
-    std::cout<<"blubblub test output"<<std::endl;
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";
@@ -685,8 +655,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
     tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
-
- //   std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
+    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
 
 
     // check if points lie inside pore:
