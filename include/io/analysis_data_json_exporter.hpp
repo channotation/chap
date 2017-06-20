@@ -51,5 +51,23 @@ class AnalysisDataJsonExporter : public gmx::AnalysisDataModuleParallel
  */
 typedef std::shared_ptr<AnalysisDataJsonExporter> AnalysisDataJsonExporterPointer;
 
+
+/*
+ *
+ */
+typedef std::vector<std::string> ColumnHeader;
+
+/*
+ *
+ */
+typedef std::vector<std::vector<std::string>> ColumnHeaderList;
+
+
+/*
+ *
+ */
+typedef std::vector<std::string> DataSetNameList;
+
+
 #endif
 

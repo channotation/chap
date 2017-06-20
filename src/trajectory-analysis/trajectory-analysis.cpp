@@ -285,10 +285,34 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     //
     //-------------------------------------------------------------------------
 
-	// prepare data container:
-	data_.setDataSetCount(1);               // one data set for water   
-    data_.setColumnCount(0, 5);             // x y z s r
+    // multiple datasets:
+    data_.setDataSetCount(3);
+    DataSetNameList dataSetNames = {"path", "path.agg", "res.map"};
+    ColumnHeaderList columnHeaders;
 
+	// prepare data container for path data:
+    data_.setColumnCount(0, 5);
+    ColumnHeader columnHeaderPath = {"x", "y", "z", "s", "r"};
+    columnHeaders.push_back(columnHeaderPath);
+
+    // prepare data container for aggregate path data:
+    data_.setColumnCount(1, 5);
+    ColumnHeader columnHeaderAggregatePath = {"t", "R.min", "L", "V", "N"};
+    columnHeaders.push_back(columnHeaderAggregatePath);
+
+    //
+    data_.setColumnCount(2, 3);
+    ColumnHeader columnHeaderResMap = {"res.id", "s.mean", "s.sdev"};
+    columnHeaders.push_back(columnHeaderResMap);
+
+    // add json exporter to data:
+    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
+    jsonExporter -> setDataSetNames(dataSetNames);
+    jsonExporter -> setColumnNames(columnHeaders);
+    data_.addModule(jsonExporter);
+
+
+/*
     // add plot module to analysis data:
     int i = 2;
     AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
@@ -303,19 +327,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
     pdbplotm -> setFileName(poreParticleFileName);
     data_.addModule(pdbplotm);
-
-    // add json exporter to data:
-    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
-    std::vector<std::string> dataSetNames = {"path"};
-    jsonExporter -> setDataSetNames(dataSetNames);
-
-    std::vector<std::string> columnNamesProfile = {"x", "y", "z", "s", "r"};
-    std::vector<std::vector<std::string>> columnNames;
-    columnNames.push_back(columnNamesProfile);
-    jsonExporter -> setColumnNames(columnNames);
-
-    data_.addModule(jsonExporter);
-
+*/
 
     // RESIDUE MAPPING DATA
     //-------------------------------------------------------------------------
@@ -713,6 +725,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // ADD PATH DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
+
+    // select correct data set:
+    dh.selectDataSet(0);
 
     // access path finding module result:
     real extrapDist = 1.0;

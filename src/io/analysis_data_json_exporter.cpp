@@ -110,11 +110,6 @@ void
 AnalysisDataJsonExporter::pointsAdded(
         const gmx::AnalysisDataPointSetRef &point)
 {
-    std::cout<<"frameIndex = "<<point.frameIndex()<<"  "
-             <<"x = "<<point.x()<<"  "
-             <<"x = "<<point.x()<<"  "
-             <<std::endl;
-
     // sanity check:
     if( point.columnCount() != columnNames_[point.dataSetIndex()].size() )
     {
