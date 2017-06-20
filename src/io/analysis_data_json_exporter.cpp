@@ -6,7 +6,7 @@
 #include <gromacs/analysisdata/dataframe.h>
 
 #include "rapidjson/filewritestream.h"
-#include "rapidjson/prettywriter.h"
+#include "rapidjson/writer.h"
 
 #include "io/analysis_data_json_exporter.hpp"
 
@@ -177,7 +177,7 @@ AnalysisDataJsonExporter::dataFinished()
     rapidjson::FileWriteStream os(file, buffer, sizeof(buffer));
 
     // write prettyfied JSON to file:
-    rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+    rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
     json_.Accept(writer);
 
     // close output file:
