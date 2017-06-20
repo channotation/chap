@@ -24,6 +24,7 @@
 
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/json_doc_importer.hpp"
+#include "io/analysis_data_json_exporter.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -284,10 +285,34 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     //
     //-------------------------------------------------------------------------
 
-	// prepare data container:
-	data_.setDataSetCount(1);               // one data set for water   
-    data_.setColumnCount(0, 5);             // x y z s r
+    // multiple datasets:
+    data_.setDataSetCount(3);
+    DataSetNameList dataSetNames = {"path", "path.agg", "res.map"};
+    ColumnHeaderList columnHeaders;
 
+	// prepare data container for path data:
+    data_.setColumnCount(0, 5);
+    ColumnHeader columnHeaderPath = {"x", "y", "z", "s", "r"};
+    columnHeaders.push_back(columnHeaderPath);
+
+    // prepare data container for aggregate path data:
+    data_.setColumnCount(1, 4);
+    ColumnHeader columnHeaderAggregatePath = {"R.min", "L", "V", "N"};
+    columnHeaders.push_back(columnHeaderAggregatePath);
+
+    //
+    data_.setColumnCount(2, 4);
+    ColumnHeader columnHeaderResMap = {"res.id", "s", "rho", "phi"};
+    columnHeaders.push_back(columnHeaderResMap);
+
+    // add json exporter to data:
+    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
+    jsonExporter -> setDataSetNames(dataSetNames);
+    jsonExporter -> setColumnNames(columnHeaders);
+    data_.addModule(jsonExporter);
+
+
+/*
     // add plot module to analysis data:
     int i = 2;
     AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
@@ -302,7 +327,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
     pdbplotm -> setFileName(poreParticleFileName);
     data_.addModule(pdbplotm);
-
+*/
 
     // RESIDUE MAPPING DATA
     //-------------------------------------------------------------------------
@@ -457,8 +482,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
     //-------------------------------------------------------------------------
 
-    std::cout<<"BEGIN INITIAL PROBE POS"<<std::endl;
-
     // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
     {  
@@ -511,17 +534,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfInitProbePos_[2] = centreOfMass[2];
     }
 
-    std::cout<<"END INITIAL PROBE POS"<<std::endl;
-
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
     // TODO: Move this to separate class and test!
     // TODO: Should then also work for coarse-grained situations!
-
-    std::cout<<"BEGIN PREPARE RADII"<<std::endl;
-
-    std::cout<<"vdwRadii_.size = "<<vdwRadii_.size()<<std::endl;
 
 	// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
@@ -534,20 +551,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-//        std::cout<<"mappedId = "<<idx<<"  "
-//                 <<"vdwR = "<<vdwRadii_.at(idx)
-//                 <<std::endl;
-
 		// add radius to vector of radii:
 		selVdwRadii.push_back(vdwRadii_.at(idx));
 	}
 
-    std::cout<<"END PREPARE RADII"<<std::endl;
-
-
-    std::cout<<"blah test output"<<std::endl;
-    std::cout<<"selVdwRadii.size = "<<selVdwRadii.size()<<std::endl;
-    std::cout<<"refFelection.atomCount = "<<refSelection.atomCount()<<std::endl;
 
 	// PORE FINDING AND RADIUS CALCULATION
 	// ------------------------------------------------------------------------
@@ -598,16 +605,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
              <<pfInitProbePos_[2]<<" "
              <<std::endl;
 
-//    std::cout<<"atomCount = "<<test.atomCount()<<"  "
-//             <<std::endl;
-
-
-
-
-    std::cout<<"test output"<<std::endl;
-
-
-
 
 
 
@@ -633,7 +630,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    std::cout<<std::endl;
 
 
-    std::cout<<"blub test output"<<std::endl;
 
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
@@ -643,7 +639,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
-    std::cout<<"blubblub test output"<<std::endl;
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";
@@ -660,8 +655,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
     tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
-
- //   std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
+    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
 
 
     // check if points lie inside pore:
@@ -671,7 +665,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 //    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
 //    std::cout<<"done in  "<<tCheckInside<<" sec"<<std::endl;
 
-/*
+    // legacy code (currently retained):
     for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
          dhResMapping.setPoint(0, it -> first);         // refId
@@ -680,8 +674,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhResMapping.setPoint(3, it -> second[3]);     // phi
          dhResMapping.finishPointSet();
     }
-*/
-    
+
+
 
     
 
@@ -698,18 +692,17 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-    // ADD PATH DATA TO PARALLELISABLE CONTAINER
+    // ADD DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------
+
+    // start with path data:
+    dh.selectDataSet(0);
 
     // access path finding module result:
     real extrapDist = 1.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
-
-
-    std::cout<<"nPoints = "<<radiusSample.size()<<std::endl;
-
 
     // loop over all support points of path:
     for(int i = 0; i < nOutPoints_; i++)
@@ -720,10 +713,32 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dh.setPoint(2, pointSample[i][2]);     // z
         dh.setPoint(3, arcLengthSample[i]);    // s
         dh.setPoint(4, radiusSample[i]);       // r
-
         dh.finishPointSet(); 
     }
-  
+
+    // add aggegate path data:
+    dh.selectDataSet(1);
+
+    // only one point per frame:
+    dh.setPoint(0, molPath.minRadius());
+    dh.setPoint(1, molPath.length());
+    dh.setPoint(2, molPath.volume());
+    dh.setPoint(3, 0);  // TODO: implement number of particles in channel!
+    dh.finishPointSet();
+
+    
+    // now adding mapped residue coordinates:
+    dh.selectDataSet(2);
+    
+    // add mapped residues to data container:
+    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
+    {
+         dh.setPoint(0, it -> first);         // refId
+         dh.setPoint(1, it -> second[0]);     // s
+         dh.setPoint(2, it -> second[1]);     // rho
+         dh.setPoint(3, it -> second[3]);     // phi
+         dh.finishPointSet();
+    }
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------

@@ -86,6 +86,9 @@ find_package(Boost REQUIRED)
 # Compile Instructions
 #------------------------------------------------------------------------------
 
+# rapidjson support for std::string:
+add_definitions(-DRAPIDJSON_HAS_STDSTRING)
+
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
