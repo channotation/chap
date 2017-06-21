@@ -874,7 +874,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhResMapping.setPoint(2, it -> second[1]); // rho
         dhResMapping.setPoint(3, it -> second[2]);// phi
         dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
-        dhResMapping.setPoint(5, false);             // poreFacing TODO
+        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing TODO
         dhResMapping.finishPointSet();
     }
     
