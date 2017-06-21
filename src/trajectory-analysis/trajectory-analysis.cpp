@@ -837,7 +837,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         // is residue pore lining and has COG closer to centreline than CA?
-        if( it -> second[1] < poreCalMappedCoords[it->first][1] &&
+        if( it -> second[1] > poreCalMappedCoords[it->first][1] &&
             poreLining[it -> first] == true )
         {
             poreFacing[it->first] = true;
