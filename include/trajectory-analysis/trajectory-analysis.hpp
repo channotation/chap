@@ -51,6 +51,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     std::string poreParticleFileName_;  // positions of probe particles
     std::string smallParticleFileName_; // positions of small particles (e.g. water)
     std::string poreProfileFileName_;       // time averaged radius, energy etc.
+    std::string jsonOutputFileName_;
     bool poreFile_;
 
 	class ModuleData;

@@ -141,7 +141,13 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 	                     .store(&poreMappingMargin_)
                          .defaultValue(1.5)
                          .description("Margin for residue mapping."));
- 
+
+    // file name for output json:
+    options -> addOption(StringOption("json")
+	                     .store(&jsonOutputFileName_)
+                         .defaultValue("output.json")
+                         .description("File name for JSON output."));
+
 
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
@@ -344,6 +350,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     jsonExporter -> setDataSetNames(dataSetNames);
     jsonExporter -> setColumnNames(columnHeaders);
     jsonExporter -> setResidueNames(residueNames);
+    jsonExporter -> setFileName(jsonOutputFileName_);
     data_.addModule(jsonExporter);
 
 

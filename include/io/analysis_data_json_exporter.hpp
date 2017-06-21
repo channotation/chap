@@ -35,6 +35,7 @@ class AnalysisDataJsonExporter : public gmx::AnalysisDataModuleParallel
         void setDataSetNames(std::vector<std::string> dataSetNames);
         void setColumnNames(std::vector<std::vector<std::string>> columnNames);
         void setResidueNames(std::unordered_map<int, std::string> resNames);
+        void setFileName(std::string fileName);
 
     private:
 
@@ -45,6 +46,7 @@ class AnalysisDataJsonExporter : public gmx::AnalysisDataModuleParallel
         std::vector<std::string> dataSetNames_;
         std::vector<std::vector<std::string>> columnNames_;
         std::unordered_map<int, std::string> residueNames_;
+        std::string fileName_;
 };
 
 

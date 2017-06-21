@@ -105,7 +105,6 @@ AnalysisDataJsonExporter::parallelDataStarted(
         rapidjson::Value array(rapidjson::kArrayType);
     }
 
-
     // indicate that parallel support is enabled:
     return true;
 }
@@ -185,8 +184,15 @@ AnalysisDataJsonExporter::frameFinishedSerial(int index)
 void
 AnalysisDataJsonExporter::dataFinished()
 {
+    // sanity check:
+    if( fileName_.empty() )
+    {
+        std::cerr<<"ERROR: Output file name not given."<<std::endl;
+        std::abort();
+    }
+
     // open output file:
-    FILE* file = std::fopen("output.json", "w");
+    FILE* file = std::fopen(fileName_.c_str(), "w");
 
     // prepare buffer for JSOn output:
     char buffer[65536];
@@ -228,5 +234,15 @@ void
 AnalysisDataJsonExporter::setResidueNames(std::unordered_map<int, std::string> resNames)
 {
     residueNames_ = resNames;
+}
+
+
+/*
+ * Setting function for output file name.
+ */
+void
+AnalysisDataJsonExporter::setFileName(std::string fileName)
+{
+    fileName_ = fileName;
 }
 
