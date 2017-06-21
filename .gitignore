@@ -2,7 +2,7 @@
 build/*
 bin/*
 doc/*
-scripts/*
+scripts/misc/*
 
 # temporary files:
 *.swp
