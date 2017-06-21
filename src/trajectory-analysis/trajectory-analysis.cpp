@@ -293,8 +293,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // Path Mapping Parameters
     //-------------------------------------------------------------------------
     
-    mappingParams_.nbhSearchCutoff_ = cutoff_;
-    mappingParams_.mapTol_ = 1e-3;
+    mappingParams_.nbhSearchCutoff_ = cutoff_ + poreMappingMargin_;
+    mappingParams_.mapTol_ = 1e-7;
     mappingParams_.numPathSamples_ = 1000;
     mappingParams_.extrapDist_ = 100;
 
@@ -385,39 +385,23 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // prepare a centre of geometry selection collection:
     poreMappingSelCol_.setReferencePosType("res_cog");
     poreMappingSelCol_.setOutputPosType("res_cog");
-
-    // selection strings:
-    // TODO: move this to a config file!
-    std::string poreMappingSelCalString = "name CA";
-    std::string poreMappingSelCogString = "resname ALA or" 
-                                          "resname ARG or"
-                                          "resname ASN or"
-                                          "resname ASP or"
-                                          "resname ASX or"
-                                          "resname CYS or"
-                                          "resname GLU or"
-                                          "resname GLN or"
-                                          "resname GLX or"
-                                          "resname GLY or"
-                                          "resname HIS or"
-                                          "resname ILE or"
-                                          "resname LEU or"
-                                          "resname LYS or"
-                                          "resname MET or"
-                                          "resname PHE or"
-                                          "resname PRO or"
-                                          "resname SER or"
-                                          "resname THR or"
-                                          "resname TRP or"
-                                          "resname TYR or"
-                                          "resname VAL";
-    
+   
+    // create index groups from topology:
+    // TODO: this will probably not work for custom index groups:
+    gmx_ana_indexgrps_t *poreIdxGroups;
+    gmx_ana_indexgrps_init(&poreIdxGroups, 
+                           top.topology(), 
+                           NULL); 
 
     // create selections as defined above:
     poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
     poreMappingSelCog_ = poreMappingSelCol_.parseFromString(poreMappingSelCogString)[0];
     poreMappingSelCol_.setTopology(top.topology(), 0);
+    poreMappingSelCol_.setIndexGroups(poreIdxGroups);
     poreMappingSelCol_.compile();
+
+    // free memory:
+    gmx_ana_indexgrps_free(poreIdxGroups);
 
     // validate that there is a c-alpha for each residue:
     if( poreMappingSelCal_.posCount() != poreMappingSelCog_.posCount() )
