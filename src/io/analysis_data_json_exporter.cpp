@@ -54,6 +54,25 @@ AnalysisDataJsonExporter::parallelDataStarted(
     json_.AddMember("reproducibility information", reproInfo, allocator);
 
 
+    // residue information:
+    //-------------------------------------------------------------------------
+
+
+    // add all residue ID/name pairs to array:
+    rapidjson::Value resNames(rapidjson::kArrayType);
+    for(auto it = residueNames_.begin(); it != residueNames_.end(); it++)
+    {
+        rapidjson::Value res;
+        res.SetObject();
+        res.AddMember("res.id", it -> first, allocator);
+        res.AddMember("res.name", it -> second, allocator);
+        resNames.PushBack(res, allocator);
+    }
+    
+    // add array to JSON document:
+    json_.AddMember("residue.names", resNames, allocator);
+
+
     // build object for each data set:
     //-------------------------------------------------------------------------
 
@@ -199,5 +218,15 @@ void
 AnalysisDataJsonExporter::setColumnNames(std::vector<std::vector<std::string>> columnNames)
 {
     columnNames_ = columnNames;
+}
+
+
+/*
+ *
+ */
+void
+AnalysisDataJsonExporter::setResidueNames(std::unordered_map<int, std::string> resNames)
+{
+    residueNames_ = resNames;
 }
 

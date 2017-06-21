@@ -330,29 +330,23 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                        "z"};
     columnHeaders.push_back(columnHeaderResMap);
 
+    // prepare residue names:
+    t_atoms allAtoms = top.topology() -> atoms;
+    std::unordered_map<int, std::string> residueNames;
+    std::cout<<"resinfo.nr = "<<allAtoms.nres<<std::endl;
+    for(size_t i = 0; i < allAtoms.nres; i++)
+    {
+        residueNames[allAtoms.resinfo[i].nr] = std::string(*allAtoms.resinfo[i].name);        
+    } 
+
     // add json exporter to data:
     AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
     jsonExporter -> setDataSetNames(dataSetNames);
     jsonExporter -> setColumnNames(columnHeaders);
+    jsonExporter -> setResidueNames(residueNames);
     data_.addModule(jsonExporter);
 
 
-/*
-    // add plot module to analysis data:
-    int i = 2;
-    AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
-    const char *poreParticleFileName = poreParticleFileName_.c_str();
-    lfplotm -> setFileName(poreParticleFileName);
-    lfplotm -> setPrecision(3);
-    std::vector<char*> header = {"t", "x", "y", "z", "s", "r"};
-    lfplotm -> setHeader(header);
-    data_.addModule(lfplotm);  
-
-    // add pdb plot module to analysis data:
-    AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
-    pdbplotm -> setFileName(poreParticleFileName);
-    data_.addModule(pdbplotm);
-*/
 
     // RESIDUE MAPPING DATA
     //-------------------------------------------------------------------------
@@ -512,7 +506,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 //	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
 
 
-    // TRACK C-ALPHAS and RESIDUE INDECES
+    // TRACK C-ALPHAS and RESIDUE INDICES
     //-------------------------------------------------------------------------
    
     // loop through all atoms, get index lists for c-alphas and residues:
@@ -802,6 +796,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     const gmx::Selection poreMappingSelCal = pdata -> parallelSelection(poreMappingSelCal_);    
     const gmx::Selection poreMappingSelCog = pdata -> parallelSelection(poreMappingSelCog_);    
 
+
     // map pore residue COG onto pathway:
     std::cout<<"mapping pore residue COG onto pathway ... ";
     clock_t tMapResCog = std::clock();
@@ -918,7 +913,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dh.setPoint(2, molPath.volume());
     dh.setPoint(3, 0);  // TODO: implement number of particles in channel!
     dh.finishPointSet();
-
     
     // now adding mapped residue coordinates:
     dh.selectDataSet(2);
@@ -926,15 +920,15 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // add mapped residues to data container:
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
-         dh.setPoint(0, it -> first);         // res.id
+         dh.setPoint(0, poreMappingSelCog.position(it -> first).mappedId()); // res.id
          dh.setPoint(1, it -> second[0]);     // s
          dh.setPoint(2, it -> second[1]);     // rho
          dh.setPoint(3, it -> second[3]);     // phi
          dh.setPoint(4, poreLining[it -> first]);     // pore lining?
          dh.setPoint(5, poreFacing[it -> first]);     // pore facing?
-         dh.setPoint(6, it -> second[3]);     // x
-         dh.setPoint(7, it -> second[3]);     // y
-         dh.setPoint(8, it -> second[3]);     // z
+         dh.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
+         dh.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
+         dh.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
          dh.finishPointSet();
     }
 

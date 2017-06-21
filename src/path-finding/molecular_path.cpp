@@ -112,7 +112,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
         }
 
         // add to list of mapped coordinates:
-        mappedCoords[mapSel.position(i).mappedId()] = mappedCoord;
+        mappedCoords[mapSel.position(i).refId()] = mappedCoord;
     }
 
     return mappedCoords;
