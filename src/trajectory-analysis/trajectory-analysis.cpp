@@ -385,9 +385,16 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // prepare a centre of geometry selection collection:
     poreMappingSelCol_.setReferencePosType("res_cog");
     poreMappingSelCol_.setOutputPosType("res_cog");
-   
+  
+    // selection of C-alpha atoms:
+    // TODO: this will not work if only part of protein is specified as pore
+    std::string refselSelText = refsel_.selectionText();
+    std::string poreMappingSelCalString = "name CA";
+    std::string poreMappingSelCogString = refselSelText;
+
+
     // create index groups from topology:
-    // TODO: this will probably not work for custom index groups:
+    // TODO: this will probably not work for custom index groups
     gmx_ana_indexgrps_t *poreIdxGroups;
     gmx_ana_indexgrps_init(&poreIdxGroups, 
                            top.topology(), 
