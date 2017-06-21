@@ -17,6 +17,21 @@
 /*
  *
  */
+class PathMappingParameters
+{
+    public:
+
+        // parameters values:
+        real nbhSearchCutoff_;
+        real mapTol_;
+        real extrapDist_;
+        int numPathSamples_;
+};
+
+
+/*
+ *
+ */
 class MolecularPath
 {
     public:
@@ -28,6 +43,7 @@ class MolecularPath
 
         // interface for mapping particles onto pathway:
         std::map<int, gmx::RVec> mapSelection(gmx::Selection mapSel,
+                                              PathMappingParameters params,
                                               t_pbc *nbhSearchPbc);
         
         // check if points lie inside pore:

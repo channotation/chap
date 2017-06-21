@@ -9,6 +9,7 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
+#include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
 
 using namespace gmx;
@@ -124,6 +125,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     // Nelder-Mead parameters:
     int nmMaxIter_;
 
+    // path mapping parameters:
+    PathMappingParameters mappingParams_;
 
 
 

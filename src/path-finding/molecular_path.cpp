@@ -59,6 +59,7 @@ MolecularPath::~MolecularPath()
  */
 std::map<int, gmx::RVec>
 MolecularPath::mapSelection(gmx::Selection mapSel,
+                            PathMappingParameters params,
                             t_pbc *nbhSearchPbc)
 {
     // create a set of reference positions on the pore centre line:
@@ -66,8 +67,8 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
     gmx::AnalysisNeighborhoodPositions centreLinePos(pathPoints_);
 
     // prepare neighborhood search:
-    real nbhSearchCutoff = 1.0;
-    real mapTol = 1e-3;
+    real nbhSearchCutoff = params.nbhSearchCutoff_;
+    real mapTol = params.mapTol_;
     gmx::AnalysisNeighborhood nbh;
     nbh.setCutoff(nbhSearchCutoff);
 
@@ -80,7 +81,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
 
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
-    for(int i = 0; i < mapSel.posCount(); i++)
+    for(size_t i = 0; i < mapSel.posCount(); i++)
     {
         // cartesian coordinates of test position:
         gmx::RVec cartCoord = mapSel.position(i).x();
@@ -88,7 +89,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
         // find closest sample point:
         std::vector<real> distances;
         distances.reserve(pathSample.size());
-        for(unsigned int j = 0; j < pathSample.size(); j++)
+        for(size_t j = 0; j < pathSample.size(); j++)
         {
             distances.push_back( distance2(cartCoord, pathSample[j]) );
         }
