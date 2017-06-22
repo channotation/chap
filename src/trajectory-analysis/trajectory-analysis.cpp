@@ -906,7 +906,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dh.selectDataSet(1);
 
     // only one point per frame:
-    dh.setPoint(0, molPath.minRadius());
+    dh.setPoint(0, molPath.minRadius().second);
     dh.setPoint(1, molPath.length());
     dh.setPoint(2, molPath.volume());
     dh.setPoint(3, 0);  // TODO: implement number of particles in channel!

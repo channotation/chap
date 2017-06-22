@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <functional>
+#include <limits>
 #include <ctime>
 
 #include <boost/math/tools/minima.hpp>
@@ -187,8 +188,22 @@ MolecularPath::radius(real s)
 }
 
 
-/*
+/*!
+ * Finds the minimum radius of the path and the location along the centre line
+ * (in the current parameterisation) of this minimum. 
  *
+ * This is achieved by first sampling a set of trial points no more than 0.1
+ * nm apart along the centreline and evaluating the path radius at all of these
+ * points. The position of the minimum radius sample point is then used to 
+ * create input to Brent's minimisation algorithm. The initial bracketing 
+ * interval for Brent's algorithm is taken as one sampling point above and 
+ * below the minimum radius sampling point, if this point lies somewhere in 
+ * between the the centre line's endpoints. If the minimum radius sampling
+ * point falls on either endpoint of the centeline, this point itself is taken
+ * as one of the bracketing interval's limits.
+ *
+ * Note that Brent's algorithm is currently limited to a hardcoded limit of
+ * 100 iterations.
  */
 std::pair<real, real>
 MolecularPath::minRadius()
@@ -241,7 +256,130 @@ MolecularPath::minRadius()
 real
 MolecularPath::volume()
 {
-    return -1.0;
+    // control parameters:
+    real tol = 0.1*std::sqrt(std::numeric_limits<real>::epsilon());
+    int maxIter = 25;
+    int maxPoints = 1e7;
+
+    // initialise number of intervals larger than number of spline intervals:
+    // (this ensures that function is polynomial on each interval)
+    int numIntervalsCoarse = 5*(poreRadius_.nCtrlPoints() - 1);
+
+    // integration interval:
+    int numIntervalsFine = 2*numIntervalsCoarse;
+    real hCoarse = length_/numIntervalsCoarse;
+    real hFine = length_/numIntervalsFine;
+
+    std::cout<<"hFine = "<<hFine<<std::endl;
+    std::cout<<"hCoarse = "<<hCoarse<<std::endl;
+    
+
+    // sample path radii:
+    int numPoints = 2*numIntervalsFine;
+    std::vector<real> radii = sampleRadii(numPoints, 0.0);
+    
+    // calculate squared radii:
+    std::vector<real> sqRadii;
+    sqRadii.reserve(radii.size());
+    for(size_t i = 0; i < radii.size(); i++)
+    {
+        sqRadii.push_back(radii[i]*radii[i]);
+    }
+
+    // evaluate integral using coarse grained support points:
+    real integralCoarse = 0.0;
+    for(size_t i = 0; i < sqRadii.size(); i += 4)
+    {
+        integralCoarse += sqRadii[i] + 4.0*sqRadii[i+2] + sqRadii[i+4];
+    }
+    integralCoarse *= hCoarse/6.0;
+
+    // evaluate integral using fine grained support points:
+    real integralFine = 0.0;
+    for(size_t i = 0; i < sqRadii.size(); i += 2)
+    {
+        integralFine += sqRadii[i] + 4.0*sqRadii[i+1] + sqRadii[i+2];
+    }
+    integralFine *= hFine/6.0;
+
+    // calculate difference between integral values:
+    real err = std::abs(integralCoarse - integralFine);
+
+    // refine estimated integral until error vanishes:
+    int iter = 0;
+    while( true )
+    {
+        // integration interval:
+        numIntervalsFine = 2*numIntervalsCoarse;
+        real hCoarse = length_/numIntervalsCoarse;
+        real hFine = length_/numIntervalsFine;
+
+        std::cout<<"hFine = "<<hFine<<std::endl;
+        std::cout<<"hCoarse = "<<hCoarse<<std::endl;
+        
+        // sample path radii:
+        // TODO: would be better to avoid resampling
+        numPoints = 2*numIntervalsFine;
+        radii = sampleRadii(numPoints, 0.0);
+
+        // calculate squared radii:
+        sqRadii.clear();
+        sqRadii.reserve(radii.size());
+        for(size_t i = 0; i < radii.size(); i++)
+        {
+            sqRadii.push_back(radii[i]*radii[i]);
+        }
+
+        // evaluate refined integral:
+        integralFine = 0.0;
+        for(size_t i = 0; i < sqRadii.size(); i += 2)
+        {
+            integralFine += sqRadii[i] + 4.0*sqRadii[i+1] + sqRadii[i+2];
+        }
+        integralFine *= hFine/6.0;
+
+        // calculate difference between integral values:
+        real err = std::abs(integralCoarse - integralFine);
+
+        std::cout<<"coarse = "<<integralCoarse<<std::endl;
+        std::cout<<"fine = "<<integralFine<<std::endl;
+        std::cout<<"err = "<<err<<std::endl;
+        std::cout<<"iter = "<<iter<<std::endl;
+        std::cout<<"numSamples = "<<numPoints<<std::endl;
+
+        // check termination conditions:
+        if( err < tol )
+        {
+            break;
+        }
+        if( iter >= maxIter )
+        {
+            // throw exception and break out of loop:
+//            throw std::runtime_error("ERROR: Could not converge path volume.");
+            break;
+        }
+        if( numPoints >= maxPoints )
+        {
+            // throw exception and break out of loop:
+//            throw std::runtime_error("ERROR: Could not converge path volume.");
+            break;
+        }
+
+        // current refined becomes future coarse:
+        integralCoarse = integralFine;
+
+        // double number of intervals:
+        numIntervalsCoarse *= 2;
+
+        // increment iteration counter:
+        iter++;
+    }
+
+    // multiply in constant factor:
+    integralFine *= PI_;
+
+    // return value of integral:
+    return integralFine;
 }
 
 

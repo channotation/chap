@@ -5,6 +5,15 @@
 #include "geometry/abstract_spline_curve.hpp"
 
 
+/*!
+ * Getter method for the number of control points in this spline curve.
+ */
+int AbstractSplineCurve::nCtrlPoints() const
+{
+    return nCtrlPoints_;
+}
+
+
 /*
  *  Given an evaluation point t, this functions finds the interval index idx 
  *  such that knot[idx] <= t < knot[idx + 1], i.e. the interval index required

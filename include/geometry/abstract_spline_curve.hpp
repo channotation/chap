@@ -18,7 +18,12 @@ enum eSplineEvalMethod {eSplineEvalNaive = 901, eSplineEvalDeBoor = 902};
  *
  */
 class AbstractSplineCurve
-{ 
+{
+    public:
+
+        // getter methods:
+        int nCtrlPoints() const;
+
     protected:
         
         // internal variables:

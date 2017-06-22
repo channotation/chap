@@ -77,6 +77,9 @@ class MolecularPath
 
     private:
 
+        // mathematical constants:
+        const real PI_ = std::acos(-1.0);
+
         // utilities for sampling functions:
         inline real sampleArcLenStep(int nPoints, real extrapDist); 
 
