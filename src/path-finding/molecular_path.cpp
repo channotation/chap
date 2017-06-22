@@ -1,6 +1,9 @@
 #include <algorithm>
 #include <iostream>
+#include <functional>
 #include <ctime>
+
+#include <boost/math/tools/minima.hpp>
 
 #include <gromacs/pbcutil/pbc.h>
 #include <gromacs/selection/nbsearch.h>
@@ -172,6 +175,74 @@ MolecularPath::length()
     return length_;
 }
 
+
+/*!
+ * Returns the pore radius \f$ R(s) \f$ at a given value of the centre line's
+ * spline parameter \f$ s \f$.
+ */
+real
+MolecularPath::radius(real s)
+{
+    return poreRadius_(s, 0, eSplineEvalDeBoor);
+}
+
+
+/*
+ *
+ */
+std::pair<real, real>
+MolecularPath::minRadius()
+{
+    // internal parameters:
+    real maxSampleDist = 0.1;
+    boost::uintmax_t maxIter = 100;
+
+    // draw radius samples along path:
+    int nSamples = std::ceil(length_/maxSampleDist);
+    std::vector<real> s = sampleArcLength(nSamples, 0.0);
+    std::vector<real> r = sampleRadii(s);
+    
+    // find smallest sample radius:
+    auto itMin = std::min_element(r.begin(), r.end());
+    int idxMin = std::distance(r.begin(), itMin);
+
+    // determine bracketing interval:
+    real sMin;
+    real sMax;
+    if( itMin > r.begin() && itMin < r.end() )
+    {
+        sMin = s[idxMin - 1];
+        sMax = s[idxMin + 1];
+    }
+    else if( itMin == r.begin() )
+    {
+        sMin = s[idxMin];
+        sMax = s[idxMin + 1];
+    }
+    else if( itMin == r.end() )
+    {
+        sMin = s[idxMin - 1];
+        sMax = s[idxMin];
+    }
+
+    // return minimum and arg min:    
+    return boost::math::tools::brent_find_minima(
+            std::bind(&MolecularPath::radius, this, std::placeholders::_1), 
+            sMin, 
+            sMax, 
+            std::numeric_limits<real>::digits,
+            maxIter);
+}
+
+
+/*
+ *
+ */
+real
+MolecularPath::volume()
+{
+    return -1.0;
+}
 
 
 /*

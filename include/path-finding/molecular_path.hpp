@@ -56,9 +56,9 @@ class MolecularPath
 
         // access properties of path:
         real length();
-        real minRadius(){return -1.0;};
-        real volume(){return -1.0;};
-        real radius(real param){return 1.0;};
+        std::pair<real, real> minRadius();
+        real volume();
+        real radius(real);
 
         // sample points from centreline:
         std::vector<real> sampleArcLength(int nPoints, real extrapDist);
