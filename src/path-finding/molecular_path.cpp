@@ -423,7 +423,7 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
     // evaluate spline to obtain sample points:
     std::vector<gmx::RVec> points;
     points.reserve(arcLengthSample.size());
-    for(int i = 0; i < arcLengthSample.size(); i++)
+    for(size_t i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
         points.push_back( centreLine_(arcLengthSample[i], 0, eSplineEvalDeBoor) );
@@ -460,7 +460,7 @@ MolecularPath::sampleTangents(std::vector<real> arcLengthSample)
     // evaluate spline to obtain sample points:
     std::vector<gmx::RVec> tangents;
     tangents.reserve(arcLengthSample.size());
-    for(int i = 0; i < arcLengthSample.size(); i++)
+    for(size_t i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
         tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
@@ -508,7 +508,7 @@ MolecularPath::sampleNormTangents(std::vector<real> arcLengthSample)
     // evaluate spline to obtain sample points:
     std::vector<gmx::RVec> tangents;
     tangents.reserve(arcLengthSample.size());
-    for(int i = 0; i < arcLengthSample.size(); i++)
+    for(size_t i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
         tangents.push_back( centreLine_.tangentVec(arcLengthSample[i]) );
@@ -563,7 +563,7 @@ MolecularPath::sampleRadii(int nPoints,
 
     // evaluate spline to obtain sample points:
     std::vector<real> radii;
-    for(int i = 0; i < nPoints; i++)
+    for(size_t i = 0; i < nPoints; i++)
     {
         // calculate evaluation point:
         real evalPoint = openingLo_ - extrapDist + i*arcLenStep;  
@@ -585,7 +585,7 @@ MolecularPath::sampleRadii(std::vector<real> arcLengthSample)
 {
     // evaluate spline to obtain sample points:
     std::vector<real> radii;
-    for(int i = 0; i < arcLengthSample.size(); i++)
+    for(size_t i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
         radii.push_back( poreRadius_(arcLengthSample[i], 0, eSplineEvalDeBoor) );
