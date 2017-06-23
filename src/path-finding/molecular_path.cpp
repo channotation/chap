@@ -451,7 +451,7 @@ MolecularPath::sampleTangents(int nPoints, real extrapDist)
 
 
 /*!
- * Returns vector of tangents to the centre line. These are calculate at the 
+ * Returns vector of tangents to the centre line. These are calculated at the 
  * evaluation points given on \p arcLengthSample.
  */
 std::vector<gmx::RVec>

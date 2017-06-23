@@ -29,8 +29,26 @@ class PathMappingParameters
 };
 
 
-/*
+/*!
+ * \brief Representation of a molecular pathway.
  *
+ * This class is used to describe a molecular pathway (e.g. an ion channel 
+ * pore). It is typically created by a class derived from AbstractPathFinder
+ * and permits access the pathways properties, such as its length(), volume(),
+ * or minRadius(). A MolecularPathObjExporter can be used to generate a
+ * mesh representing the pathways surface in the Wavefront Object format.
+ *
+ * Internally, the pathway is represented by a SplineCurve3D object, which 
+ * describes a \f$ C^2 \f$ -continuous curve corresponding to the centre line
+ * of the pathway. A further SplineCurve1D object is used to describe the 
+ * pathway's radius along the centre line. Together, these splines provide a 
+ * means of determining where in the pathway a particle is located using
+ * mapSelection() and to decide whether a given particle lies inside the 
+ * pathway or not using checkIfInside().
+ *
+ * The class also exposes several auxiliary functions such as samplePoints() or
+ * sampleRadii() to provide access to the properties of the centre line curve
+ * and radius spline directly.
  */
 class MolecularPath
 {
