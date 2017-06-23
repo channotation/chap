@@ -5,8 +5,11 @@
 #include "path-finding/molecular_path.hpp"
 
 
-/*
+/*!
+ * \brief Test fixture for MolecularPath objects.
  *
+ * Provides some functions to set up simple mathematical shapes as paths,
+ * including cylinder, hourglass, torus, and spring.
  */
 class MolecularPathTest : public ::testing::Test
 {
@@ -67,6 +70,11 @@ class MolecularPathTest : public ::testing::Test
          * line of this path is straight (i.e. zero curvature) and the radius
          * becomes minimal at \f$ s = L/2 \f$. This minimum is only unique if
          * the path is created from an odd number of points.
+         *
+         * Note that the radius of this pore will be proportional to the third
+         * power of the pore length. Such a steep increase is unlikely to 
+         * happen in ion channel pores, where the radius will be roughly on the
+         * same order of magnitude.
          */
         MolecularPath makeHourglassPath(gmx::RVec dir,
                                         gmx::RVec centre,
@@ -74,6 +82,14 @@ class MolecularPathTest : public ::testing::Test
                                         real minRadius,
                                         int numPoints)
         {
+            // sanity check:
+            if( numPoints % 2 == 0 )
+            {
+                throw std::runtime_error("ERROR: This function only works for odd number of points!");
+                std::abort();
+            }
+    
+
             // ensure direction is normalised:
             unitv(dir, dir);
 
@@ -99,11 +115,13 @@ class MolecularPathTest : public ::testing::Test
                 pathPoints.push_back(point);
             }
 
+
             // build up radii:
             for(int i = 0; i < numPoints; i++)
             {
+                real s = stepLength*i - length/2.0;
                 real radius = minRadius + 
-                    stepLength*stepLength*(numPoints/2 - i)*(numPoints/2 - i);
+                    std::abs(std::pow(s, 3));
                 pathRadii.push_back(radius);
             }
 
@@ -184,8 +202,11 @@ class MolecularPathTest : public ::testing::Test
 };
 
 
-/*
- *
+/*!
+ * Test that MolecularPath objects return the correct (arc) length. This is 
+ * tested on a cylinder, an hourglass, a half-torus, and a spring and the 
+ * tolarance threshold for floating point comparison is taken to be
+ * \f$ \sqrt{\epsilon} \f$.
  */
 TEST_F(MolecularPathTest, MolecularPathLengthTest)
 {
@@ -206,7 +227,7 @@ TEST_F(MolecularPathTest, MolecularPathLengthTest)
             numPoints);
 
     // assert correct length:
-    ASSERT_NEAR(length, mpCylindrical.length(), 10*eps);
+    ASSERT_NEAR(length, mpCylindrical.length(), std::sqrt(eps));
     
 
     // create an hourglass-shaped path:
@@ -223,7 +244,7 @@ TEST_F(MolecularPathTest, MolecularPathLengthTest)
             numPoints);
 
     // assert correct length:
-    ASSERT_NEAR(length, mpHourglass.length(), 10*eps);
+    ASSERT_NEAR(length, mpHourglass.length(), std::sqrt(eps));
 
 
     // create a toroidal path:
@@ -240,7 +261,7 @@ TEST_F(MolecularPathTest, MolecularPathLengthTest)
     ASSERT_NEAR(PI_*torusRadius, mpToroidal.length(), std::sqrt(eps));
 
 
-    // create a spring-shaped  path:
+    // create a spring-shaped path:
     pathRadius = 0.015;
     real springA = 1.0;
     real springB = 3.0;
@@ -260,8 +281,13 @@ TEST_F(MolecularPathTest, MolecularPathLengthTest)
 }
 
 
-/*
- *
+/*!
+ * This tests checks that the MolecularPath object returns the correct minimum
+ * (and arg min) radius. The minimum is is checked for a a cylinder, an 
+ * hourglass, a half-torus, and a spring, where the tolerance threshold is 
+ * taken to be \f$ \epsilon \f$. The arg min is only tested on the hourglass 
+ * path (it is not unique in all other cases) with a tolerance of 
+ * \f$ \sqrt{\epsilon}  \f$ . 
  */
 TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
 {
@@ -282,15 +308,15 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
             numPoints);
 
     // assert correct minimum radius (arg min is undefined for constant radius):
-    ASSERT_NEAR(radius, mpCylindrical.minRadius().second, 10*eps);
+    ASSERT_NEAR(radius, mpCylindrical.minRadius().second, eps);
 
 
     // create an hourglass-shaped path:
-    dir = gmx::RVec(0.0, 0.0, 1.0);
+    dir = gmx::RVec(-0.6, 0.5, 1.0);
     centre = gmx::RVec(0.4, -2.5, -0.1);
-    length = 4.5;
-    radius = 0.15;
-    numPoints = 11;
+    length = 1.1;
+    radius = 0.5;
+    numPoints = 25;
     MolecularPath mpHourglass = makeHourglassPath(
             dir, 
             centre, 
@@ -299,7 +325,7 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
             numPoints);
 
     // assert correct minimal radius and location of minimum:
-    ASSERT_NEAR(length/2.0, mpHourglass.minRadius().first, eps);
+    ASSERT_NEAR(length/2.0, mpHourglass.minRadius().first, std::sqrt(eps));
     ASSERT_NEAR(radius, mpHourglass.minRadius().second, eps);
 
 
@@ -336,21 +362,96 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
 }
 
 
-/*
- *
+/*!
+ * This test checks that the MolecularPath object calculates the correct volume
+ * for a cylinder, hourglass, half-torus, and spring. The tolarance threshold 
+ * is \f$ \sqrt{\epsilon} \f$ in all cases.
  */
 TEST_F(MolecularPathTest, MolecularPathVolumeTest)
 {
-/*
+  
+  // get machine epsilon:
+    real eps = std::numeric_limits<real>::epsilon();
+
+    // create a cylindrical path:
+    gmx::RVec dir(1.0, -2.0, 0.5);
+    gmx::RVec centre(15.3, -25.0, 10.0);
+    real length = 50.0;
+    real radius = 0.05;
+    int numPoints = 10;
+    MolecularPath mpCylindrical = makeCylindricalPath(
+            dir, 
+            centre, 
+            length, 
+            radius,
+            numPoints);
+
+    // assert correct volume of cylinder:
+    ASSERT_NEAR(PI_*radius*radius*length, 
+                mpCylindrical.volume(), 
+                std::sqrt(eps));
+
+
+    // create an hourglass-shaped path:
+    // (note: if length too large, radius varies over many orders of magnitude
+    // so that chord-length approximation in reparameterisation is poor, 
+    // leading to an error in volume estimation, but this should not be 
+    // relevant in channels, where chord length should be a good approximation)
+    dir = gmx::RVec(0.2, -3.0, 1.0);
+    centre = gmx::RVec(-3.3, 4.0, std::sqrt(2.0));
+    length = 2.0; 
+    radius = 0.015;
+    numPoints = 25;
+    MolecularPath mpHourglass = makeHourglassPath(
+            dir, 
+            centre, 
+            length, 
+            radius,
+            numPoints);
+
+    // assert correct volume:
+    real volumeHourglass = std::pow(length, 7)/896.0 + 
+                           std::pow(length, 4)/32.0*radius +
+                           radius*radius*length/2.0;
+    volumeHourglass *= PI_*2.0;
+    ASSERT_NEAR(volumeHourglass,
+                mpHourglass.volume(), 
+                std::sqrt(eps));
+
+
     // create a toroidal path    
-    real pathRadius = 1.0;
+    real pathRadius = 0.5;
     real torusRadius = 10.0;
-    real zOffset = 0.0;
-    int numPoints = 100;
-    MolecularPath mp = makeToroidalPath(pathRadius,
-                                        torusRadius,
-                                        zOffset,
-                                        numPoints);
-*/
+    real zOffset = -5.3;
+    numPoints = 25;
+    MolecularPath mpToroidal = makeToroidalPath(pathRadius,
+                                                torusRadius,
+                                                zOffset,
+                                                numPoints);
+
+    // assert correct volume of torus:
+    ASSERT_NEAR(PI_*PI_*pathRadius*pathRadius*torusRadius, 
+                mpToroidal.volume(), 
+                std::sqrt(eps));
+
+
+    // create a spring-shaped path:
+    pathRadius = 0.015;
+    real springA = 1.0;
+    real springB = 3.0;
+    real springParLen = 4.0*PI_;
+    gmx::RVec offset(-2.0, 0.3, 1.5);
+    numPoints = 25;
+    MolecularPath mpSpring = makeSpringPath(pathRadius,
+                                            springA,
+                                            springB,
+                                            springParLen,
+                                            offset,
+                                            numPoints);
+
+    // assert correct volume:
+    ASSERT_NEAR(PI_*PI_*pathRadius*pathRadius*springParLen, 
+                mpSpring.volume(), 
+                std::sqrt(eps));                
 }
 
