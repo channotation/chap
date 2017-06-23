@@ -22,7 +22,10 @@ class AbstractSplineCurve
     public:
 
         // getter methods:
+        int degree() const;
         int nCtrlPoints() const;
+        int nKnots() const;
+        std::vector<real> knotVector() const;
 
     protected:
         

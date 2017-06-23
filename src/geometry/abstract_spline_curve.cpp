@@ -6,11 +6,42 @@
 
 
 /*!
+ * Getter method for spline curve degree.
+ */
+int
+AbstractSplineCurve::degree() const
+{
+    return degree_;
+}
+
+
+/*!
  * Getter method for the number of control points in this spline curve.
  */
-int AbstractSplineCurve::nCtrlPoints() const
+int
+AbstractSplineCurve::nCtrlPoints() const
 {
     return nCtrlPoints_;
+}
+
+
+/*!
+ * Getter method for number of knots.
+ */
+int
+AbstractSplineCurve::nKnots() const
+{
+    return nKnots_;
+}
+
+
+/*!
+ * Getting method for the knot vector.
+ */
+std::vector<real>
+AbstractSplineCurve::knotVector() const
+{
+    return knotVector_;
 }
 
 

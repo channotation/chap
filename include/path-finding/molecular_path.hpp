@@ -47,8 +47,9 @@ class MolecularPath
                                               t_pbc *nbhSearchPbc);
         
         // check if points lie inside pore:
-        std::map<int, bool> checkIfInside(std::map<int, gmx::RVec> mappedCoords,
-                                          real margin);
+        std::map<int, bool> checkIfInside(
+                const std::map<int, gmx::RVec> &mappedCoords,
+                real margin);
 
         // access original points:
         std::vector<gmx::RVec> pathPoints();
@@ -72,7 +73,6 @@ class MolecularPath
         std::vector<gmx::RVec> sampleNormals(std::vector<real> arcLengthSample);
         std::vector<real> sampleRadii(int nPoints, real extrapDist);
         std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
-
 
 
     private:
