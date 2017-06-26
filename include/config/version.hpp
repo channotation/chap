@@ -13,8 +13,12 @@ extern const char g_CHAP_VERSION_PATCH[];
 
 
 
-/*
+/*!
+ * \brief Returns CHAP version string.
  *
+ * The string consists of four point-separated substring representing the 
+ * major version number, minor version number, patch number and git hash 
+ * respectively.
  */
 extern "C" inline std::string
 chapVersionString()
