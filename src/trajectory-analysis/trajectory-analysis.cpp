@@ -1008,9 +1008,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dh.setPoint(2, it -> second[1]);     // rho
          dh.setPoint(3, it -> second[3]);     // phi
          dh.setPoint(4, solvInside[it -> first]);     // inside
-         dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
-         dh.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
-         dh.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+         dh.setPoint(5, solvMapSel.position(it -> first).x()[0]);  // x
+         dh.setPoint(6, solvMapSel.position(it -> first).x()[1]);  // y
+         dh.setPoint(7, solvMapSel.position(it -> first).x()[2]);  // z
          dh.finishPointSet();
     }
 
@@ -1075,7 +1075,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 void
 trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 {
-
+    std::cout<<"finished analysis"<<std::endl;
 }
 
 

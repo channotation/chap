@@ -206,6 +206,9 @@ AnalysisDataJsonExporter::dataFinished()
 
     // close output file:
     std::fclose(file);
+
+
+    std::cout<<"file closed"<<std::endl;
 }
 
 
