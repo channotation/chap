@@ -386,7 +386,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     
 
 
-    // PREPARE SELECTIONS FOR MAPPING
+    // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
     // prepare a centre of geometry selection collection:
@@ -424,6 +424,41 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                  <<std::endl<<"Is your pore a protein?"<<std::endl;
         std::abort();
     }
+
+
+    // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
+    //-------------------------------------------------------------------------
+
+    // prepare centre of geometry seection collection:
+    solvMappingSelCol_.setReferencePosType("res_cog");
+    solvMappingSelCol_.setOutputPosType("res_cog");
+
+    // create index groups from topology:
+    // TODO: this will not work for custom index groups
+    gmx_ana_indexgrps_t *solvIdxGroups;
+    gmx_ana_indexgrps_init(&solvIdxGroups,
+                           top.topology(),
+                           NULL);
+
+    // loop over selections:
+    // TODO: currently only one selection is accepted in input:
+    for(auto it = sel_.begin(); it != sel_.end(); it++)
+    {
+        // selection text:
+        std::string solvMappingSelCogString = it -> selectionText();
+
+        // create selection as defined by user:
+        solvMappingSelCog_.push_back(
+            solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0]);
+    }
+    
+    // compile the selections:
+    solvMappingSelCol_.setTopology(top.topology(), 0);
+    solvMappingSelCol_.setIndexGroups(solvIdxGroups);
+    solvMappingSelCol_.compile();
+
+    // free memory:
+    gmx_ana_indexgrps_free(solvIdxGroups);
 
     
     // PREPARE TOPOLOGY QUERIES
@@ -743,10 +778,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-//    std::cout<<"================================================="<<std::endl;
-//    std::cout<<std::endl;
-//    std::cout<<std::endl;
 
+    // PATH FINDING
+    //-------------------------------------------------------------------------
 
 
     // run path finding algorithm on current frame:
@@ -765,16 +799,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
     
-    // map residues onto pathway:
-    /*
-    std::cout<<"mapping residues onto pathway ... ";
-    clock_t tMapRes = std::clock();
-    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
-    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
-    tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
-    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
-    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
-*/
     std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
     std::vector<real> pathRadii = molPath.pathRadii();
 
@@ -860,7 +884,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
              <<1000*tResPoreFacing<<" ms"<<std::endl;
     
 
-
     // add points inside to data frame:
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
@@ -876,6 +899,91 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhResMapping.finishPointSet();
     }
     
+
+    // MAP SOLVENT PARTICLES ONTO PATHWAY
+    //-------------------------------------------------------------------------
+
+    // evaluate solevnt mapping selections for this frame:
+    t_trxframe tmpFrame = fr;
+    solvMappingSelCol_.evaluate(&tmpFrame, pbc);
+
+    real solvMappingMargin_ = 10.0;
+
+    // loop over selections:
+    for(auto it = solvMappingSelCog_.begin(); it != solvMappingSelCog_.end(); it++)
+    {
+
+        
+        // get thread-local selection data:
+        const Selection solvMapSel = pdata -> parallelSelection(*it);
+
+
+
+
+        // map particles onto pathway:
+        std::cout<<"mapping solvent particles onto pathway ... ";
+        clock_t tMapSol = std::clock();
+        std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
+                solvMapSel, 
+                mappingParams_,
+                pbc);
+        tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
+        std::cout<<"mapped "<<solventMappedCoords.size()
+                 <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
+
+
+        std::cout<<"solvMapSel.posCount = "<<solvMapSel.posCount()<<std::endl;
+        std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
+
+/*
+        for(auto jt = solventMappedCoords.begin(); jt != solventMappedCoords.end(); jt++)
+        {
+            std::cout<<"id = "<<(*jt).first<<"  "
+                     <<"s = "<<(*jt).second[0]<<"  "
+                     <<"r = "<<(*jt).second[0]<<"  "
+                     <<std::endl;
+        }
+*/
+
+        // find particles inside pore:
+        std::cout<<"finding solvent particles inside pore ... ";
+        clock_t tSolInside = std::clock();
+        std::map<int, bool> solvInside = molPath.checkIfInside(
+                solventMappedCoords, solvMappingMargin_);
+        int numSolvInside = 0;
+        for(auto jt = solvInside.begin(); jt != solvInside.end(); jt++)
+        {            
+            if( jt -> second == true )
+            {
+                numSolvInside++;
+            }
+        }
+        tSolInside = (std::clock() - tSolInside)/CLOCKS_PER_SEC;
+        std::cout<<"found "<<numSolvInside<<" solvent particles inside pore in "
+                 <<1000*tSolInside<<" ms"<<std::endl;
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // ADD DATA TO PARALLELISABLE CONTAINER

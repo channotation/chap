@@ -98,7 +98,7 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
     // create a set of reference positions on the pore centre line:
     // TODO: how to select these parameters automatically?
     int nPathSamples = 1000;
-    real extrapDist = 100.0;
+    real extrapDist = 50.0;
     std::vector<real> arcLenSample = this -> sampleArcLength(nPathSamples, extrapDist);
     const std::vector<gmx::RVec> pathSample = this -> samplePoints(arcLenSample);
 
@@ -136,6 +136,14 @@ MolecularPath::mapSelection(gmx::Selection mapSel,
 
         // add to list of mapped coordinates:
         mappedCoords[mapSel.position(i).refId()] = mappedCoord;
+
+/*
+        std::cout<<"id = "<<mapSel.position(i).refId()<<"  "
+                 <<"s = "<<mappedCoord[0]<<"  "
+                 <<"rho = "<<mappedCoord[1]<<"  "
+                 <<"phi = "<<mappedCoord[2]<<"  "
+                 <<std::endl;
+                 */
     }
 
     return mappedCoords;

@@ -61,9 +61,13 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     // internal selections for pore mapping:
     SelectionCollection              poreMappingSelCol_;
+    SelectionCollection              solvMappingSelCol_;
     Selection                        poreMappingSelCal_;
     Selection                        poreMappingSelCog_;
+    SelectionList                    solvMappingSelCog_;
     real                             poreMappingMargin_;
+
+
 
     bool                             ippselIsSet_;
 	SelectionList                    sel_;			// selection of the small particle groups
