@@ -319,8 +319,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     columnHeaders.push_back(columnHeaderPath);
 
     // prepare data container for aggregate path data:
-    data_.setColumnCount(1, 4);
-    ColumnHeader columnHeaderAggregatePath = {"R.min", "L", "V", "N"};
+    data_.setColumnCount(1, 5);
+    ColumnHeader columnHeaderAggregatePath = {"R.min", 
+                                              "L", 
+                                              "V", 
+                                              "N",
+                                              "N.sample"};
     columnHeaders.push_back(columnHeaderAggregatePath);
 
     // prepare data container for residue mapping:
@@ -337,12 +341,13 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     columnHeaders.push_back(columnHeaderResMap);
 
     // prepare data container for solvent mapping:
-    data_.setColumnCount(3, 8);
+    data_.setColumnCount(3, 9);
     ColumnHeader columnHeaderSolvMap = {"res.id", 
                                         "s", 
                                         "rho", 
                                         "phi", 
-                                        "inside",
+                                        "pore",
+                                        "sample",
                                         "x",
                                         "y",
                                         "z"};
@@ -977,22 +982,43 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
 
 
-    // find particles inside pore:
+    // find particles inside path (i.e. pore plus bulk sampling regime):
     std::cout<<"finding solvent particles inside pore ... ";
-    clock_t tSolInside = std::clock();
-    std::map<int, bool> solvInside = molPath.checkIfInside(
+    clock_t tSolInsideSample = std::clock();
+    std::map<int, bool> solvInsideSample = molPath.checkIfInside(
             solventMappedCoords, solvMappingMargin_);
-    int numSolvInside = 0;
-    for(auto jt = solvInside.begin(); jt != solvInside.end(); jt++)
+    int numSolvInsideSample = 0;
+    for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
     {            
         if( jt -> second == true )
         {
-            numSolvInside++;
+            numSolvInsideSample++;
         }
     }
-    tSolInside = (std::clock() - tSolInside)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<numSolvInside<<" solvent particles inside pore in "
-             <<1000*tSolInside<<" ms"<<std::endl;
+    tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<numSolvInsideSample<<" solvent particles inside pore in "
+             <<1000*tSolInsideSample<<" ms"<<std::endl;
+
+
+    // find particles inside pore:
+    std::cout<<"finding solvent particles inside pore ... ";
+    clock_t tSolInsidePore = std::clock();
+    std::map<int, bool> solvInsidePore = molPath.checkIfInside(
+            solventMappedCoords, 
+            solvMappingMargin_,
+            molPath.sLo(),
+            molPath.sHi());
+    int numSolvInsidePore = 0;
+    for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
+    {            
+        if( jt -> second == true )
+        {
+            numSolvInsidePore++;
+        }
+    }
+    tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<numSolvInsidePore<<" solvent particles inside pore in "
+             <<1000*tSolInsidePore<<" ms"<<std::endl;
 
 
     // now add mapped residue coordinates to data handle:
@@ -1007,30 +1033,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dh.setPoint(1, it -> second[0]);     // s
          dh.setPoint(2, it -> second[1]);     // rho
          dh.setPoint(3, it -> second[3]);     // phi
-         dh.setPoint(4, solvInside[it -> first]);     // inside
-         dh.setPoint(5, solvMapSel.position(it -> first).x()[0]);  // x
-         dh.setPoint(6, solvMapSel.position(it -> first).x()[1]);  // y
-         dh.setPoint(7, solvMapSel.position(it -> first).x()[2]);  // z
+         dh.setPoint(4, solvInsidePore[it -> first]);     // inside pore
+         dh.setPoint(5, solvInsideSample[it -> first]);     // inside sample
+         dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+         dh.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+         dh.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
          dh.finishPointSet();
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
@@ -1044,7 +1053,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dh.setPoint(0, molPath.minRadius().second);
     dh.setPoint(1, molPath.length());
     dh.setPoint(2, molPath.volume());
-    dh.setPoint(3, numSolvInside); 
+    dh.setPoint(3, numSolvInsidePore); 
+    dh.setPoint(4, numSolvInsideSample); 
     dh.finishPointSet();
     
 

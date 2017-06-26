@@ -198,6 +198,36 @@ MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
 }
 
 
+/*
+ *
+ */
+std::map<int, bool>
+MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
+                             real margin,
+                             real sLo,
+                             real sHi)
+{
+    // first make decision based on margin:
+    std::map<int, bool> isInside = checkIfInside(mappedCoords, margin);
+
+    // now erase all elements that do not fall in given range:
+    for(auto it = isInside.begin(); it != isInside.end(); it++)
+    {
+        // optain mapped s value:
+        real s = mappedCoords.at(it->first)[0];
+
+        // does it fall in target interval?
+        if( s < sLo || s > sHi )
+        {
+            it -> second = false;
+        }
+    }
+
+    // return resulting map:
+    return isInside;
+}
+
+
 /*! 
  * Simple getter function for access to original path points used to construct
  * the path.
@@ -239,6 +269,26 @@ real
 MolecularPath::radius(real s)
 {
     return poreRadius_(s, 0, eSplineEvalDeBoor);
+}
+
+
+/*
+ * TODO: update this with shifts of coordinate
+ */
+real
+MolecularPath::sLo()
+{
+    return 0.0;
+}
+
+
+/*
+ * TODO: update this with shifts of coordinate
+ */
+real
+MolecularPath::sHi()
+{
+    return length_;
 }
 
 

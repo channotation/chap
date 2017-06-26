@@ -68,6 +68,11 @@ class MolecularPath
         std::map<int, bool> checkIfInside(
                 const std::map<int, gmx::RVec> &mappedCoords,
                 real margin);
+        std::map<int, bool> checkIfInside(
+                const std::map<int, gmx::RVec> &mappedCoords,
+                real margin, 
+                real sLo,
+                real sHi);
 
         // access original points:
         std::vector<gmx::RVec> pathPoints();
@@ -78,6 +83,8 @@ class MolecularPath
         std::pair<real, real> minRadius();
         real volume();
         real radius(real);
+        real sLo();
+        real sHi();
 
         // sample points from centreline:
         std::vector<real> sampleArcLength(int nPoints, real extrapDist);
