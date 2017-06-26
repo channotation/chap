@@ -139,7 +139,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(RealOption("margin")
 	                     .store(&poreMappingMargin_)
-                         .defaultValue(1.5)
+                         .defaultValue(0.9)
                          .description("Margin for residue mapping."));
 
     // file name for output json:
