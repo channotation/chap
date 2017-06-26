@@ -8,6 +8,7 @@
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/writer.h"
 
+#include "config/version.hpp"
 #include "io/analysis_data_json_exporter.hpp"
 
 
@@ -44,10 +45,16 @@ AnalysisDataJsonExporter::parallelDataStarted(
 
     // get program context:
     const gmx::IProgramContext &programContext = gmx::getProgramContext();
+    
+    // get chap version:
+    std::string version = chapVersionString();
 
     // add reproducibility information to JSON document:
     rapidjson::Value reproInfo;
     reproInfo.SetObject();
+    reproInfo.AddMember("version",
+                        version,
+                        allocator);
     reproInfo.AddMember("commandline", 
                         std::string(programContext.commandLine()), 
                         allocator);
