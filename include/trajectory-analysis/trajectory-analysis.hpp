@@ -64,7 +64,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     SelectionCollection              solvMappingSelCol_;
     Selection                        poreMappingSelCal_;
     Selection                        poreMappingSelCog_;
-    SelectionList                    solvMappingSelCog_;
+    Selection                        solvMappingSelCog_;
     real                             poreMappingMargin_;
 
 

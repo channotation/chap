@@ -305,12 +305,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     mappingParams_.extrapDist_ = 100;
 
 
-    //
+    // PREPARE DATSETS
     //-------------------------------------------------------------------------
 
     // multiple datasets:
-    data_.setDataSetCount(3);
-    DataSetNameList dataSetNames = {"path", "path.agg", "res.map"};
+    data_.setDataSetCount(4);
+    DataSetNameList dataSetNames = {"path", "path.agg", "res.map", "solv.map"};
     ColumnHeaderList columnHeaders;
 
 	// prepare data container for path data:
@@ -335,6 +335,18 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                        "y",
                                        "z"};
     columnHeaders.push_back(columnHeaderResMap);
+
+    // prepare data container for solvent mapping:
+    data_.setColumnCount(3, 8);
+    ColumnHeader columnHeaderSolvMap = {"res.id", 
+                                        "s", 
+                                        "rho", 
+                                        "phi", 
+                                        "inside",
+                                        "x",
+                                        "y",
+                                        "z"};
+    columnHeaders.push_back(columnHeaderSolvMap);
 
     // prepare residue names:
     t_atoms allAtoms = top.topology() -> atoms;
@@ -368,7 +380,13 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     int j = 1;
     AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
     const char *fnResMapping = "res_mapping.dat";
-    std::vector<char*> headerResMapping = {"t", "mappedId", "s", "rho", "phi", "poreLining", "poreFacing"};
+    std::vector<char*> headerResMapping = {"t", 
+                                           "mappedId", 
+                                           "s", 
+                                           "rho", 
+                                           "phi", 
+                                           "poreLining", 
+                                           "poreFacing"};
     lfpltResMapping -> setFileName(fnResMapping);
     lfpltResMapping -> setHeader(headerResMapping);
     lfpltResMapping -> setPrecision(5);    // TODO: different treatment for integers?
@@ -384,7 +402,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     plotResMappingPdb -> setFileName("res_mapping.pdb");
     dataResMappingPdb_.addModule(plotResMappingPdb);
     
-
 
     // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
     //-------------------------------------------------------------------------
@@ -440,18 +457,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                            top.topology(),
                            NULL);
 
-    // loop over selections:
-    // TODO: currently only one selection is accepted in input:
-    for(auto it = sel_.begin(); it != sel_.end(); it++)
-    {
-        // selection text:
-        std::string solvMappingSelCogString = it -> selectionText();
+    // selection text:
+    std::string solvMappingSelCogString = sel_[0].selectionText();
 
-        // create selection as defined by user:
-        solvMappingSelCog_.push_back(
-            solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0]);
-    }
-    
+    // create selection as defined by user:
+    solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
+
     // compile the selections:
     solvMappingSelCol_.setTopology(top.topology(), 0);
     solvMappingSelCol_.setIndexGroups(solvIdxGroups);
@@ -802,7 +813,26 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
     std::vector<real> pathRadii = molPath.pathRadii();
 
+    // add path data to data handle:
+    dh.selectDataSet(0);
 
+    // access path finding module result:
+    real extrapDist = 1.0;
+    std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
+    std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
+    std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
+
+    // loop over all support points of path:
+    for(int i = 0; i < nOutPoints_; i++)
+    {
+        // add to container:
+        dh.setPoint(0, pointSample[i][0]);     // x
+        dh.setPoint(1, pointSample[i][1]);     // y
+        dh.setPoint(2, pointSample[i][2]);     // z
+        dh.setPoint(3, arcLengthSample[i]);    // s
+        dh.setPoint(4, radiusSample[i]);       // r
+        dh.finishPointSet(); 
+    }
 
 
 
@@ -899,128 +929,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhResMapping.finishPointSet();
     }
     
-
-    // MAP SOLVENT PARTICLES ONTO PATHWAY
-    //-------------------------------------------------------------------------
-
-    // evaluate solevnt mapping selections for this frame:
-    t_trxframe tmpFrame = fr;
-    solvMappingSelCol_.evaluate(&tmpFrame, pbc);
-
-    real solvMappingMargin_ = 10.0;
-
-    // loop over selections:
-    for(auto it = solvMappingSelCog_.begin(); it != solvMappingSelCog_.end(); it++)
-    {
-
-        
-        // get thread-local selection data:
-        const Selection solvMapSel = pdata -> parallelSelection(*it);
-
-
-
-
-        // map particles onto pathway:
-        std::cout<<"mapping solvent particles onto pathway ... ";
-        clock_t tMapSol = std::clock();
-        std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
-                solvMapSel, 
-                mappingParams_,
-                pbc);
-        tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
-        std::cout<<"mapped "<<solventMappedCoords.size()
-                 <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
-
-
-        std::cout<<"solvMapSel.posCount = "<<solvMapSel.posCount()<<std::endl;
-        std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
-
-/*
-        for(auto jt = solventMappedCoords.begin(); jt != solventMappedCoords.end(); jt++)
-        {
-            std::cout<<"id = "<<(*jt).first<<"  "
-                     <<"s = "<<(*jt).second[0]<<"  "
-                     <<"r = "<<(*jt).second[0]<<"  "
-                     <<std::endl;
-        }
-*/
-
-        // find particles inside pore:
-        std::cout<<"finding solvent particles inside pore ... ";
-        clock_t tSolInside = std::clock();
-        std::map<int, bool> solvInside = molPath.checkIfInside(
-                solventMappedCoords, solvMappingMargin_);
-        int numSolvInside = 0;
-        for(auto jt = solvInside.begin(); jt != solvInside.end(); jt++)
-        {            
-            if( jt -> second == true )
-            {
-                numSolvInside++;
-            }
-        }
-        tSolInside = (std::clock() - tSolInside)/CLOCKS_PER_SEC;
-        std::cout<<"found "<<numSolvInside<<" solvent particles inside pore in "
-                 <<1000*tSolInside<<" ms"<<std::endl;
-
-
-
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // ADD DATA TO PARALLELISABLE CONTAINER
-    //-------------------------------------------------------------------------
-
-    // start with path data:
-    dh.selectDataSet(0);
-
-    // access path finding module result:
-    real extrapDist = 1.0;
-    std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
-    std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
-    std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
-
-    // loop over all support points of path:
-    for(int i = 0; i < nOutPoints_; i++)
-    {
-        // add to container:
-        dh.setPoint(0, pointSample[i][0]);     // x
-        dh.setPoint(1, pointSample[i][1]);     // y
-        dh.setPoint(2, pointSample[i][2]);     // z
-        dh.setPoint(3, arcLengthSample[i]);    // s
-        dh.setPoint(4, radiusSample[i]);       // r
-        dh.finishPointSet(); 
-    }
-
-    // add aggegate path data:
-    dh.selectDataSet(1);
-
-    // only one point per frame:
-    dh.setPoint(0, molPath.minRadius().second);
-    dh.setPoint(1, molPath.length());
-    dh.setPoint(2, molPath.volume());
-    dh.setPoint(3, 0);  // TODO: implement number of particles in channel!
-    dh.finishPointSet();
-    
-    // now adding mapped residue coordinates:
+    // now add mapped residue coordinates to data handle:
     dh.selectDataSet(2);
     
     // add mapped residues to data container:
@@ -1037,6 +946,107 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dh.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
          dh.finishPointSet();
     }
+
+
+    // MAP SOLVENT PARTICLES ONTO PATHWAY
+    //-------------------------------------------------------------------------
+
+    // evaluate solevnt mapping selections for this frame:
+    t_trxframe tmpFrame = fr;
+    solvMappingSelCol_.evaluate(&tmpFrame, pbc);
+
+    // TODO: make this a parameter:
+    real solvMappingMargin_ = 0.0;
+        
+    // get thread-local selection data:
+    const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
+
+    // map particles onto pathway:
+    std::cout<<"mapping solvent particles onto pathway ... ";
+    clock_t tMapSol = std::clock();
+    std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
+            solvMapSel, 
+            mappingParams_,
+            pbc);
+    tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
+    std::cout<<"mapped "<<solventMappedCoords.size()
+             <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
+
+
+    std::cout<<"solvMapSel.posCount = "<<solvMapSel.posCount()<<std::endl;
+    std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
+
+
+    // find particles inside pore:
+    std::cout<<"finding solvent particles inside pore ... ";
+    clock_t tSolInside = std::clock();
+    std::map<int, bool> solvInside = molPath.checkIfInside(
+            solventMappedCoords, solvMappingMargin_);
+    int numSolvInside = 0;
+    for(auto jt = solvInside.begin(); jt != solvInside.end(); jt++)
+    {            
+        if( jt -> second == true )
+        {
+            numSolvInside++;
+        }
+    }
+    tSolInside = (std::clock() - tSolInside)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<numSolvInside<<" solvent particles inside pore in "
+             <<1000*tSolInside<<" ms"<<std::endl;
+
+
+    // now add mapped residue coordinates to data handle:
+    dh.selectDataSet(3);
+    
+    // add mapped residues to data container:
+    for(auto it = solventMappedCoords.begin(); 
+        it != solventMappedCoords.end(); 
+        it++)
+    {
+         dh.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
+         dh.setPoint(1, it -> second[0]);     // s
+         dh.setPoint(2, it -> second[1]);     // rho
+         dh.setPoint(3, it -> second[3]);     // phi
+         dh.setPoint(4, solvInside[it -> first]);     // inside
+         dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+         dh.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+         dh.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+         dh.finishPointSet();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
+    //-------------------------------------------------------------------------
+
+
+    // add aggegate path data:
+    dh.selectDataSet(1);
+
+    // only one point per frame:
+    dh.setPoint(0, molPath.minRadius().second);
+    dh.setPoint(1, molPath.length());
+    dh.setPoint(2, molPath.volume());
+    dh.setPoint(3, numSolvInside); 
+    dh.finishPointSet();
+    
 
 
     // WRITE PORE TO OBJ FILE

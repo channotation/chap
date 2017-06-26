@@ -202,6 +202,8 @@ AnalysisDataJsonExporter::dataFinished()
     rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
     json_.Accept(writer);
 
+    std::cout<<"written to file"<<std::endl;
+
     // close output file:
     std::fclose(file);
 }
