@@ -15,6 +15,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 # include cmake scripts for geting git revisions:
 include(GetGitRevisionDescription)
 
+# version definitions:
+set(CHAP_VERSION_MAJOR "0")
+set(CHAP_VERSION_MINOR "1")
+set(CHAP_VERSION_PATCH "0")
+
 # get git hash:
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 

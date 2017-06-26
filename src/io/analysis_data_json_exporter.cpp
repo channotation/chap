@@ -8,6 +8,7 @@
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/writer.h"
 
+#include "config/version.hpp"
 #include "io/analysis_data_json_exporter.hpp"
 
 
@@ -44,14 +45,55 @@ AnalysisDataJsonExporter::parallelDataStarted(
 
     // get program context:
     const gmx::IProgramContext &programContext = gmx::getProgramContext();
+    
+    // get chap version:
+    std::string version = chapVersionString();
 
     // add reproducibility information to JSON document:
     rapidjson::Value reproInfo;
     reproInfo.SetObject();
+    reproInfo.AddMember("version",
+                        version,
+                        allocator);
     reproInfo.AddMember("commandline", 
                         std::string(programContext.commandLine()), 
                         allocator);
     json_.AddMember("reproducibility information", reproInfo, allocator);
+
+
+    // parameter information:
+    //-------------------------------------------------------------------------
+
+    // create object for parameters:
+    rapidjson::Value paramInfo;
+    paramInfo.SetObject();
+
+    // loop over all known parameters:
+    for(auto it = parameterMap_.begin(); it != parameterMap_.end(); it++)
+    {       
+        rapidjson::Value key(it -> first, allocator);
+        paramInfo.AddMember(key, it -> second, allocator);
+    }
+
+    // add parameter object to document:
+    json_.AddMember("parameters", paramInfo, allocator);
+
+    // residue information:
+    //-------------------------------------------------------------------------
+
+    // add all residue ID/name pairs to array:
+    rapidjson::Value resNames(rapidjson::kArrayType);
+    for(auto it = residueNames_.begin(); it != residueNames_.end(); it++)
+    {
+        rapidjson::Value res;
+        res.SetObject();
+        res.AddMember("res.id", it -> first, allocator);
+        res.AddMember("res.name", it -> second, allocator);
+        resNames.PushBack(res, allocator);
+    }
+    
+    // add array to JSON document:
+    json_.AddMember("residue.names", resNames, allocator);
 
 
     // build object for each data set:
@@ -85,7 +127,6 @@ AnalysisDataJsonExporter::parallelDataStarted(
         // create an array internal to this member:
         rapidjson::Value array(rapidjson::kArrayType);
     }
-
 
     // indicate that parallel support is enabled:
     return true;
@@ -166,8 +207,15 @@ AnalysisDataJsonExporter::frameFinishedSerial(int index)
 void
 AnalysisDataJsonExporter::dataFinished()
 {
+    // sanity check:
+    if( fileName_.empty() )
+    {
+        std::cerr<<"ERROR: Output file name not given."<<std::endl;
+        std::abort();
+    }
+
     // open output file:
-    FILE* file = std::fopen("output.json", "w");
+    FILE* file = std::fopen(fileName_.c_str(), "w");
 
     // prepare buffer for JSOn output:
     char buffer[65536];
@@ -200,4 +248,39 @@ AnalysisDataJsonExporter::setColumnNames(std::vector<std::vector<std::string>> c
 {
     columnNames_ = columnNames;
 }
+
+
+/*
+ *
+ */
+void
+AnalysisDataJsonExporter::setResidueNames(std::unordered_map<int, std::string> resNames)
+{
+    residueNames_ = resNames;
+}
+
+
+/*
+ * Setting function for output file name.
+ */
+void
+AnalysisDataJsonExporter::setFileName(std::string fileName)
+{
+    fileName_ = fileName;
+}
+
+
+/*!
+ * Adds a parameter key value pair that will be written to the JSON output. 
+ * Needs to be called before dataStarted() or parallelDataStarted(), otherwise
+ * the parameter will be ignored.
+ *
+ * TODO: make it so that this adds to the JSON doc directly!
+ */
+void
+AnalysisDataJsonExporter::addParameter(std::string name, real value)
+{
+    parameterMap_[name] = std::to_string(value);
+}
+
 

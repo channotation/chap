@@ -52,10 +52,11 @@ class SplineCurve3D : public AbstractSplineCurve
         real lastPointArcLength();
 
         // map points onto curve:
-        real pointSqDist(gmx::RVec &point, real &eval);
+        real pointSqDist(gmx::RVec point, real eval);
         int closestCtrlPoint(gmx::RVec &point);
         gmx::RVec cartesianToCurvilinear(gmx::RVec cartPoint,
-                                         int idxCtrlPoint,
+                                         real lo,
+                                         real hi,
                                          real tol);
  
         

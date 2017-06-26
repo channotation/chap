@@ -1,14 +1,17 @@
 #ifndef TRAJECTORYANALYSIS_HPP
 #define TRAJECTORYANALYSIS_HPP
 
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <unordered_map>
 #include <string>
+
 #include <vector>
 
 #include <gromacs/trajectoryanalysis.h>
 
+#include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
 
 using namespace gmx;
@@ -50,22 +53,45 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     std::string poreParticleFileName_;  // positions of probe particles
     std::string smallParticleFileName_; // positions of small particles (e.g. water)
     std::string poreProfileFileName_;       // time averaged radius, energy etc.
+    std::string jsonOutputFileName_;
     bool poreFile_;
 
 	class ModuleData;
 	double                           cutoff_;		// cutoff for grid search
 	Selection                        refsel_;   	// selection of the reference group
 	Selection                        ippsel_;   	// selection of the initial probe position group
+
+    // internal selections for pore mapping:
+    SelectionCollection              poreMappingSelCol_;
+    SelectionCollection              solvMappingSelCol_;
+    Selection                        poreMappingSelCal_;
+    Selection                        poreMappingSelCog_;
+    Selection                        solvMappingSelCog_;
+    real                             poreMappingMargin_;
+
+
+
     bool                             ippselIsSet_;
 	SelectionList                    sel_;			// selection of the small particle groups
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
 
     AnalysisData                     data_;			// raw data container
     AnalysisData                     dataResMapping_;
+    AnalysisData                     dataResMappingPdb_;
 
 
 	std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
+
+
+    // pore particle and group indices:
+    std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
+    std::vector<int> residueIndices_;                       // all resIds
+    std::vector<int> poreResidueIndices_;                   // resIds of pore selection
+    std::vector<int> poreAtomIndices_;                      // atomIds of pore selection
+    std::map<int, int> atomResidueMapping_;                 // maps atomId onto resId
+    std::map<int, std::vector<int>> residueAtomMapping_;    // maps resId onto atomId
+
 
 
     int                              nOutPoints_;   // number of points on path sample
@@ -93,7 +119,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     bool pfChanDirVecIsSet_;
 
     // simulated annealing parameters:
-    int saRandomSeed_;
+    int64_t saRandomSeed_;
+    bool saRandomSeedIsSet_;
     int saMaxCoolingIter_;
     int saNumCostSamples_;
     real saXi_;
@@ -106,6 +133,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     // Nelder-Mead parameters:
     int nmMaxIter_;
 
+    // path mapping parameters:
+    PathMappingParameters mappingParams_;
 
 
 

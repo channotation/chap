@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <cstring>
 #include <ctime>
 #include <regex>
 
@@ -133,7 +134,20 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&ippsel_)
                          .storeIsSet(&ippselIsSet_)
 	                     .description("Reference group from which to determine the initial probe position for the pore finding algorithm. If unspecified, this defaults to the overall pore forming group. Will be overridden if init-probe-pos is set explicitly."));
- 
+
+    
+    // get (optional) selection option for the neighbourhood search cutoff:
+    options -> addOption(RealOption("margin")
+	                     .store(&poreMappingMargin_)
+                         .defaultValue(1.5)
+                         .description("Margin for residue mapping."));
+
+    // file name for output json:
+    options -> addOption(StringOption("json")
+	                     .store(&jsonOutputFileName_)
+                         .defaultValue("output.json")
+                         .description("File name for JSON output."));
+
 
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
@@ -211,10 +225,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
                          .description("Channel direction vector; will be normalised to unit vector internally. Defaults to (0, 0, 1)."));
-    options -> addOption(IntegerOption("sa-random-seed")
+    options -> addOption(Int64Option("sa-random-seed")
                          .store(&saRandomSeed_)
-                         .required()
-                         .description("Seed for RNG used in simulated annealing."));
+                         .storeIsSet(&saRandomSeedIsSet_)
+                         .description("Seed for RNG used in simulated annealing. "));
     options -> addOption(IntegerOption("sa-max-cool")
                           .store(&saMaxCoolingIter_)
                           .defaultValue(1000)
@@ -262,9 +276,16 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                  const TopologyInformation &top)
 {
-    // set parameters in parameter map:
+    // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
 
+    // set inut-dependent defaults:
+    if( !saRandomSeedIsSet_ )
+    {
+        saRandomSeed_ = gmx::makeRandomSeed();
+    }
+
+    // set parameters in map:
     pfParams_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
 
     pfParams_["pfCylRad"] = pfParams_["pfProbeMaxRadius"];
@@ -282,12 +303,21 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
 
 
-    //
+    // PATH MAPPING PARAMETERS
+    //-------------------------------------------------------------------------
+    
+    mappingParams_.nbhSearchCutoff_ = cutoff_ + poreMappingMargin_;
+    mappingParams_.mapTol_ = 1e-7;
+    mappingParams_.numPathSamples_ = 1000;
+    mappingParams_.extrapDist_ = 100;
+
+
+    // PREPARE DATSETS
     //-------------------------------------------------------------------------
 
     // multiple datasets:
-    data_.setDataSetCount(3);
-    DataSetNameList dataSetNames = {"path", "path.agg", "res.map"};
+    data_.setDataSetCount(4);
+    DataSetNameList dataSetNames = {"path", "path.agg", "res.map", "solv.map"};
     ColumnHeaderList columnHeaders;
 
 	// prepare data container for path data:
@@ -296,38 +326,65 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     columnHeaders.push_back(columnHeaderPath);
 
     // prepare data container for aggregate path data:
-    data_.setColumnCount(1, 4);
-    ColumnHeader columnHeaderAggregatePath = {"R.min", "L", "V", "N"};
+    data_.setColumnCount(1, 5);
+    ColumnHeader columnHeaderAggregatePath = {"R.min", 
+                                              "L", 
+                                              "V", 
+                                              "N",
+                                              "N.sample"};
     columnHeaders.push_back(columnHeaderAggregatePath);
 
-    //
-    data_.setColumnCount(2, 4);
-    ColumnHeader columnHeaderResMap = {"res.id", "s", "rho", "phi"};
+    // prepare data container for residue mapping:
+    data_.setColumnCount(2, 9);
+    ColumnHeader columnHeaderResMap = {"res.id", 
+                                       "s", 
+                                       "rho", 
+                                       "phi", 
+                                       "pl",
+                                       "pf",
+                                       "x",
+                                       "y",
+                                       "z"};
     columnHeaders.push_back(columnHeaderResMap);
+
+    // prepare data container for solvent mapping:
+    data_.setColumnCount(3, 9);
+    ColumnHeader columnHeaderSolvMap = {"res.id", 
+                                        "s", 
+                                        "rho", 
+                                        "phi", 
+                                        "pore",
+                                        "sample",
+                                        "x",
+                                        "y",
+                                        "z"};
+    columnHeaders.push_back(columnHeaderSolvMap);
+
+    // prepare residue names:
+    t_atoms allAtoms = top.topology() -> atoms;
+    std::unordered_map<int, std::string> residueNames;
+    std::cout<<"resinfo.nr = "<<allAtoms.nres<<std::endl;
+    for(size_t i = 0; i < allAtoms.nres; i++)
+    {
+        residueNames[allAtoms.resinfo[i].nr] = std::string(*allAtoms.resinfo[i].name);        
+    } 
 
     // add json exporter to data:
     AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
     jsonExporter -> setDataSetNames(dataSetNames);
     jsonExporter -> setColumnNames(columnHeaders);
+    jsonExporter -> setResidueNames(residueNames);
+    jsonExporter -> setFileName(jsonOutputFileName_);
     data_.addModule(jsonExporter);
 
+    // add path finding parameters to JSON exporter:
+    for(auto it = pfParams_.begin(); it != pfParams_.end(); it++)
+    {
+        jsonExporter -> addParameter(it -> first, it -> second);
+    }
+    jsonExporter -> addParameter("cutoff", cutoff_);
 
-/*
-    // add plot module to analysis data:
-    int i = 2;
-    AnalysisDataLongFormatPlotModulePointer lfplotm(new AnalysisDataLongFormatPlotModule(i));
-    const char *poreParticleFileName = poreParticleFileName_.c_str();
-    lfplotm -> setFileName(poreParticleFileName);
-    lfplotm -> setPrecision(3);
-    std::vector<char*> header = {"t", "x", "y", "z", "s", "r"};
-    lfplotm -> setHeader(header);
-    data_.addModule(lfplotm);  
 
-    // add pdb plot module to analysis data:
-    AnalysisDataPdbPlotModulePointer pdbplotm(new AnalysisDataPdbPlotModule(i));
-    pdbplotm -> setFileName(poreParticleFileName);
-    data_.addModule(pdbplotm);
-*/
 
     // RESIDUE MAPPING DATA
     //-------------------------------------------------------------------------
@@ -335,42 +392,116 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     // set dataset properties:
     dataResMapping_.setDataSetCount(1);
-    dataResMapping_.setColumnCount(0, 4);   // refID s rho phi 
+    dataResMapping_.setColumnCount(0, 6);   // refID s rho phi 
     dataResMapping_.setMultipoint(true);
 
     // add long format plot module:
     int j = 1;
     AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
     const char *fnResMapping = "res_mapping.dat";
-    std::vector<char*> headerResMapping = {"t", "refId", "s", "rho", "phi"};
+    std::vector<char*> headerResMapping = {"t", 
+                                           "mappedId", 
+                                           "s", 
+                                           "rho", 
+                                           "phi", 
+                                           "poreLining", 
+                                           "poreFacing"};
     lfpltResMapping -> setFileName(fnResMapping);
     lfpltResMapping -> setHeader(headerResMapping);
-    lfpltResMapping -> setPrecision(15);    // TODO: different treatment for integers?
+    lfpltResMapping -> setPrecision(5);    // TODO: different treatment for integers?
     dataResMapping_.addModule(lfpltResMapping);
 
 
+    // set pdb data set properties:
+    dataResMappingPdb_.setDataSetCount(1);
+    dataResMappingPdb_.setColumnCount(0, 7);
 
-    // PREPARE SELECTIONS FOR MAPPING
-    //-------------------------------------------------------------------------
-
-    gmx::SelectionCollection poreComCollection; 
-    poreComCollection.setReferencePosType("res_com");
-    poreComCollection.setOutputPosType("res_com");
-
-    gmx::Selection test = poreComCollection.parseFromString("resname SOL")[0];
-
-//    poreComCollection.setTopology(top.topology(), 0);
-//    poreComCollection.compile();
-
-/*
-    std::cout<<std::endl<<std::endl;
-    std::cout<<"atomCount = "<<test.atomCount()<<"  "
-             <<"posCount = "<<test.posCount()<<"  "
-             <<std::endl;
-    std::cout<<std::endl<<std::endl;
-*/
+    // add PDB plot module:
+    AnalysisDataPdbPlotModulePointer plotResMappingPdb(new AnalysisDataPdbPlotModule(3));
+    plotResMappingPdb -> setFileName("res_mapping.pdb");
+    dataResMappingPdb_.addModule(plotResMappingPdb);
     
 
+    // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
+    //-------------------------------------------------------------------------
+
+    // prepare a centre of geometry selection collection:
+    poreMappingSelCol_.setReferencePosType("res_cog");
+    poreMappingSelCol_.setOutputPosType("res_cog");
+  
+    // selection of C-alpha atoms:
+    // TODO: this will not work if only part of protein is specified as pore
+    std::string refselSelText = refsel_.selectionText();
+    std::string poreMappingSelCalString = "name CA";
+    std::string poreMappingSelCogString = refselSelText;
+
+
+    // create index groups from topology:
+    // TODO: this will probably not work for custom index groups
+    gmx_ana_indexgrps_t *poreIdxGroups;
+    gmx_ana_indexgrps_init(&poreIdxGroups, 
+                           top.topology(), 
+                           NULL); 
+
+    // create selections as defined above:
+    poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
+    poreMappingSelCog_ = poreMappingSelCol_.parseFromString(poreMappingSelCogString)[0];
+    poreMappingSelCol_.setTopology(top.topology(), 0);
+    poreMappingSelCol_.setIndexGroups(poreIdxGroups);
+    poreMappingSelCol_.compile();
+
+    // free memory:
+    gmx_ana_indexgrps_free(poreIdxGroups);
+
+    // validate that there is a c-alpha for each residue:
+    if( poreMappingSelCal_.posCount() != poreMappingSelCog_.posCount() )
+    {
+        std::cerr<<"ERROR: Could not find a C-alpha for each residue in pore forming group."
+                 <<std::endl<<"Is your pore a protein?"<<std::endl;
+        std::abort();
+    }
+
+
+    // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
+    //-------------------------------------------------------------------------
+
+    // prepare centre of geometry seection collection:
+    solvMappingSelCol_.setReferencePosType("res_cog");
+    solvMappingSelCol_.setOutputPosType("res_cog");
+
+    // create index groups from topology:
+    // TODO: this will not work for custom index groups
+    gmx_ana_indexgrps_t *solvIdxGroups;
+    gmx_ana_indexgrps_init(&solvIdxGroups,
+                           top.topology(),
+                           NULL);
+
+    // selection text:
+    std::string solvMappingSelCogString = sel_[0].selectionText();
+
+    // create selection as defined by user:
+    solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
+
+    // compile the selections:
+    solvMappingSelCol_.setTopology(top.topology(), 0);
+    solvMappingSelCol_.setIndexGroups(solvIdxGroups);
+    solvMappingSelCol_.compile();
+
+    // free memory:
+    gmx_ana_indexgrps_free(solvIdxGroups);
+
+    
+    // PREPARE TOPOLOGY QUERIES
+    //-------------------------------------------------------------------------
+
+	// load full topology:
+	t_topology *topol = top.topology();	
+
+	// access list of all atoms:
+	t_atoms atoms = topol -> atoms;
+    
+	// create atomprop struct:
+	gmx_atomprop_t aps = gmx_atomprop_init();
 
     
     // GET ATOM RADII FROM TOPOLOGY
@@ -433,6 +564,73 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
         std::cerr<<e.what()<<std::endl; 
         std::abort();
     }
+
+	// find largest van der Waals radius in system:
+//	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
+
+
+    // TRACK C-ALPHAS and RESIDUE INDICES
+    //-------------------------------------------------------------------------
+   
+    // loop through all atoms, get index lists for c-alphas and residues:
+    for(int i = 0; i < atoms.nr; i++)
+    {
+        // check for calpha:
+        if( std::strcmp(*atoms.atomname[i], "CA") == 0 )
+        {
+           poreCAlphaIndices_.push_back(i); 
+        }
+
+        // track residue ID of atoms: 
+        residueIndices_.push_back(atoms.atom[i].resind);
+        atomResidueMapping_[i] = atoms.atom[i].resind;
+        residueAtomMapping_[atoms.atom[i].resind].push_back(i);
+    }
+
+    // remove duplicate residue indices:
+    std::vector<int>::iterator it;
+    it = std::unique(residueIndices_.begin(), residueIndices_.end());
+    residueIndices_.resize(std::distance(residueIndices_.begin(), it));
+
+    //
+    ConstArrayRef<int> refselAtomIdx = refsel_.atomIndices();
+    for(it = residueIndices_.begin(); it != residueIndices_.end(); it++)
+    {
+        // current residue id:
+        int resId = *it;
+    
+        // get vector of all atom indices in this residue:
+        std::vector<int> atomIdx = residueAtomMapping_[resId];
+
+        // for each atom in residue, check if it belongs to pore selection:
+        bool addResidue = false;
+        std::vector<int>::iterator jt;
+        for(jt = atomIdx.begin(); jt != atomIdx.end(); jt++)
+        {
+            // check if atom belongs to pore selection:
+            if( std::find(refselAtomIdx.begin(), refselAtomIdx.end(), *jt) != refselAtomIdx.end() )
+            {
+                // add atom to list of pore atoms:
+                poreAtomIndices_.push_back(*jt);
+
+                // if at least one atom belongs to pore group, the whole residue will be considered:
+                addResidue = true;
+            }
+        }
+
+        // add residue, if at least one atom is part of pore:
+        if( addResidue == true )
+        {
+            poreResidueIndices_.push_back(resId);
+        }
+    }
+
+
+    // FINALISE ATOMPROP QUERIES
+    //-------------------------------------------------------------------------
+    
+	// delete atomprop struct:
+	gmx_atomprop_destroy(aps);
 
     // set user-defined default radius?
     if( pfDefaultVdwRadiusIsSet_ )
@@ -611,24 +809,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//    std::cout<<"================================================="<<std::endl;
-//    std::cout<<std::endl;
-//    std::cout<<std::endl;
-
+    // PATH FINDING
+    //-------------------------------------------------------------------------
 
 
     // run path finding algorithm on current frame:
@@ -646,56 +828,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
-
     
-    // map residues onto pathway:
-    std::cout<<"mapping residues onto pathway ... ";
-    clock_t tMapRes = std::clock();
-    const gmx::Selection &refResidueSelection = pdata -> parallelSelection(refsel_);
-    std::map<int, gmx::RVec> mappedCoords = molPath.mapSelection(refResidueSelection, pbc);
-    tMapRes = (std::clock() - tMapRes)/CLOCKS_PER_SEC;
-    std::cout<<"done in  "<<tMapRes<<" sec"<<std::endl;
-    std::cout<<mappedCoords.size()<<" particles have been mapped"<<std::endl;
+    std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
+    std::vector<real> pathRadii = molPath.pathRadii();
 
-
-    // check if points lie inside pore:
-//    std::cout<<"checking if particles are inside pore ... ";
-//    clock_t tCheckInside = std::clock();
-//    std::map<int, bool> isInside = molPath.checkIfInside(mappedCoords);
-//    tCheckInside = (std::clock() - tCheckInside)/CLOCKS_PER_SEC;
-//    std::cout<<"done in  "<<tCheckInside<<" sec"<<std::endl;
-
-    // legacy code (currently retained):
-    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
-    {
-         dhResMapping.setPoint(0, it -> first);         // refId
-         dhResMapping.setPoint(1, it -> second[0]);     // s
-         dhResMapping.setPoint(2, it -> second[1]);     // rho
-         dhResMapping.setPoint(3, it -> second[3]);     // phi
-         dhResMapping.finishPointSet();
-    }
-
-
-
-    
-
-    std::cout<<std::endl;
-    std::cout<<std::endl;
-//    std::cout<<"================================================="<<std::endl;
-
-
-    // reset smart pointer:
-    // TODO: Is this necessary and parallel compatible?
-//    pfm.reset();
-
-
-
-
-
-    // ADD DATA TO PARALLELISABLE CONTAINER
-    //-------------------------------------------------------------------------
-
-    // start with path data:
+    // add path data to data handle:
     dh.selectDataSet(0);
 
     // access path finding module result:
@@ -716,29 +853,225 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dh.finishPointSet(); 
     }
 
+
+
+    // MAP PORE PARTICLES ONTO PATHWAY
+    //-------------------------------------------------------------------------
+
+    std::cout<<std::endl;
+
+ 
+    // evaluate pore mapping selection for this frame:
+    t_trxframe frame = fr;
+    poreMappingSelCol_.evaluate(&frame, pbc);
+    const gmx::Selection poreMappingSelCal = pdata -> parallelSelection(poreMappingSelCal_);    
+    const gmx::Selection poreMappingSelCog = pdata -> parallelSelection(poreMappingSelCog_);    
+
+
+    // map pore residue COG onto pathway:
+    std::cout<<"mapping pore residue COG onto pathway ... ";
+    clock_t tMapResCog = std::clock();
+    std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
+            poreMappingSelCog, 
+            mappingParams_,
+            pbc);
+    tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
+    std::cout<<"mapped "<<poreCogMappedCoords.size()
+             <<" particles in "<<1000*tMapResCog<<" ms"<<std::endl;
+
+    // map pore residue C-alpha onto pathway:
+    std::cout<<"mapping pore residue C-alpha onto pathway ... ";
+    clock_t tMapResCal = std::clock();
+    std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
+            poreMappingSelCal, 
+            mappingParams_,
+            pbc);
+    tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
+    std::cout<<"mapped "<<poreCalMappedCoords.size()
+             <<" particles in "<<1000*tMapResCal<<" ms"<<std::endl;
+
+    
+    // check if particles are pore-lining:
+    std::cout<<"checking which residues are pore-lining ... ";
+    clock_t tResPoreLining = std::clock();
+    std::map<int, bool> poreLining = molPath.checkIfInside(poreCogMappedCoords, poreMappingMargin_);
+    int nPoreLining = 0;
+    for(auto jt = poreLining.begin(); jt != poreLining.end(); jt++)
+    {
+        if( jt -> second == true )
+        {
+            nPoreLining++;
+        }
+    }
+    tResPoreLining = (std::clock() - tResPoreLining)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<nPoreLining<<" pore lining residues in "
+             <<1000*tResPoreLining<<" ms"<<std::endl;
+
+    // check if residues are pore-facing:
+    // TODO: make this conditional on whether C-alphas are available
+    
+    std::cout<<"checking which residues are pore-facing ... ";
+    clock_t tResPoreFacing = std::clock();
+    std::map<int, bool> poreFacing;
+    int nPoreFacing = 0;
+    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+        // is residue pore lining and has COG closer to centreline than CA?
+        if( it -> second[1] > poreCalMappedCoords[it->first][1] &&
+            poreLining[it -> first] == true )
+        {
+            poreFacing[it->first] = true;
+            nPoreFacing++;
+        }
+        else
+        {
+            poreFacing[it->first] = false;            
+        }
+    }
+    tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<nPoreFacing<<" pore facing residues in "
+             <<1000*tResPoreFacing<<" ms"<<std::endl;
+    
+
+    // add points inside to data frame:
+    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+        SelectionPosition pos = poreMappingSelCog.position(it->first);
+        
+        // add points to dataset:
+        dhResMapping.setPoint(0, pos.mappedId());                    // refId
+        dhResMapping.setPoint(1, it -> second[0]); // s
+        dhResMapping.setPoint(2, it -> second[1]); // rho
+        dhResMapping.setPoint(3, it -> second[2]);// phi
+        dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
+        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing TODO
+        dhResMapping.finishPointSet();
+    }
+    
+    // now add mapped residue coordinates to data handle:
+    dh.selectDataSet(2);
+    
+    // add mapped residues to data container:
+    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+         dh.setPoint(0, poreMappingSelCog.position(it -> first).mappedId()); // res.id
+         dh.setPoint(1, it -> second[0]);     // s
+         dh.setPoint(2, it -> second[1]);     // rho
+         dh.setPoint(3, it -> second[3]);     // phi
+         dh.setPoint(4, poreLining[it -> first]);     // pore lining?
+         dh.setPoint(5, poreFacing[it -> first]);     // pore facing?
+         dh.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
+         dh.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
+         dh.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
+         dh.finishPointSet();
+    }
+
+
+    // MAP SOLVENT PARTICLES ONTO PATHWAY
+    //-------------------------------------------------------------------------
+
+    // evaluate solevnt mapping selections for this frame:
+    t_trxframe tmpFrame = fr;
+    solvMappingSelCol_.evaluate(&tmpFrame, pbc);
+
+    // TODO: make this a parameter:
+    real solvMappingMargin_ = 0.0;
+        
+    // get thread-local selection data:
+    const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
+
+    // map particles onto pathway:
+    std::cout<<"mapping solvent particles onto pathway ... ";
+    clock_t tMapSol = std::clock();
+    std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
+            solvMapSel, 
+            mappingParams_,
+            pbc);
+    tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
+    std::cout<<"mapped "<<solventMappedCoords.size()
+             <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
+
+
+    std::cout<<"solvMapSel.posCount = "<<solvMapSel.posCount()<<std::endl;
+    std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
+
+
+    // find particles inside path (i.e. pore plus bulk sampling regime):
+    std::cout<<"finding solvent particles inside pore ... ";
+    clock_t tSolInsideSample = std::clock();
+    std::map<int, bool> solvInsideSample = molPath.checkIfInside(
+            solventMappedCoords, solvMappingMargin_);
+    int numSolvInsideSample = 0;
+    for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
+    {            
+        if( jt -> second == true )
+        {
+            numSolvInsideSample++;
+        }
+    }
+    tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<numSolvInsideSample<<" solvent particles inside pore in "
+             <<1000*tSolInsideSample<<" ms"<<std::endl;
+
+
+    // find particles inside pore:
+    std::cout<<"finding solvent particles inside pore ... ";
+    clock_t tSolInsidePore = std::clock();
+    std::map<int, bool> solvInsidePore = molPath.checkIfInside(
+            solventMappedCoords, 
+            solvMappingMargin_,
+            molPath.sLo(),
+            molPath.sHi());
+    int numSolvInsidePore = 0;
+    for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
+    {            
+        if( jt -> second == true )
+        {
+            numSolvInsidePore++;
+        }
+    }
+    tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
+    std::cout<<"found "<<numSolvInsidePore<<" solvent particles inside pore in "
+             <<1000*tSolInsidePore<<" ms"<<std::endl;
+
+
+    // now add mapped residue coordinates to data handle:
+    dh.selectDataSet(3);
+    
+    // add mapped residues to data container:
+    for(auto it = solventMappedCoords.begin(); 
+        it != solventMappedCoords.end(); 
+        it++)
+    {
+         dh.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
+         dh.setPoint(1, it -> second[0]);     // s
+         dh.setPoint(2, it -> second[1]);     // rho
+         dh.setPoint(3, it -> second[3]);     // phi
+         dh.setPoint(4, solvInsidePore[it -> first]);     // inside pore
+         dh.setPoint(5, solvInsideSample[it -> first]);     // inside sample
+         dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+         dh.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+         dh.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+         dh.finishPointSet();
+    }
+
+
+    // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
+    //-------------------------------------------------------------------------
+
+
     // add aggegate path data:
     dh.selectDataSet(1);
 
     // only one point per frame:
-    dh.setPoint(0, molPath.minRadius());
+    dh.setPoint(0, molPath.minRadius().second);
     dh.setPoint(1, molPath.length());
     dh.setPoint(2, molPath.volume());
-    dh.setPoint(3, 0);  // TODO: implement number of particles in channel!
+    dh.setPoint(3, numSolvInsidePore); 
+    dh.setPoint(4, numSolvInsideSample); 
     dh.finishPointSet();
+    
 
-    
-    // now adding mapped residue coordinates:
-    dh.selectDataSet(2);
-    
-    // add mapped residues to data container:
-    for(std::map<int, gmx::RVec>::iterator it = mappedCoords.begin(); it != mappedCoords.end(); it++)
-    {
-         dh.setPoint(0, it -> first);         // refId
-         dh.setPoint(1, it -> second[0]);     // s
-         dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[3]);     // phi
-         dh.finishPointSet();
-    }
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
@@ -750,6 +1083,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // FINISH FRAME
     //-------------------------------------------------------------------------
+
+    std::cout<<std::endl;
 
 	// finish analysis of current frame:
     dh.finishFrame();
@@ -764,7 +1099,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 void
 trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 {
-
+    std::cout<<"finished analysis"<<std::endl;
 }
 
 

@@ -15,6 +15,8 @@ if( GTEST_FOUND )
     file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
     file(GLOB_RECURSE TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
     list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
+    list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/../config/version.cpp")
+    list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/../config/config.cpp")
 
     # add executable to run all tests and link libraries:
     add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})

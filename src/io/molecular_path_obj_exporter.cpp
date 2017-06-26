@@ -32,7 +32,7 @@ MolecularPathObjExporter::operator()(char *filename,
     real extrapDist = 1.0;
 
     int nLen = 100;
-    int nPhi = 50;
+    int nPhi = 100;
 
 
     real deltaLen = molPath.length() / (nLen - 1);

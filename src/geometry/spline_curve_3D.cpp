@@ -7,6 +7,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/math/tools/minima.hpp>
 #include <boost/math/tools/roots.hpp>
 
 #include "geometry/spline_curve_3D.hpp"
@@ -329,140 +330,35 @@ SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
  */
 gmx::RVec 
 SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
-                                      int idxCtrlPoint,
+                                      real lo,
+                                      real hi, 
                                       real tol)
 {
-    int maxIter = 100;
-    real eps = std::numeric_limits<real>::epsilon();
+    // internal parameters:
+    boost::uintmax_t maxIter = 100;
 
-    gmx::RVec curvPoint;
-
-    // shift index to take into account repeated knots:
-    int idx = idxCtrlPoint + degree_;
-
-    // get typical distance between knots:
-    // (should be equal for all intervals if curve parameterised by arc length)
-    real paramStep = knotVector_[degree_ + 2] - knotVector_[degree_ + 1];
-
-    // create initial guess based on closest point and its nearest neighbours:
-    std::vector<real> s = {knotVector_[idx] - paramStep,
-                           knotVector_[idx],
-                           knotVector_[idx] + paramStep};
-
-    // evaluate difference at trial points:
-    std::vector<real> d = {pointSqDist(cartPoint, s[0]),
-                           pointSqDist(cartPoint, s[1]),
-                           pointSqDist(cartPoint, s[2])};
+    // objective functionbinding:
+    boost::function<real(real)> objFun;
+    objFun = boost::bind(&SplineCurve3D::pointSqDist, 
+                         this, 
+                         cartPoint, 
+                         _1);
  
-    // try out new points until local minimum is bracketed:
-    // TODO: this may be slow for points far outside the interpolation interval
-    while( d[0] <= d[1] )
-    {
-        s[0] -= paramStep;
-        d[0] = pointSqDist(cartPoint, s[0]);
-    }
-    while( d[2] <= d[1] )
-    {
-        s[2] += paramStep;
-        d[2] = pointSqDist(cartPoint, s[2]);
-    }
+    // find minimum via Brent's method:
+    int bits = std::numeric_limits<real>::digits;
+    std::pair<real, real> result;
+    result = boost::math::tools::brent_find_minima(objFun,
+                                                   lo, 
+                                                   hi,
+                                                   bits,
+                                                   maxIter);
 
-    // sanity check on initial points:
-    if( s[1] - s[0] < eps || s[2] - s[1] < eps )
-    {
-        std::cerr<<"ERROR: Initial points are degenerate!"<<std::endl;
-        std::abort();
-    }
-
-    // sanity check on bracketing:
-    if( d[0] <= d[1] || d[2] <= d[1] )
-    {
-        std::cerr<<"ERROR: Initial guess does not bracket the minimum!"<<std::endl;
-        std::cerr<<"Require d(a) > d(b) and d(c) > d(b)."<<std::endl;
-        std::cerr<<"But have: "<<std::endl;
-        std::cerr<<"d(a) = "<<d[0]<<"  "
-                 <<"d(b) = "<<d[1]<<"  "
-                 <<"d(c) = "<<d[2]<<std::endl; 
-        std::cerr<<"a = "<<s[0]<<"  "
-                 <<"b = "<<s[1]<<"  "
-                 <<"c = "<<s[2]<<std::endl; 
-        std::abort();
-    }
-
-    // initialise optimal position and distance:
-    real sOpt = s[1];
-    real dOpt = pointSqDist(cartPoint, sOpt);
-    real sOptOld = sOpt + 3*tol;
-
-    int iter = 0;
-    while( iter < maxIter )
-    {
-        // golden search step:
-        real mi = (s[0] + s[2])/2.0;
-        const real GOLD = 0.38196;
-        if( s[1] > mi )
-        {
-            sOpt = s[1] + GOLD*(s[0] - s[1]);
-        }
-        else 
-        {
-            sOpt = s[1] + GOLD*(s[2] - s[1]);
-        }
-
-
-        // evaluate distance at new trial point:
-        dOpt = pointSqDist(cartPoint, sOpt);
-
-
-        // narrow down interval:
-        if( dOpt < d[1]  )
-        {
-            if( sOpt > s[1] )
-            {
-                s[0] = s[1];
-            }
-            else
-            {
-                s[2] = s[1];
-            }
-            s[1] = sOpt;
-            d[1] = dOpt;
-        }
-        else
-        {
-            if( sOpt < s[1] )
-            {
-                s[0] = sOpt;
-            }
-            else
-            {
-                s[2] = sOpt;
-            }
-        }
-
-        // check convergence criterion:
-        // TODO: cast this in terms of bracketing
-        if( std::abs(sOpt - sOptOld) < tol )
-        {
-            break;
-        }
-        sOptOld = sOpt;
-
-        // increment loop counter:
-        iter++;
-    }
-
-    // check on convergence:
-    if( iter == maxIter )
-    {
-        std::cerr<<"WARNING: Could not reach convergence in mapping point onto spline!"<<std::endl;
-        std::abort();
-    }
-
-    curvPoint[0] = sOpt;
-    curvPoint[1] = dOpt;
+    // return curvilinear coordinates of point:
+    // TODO: implement angular coordinate
+    gmx::RVec curvPoint;
+    curvPoint[0] = result.first;
+    curvPoint[1] = result.second;
     curvPoint[2] = std::nan("");
-
     return curvPoint;
 }
 
@@ -661,7 +557,7 @@ SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
  * square root is not drawn, hence the squared distance is returned.
  */
 real
-SplineCurve3D::pointSqDist(gmx::RVec &point, real &eval)
+SplineCurve3D::pointSqDist(gmx::RVec point, real eval)
 {
     // evaluate spline:
     gmx::RVec splPoint = evaluate(eval, 0, eSplineEvalDeBoor);
