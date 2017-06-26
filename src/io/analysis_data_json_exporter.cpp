@@ -61,9 +61,25 @@ AnalysisDataJsonExporter::parallelDataStarted(
     json_.AddMember("reproducibility information", reproInfo, allocator);
 
 
-    // residue information:
+    // parameter information:
     //-------------------------------------------------------------------------
 
+    // create object for parameters:
+    rapidjson::Value paramInfo;
+    paramInfo.SetObject();
+
+    // loop over all known parameters:
+    for(auto it = parameterMap_.begin(); it != parameterMap_.end(); it++)
+    {       
+        rapidjson::Value key(it -> first, allocator);
+        paramInfo.AddMember(key, it -> second, allocator);
+    }
+
+    // add parameter object to document:
+    json_.AddMember("parameters", paramInfo, allocator);
+
+    // residue information:
+    //-------------------------------------------------------------------------
 
     // add all residue ID/name pairs to array:
     rapidjson::Value resNames(rapidjson::kArrayType);
@@ -209,13 +225,8 @@ AnalysisDataJsonExporter::dataFinished()
     rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
     json_.Accept(writer);
 
-    std::cout<<"written to file"<<std::endl;
-
     // close output file:
     std::fclose(file);
-
-
-    std::cout<<"file closed"<<std::endl;
 }
 
 
@@ -257,4 +268,19 @@ AnalysisDataJsonExporter::setFileName(std::string fileName)
 {
     fileName_ = fileName;
 }
+
+
+/*!
+ * Adds a parameter key value pair that will be written to the JSON output. 
+ * Needs to be called before dataStarted() or parallelDataStarted(), otherwise
+ * the parameter will be ignored.
+ *
+ * TODO: make it so that this adds to the JSON doc directly!
+ */
+void
+AnalysisDataJsonExporter::addParameter(std::string name, real value)
+{
+    parameterMap_[name] = std::to_string(value);
+}
+
 

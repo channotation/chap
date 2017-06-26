@@ -285,9 +285,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
         saRandomSeed_ = gmx::makeRandomSeed();
     }
 
-
-    std::cout<<"random seed = "<<saRandomSeed_<<std::endl;
-
     // set parameters in map:
     pfParams_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
 
@@ -379,6 +376,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     jsonExporter -> setResidueNames(residueNames);
     jsonExporter -> setFileName(jsonOutputFileName_);
     data_.addModule(jsonExporter);
+
+    // add path finding parameters to JSON exporter:
+    for(auto it = pfParams_.begin(); it != pfParams_.end(); it++)
+    {
+        jsonExporter -> addParameter(it -> first, it -> second);
+    }
 
 
 
