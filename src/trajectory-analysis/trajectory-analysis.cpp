@@ -382,6 +382,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     {
         jsonExporter -> addParameter(it -> first, it -> second);
     }
+    jsonExporter -> addParameter("cutoff", cutoff_);
 
 
 
