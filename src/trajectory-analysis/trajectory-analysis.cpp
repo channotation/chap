@@ -225,10 +225,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
                          .description("Channel direction vector; will be normalised to unit vector internally. Defaults to (0, 0, 1)."));
-    options -> addOption(IntegerOption("sa-random-seed")
+    options -> addOption(Int64Option("sa-random-seed")
                          .store(&saRandomSeed_)
-                         .required()
-                         .description("Seed for RNG used in simulated annealing."));
+                         .storeIsSet(&saRandomSeedIsSet_)
+                         .description("Seed for RNG used in simulated annealing. "));
     options -> addOption(IntegerOption("sa-max-cool")
                           .store(&saMaxCoolingIter_)
                           .defaultValue(1000)
@@ -276,9 +276,19 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                  const TopologyInformation &top)
 {
-    // set parameters in parameter map:
+    // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
 
+    // set inut-dependent defaults:
+    if( !saRandomSeedIsSet_ )
+    {
+        saRandomSeed_ = gmx::makeRandomSeed();
+    }
+
+
+    std::cout<<"random seed = "<<saRandomSeed_<<std::endl;
+
+    // set parameters in map:
     pfParams_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
 
     pfParams_["pfCylRad"] = pfParams_["pfProbeMaxRadius"];
@@ -296,7 +306,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
 
 
-    // Path Mapping Parameters
+    // PATH MAPPING PARAMETERS
     //-------------------------------------------------------------------------
     
     mappingParams_.nbhSearchCutoff_ = cutoff_ + poreMappingMargin_;

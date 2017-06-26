@@ -1,10 +1,12 @@
 #ifndef TRAJECTORYANALYSIS_HPP
 #define TRAJECTORYANALYSIS_HPP
 
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <unordered_map>
 #include <string>
+
 #include <vector>
 
 #include <gromacs/trajectoryanalysis.h>
@@ -117,7 +119,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     bool pfChanDirVecIsSet_;
 
     // simulated annealing parameters:
-    int saRandomSeed_;
+    int64_t saRandomSeed_;
+    bool saRandomSeedIsSet_;
     int saMaxCoolingIter_;
     int saNumCostSamples_;
     real saXi_;
