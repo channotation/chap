@@ -204,7 +204,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&pfMethod_)
                          .defaultValue("inplane-optim")
                          .description("Path finding method. Only inplane-optim is implemented so far."));
-    options -> addOption(RealOption("probe-step")
+    options -> addOption(RealOption("pf-probe-step")
                          .store(&pfParams_["pfProbeStepLength"])
                          .defaultValue(0.025)
                          .description("Step length for probe movement. Defaults to 0.025 nm."));
@@ -212,19 +212,19 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&pfParams_["pfProbeRadius"])
                          .defaultValue(0.0)
                          .description("Radius of probe. Defaults to 0.0, buggy for other values!"));
-    options -> addOption(RealOption("max-free-dist")
+    options -> addOption(RealOption("pf-max-free-dist")
                          .store(&pfParams_["pfProbeMaxRadius"])
                          .defaultValue(1.0)
                          .description("Maximum radius of pore. Defaults to 1.0, buggy for larger values."));
-    options -> addOption(IntegerOption("max-probe-steps")
+    options -> addOption(IntegerOption("pf-max-probe-steps")
                          .store(&pfMaxProbeSteps_)
                          .description("Maximum number of steps the probe is moved in either direction."));
-    options -> addOption(RealOption("init-probe-pos")
+    options -> addOption(RealOption("pf-init-probe-pos")
                          .storeVector(&pfInitProbePos_)
                          .storeIsSet(&pfInitProbePosIsSet_)
                          .valueCount(3)
                          .description("Initial position of probe in probe-based pore finding algorithms. If this is set explicitly, it will overwrite the COM-based initial position set with the ippselflag."));
-    options -> addOption(RealOption("chan-dir-vec")
+    options -> addOption(RealOption("pf-chan-dir-vec")
                          .storeVector(&pfChanDirVec_)
                          .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
