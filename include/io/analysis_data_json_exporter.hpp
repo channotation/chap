@@ -39,6 +39,7 @@ class AnalysisDataJsonExporter : public gmx::AnalysisDataModuleParallel
 
         // setter methods for parameter map:
         void addParameter(std::string name, real value);
+        void addParameter(std::string name, std::string value);
 
     private:
 

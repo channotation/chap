@@ -381,6 +381,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     jsonExporter -> setFileName(jsonOutputFileName_);
     data_.addModule(jsonExporter);
 
+    // add general parameters to JSON exporter:
+    jsonExporter -> addParameter("jsonOutputFileName", jsonOutputFileName_);
+    jsonExporter -> addParameter("objOutputFileName", objOutputFileName_);
+
     // add path finding parameters to JSON exporter:
     for(auto it = pfParams_.begin(); it != pfParams_.end(); it++)
     {

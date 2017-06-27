@@ -284,3 +284,12 @@ AnalysisDataJsonExporter::addParameter(std::string name, real value)
 }
 
 
+/*
+ *
+ */
+void
+AnalysisDataJsonExporter::addParameter(std::string name, std::string value)
+{
+    parameterMap_[name] = value;
+}
+
