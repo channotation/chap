@@ -71,11 +71,11 @@ class WavefrontObjExporter
     public:
 
         // interface for export:
-        void write(char *filename,
+        void write(std::string fileName,
                    std::vector<gmx::RVec> vertices,
                    std::vector<std::vector<int>> faces);
 
-        void write(char *filename,
+        void write(std::string fileName,
                    WavefrontObjObject object);
 
 

@@ -148,6 +148,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue("output.json")
                          .description("File name for JSON output."));
 
+    options -> addOption(StringOption("obj")
+	                     .store(&objOutputFileName_)
+                         .defaultValue("output.obj")
+                         .description("File name for OBJ output (testing)."));
 
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
@@ -1077,7 +1081,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     //-------------------------------------------------------------------------
 
     MolecularPathObjExporter molPathExp;
-    molPathExp("pore.obj",
+    molPathExp(objOutputFileName_.c_str(),
                molPath);
 
 

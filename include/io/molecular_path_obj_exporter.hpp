@@ -1,6 +1,8 @@
 #ifndef MOLECULAR_PATH_OBJ_EXPORTER_HPP
 #define MOLECULAR_PATH_OBJ_EXPORTER_HPP
 
+#include <string>
+
 #include <gtest/gtest.h>
 
 #include "path-finding/molecular_path.hpp"
@@ -22,7 +24,7 @@ class MolecularPathObjExporter
         MolecularPathObjExporter();
 
         // interface for exporting:
-        void operator()(char *filename, 
+        void operator()(std::string fileName, 
                         MolecularPath &molPath);
 
     private:

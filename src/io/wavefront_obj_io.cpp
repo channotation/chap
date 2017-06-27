@@ -132,11 +132,11 @@ WavefrontObjObject::calculateCog()
  * Writes an OBJ object to a file of the given name. 
  */
 void
-WavefrontObjExporter::write(char *filename,
+WavefrontObjExporter::write(std::string fileName,
                             WavefrontObjObject object)
 {
     // open file stream:
-    obj_.open(filename, std::fstream::out);
+    obj_.open(fileName.c_str(), std::fstream::out);
 
     // writer header comment:
     writeComment("produced by CHAP");

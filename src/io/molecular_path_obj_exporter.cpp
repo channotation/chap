@@ -21,7 +21,7 @@ MolecularPathObjExporter::MolecularPathObjExporter()
  *
  */
 void
-MolecularPathObjExporter::operator()(char *filename,
+MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
 {
     std::cout<<"begin molpath"<<std::endl;
@@ -122,7 +122,7 @@ MolecularPathObjExporter::operator()(char *filename,
 
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
-    objExp.write(filename, obj);
+    objExp.write(fileName, obj);
 }
 
 
