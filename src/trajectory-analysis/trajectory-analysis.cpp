@@ -153,6 +153,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue("output.obj")
                          .description("File name for OBJ output (testing)."));
 
+    options -> addOption(StringOption("resm")
+	                     .store(&resMappingOutFileName_)
+                         .defaultValue("res_mapping.dat")
+                         .description("Residue mapping data (testing)."));
+
     // get (optional) selection option for the neighbourhood search cutoff:
     options -> addOption(DoubleOption("cutoff")
 	                     .store(&cutoff_)
@@ -406,7 +411,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // add long format plot module:
     int j = 1;
     AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
-    const char *fnResMapping = "res_mapping.dat";
+    const char *fnResMapping = resMappingOutFileName_.c_str();
     std::vector<char*> headerResMapping = {"t", 
                                            "mappedId", 
                                            "s", 

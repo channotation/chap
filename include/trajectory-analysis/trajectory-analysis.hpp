@@ -55,6 +55,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     std::string poreProfileFileName_;       // time averaged radius, energy etc.
     std::string jsonOutputFileName_;
     std::string objOutputFileName_;
+    std::string resMappingOutFileName_;
     bool poreFile_;
 
 	class ModuleData;
