@@ -223,6 +223,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Maximum radius of pore. Defaults to 1.0, buggy for larger values."));
     options -> addOption(IntegerOption("pf-max-probe-steps")
                          .store(&pfMaxProbeSteps_)
+                         .defaultValue(10000)
                          .description("Maximum number of steps the probe is moved in either direction."));
     options -> addOption(RealOption("pf-init-probe-pos")
                          .storeVector(&pfInitProbePos_)
