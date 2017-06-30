@@ -838,6 +838,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";
+    std::cout.flush();
     clock_t tMolPath = std::clock();
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;

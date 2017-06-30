@@ -488,17 +488,30 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
         return knotVector_.back();
     }
 
-    // find appropriate interval:
+    // find apropriate interval:
     std::pair<std::vector<real>::iterator, std::vector<real>::iterator> bounds;
     bounds = std::equal_range(arcLengthTable_.begin(), arcLengthTable_.end(), arcLength);
     int idxLo = bounds.second - arcLengthTable_.begin() - 1;
     int idxHi = bounds.second - arcLengthTable_.begin();
 
+
+    // handle query outside table range:
+    // TODO: add case for query below lower bound and test!
+    if( bounds.second == arcLengthTable_.end() )
+    {
+        return knotVector_.back() + arcLength - arcLengthTable_.back();
+    }
+    if( bounds.second == arcLengthTable_.begin() )
+    {
+        std::cerr<<"ERROR: arc length below table value range!"<<std::endl;
+        std::abort();
+    }
+
     // initialise bisection interval and lower limit:
     real tLo = knotVector_[idxLo];
     real tHi = knotVector_[idxHi];
     real tLi = tLo;
-    
+   
     // target arc length within this interval:
     real targetIntervalLength = arcLength - arcLengthTable_[idxLo];
 
@@ -517,14 +530,15 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
                          tLi, 
                          _1, 
                          targetIntervalLength);
- 
-    // find root via TOMS748 bracketing algorithm:
+
+        
     std::pair<real, real> result;
     result = boost::math::tools::toms748_solve(objFun,
                                                tLo, 
                                                tHi,
                                                termCond,
                                                maxIter);
+    
 
     // best guess if middle of bracketing interval:
     return 0.5*(result.first + result.second);
