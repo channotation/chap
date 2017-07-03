@@ -73,79 +73,165 @@ MolecularPath::~MolecularPath()
 }
 
 
-/*
+/*!
+ * Function for mapping one point in Cartesian coordinates to spline 
+ * coordinates used internally by both mapPosition() and mapSelection().
+ *
+ * The mapping procedes in two steps: First, the closest of a set of sampling
+ * points is found by direct searching in order to find an initial point for
+ * a minimisation procedure that iteratively minimises the distance between 
+ * the Cartesian point and the spline curve using cartesianToCurvilinear().
+ *
+ * The set of sample points is provided externally as it can be the same for 
+ * mutliple mapped points and resampling in each step would be unneccessarily
+ * costly. An exception is thrown if the closest point in the initial step is 
+ * one of the endpoints of the sample.
+ *
+ * \todo The first step is relatively slow if more than ca. 1000 sample points 
+ * have to be checked. May be worth to implement a tree-based search here.
+ */
+inline
+gmx::RVec
+MolecularPath::mapPosition(const gmx::RVec &cartCoord,
+                           const std::vector<real> &arcLenSample,
+                           const std::vector<gmx::RVec> &pathPointSample,
+                           const real mapTol)
+{
+    // find closest sample point:
+    std::vector<real> distances;
+    distances.reserve(pathPointSample.size());
+    for(size_t j = 0; j < pathPointSample.size(); j++)
+    {
+        distances.push_back( distance2(cartCoord, pathPointSample[j]) );
+    }
+    int idxMinDist = std::min_element(distances.begin(), distances.end()) - distances.begin();
+
+    // refine mapping by distance minimisation:
+    gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(
+            cartCoord,
+            arcLenSample[idxMinDist - 1],
+            arcLenSample[idxMinDist + 1],
+            mapTol);
+
+    // check that all points have been mapped to the interior of the spline sample:
+    if( idxMinDist == 0 || idxMinDist == (pathPointSample.size() - 1) )
+    {
+        throw std::runtime_error("Particle mapped onto endpoint samples.");
+    }
+   
+    // return mapped coordinate:
+    return mappedCoord;
+}
+
+
+/*!
+ * Auxiliary function for calculating the number of sample points used in the
+ * initial step of particle to path mapping. The number of sample points is 
+ * determined according to
+ *
+ * \f[
+ *      N = \left\lceil \frac{L + 2d}{\Delta s} \right\rceil
+ * \f]
+ *
+ * where \f$ L \f$ is the length of the path, \f$ d \f$ is the extrapolation 
+ * at either endpoint and \f$ \Delta s \f$ is the target step length. 
+ */
+inline
+int
+MolecularPath::numSamplePoints(const PathMappingParameters &params)
+{
+    return std::ceil( (2.0*params.extrapDist_ + length()) / params.sampleStep_ );
+}
+
+
+/*!
+ * Function for mapping a set of Cartesian positions onto the centre line 
+ * spline curve.
+ *
+ * The return value is a vector of points in spline coordinates ordered in the 
+ * same way as the input vector. Internally, this uses mapPosition() for each 
+ * input position.
+ */
+std::vector<gmx::RVec>
+MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
+                            const PathMappingParameters &params)
+{
+    // prepare sample points on centre line with maximum arc length distance:
+    int nPathSamples = numSamplePoints(params);
+    std::vector<real> arcLenSample = sampleArcLength(
+            nPathSamples, 
+            params.extrapDist_);
+    std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
+
+    // map all input positions onto centre line:
+    std::vector<gmx::RVec> mappedPositions;
+    mappedPositions.reserve(positions.size());
+    for(auto it = positions.begin(); it != positions.end(); it++)
+    {
+        try
+        {
+            mappedPositions.push_back(mapPosition(*it,
+                                                  arcLenSample,
+                                                  pathPointSample,
+                                                  params.mapTol_) );
+        }
+        catch( const std::runtime_error& e )
+        {
+            // TODO: adaptively increase extrapolation distance to handle 
+            // failure where position is mapped onto sample endpoints, for now
+            // fatal failure will have to do
+            std::cerr<<"ERROR: "<<e.what()<<std::endl;
+            std::abort();
+        }        
+    }
+ 
+    // return mapped positions:
+    return mappedPositions;
+}
+
+
+/*!
  * Maps all positions in a selection onto molecular pathway.
  *
- * 
- *
- * \todo Handle periodic boundary conditions internally.
+ * This function does essentially the same as mapPositions, except that the 
+ * input may be provided as a selection of particles and the output will be 
+ * a map associating each refId in the selection with a set of curvilinear 
+ * coordinates.
  */
 std::map<int, gmx::RVec>
-MolecularPath::mapSelection(gmx::Selection mapSel,
-                            PathMappingParameters params,
-                            t_pbc *nbhSearchPbc)
+MolecularPath::mapSelection(const gmx::Selection &mapSel,
+                            const PathMappingParameters &params)
 {
     // create a set of reference positions on the pore centre line:
-    // TODO: fine grain the reference point set
-    gmx::AnalysisNeighborhoodPositions centreLinePos(pathPoints_);
-
-    // prepare neighborhood search:
-    real nbhSearchCutoff = params.nbhSearchCutoff_;
-    real mapTol = params.mapTol_;
-    gmx::AnalysisNeighborhood nbh;
-    nbh.setCutoff(nbhSearchCutoff);
-
-    // create a set of reference positions on the pore centre line:
-    // TODO: how to select these parameters automatically?
-    int nPathSamples = 1000;
-    real extrapDist = 50.0;
-    std::vector<real> arcLenSample = this -> sampleArcLength(nPathSamples, extrapDist);
-    const std::vector<gmx::RVec> pathSample = this -> samplePoints(arcLenSample);
+    int nPathSamples = numSamplePoints(params);
+    std::vector<real> arcLenSample = sampleArcLength(
+            nPathSamples, 
+            params.extrapDist_);
+    const std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
 
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
     for(size_t i = 0; i < mapSel.posCount(); i++)
     {
-        // cartesian coordinates of test position:
-        gmx::RVec cartCoord = mapSel.position(i).x();
-
-        // find closest sample point:
-        std::vector<real> distances;
-        distances.reserve(pathSample.size());
-        for(size_t j = 0; j < pathSample.size(); j++)
+        try
         {
-            distances.push_back( distance2(cartCoord, pathSample[j]) );
+            mappedCoords[mapSel.position(i).refId()] = mapPosition(
+                    mapSel.position(i).x(),
+                    arcLenSample,
+                    pathPointSample,
+                    params.mapTol_);
         }
-        int idxMinDist = std::min_element(distances.begin(), distances.end()) - distances.begin();
-
-        // refine mapping by distance minimisation:
-        int idx = idxMinDist;
-        gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(cartCoord,
-                                                                   arcLenSample[idx - 1],
-                                                                   arcLenSample[idx + 1],
-                                                                   mapTol);
-
-        // check that all points have been mapped to the interior of the spline sample:
-        if( idxMinDist == 0 || idxMinDist == (pathSample.size() - 1) )
+        catch( const std::runtime_error &e )
         {
-            std::cerr<<"ERROR: Some particles mapped onto spline sample endpoints."<<std::endl;
-            std::cerr<<"idxMinDist = "<<idxMinDist<<std::endl;
-            std::cerr<<"Increase extrapolation distance!"<<std::endl;
+            // TODO: adaptively increase extrapolation distance to handle cases
+            // where some particles are mapped onto sample endpoints; for now 
+            // a hard failure will have to suffice
+            std::cerr<<"ERROR: "<<e.what()<<std::endl;
             std::abort();
         }
-
-        // add to list of mapped coordinates:
-        mappedCoords[mapSel.position(i).refId()] = mappedCoord;
-
-/*
-        std::cout<<"id = "<<mapSel.position(i).refId()<<"  "
-                 <<"s = "<<mappedCoord[0]<<"  "
-                 <<"rho = "<<mappedCoord[1]<<"  "
-                 <<"phi = "<<mappedCoord[2]<<"  "
-                 <<std::endl;
-                 */
     }
 
+    // return mapped coordinates:
     return mappedCoords;
 }
 

@@ -318,8 +318,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     
     mappingParams_.nbhSearchCutoff_ = cutoff_ + poreMappingMargin_;
     mappingParams_.mapTol_ = 1e-7;
-    mappingParams_.numPathSamples_ = 1000;
     mappingParams_.extrapDist_ = 100;
+    mappingParams_.sampleStep_ = 0.1;
 
 
     // PREPARE DATSETS
@@ -869,6 +869,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
 
 
+    // PATH ALIGNMENT
+    //-------------------------------------------------------------------------
+
+
+    
+
 
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
@@ -888,8 +894,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     clock_t tMapResCog = std::clock();
     std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
             poreMappingSelCog, 
-            mappingParams_,
-            pbc);
+            mappingParams_);
     tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
     std::cout<<"mapped "<<poreCogMappedCoords.size()
              <<" particles in "<<1000*tMapResCog<<" ms"<<std::endl;
@@ -899,8 +904,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     clock_t tMapResCal = std::clock();
     std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
             poreMappingSelCal, 
-            mappingParams_,
-            pbc);
+            mappingParams_);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
     std::cout<<"mapped "<<poreCalMappedCoords.size()
              <<" particles in "<<1000*tMapResCal<<" ms"<<std::endl;
@@ -1000,8 +1004,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     clock_t tMapSol = std::clock();
     std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
             solvMapSel, 
-            mappingParams_,
-            pbc);
+            mappingParams_);
     tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
     std::cout<<"mapped "<<solventMappedCoords.size()
              <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;

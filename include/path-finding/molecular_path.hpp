@@ -25,7 +25,7 @@ class PathMappingParameters
         real nbhSearchCutoff_;
         real mapTol_;
         real extrapDist_;
-        int numPathSamples_;
+        real sampleStep_;
 };
 
 
@@ -60,9 +60,12 @@ class MolecularPath
         ~MolecularPath();
 
         // interface for mapping particles onto pathway:
-        std::map<int, gmx::RVec> mapSelection(gmx::Selection mapSel,
-                                              PathMappingParameters params,
-                                              t_pbc *nbhSearchPbc);
+        std::vector<gmx::RVec> mapPositions(
+                const std::vector<gmx::RVec> &positions,
+                const PathMappingParameters &params);
+        std::map<int, gmx::RVec> mapSelection(
+                const gmx::Selection &mapSel,
+                const PathMappingParameters &params); 
         
         // check if points lie inside pore:
         std::map<int, bool> checkIfInside(
@@ -108,6 +111,14 @@ class MolecularPath
         // utilities for sampling functions:
         inline real sampleArcLenStep(int nPoints, real extrapDist); 
 
+        // utilities for path mapping:
+        inline gmx::RVec mapPosition(
+                const gmx::RVec &cartCoord,
+                const std::vector<real> &arcLenSample,
+                const std::vector<gmx::RVec> &pathPointSample,
+                const real mapTol);
+        inline int numSamplePoints(const PathMappingParameters &params);
+
         // original path points and corresponding radii:
         std::vector<gmx::RVec> pathPoints_;
         std::vector<real> pathRadii_;
@@ -121,7 +132,6 @@ class MolecularPath
         real openingHi_;
         real length_;
 };
-
 
 #endif
 
