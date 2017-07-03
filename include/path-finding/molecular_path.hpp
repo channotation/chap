@@ -22,7 +22,6 @@ class PathMappingParameters
     public:
 
         // parameters values:
-        real nbhSearchCutoff_;
         real mapTol_;
         real extrapDist_;
         real sampleStep_;

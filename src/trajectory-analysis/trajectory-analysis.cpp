@@ -271,6 +271,22 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&pfParams_["nmInitShift"])
                          .defaultValue(0.1)
                          .description("Distance of vertices in initial Nelder-Mead simplex.")) ;
+
+
+    options -> addOption(RealOption("pm-tol")
+                         .store(&mappingParams_.mapTol_)
+                         .defaultValue(1e-7)
+                         .description("Tolerance threshold for mapping particles onto molecular pathway."));
+    options -> addOption(RealOption("pm-extrap-dist")
+                         .store(&mappingParams_.extrapDist_)
+                         .defaultValue(10)
+                         .description("Extrapolation distance for sampling path points outside the pore when mapping particles onto molecular pathway."));
+    options -> addOption(RealOption("pm-sample-step")
+                         .store(&mappingParams_.sampleStep_)
+                         .defaultValue(0.01)
+                         .description("Arc length distance of path samples when mapping particles onto molecular pathway."));
+
+
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
@@ -315,12 +331,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     // PATH MAPPING PARAMETERS
     //-------------------------------------------------------------------------
-    
-    mappingParams_.nbhSearchCutoff_ = cutoff_ + poreMappingMargin_;
+
+    /*
     mappingParams_.mapTol_ = 1e-7;
     mappingParams_.extrapDist_ = 100;
     mappingParams_.sampleStep_ = 0.1;
-
+    */
 
     // PREPARE DATSETS
     //-------------------------------------------------------------------------
