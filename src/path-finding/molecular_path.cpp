@@ -740,6 +740,22 @@ MolecularPath::sampleRadii(std::vector<real> arcLengthSample)
 }
 
 
+/*
+ *
+ */
+void
+MolecularPath::shift(const gmx::RVec &shift)
+{
+    // shift both the centre line and the radius spline:
+    centreLine_.shift(shift); 
+    poreRadius_.shift(shift);
+
+    // adjust convenience variables defined in MolecularPath itself:
+    openingLo_ -= shift[SS];
+    openingHi_ -= shift[SS];
+}
+
+
 /*!
  * Auxiliary function that computes the step length along the arc for sampling
  * a given property at \f$ N \f$ points and reaching \f$ d \f$ into the 

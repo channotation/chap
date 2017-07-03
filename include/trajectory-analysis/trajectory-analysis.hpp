@@ -119,6 +119,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     bool pfInitProbePosIsSet_;
     std::vector<real> pfChanDirVec_;
     bool pfChanDirVecIsSet_;
+    ePathAlignmentMethod pfPathAlignmentMethod_;
+
 
     // simulated annealing parameters:
     int64_t saRandomSeed_;

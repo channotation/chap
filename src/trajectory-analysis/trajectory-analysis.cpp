@@ -201,6 +201,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .enumValue(allowedVdwRadiusDatabase)
                          .store(&pfVdwRadiusDatabase_)
                          .description("Database of van-der-Waals radii to be used in pore finding"));
+
+    const char * const allowedPathAlignmentMethod[] = {"none",
+                                                       "ipp"};
+    pfPathAlignmentMethod_ = ePathAlignmentMethodIpp;
+    options -> addOption(EnumOption<ePathAlignmentMethod>("pf-align-method")
+                         .enumValue(allowedPathAlignmentMethod)
+                         .store(&pfPathAlignmentMethod_)
+                         .description("Method for aligning pathway coordinates across time steps."));
+
     options -> addOption(StringOption("pf-vdwr-json")
                          .store(&pfVdwRadiusJson_)
                          .storeIsSet(&pfVdwRadiusJsonIsSet_)
@@ -853,7 +862,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // PATH FINDING
     //-------------------------------------------------------------------------
 
-
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
     std::cout.flush();
@@ -861,7 +869,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
-
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";
@@ -899,7 +906,29 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // PATH ALIGNMENT
     //-------------------------------------------------------------------------
 
+    // which method do we use for path alignment?
+    if( pfPathAlignmentMethod_ == ePathAlignmentMethodNone )
+    {
+        // no need to do anything in this case
+    }
+    else if( pfPathAlignmentMethod_ == ePathAlignmentMethodIpp )
+    {
+        // map initial probe position onto pathway:
+        std::vector<gmx::RVec> ipp;
+        ipp.push_back(initProbePos);
+        std::vector<gmx::RVec> mappedIpp = molPath.mapPositions(
+                ipp, 
+                mappingParams_);
 
+        std::cout<<"ipp.s = "<<mappedIpp.front()[0]<<"  "
+                 <<"ipp.rho = "<<mappedIpp.front()[1]<<"  "
+                 <<"ipp.phi = "<<mappedIpp.front()[2]<<"  "
+                 <<std::endl;
+
+        // shift coordinates of molecular path appropriately:
+        molPath.shift(mappedIpp.front());
+    }
+    
     
 
 
@@ -1091,7 +1120,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dh.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
          dh.setPoint(1, it -> second[0]);     // s
          dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[3]);     // phi
+         dh.setPoint(3, it -> second[2]);     // phi
          dh.setPoint(4, solvInsidePore[it -> first]);     // inside pore
          dh.setPoint(5, solvInsideSample[it -> first]);     // inside sample
          dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x

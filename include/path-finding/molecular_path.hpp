@@ -14,6 +14,13 @@
 #include "geometry/spline_curve_3D.hpp"
 
 
+/*!
+ * Enum for different methods for aligning molecular pathways between frames.
+ */
+enum ePathAlignmentMethod {ePathAlignmentMethodNone, 
+                           ePathAlignmentMethodIpp};
+
+
 /*
  *
  */
@@ -101,6 +108,9 @@ class MolecularPath
         std::vector<real> sampleRadii(int nPoints, real extrapDist);
         std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
 
+        // change internal coordinate representation of path:
+        void shift(const gmx::RVec &shift);
+        
 
     private:
 
