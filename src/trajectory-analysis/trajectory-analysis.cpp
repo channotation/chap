@@ -332,11 +332,22 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // PATH MAPPING PARAMETERS
     //-------------------------------------------------------------------------
 
-    /*
-    mappingParams_.mapTol_ = 1e-7;
-    mappingParams_.extrapDist_ = 100;
-    mappingParams_.sampleStep_ = 0.1;
-    */
+    // sanity checks and automatic defaults:
+    if( mappingParams_.mapTol_ <= 0.0 )
+    {
+        throw(std::runtime_error("Mapping tolerance parameter pm-tol must be positive."));
+    }
+
+    if( mappingParams_.extrapDist_ <= 0 )
+    {
+        throw(std::runtime_error("Extrapolation distance set with pm-extrap-dist may not be negative."));
+    }
+
+    if( mappingParams_.sampleStep_ <= 0 )
+    {
+        throw(std::runtime_error("Sampling step set with pm-sample-step must be positive."));
+    }
+
 
     // PREPARE DATSETS
     //-------------------------------------------------------------------------
