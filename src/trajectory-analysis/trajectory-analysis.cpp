@@ -878,33 +878,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
     
-    std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
-    std::vector<real> pathRadii = molPath.pathRadii();
-
-    // add path data to data handle:
-    dh.selectDataSet(0);
-
-    // access path finding module result:
-    real extrapDist = 1.0;
-    std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
-    std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
-    std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
-
-    // loop over all support points of path:
-    for(int i = 0; i < nOutPoints_; i++)
-    {
-        // add to container:
-        dh.setPoint(0, pointSample[i][0]);     // x
-        dh.setPoint(1, pointSample[i][1]);     // y
-        dh.setPoint(2, pointSample[i][2]);     // z
-        dh.setPoint(3, arcLengthSample[i]);    // s
-        dh.setPoint(4, radiusSample[i]);       // r
-        dh.finishPointSet(); 
-    }
-
-
-    // PATH ALIGNMENT
-    //-------------------------------------------------------------------------
 
     // which method do we use for path alignment?
     if( pfPathAlignmentMethod_ == ePathAlignmentMethodNone )
@@ -928,8 +901,31 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         // shift coordinates of molecular path appropriately:
         molPath.shift(mappedIpp.front());
     }
-    
-    
+
+    // get original path points and radii:
+    std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
+    std::vector<real> pathRadii = molPath.pathRadii();
+
+    // add path data to data handle:
+    dh.selectDataSet(0);
+
+    // access path finding module result:
+    real extrapDist = 0.0;
+    std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
+    std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
+    std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
+
+    // loop over all support points of path:
+    for(int i = 0; i < nOutPoints_; i++)
+    {
+        // add to container:
+        dh.setPoint(0, pointSample[i][0]);     // x
+        dh.setPoint(1, pointSample[i][1]);     // y
+        dh.setPoint(2, pointSample[i][2]);     // z
+        dh.setPoint(3, arcLengthSample[i]);    // s
+        dh.setPoint(4, radiusSample[i]);       // r
+        dh.finishPointSet(); 
+    }
 
 
     // MAP PORE PARTICLES ONTO PATHWAY
@@ -1120,7 +1116,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dh.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
          dh.setPoint(1, it -> second[0]);     // s
          dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[2]);     // phi
+         dh.setPoint(3, it -> second[0]);     // phi // FIXME index wrong, but JSON cant handle NaN
          dh.setPoint(4, solvInsidePore[it -> first]);     // inside pore
          dh.setPoint(5, solvInsideSample[it -> first]);     // inside sample
          dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x

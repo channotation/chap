@@ -50,14 +50,14 @@ AbstractSplineCurve::knotVector() const
  * this function simply subtracts the second element in the given RVec from 
  * each knot. An RVec is used instead of a simple real to provide a hook for
  * extending this method to shifts in angular coordinate in the case of 
- * SplineCurve3D; for the same reason the function is declared virtual.
+ * SplineCurve3D.
  */
 void
 AbstractSplineCurve::shift(const gmx::RVec &shift)
 {
-    for(auto knot : knotVector_)
+    for(auto it = knotVector_.begin(); it != knotVector_.end(); it++)
     {
-        knot -= shift[SS];
+        *it -= shift[SS];
     }
 }
 

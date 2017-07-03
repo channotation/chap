@@ -747,7 +747,7 @@ void
 MolecularPath::shift(const gmx::RVec &shift)
 {
     // shift both the centre line and the radius spline:
-    centreLine_.shift(shift); 
+    centreLine_.shift(shift);  
     poreRadius_.shift(shift);
 
     // adjust convenience variables defined in MolecularPath itself:

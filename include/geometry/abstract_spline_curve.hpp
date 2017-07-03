@@ -47,9 +47,9 @@ class AbstractSplineCurve
         std::vector<real> knotVector() const;
 
         // method to shift the internal coordinate system:
-        virtual void shift(const gmx::RVec &shift);
+        void shift(const gmx::RVec &shift);
 
-    protected:
+//    protected:
         
         // internal variables:
         int degree_;
