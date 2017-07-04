@@ -26,6 +26,7 @@
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/json_doc_importer.hpp"
 #include "io/analysis_data_json_exporter.hpp"
+#include "io/analysis_data_json_frame_exporter.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -421,7 +422,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     jsonExporter -> setColumnNames(columnHeaders);
     jsonExporter -> setResidueNames(residueNames);
     jsonExporter -> setFileName(jsonOutputFileName_);
-    data_.addModule(jsonExporter);
+//    data_.addModule(jsonExporter);
 
     // add general parameters to JSON exporter:
     jsonExporter -> addParameter("jsonOutputFileName", jsonOutputFileName_);
@@ -434,6 +435,16 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     }
     jsonExporter -> addParameter("cutoff", cutoff_);
 
+
+
+
+
+
+    AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
+    jsonFrameExporter -> setDataSetNames(dataSetNames);
+    jsonFrameExporter -> setColumnNames(columnHeaders);
+    jsonFrameExporter -> setFileName("stream.json");
+    data_.addModule(jsonFrameExporter);
 
 
     // RESIDUE MAPPING DATA
