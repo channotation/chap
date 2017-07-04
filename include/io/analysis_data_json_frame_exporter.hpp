@@ -26,18 +26,18 @@
  * While this format is less intuitive than a tabular format, it has several
  * advantages, namely:
  *
- *      - Each frame can be handled individually and there is no need to keep
- *      data for multiple frames in memory. This should allow handling of
- *      very long trajectories even if the spline curves have many control 
- *      points e.g. a small probe step was chosen.
- *      - The resulting file should be comparably small, as record labels are
- *      not repeated many times and each data set column can be treated as a
- *      JSON array.
- *      - The newline delimited JSON format allows streaming, i.e. the 
- *      resulting file can be read line by line (where each line is a valid
- *      JSON document), and features of interest can be extracted without the
- *      need to keep the entire file in memory (or implement a much more 
- *      complicated parser for extracting features of interest).
+ * - Each frame can be handled individually and there is no need to keep
+ *   data for multiple frames in memory. This should allow handling of
+ *   very long trajectories even if the spline curves have many control 
+ *   points e.g. a small probe step was chosen.
+ * - The resulting file should be comparably small, as record labels are
+ *   not repeated many times and each data set column can be treated as a
+ *   JSON array.
+ * - The newline delimited JSON format allows streaming, i.e. the 
+ *   resulting file can be read line by line (where each line is a valid
+ *   JSON document), and features of interest can be extracted without the
+ *   need to keep the entire file in memory (or implement a much more 
+ *   complicated parser for extracting features of interest).
  *
  * The repeated opening and closing of files may not be very efficient, but 
  * will likely not be the bottleneck of the analysis tool.
