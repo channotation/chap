@@ -117,7 +117,7 @@ target_link_libraries(chap lapacke lapack blas)
 include(CTest)
 
 # add test subdirectory:
-#add_subdirectory(test)
+add_subdirectory(test)
 
 
 # Install Destinations

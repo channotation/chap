@@ -20,7 +20,8 @@ if( GTEST_FOUND )
 
     # add executable to run all tests and link libraries:
     add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
-    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} pthread)
+    set_target_properties(runAllTests PROPERTIES COMPILE_FLAGS "${GROMACS_CXX_FLAGS}")
+    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} lapacke lapack blas pthread)
 
     # make ctest aware of test executable:
     # (if the color option is not set some test fail)
