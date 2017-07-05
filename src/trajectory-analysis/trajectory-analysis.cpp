@@ -1300,20 +1300,23 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::string inFileName = "stream.json";
     std::string outFileName = "outfile.json";
 
-    // open JSON data file in read mode:
-    std::string inFileName_ = "stream.json";
-    std::fstream inFile;
-    inFile.open(inFileName_.c_str(), std::fstream::in);
+    // READ PER-FRAME DATA AND AGGREGATE ALL NON-PROFILE DATA
+    // ------------------------------------------------------------------------
 
-    // prepare JSON document for output:
-    rapidjson::Document outDoc;
-    rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
-    outDoc.SetObject();
+    // TODO: this needs another pass through the infile and should collect
+    // pore summary data like length and volume
 
-    
     // defin set of support points for profile evaluation:
     std::vector<real> supportPoints = {-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0};
 
+
+    // READ PER-FRAME DATA AND AGGREGATE TIME-AVERAGED PORE PROFILE
+    // ------------------------------------------------------------------------
+
+    // open JSON data file in read mode:
+    std::fstream inFile;
+    inFile.open(inFileName.c_str(), std::fstream::in);
+    
     // prepare containers for profile summaries:
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
 
@@ -1333,7 +1336,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         if( !lineDoc.IsObject() )
         {
             std::string error = "Line " + std::to_string(linesRead) + 
-            " read from" + inFileName_ + "is not valid JSON object.";
+            " read from" + inFileName + "is not valid JSON object.";
             throw std::runtime_error(error);
         }
 
@@ -1368,6 +1371,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // ------------------------------------------------------------------------
 
     // TODO also need to write density and energy profiles
+
+    // prepare JSON document for output:
+    rapidjson::Document outDoc;
+    rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
+    outDoc.SetObject();
 
     // create JSON object for pore profile:
     rapidjson::Value poreProfile;
@@ -1415,7 +1423,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     
     // open outgoing file stream:
     std::fstream outFile;
-    outFile.open("outfile.json", std::fstream::out);
+    outFile.open(outFileName, std::fstream::out);
 
     // write JSON output to file:
     outFile<<outLine<<std::endl;
