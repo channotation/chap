@@ -15,6 +15,8 @@
 
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
@@ -27,6 +29,8 @@
 #include "io/json_doc_importer.hpp"
 #include "io/analysis_data_json_exporter.hpp"
 #include "io/analysis_data_json_frame_exporter.hpp"
+
+#include "statistics-utilities/summary_statistics.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -1297,6 +1301,17 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::fstream inFile;
     inFile.open(inFileName_.c_str(), std::fstream::in);
 
+    // prepare JSON document for output:
+    rapidjson::Document outDoc;
+    rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
+    outDoc.SetObject();
+
+    
+    // defin set of support points for profile evaluation:
+    std::vector<real> supportPoints = {-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0};
+
+    // prepare containers for profile summaries:
+    std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
 
     // read file line by line:
     int linesRead = 0;
@@ -1321,15 +1336,12 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         // create molecular path:
         MolecularPath molPath(lineDoc);
 
-        // TODO this
-        std::vector<real> supportPoints = {-1.0, 0.0, 1.0};
+        // sample radius at support points and add to summary statistics:
         std::vector<real> radiusSample = molPath.sampleRadii(supportPoints); 
-
-
-
-
-
-
+        for(size_t i = 0; i < radiusSample.size(); i++)
+        {
+            radiusSummary.at(i).update(radiusSample.at(i));
+        }
 
         // increment line counter:
         linesRead++;
@@ -1343,9 +1355,71 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         throw std::runtime_error(error);
     }
 
-
     // close filestream object:
     inFile.close();
+
+    
+
+
+
+
+    // create JSON object for pore profile:
+    rapidjson::Value poreProfile;
+    poreProfile.SetObject();
+
+    // create JSON arrays to hold pore profile values:
+    rapidjson::Value supportPts(rapidjson::kArrayType);
+    rapidjson::Value radiusMin(rapidjson::kArrayType);
+    rapidjson::Value radiusMax(rapidjson::kArrayType);
+    rapidjson::Value radiusMean(rapidjson::kArrayType);
+    rapidjson::Value radiusSd(rapidjson::kArrayType);    
+
+    // fill JSON arrays with values::
+    for(size_t i = 0; i < supportPoints.size(); i++)
+    {
+        // support points:
+        supportPts.PushBack(supportPoints.at(i), alloc);
+
+        // radius:
+        radiusMin.PushBack(radiusSummary.at(i).min(), alloc);
+        radiusMax.PushBack(radiusSummary.at(i).max(), alloc);
+        radiusMean.PushBack(radiusSummary.at(i).mean(), alloc);
+        radiusSd.PushBack(radiusSummary.at(i).sd(), alloc);
+    }
+
+    // add JSON arrays to pore profile object:
+    poreProfile.AddMember("s", supportPts, alloc);
+    poreProfile.AddMember("radiusMin", radiusMin, alloc);
+    poreProfile.AddMember("radiusMax", radiusMax, alloc);
+    poreProfile.AddMember("radiusMean", radiusMean, alloc);
+    poreProfile.AddMember("radiusSd", radiusSd, alloc);
+    
+
+    
+
+
+
+    // add pore profile to output document:
+    outDoc.AddMember("poreProfile", poreProfile, alloc);
+
+
+
+
+    // stringify output document:
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    outDoc.Accept(writer);
+    std::string outLine(buffer.GetString(), buffer.GetSize());
+    
+    // open outgoing file stream:
+    std::fstream outFile;
+    outFile.open("outfile.json", std::fstream::out);
+
+    // write JSON output to file:
+    outFile<<outLine<<std::endl;
+
+    // close out file stream:
+    outFile.close();
 }
 
 
@@ -1354,10 +1428,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 void
 trajectoryAnalysis::writeOutput()
 {
-    std::cout<<"datSetCount = "<<data_.dataSetCount()<<std::endl
-             <<"columnCount = "<<data_.columnCount()<<std::endl
-             <<"frameCount = "<<data_.frameCount()<<std::endl
-             <<std::endl;
+
 }
 
 
