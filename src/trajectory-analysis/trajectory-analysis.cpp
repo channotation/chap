@@ -1296,6 +1296,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 void
 trajectoryAnalysis::finishAnalysis(int numFrames)
 {
+    // TODO: make this dynamical
+    std::string inFileName = "stream.json";
+    std::string outFileName = "outfile.json";
+
     // open JSON data file in read mode:
     std::string inFileName_ = "stream.json";
     std::fstream inFile;
@@ -1360,8 +1364,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     
 
+    // CREATING OUTPUT JSON
+    // ------------------------------------------------------------------------
 
-
+    // TODO also need to write density and energy profiles
 
     // create JSON object for pore profile:
     rapidjson::Value poreProfile;
@@ -1394,16 +1400,12 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     poreProfile.AddMember("radiusMean", radiusMean, alloc);
     poreProfile.AddMember("radiusSd", radiusSd, alloc);
     
-
-    
-
-
-
     // add pore profile to output document:
     outDoc.AddMember("poreProfile", poreProfile, alloc);
 
 
-
+    // WRITING OUTPUT JSON TO FILE
+    // ------------------------------------------------------------------------
 
     // stringify output document:
     rapidjson::StringBuffer buffer;
@@ -1420,6 +1422,37 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // close out file stream:
     outFile.close();
+
+
+    // COPYING PER-FRAME DATA TO FINAL OUTPUT FILE
+    // ------------------------------------------------------------------------
+    
+    // open file with per-frame data and output data:
+    inFile.open(inFileName, std::fstream::in);
+    outFile.open(outFileName, std::fstream::app);
+
+    // append input file to output file line by line:    
+    int linesCopied = 0;
+    std::string copyLine;
+    while( std::getline(inFile, copyLine) )
+    {
+        // append line to out file:
+        outFile<<copyLine<<std::endl;
+
+        // increment line counter:
+        linesCopied++;
+    }
+
+    // close file streams:
+    inFile.close();
+    outFile.close();
+
+    // sanity checks:
+    if( linesCopied != numFrames )
+    {
+        throw std::runtime_error("Could not copy all lines from per-frame data"
+        "file to output data file.");
+    }
 }
 
 
