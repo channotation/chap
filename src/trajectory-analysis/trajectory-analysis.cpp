@@ -67,7 +67,10 @@ trajectoryAnalysis::trajectoryAnalysis()
     
        // register dataset:
     registerAnalysisDataset(&dataResMapping_, "resMapping");
- 
+
+
+    registerAnalysisDataset(&frameStreamData_, "frameStreamData");
+    frameStreamData_.setMultipoint(true); 
 
 
 
@@ -437,14 +440,77 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 
 
+    // prepare per frame data stream:
+    frameStreamData_.setDataSetCount(6);
+    std::vector<std::string> frameStreamDataSetNames = {
+            "pathSummary",
+            "molPathOrigPoints",
+            "molPathRadiusSpline",
+            "molPathCentreLineSpline",
+            "residuePositions",
+            "solventPositions"};
+    std::vector<std::vector<std::string>> frameStreamColumnNames;
 
 
+    // prepare container for aggregated data:
+    frameStreamData_.setColumnCount(0, 5);
+    frameStreamColumnNames.push_back({"minRadius",
+                                      "length",
+                                      "volume",
+                                      "numPath",
+                                      "numSample"});
 
+    // prepare container for original path points:
+    frameStreamData_.setColumnCount(1, 4);
+    frameStreamColumnNames.push_back({"x", 
+                                      "y",
+                                      "z",
+                                      "r"});
+
+    // prepare container for path radius:
+    frameStreamData_.setColumnCount(2, 2);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrl"});
+
+    // prepare container for pathway spline:
+    frameStreamData_.setColumnCount(3, 4);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrlX",
+                                      "ctrlY",
+                                      "ctrlZ"});
+
+    // prepare container for residue mapping results:
+    frameStreamData_.setColumnCount(4, 9);
+    frameStreamColumnNames.push_back({"resId",
+                                      "s",
+                                      "rho",
+                                      "phi",
+                                      "poreLining",
+                                      "poreFacing",
+                                      "x",
+                                      "y",
+                                      "z"});
+
+    // prepare container for solvent mapping:
+    frameStreamData_.setColumnCount(5, 9);
+    frameStreamColumnNames.push_back({"resId", 
+                                      "s",
+                                      "rho",
+                                      "phi",
+                                      "inPore",
+                                      "inSample",
+                                      "x",
+                                      "y",
+                                      "z"});
+
+    // add JSON exporter to frame stream data:
     AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
-    jsonFrameExporter -> setDataSetNames(dataSetNames);
-    jsonFrameExporter -> setColumnNames(columnHeaders);
-    jsonFrameExporter -> setFileName("stream.json");
-    data_.addModule(jsonFrameExporter);
+    jsonFrameExporter -> setDataSetNames(frameStreamDataSetNames);
+    jsonFrameExporter -> setColumnNames(frameStreamColumnNames);
+    // TODO: make this a parameter? ot temporary file name?
+    std::string frameStreamFileName = "stream.json";
+    jsonFrameExporter -> setFileName(frameStreamFileName);
+    frameStreamData_.addModule(jsonFrameExporter);
 
 
     // RESIDUE MAPPING DATA
@@ -732,10 +798,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // get data handles for this frame:
 	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
+    AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
 
 	// get data for frame number frnr into data handle:
     dh.startFrame(frnr, fr.time);
     dhResMapping.startFrame(frnr, fr.time);
+    dhFrameStream.startFrame(frnr, fr.time);
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -904,11 +972,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                 ipp, 
                 mappingParams_);
 
-        std::cout<<"ipp.s = "<<mappedIpp.front()[0]<<"  "
-                 <<"ipp.rho = "<<mappedIpp.front()[1]<<"  "
-                 <<"ipp.phi = "<<mappedIpp.front()[2]<<"  "
-                 <<std::endl;
-
         // shift coordinates of molecular path appropriately:
         molPath.shift(mappedIpp.front());
     }
@@ -916,6 +979,54 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // get original path points and radii:
     std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
     std::vector<real> pathRadii = molPath.pathRadii();
+
+    // add original path points to frame stream dataset:
+    dhFrameStream.selectDataSet(1);
+    for(size_t i = 0; i < pathPoints.size(); i++)
+    {
+        dhFrameStream.setPoint(0, pathPoints.at(i)[XX]);
+        dhFrameStream.setPoint(1, pathPoints.at(i)[YY]);
+        dhFrameStream.setPoint(2, pathPoints.at(i)[ZZ]);
+        dhFrameStream.setPoint(3, pathRadii.at(i));
+        dhFrameStream.finishPointSet();
+    }
+
+    // add radius spline knots and control points to frame stream dataset:
+    dhFrameStream.selectDataSet(2);
+    std::vector<real> radiusKnots = molPath.poreRadiusUniqueKnots();    
+    std::vector<real> radiusCtrlPoints = molPath.poreRadiusCtrlPoints();
+    for(size_t i = 0; i < radiusKnots.size(); i++)
+    {
+        dhFrameStream.setPoint(0, radiusKnots.at(i));
+        dhFrameStream.setPoint(1, radiusCtrlPoints.at(i));
+        dhFrameStream.finishPointSet();
+    }
+    
+    // add centre line spline knots and control points to frame stream dataset:
+    dhFrameStream.selectDataSet(3);
+    std::vector<real> centreLineKnots = molPath.centreLineUniqueKnots();    
+    std::vector<gmx::RVec> centreLineCtrlPoints = molPath.centreLineCtrlPoints();
+    for(size_t i = 0; i < centreLineKnots.size(); i++)
+    {
+        dhFrameStream.setPoint(0, centreLineKnots.at(i));
+        dhFrameStream.setPoint(1, centreLineCtrlPoints.at(i)[XX]);
+        dhFrameStream.setPoint(2, centreLineCtrlPoints.at(i)[YY]);
+        dhFrameStream.setPoint(3, centreLineCtrlPoints.at(i)[ZZ]);
+        dhFrameStream.finishPointSet();
+    }
+
+
+
+
+
+    std::cout<<radiusKnots.size()<<std::endl;
+    std::cout<<radiusCtrlPoints.size()<<std::endl;
+    std::cout<<centreLineKnots.size()<<std::endl;
+    std::cout<<centreLineCtrlPoints.size()<<std::endl;
+    
+
+
+
 
     // add path data to data handle:
     dh.selectDataSet(0);
@@ -1170,6 +1281,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 	// finish analysis of current frame:
     dh.finishFrame();
     dhResMapping.finishFrame();
+    dhFrameStream.finishFrame();
 }
 
 
@@ -1178,9 +1290,62 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
  *
  */
 void
-trajectoryAnalysis::finishAnalysis(int /*nframes*/)
+trajectoryAnalysis::finishAnalysis(int numFrames)
 {
-    std::cout<<"finished analysis"<<std::endl;
+    // open JSON data file in read mode:
+    std::string inFileName_ = "stream.json";
+    std::fstream inFile;
+    inFile.open(inFileName_.c_str(), std::fstream::in);
+
+
+    // read file line by line:
+    int linesRead = 0;
+    std::string line;
+    while( std::getline(inFile, line) )
+    {
+        std::cout<<"linesRead = "<<linesRead<<std::endl;
+
+        // read line into JSON document:
+        rapidjson::StringStream lineStream(line.c_str());
+        rapidjson::Document lineDoc;
+        lineDoc.ParseStream(lineStream);
+
+        // sanity checks:
+        if( !lineDoc.IsObject() )
+        {
+            std::string error = "Line " + std::to_string(linesRead) + 
+            " read from" + inFileName_ + "is not valid JSON object.";
+            throw std::runtime_error(error);
+        }
+
+        // create molecular path:
+        MolecularPath molPath(lineDoc);
+
+        // TODO this
+        std::vector<real> supportPoints = {-1.0, 0.0, 1.0};
+        std::vector<real> radiusSample = molPath.sampleRadii(supportPoints); 
+
+
+
+
+
+
+
+        // increment line counter:
+        linesRead++;
+    }
+
+    // sanity check:
+    if( linesRead != numFrames )
+    {
+        std::string error = "Number of lines read from JSON file does not"
+        "equal number of frames processed!"; 
+        throw std::runtime_error(error);
+    }
+
+
+    // close filestream object:
+    inFile.close();
 }
 
 
