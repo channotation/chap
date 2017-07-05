@@ -59,7 +59,8 @@ class SplineCurve3D : public AbstractSplineCurve
                                          real hi,
                                          real tol);
  
-        
+        // getter functions:
+        std::vector<gmx::RVec> ctrlPoints() const;
         
     private:
 

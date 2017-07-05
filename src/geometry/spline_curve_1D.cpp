@@ -10,10 +10,10 @@ SplineCurve1D::SplineCurve1D(int degree,
                              std::vector<real> knotVector,
                              std::vector<real> ctrlPoints)
 {
+std::cout<<"SplineCurve1D Constructor"<<std::endl;
     nCtrlPoints_ = ctrlPoints.size();
     nKnots_ = knotVector.size();
     degree_ = degree;
-
     // ensure minimal number of control points for given degree:
     if( nCtrlPoints_ < degree_ + 1 )
     {
@@ -115,5 +115,15 @@ SplineCurve1D::operator()(real &evalPoint,
 {
     // actual compuatation is handled by evaluate method:
     return evaluate(evalPoint, derivOrder, method);
+}
+
+
+/*!
+ *  Getter function for access to the spline curves control points.
+ */
+std::vector<real>
+SplineCurve1D::ctrlPoints() const
+{
+    return ctrlPoints_;
 }
 

@@ -35,6 +35,9 @@ class SplineCurve1D : public AbstractSplineCurve
                         unsigned int derivOrder,
                         eSplineEvalMethod method);
 
+        // getter function for control points:
+        std::vector<real> ctrlPoints() const;
+
     private:
 
         // internal variables:
