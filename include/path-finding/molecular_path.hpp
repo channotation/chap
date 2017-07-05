@@ -4,11 +4,12 @@
 #include <vector>
 #include <map>
 
-
 #include <gromacs/math/vec.h>
 #include <gromacs/pbcutil/pbc.h>
 #include <gromacs/utility/real.h>
 #include <gromacs/selection/selection.h>
+
+#include "rapidjson/document.h"
 
 #include "geometry/spline_curve_1D.hpp"
 #include "geometry/spline_curve_3D.hpp"
@@ -60,9 +61,18 @@ class MolecularPath
 {
     public:
 
-        // costructor and destructor:
-        MolecularPath(std::vector<gmx::RVec> &pathPoints,
-                      std::vector<real> &poreRadii);
+        // costructors and destructor:
+        MolecularPath(
+                std::vector<gmx::RVec> &pathPoints,
+                std::vector<real> &poreRadii);
+        MolecularPath(
+                const rapidjson::Document &doc);
+                /*
+        MolecularPath(
+                std::vector<real> poreRadiusKnots,
+                std::vector<real> poreRadiusCtrlPoints,
+                std::vector<real> centreLineKnots,
+                std::vector<gmx::RVec> centreLineCtrlPoints);*/
         ~MolecularPath();
 
         // interface for mapping particles onto pathway:
@@ -87,13 +97,21 @@ class MolecularPath
         std::vector<gmx::RVec> pathPoints();
         std::vector<real> pathRadii();
 
-        // access properties of path:
+        // access aggregate properties of path:
         real length();
         std::pair<real, real> minRadius();
         real volume();
         real radius(real);
         real sLo();
         real sHi();
+
+        // access properties of splines
+        std::vector<real> poreRadiusKnots() const;
+        std::vector<real> poreRadiusUniqueKnots() const;
+        std::vector<real> poreRadiusCtrlPoints() const;
+        std::vector<real> centreLineKnots() const;
+        std::vector<real> centreLineUniqueKnots() const;
+        std::vector<gmx::RVec> centreLineCtrlPoints() const;
 
         // sample points from centreline:
         std::vector<real> sampleArcLength(int nPoints, real extrapDist);

@@ -38,8 +38,6 @@
  */
 MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints, 
                              std::vector<real> &pathRadii)
-    : centreLine_()
-    , poreRadius_()
 {
     // assign internal containers for original path data:
     pathPoints_ = pathPoints;
@@ -61,6 +59,163 @@ MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints,
 
     // reparameterise centre line spline by arc length:
     centreLine_.arcLengthParam();
+}
+
+
+/*
+ *
+ */
+MolecularPath::MolecularPath(
+        const rapidjson::Document &doc)
+    : centreLine_()
+    , poreRadius_()
+{
+    // make sure document is valid object:
+    if( !doc.IsObject() )
+    {
+        throw std::logic_error("JSON document passed to MolecularPath"
+        "constructor is not a valid JSON object.");
+    }
+
+    // make sure radius spline data is given:
+    if( !doc.HasMember("molPathRadiusSpline") )
+    {
+        throw std::logic_error("JSON document passed to MolecularPath"
+        "constructor does not have required member molPathRadiusSpline.");
+    }
+    if( !doc["molPathRadiusSpline"].HasMember("knots") )
+    {
+        throw std::logic_error("Could not find knots in molPathRadiusSpline.");
+    }
+    if( !doc["molPathRadiusSpline"].HasMember("ctrl") )
+    {
+        throw std::logic_error("Could not find ctrl in molPathRadiusSpline.");
+    }
+
+    // make sure centre line spline data is given:
+    if( !doc.HasMember("molPathCentreLineSpline") )
+    {
+        throw std::logic_error("JSON document passed to MolecularPath"
+        "constructor does not have required member molPathCentreLineSpline.");
+    }
+    if( !doc["molPathCentreLineSpline"].HasMember("knots") )
+    {
+        throw std::logic_error("Could not find knots in molPathCentreLineSpline.");
+    }
+    if( !doc["molPathCentreLineSpline"].HasMember("ctrlX") )
+    {
+        throw std::logic_error("Could not find ctrlX in molPathCentreLineSpline.");
+    }
+    if( !doc["molPathCentreLineSpline"].HasMember("ctrlY") )
+    {
+        throw std::logic_error("Could not find ctrlY in molPathCentreLineSpline.");
+    }
+    if( !doc["molPathCentreLineSpline"].HasMember("ctrlZ") )
+    {
+        throw std::logic_error("Could not find ctrlZ in malPathCentreLineSpline.");
+    }
+
+    // make sure original points are present:
+    if( !doc.HasMember("molPathOrigPoints") )
+    {
+        throw std::logic_error("JSON document passed to MolecularPath"
+        "constructor does not have required member molPathOrigPoints.");
+    }
+    if( !doc["molPathOrigPoints"].HasMember("x") )
+    {
+        throw std::logic_error("Could not find x in molPathRadiusSpline.");
+    }
+    if( !doc["molPathOrigPoints"].HasMember("y") )
+    {
+        throw std::logic_error("Could not find y in molPathRadiusSpline.");
+    }
+    if( !doc["molPathOrigPoints"].HasMember("z") )
+    {
+        throw std::logic_error("Could not find z in molPathRadiusSpline.");
+    }
+    if( !doc["molPathOrigPoints"].HasMember("r") )
+    {
+        throw std::logic_error("Could not find r in molPathRadiusSpline.");
+    }
+
+    // extract original point and radius data from JSON:
+    for(size_t i = 0; i < doc["molPathOrigPoints"]["r"].Size(); i++)
+    {
+         pathPoints_.push_back(
+                gmx::RVec(doc["molPathOrigPoints"]["x"][i].GetDouble(), 
+                          doc["molPathOrigPoints"]["y"][i].GetDouble(),
+                          doc["molPathOrigPoints"]["z"][i].GetDouble()));
+         pathRadii_.push_back(doc["molPathOrigPoints"]["r"][i].GetDouble());
+    }
+
+    // extract pore radius spline from data:
+    std::vector<real> poreRadiusKnots;
+    std::vector<real> poreRadiusCtrlPoints;
+    for(size_t i = 0; i < doc["molPathRadiusSpline"]["knots"].Size(); i++)
+    {
+        poreRadiusKnots.push_back( 
+                doc["molPathRadiusSpline"]["knots"][i].GetDouble() );
+        poreRadiusCtrlPoints.push_back( 
+                doc["molPathRadiusSpline"]["ctrl"][i].GetDouble() );
+    } 
+
+    // add duplicate knots at endpoints:
+    int poreRadiusSplineDegree = 3; // TODO: should not be hardcoded
+    poreRadiusKnots.insert(
+            poreRadiusKnots.end(),
+            poreRadiusSplineDegree - 1,
+            poreRadiusKnots.back());
+    poreRadiusKnots.insert(
+            poreRadiusKnots.begin(),
+            poreRadiusSplineDegree - 1,
+            poreRadiusKnots.front());
+
+    // create radius spline curve:
+    poreRadius_ = SplineCurve1D(
+            poreRadiusSplineDegree,
+            poreRadiusKnots,
+            poreRadiusCtrlPoints);
+
+    // extract centre line spline from data:
+    std::vector<real> centreLineKnots;
+    std::vector<gmx::RVec> centreLineCtrlPoints;
+    for(size_t i = 0; i < doc["molPathCentreLineSpline"]["knots"].Size(); i++)
+    {
+        centreLineKnots.push_back( 
+                doc["molPathCentreLineSpline"]["knots"][i].GetDouble() );
+        centreLineCtrlPoints.push_back( 
+                gmx::RVec(doc["molPathCentreLineSpline"]["ctrlX"][i].GetDouble(),
+                          doc["molPathCentreLineSpline"]["ctrlY"][i].GetDouble(),
+                          doc["molPathCentreLineSpline"]["ctrlZ"][i].GetDouble()));
+    } 
+
+    // add duplicate knots at endpoints:
+    int centreLineSplineDegree = 3; // TODO: should not be hardcoded
+    centreLineKnots.insert(
+            centreLineKnots.end(),
+            centreLineSplineDegree - 1,
+            centreLineKnots.back());
+    centreLineKnots.insert(
+            centreLineKnots.begin(),
+            centreLineSplineDegree - 1,
+            centreLineKnots.front());
+
+    // create centre line spline curve:
+    centreLine_ = SplineCurve3D(
+            centreLineSplineDegree,
+            centreLineKnots,
+            centreLineCtrlPoints);
+
+    // set position of openings and pore length:
+    openingLo_ = poreRadiusKnots.front();
+    openingHi_ = poreRadiusKnots.back();
+    length_ = openingHi_ - openingLo_;
+
+    // sanity check:
+    if( openingLo_ > openingHi_ )
+    {
+        throw std::logic_error("Pore opening coordinates out of order.");
+    }
 }
 
 
@@ -359,23 +514,99 @@ MolecularPath::radius(real s)
 
 
 /*
- * TODO: update this with shifts of coordinate
+ * TODO: update this with shifts of coordinate ==> done
  */
 real
 MolecularPath::sLo()
 {
-    return 0.0;
+    return openingLo_;
 }
 
 
 /*
- * TODO: update this with shifts of coordinate
+ * TODO: update this with shifts of coordinate ==> done
  */
 real
 MolecularPath::sHi()
 {
-    return length_;
+    return openingHi_;
 }
+
+
+/*!
+ * Getter method for access to the radius spline's knot vector. This returns 
+ * the complete knot vector including duplicate points at the ends.
+ */
+std::vector<real>
+MolecularPath::poreRadiusKnots() const
+{
+    return poreRadius_.knotVector();
+}
+
+
+/*!
+ * Getter method for access to the radius spline's knot vector. This does strip
+ * the knot vector of repeated knots at end points so that the resulting vector 
+ * has as many elements as the vector of control points.
+ */
+std::vector<real>
+MolecularPath::poreRadiusUniqueKnots() const
+{           
+    std::vector<real> allKnots = poreRadius_.knotVector();
+    std::vector<real> uniqueKnots(
+        allKnots.begin() + poreRadius_.degree() - 1, 
+        allKnots.end() - poreRadius_.degree() + 1);
+    return uniqueKnots;
+}
+
+
+/*!
+ * Getter method for access to the radius spline's control points.
+ */
+std::vector<real>
+MolecularPath::poreRadiusCtrlPoints() const
+{
+    return poreRadius_.ctrlPoints();
+}
+
+
+/*!
+ * Getter method for access to the centre line spline's knot vector. 
+ * This returns  the complete knot vector including duplicate points at the 
+ * ends.
+ */
+std::vector<real>
+MolecularPath::centreLineKnots() const
+{
+    return centreLine_.knotVector();
+}
+
+
+/*!
+ * Getter method for access to the centre line spline's knot vector. This does 
+ * strip the knot vector of repeated knots at end points so that the resulting 
+ * vector has as many elements as the vector of control points.
+ */
+std::vector<real>
+MolecularPath::centreLineUniqueKnots() const
+{
+    std::vector<real> allKnots = centreLine_.knotVector();
+    std::vector<real> uniqueKnots(
+            allKnots.begin() + centreLine_.degree() - 1,
+            allKnots.end() - centreLine_.degree() + 1);
+    return uniqueKnots;
+}
+
+
+/*!
+ * Getter method for access to the centre line spline's control points.
+ */
+std::vector<gmx::RVec>
+MolecularPath::centreLineCtrlPoints() const
+{
+    return centreLine_.ctrlPoints();
+}
+
 
 
 /*!
