@@ -1,4 +1,4 @@
-#include "statistics-utilities/misc_stats_utilities.hpp"
+#include "statistics/misc_stats_utilities.hpp"
 
 /*
  * Calculates mean of all values in an array.

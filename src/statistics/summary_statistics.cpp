@@ -1,7 +1,7 @@
 #include <cmath>
 #include <limits>
 
-#include "statistics-utilities/summary_statistics.hpp"
+#include "statistics/summary_statistics.hpp"
 
 
 /*!

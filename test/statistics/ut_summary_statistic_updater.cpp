@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "statistics-utilities/summary_statistics.hpp"
+#include "statistics/summary_statistics.hpp"
 
 
 /*!
