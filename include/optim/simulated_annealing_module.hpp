@@ -11,7 +11,7 @@
 #include <gromacs/random/uniformrealdistribution.h>
 
 #include "optim/optimisation.hpp"
-#include "statistics-utilities/calculate_covariance_matrix.hpp"
+#include "statistics/calculate_covariance_matrix.hpp"
 
 
 typedef std::function<real(real*)> costFunction;

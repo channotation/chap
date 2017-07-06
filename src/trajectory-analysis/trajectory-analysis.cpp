@@ -29,8 +29,9 @@
 #include "io/json_doc_importer.hpp"
 #include "io/analysis_data_json_exporter.hpp"
 #include "io/analysis_data_json_frame_exporter.hpp"
+#include "io/summary_statistics_json_converter.hpp"
 
-#include "statistics-utilities/summary_statistics.hpp"
+#include "statistics/summary_statistics.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -1204,6 +1205,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // transfer file names from user input:
     std::string inFileName = std::string("stream_") + jsonOutputFileName_;
     std::string outFileName = jsonOutputFileName_;
+    std::fstream inFile;
+    std::fstream outFile;
 
     // READ PER-FRAME DATA AND AGGREGATE ALL NON-PROFILE DATA
     // ------------------------------------------------------------------------
@@ -1211,27 +1214,21 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // TODO: this needs another pass through the infile and should collect
     // pore summary data like length and volume
 
-    // defin set of support points for profile evaluation:
-    std::vector<real> supportPoints = {-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0};
+    // openen per-frame data set for reading:
+    inFile.open(inFileName, std::fstream::in);
 
+    // prepare summary statistics for aggregate properties:
+    SummaryStatistics minRadiusSummary;
+    SummaryStatistics lengthSummary;
+    SummaryStatistics volumeSummary;
+    SummaryStatistics numPathSummary;
+    SummaryStatistics numSampleSummary;
 
-    // READ PER-FRAME DATA AND AGGREGATE TIME-AVERAGED PORE PROFILE
-    // ------------------------------------------------------------------------
-
-    // open JSON data file in read mode:
-    std::fstream inFile;
-    inFile.open(inFileName.c_str(), std::fstream::in);
-    
-    // prepare containers for profile summaries:
-    std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
-
-    // read file line by line:
+    // read file line by line and calculate summary statistics:
     int linesRead = 0;
     std::string line;
     while( std::getline(inFile, line) )
     {
-        std::cout<<"linesRead = "<<linesRead<<std::endl;
-
         // read line into JSON document:
         rapidjson::StringStream lineStream(line.c_str());
         rapidjson::Document lineDoc;
@@ -1241,6 +1238,67 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         if( !lineDoc.IsObject() )
         {
             std::string error = "Line " + std::to_string(linesRead) + 
+            " read from" + inFileName + "is not valid JSON object.";
+            throw std::runtime_error(error);
+        }
+      
+        // calculate summary statistics of aggregate variables:
+        minRadiusSummary.update(
+                lineDoc["pathSummary"]["minRadius"][0].GetDouble());
+        lengthSummary.update(
+                lineDoc["pathSummary"]["length"][0].GetDouble());
+        volumeSummary.update(
+                lineDoc["pathSummary"]["volume"][0].GetDouble());
+        numPathSummary.update(
+                lineDoc["pathSummary"]["numPath"][0].GetDouble());
+        numSampleSummary.update(
+                lineDoc["pathSummary"]["numSample"][0].GetDouble());
+
+        // increment line counter:
+        linesRead++;
+    }
+
+    // close per frame data set:
+    inFile.close();
+    
+    // sanity check:
+    if( linesRead != numFrames )
+    {
+        throw std::runtime_error("Number of frames read does not equal number"
+        "of frames analyised.");
+    }
+
+
+
+
+    // defin set of support points for profile evaluation:
+    std::vector<real> supportPoints = {-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0};
+
+
+    // READ PER-FRAME DATA AND AGGREGATE TIME-AVERAGED PORE PROFILE
+    // ------------------------------------------------------------------------
+
+    // open JSON data file in read mode:
+    inFile.open(inFileName.c_str(), std::fstream::in);
+    
+    // prepare containers for profile summaries:
+    std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
+
+    // read file line by line:
+    int linesProcessed = 0;
+    while( std::getline(inFile, line) )
+    {
+        std::cout<<"linesProcessed = "<<linesProcessed<<std::endl;
+
+        // read line into JSON document:
+        rapidjson::StringStream lineStream(line.c_str());
+        rapidjson::Document lineDoc;
+        lineDoc.ParseStream(lineStream);
+
+        // sanity checks:
+        if( !lineDoc.IsObject() )
+        {
+            std::string error = "Line " + std::to_string(linesProcessed) + 
             " read from" + inFileName + "is not valid JSON object.";
             throw std::runtime_error(error);
         }
@@ -1256,11 +1314,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         }
 
         // increment line counter:
-        linesRead++;
+        linesProcessed++;
     }
 
     // sanity check:
-    if( linesRead != numFrames )
+    if( linesProcessed != numFrames )
     {
         std::string error = "Number of lines read from JSON file does not"
         "equal number of frames processed!"; 
@@ -1281,6 +1339,36 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     rapidjson::Document outDoc;
     rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
     outDoc.SetObject();
+
+    // create JSON object for pore summary data:
+    rapidjson::Value pathSummary;
+    pathSummary.SetObject();
+
+    SummaryStatisticsJsonConverter ssjc;
+    pathSummary.AddMember(
+            "minRadius",
+            ssjc.convert(minRadiusSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "length",
+            ssjc.convert(lengthSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "volume",
+            ssjc.convert(volumeSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "numPath",
+            ssjc.convert(numPathSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "numSample",
+            ssjc.convert(numSampleSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+
+    // add summary data to output document:
+    outDoc.AddMember("pathSummary", pathSummary, alloc);
+
 
     // create JSON object for pore profile:
     rapidjson::Value poreProfile;
@@ -1327,7 +1415,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::string outLine(buffer.GetString(), buffer.GetSize());
     
     // open outgoing file stream:
-    std::fstream outFile;
     outFile.open(outFileName, std::fstream::out);
 
     // write JSON output to file:

@@ -6,7 +6,7 @@
 #include <lapacke.h>
 
 #include "optim/simulated_annealing_module.hpp"
-#include "statistics-utilities/misc_stats_utilities.hpp"
+#include "statistics/misc_stats_utilities.hpp"
 
 
 /*
