@@ -2,8 +2,8 @@
 
 #include <cblas.h>
 
-#include "statistics-utilities/calculate_covariance_matrix.hpp"
-#include "statistics-utilities/calculate_mean_vector.hpp"
+#include "statistics/calculate_covariance_matrix.hpp"
+#include "statistics/calculate_mean_vector.hpp"
 
 
 /*

@@ -363,6 +363,16 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
 }
 
 
+/*!
+ * Getter function for access to the spline curves control points.
+ */
+std::vector<gmx::RVec>
+SplineCurve3D::ctrlPoints() const
+{
+    return ctrlPoints_;
+}
+
+
 /*
  * Uses Newton-Cotes quadrature of curve speed to determine the length of the 
  * arc between two given parameter values. The specific quadrature rule applied

@@ -5,7 +5,7 @@
 
 #include <lapacke.h>
 
-#include "statistics-utilities/calculate_covariance_matrix.hpp" 
+#include "statistics/calculate_covariance_matrix.hpp" 
 
 
 /*

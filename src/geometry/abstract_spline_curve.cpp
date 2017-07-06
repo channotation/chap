@@ -45,6 +45,23 @@ AbstractSplineCurve::knotVector() const
 }
 
 
+/*!
+ * Function to shift the spline parameter by a given offset. Internally,
+ * this function simply subtracts the second element in the given RVec from 
+ * each knot. An RVec is used instead of a simple real to provide a hook for
+ * extending this method to shifts in angular coordinate in the case of 
+ * SplineCurve3D.
+ */
+void
+AbstractSplineCurve::shift(const gmx::RVec &shift)
+{
+    for(auto it = knotVector_.begin(); it != knotVector_.end(); it++)
+    {
+        *it -= shift[SS];
+    }
+}
+
+
 /*
  *  Given an evaluation point t, this functions finds the interval index idx 
  *  such that knot[idx] <= t < knot[idx + 1], i.e. the interval index required

@@ -8,6 +8,25 @@
 #include "geometry/basis_spline.hpp"
 
 
+/*!
+ * Shorthand notation for index zero in curvilinear coordinates for better
+ * legibility.
+ */
+const short int SS = 0;
+
+/*!
+ * Shorthand notation for index zero in curvilinear coordinates for better
+ * legibility.
+ */
+const short int RR = 1;
+
+/*!
+ * Shorthand notation for index zero in curvilinear coordinates for better
+ * legibility.
+ */
+const short int PP = 2;
+
+
 /*
  * Enum for spline evaluation method.
  */
@@ -27,7 +46,10 @@ class AbstractSplineCurve
         int nKnots() const;
         std::vector<real> knotVector() const;
 
-    protected:
+        // method to shift the internal coordinate system:
+        void shift(const gmx::RVec &shift);
+
+//    protected:
         
         // internal variables:
         int degree_;

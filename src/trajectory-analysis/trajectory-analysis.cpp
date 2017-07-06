@@ -15,8 +15,12 @@
 
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
+
+#include "config/version.hpp"
 
 #include "geometry/spline_curve_1D.hpp"
 #include "geometry/spline_curve_3D.hpp"
@@ -26,6 +30,10 @@
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/json_doc_importer.hpp"
 #include "io/analysis_data_json_exporter.hpp"
+#include "io/analysis_data_json_frame_exporter.hpp"
+#include "io/summary_statistics_json_converter.hpp"
+
+#include "statistics/summary_statistics.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -59,14 +67,14 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saCoolingFactor_(0.99)
     , saStepLengthFactor_(0.01)
     , saUseAdaptiveCandGen_(false)
-{
-    //
-    registerAnalysisDataset(&data_, "somedata");
-    data_.setMultipoint(true);              // mutliple support points 
-    
-       // register dataset:
+{  
+    // register dataset:
+    // TODO: this data set should be made obsolete
     registerAnalysisDataset(&dataResMapping_, "resMapping");
- 
+
+
+    registerAnalysisDataset(&frameStreamData_, "frameStreamData");
+    frameStreamData_.setMultipoint(true); 
 
 
 
@@ -201,6 +209,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .enumValue(allowedVdwRadiusDatabase)
                          .store(&pfVdwRadiusDatabase_)
                          .description("Database of van-der-Waals radii to be used in pore finding"));
+
+    const char * const allowedPathAlignmentMethod[] = {"none",
+                                                       "ipp"};
+    pfPathAlignmentMethod_ = ePathAlignmentMethodIpp;
+    options -> addOption(EnumOption<ePathAlignmentMethod>("pf-align-method")
+                         .enumValue(allowedPathAlignmentMethod)
+                         .store(&pfPathAlignmentMethod_)
+                         .description("Method for aligning pathway coordinates across time steps."));
+
     options -> addOption(StringOption("pf-vdwr-json")
                          .store(&pfVdwRadiusJson_)
                          .storeIsSet(&pfVdwRadiusJsonIsSet_)
@@ -271,6 +288,22 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&pfParams_["nmInitShift"])
                          .defaultValue(0.1)
                          .description("Distance of vertices in initial Nelder-Mead simplex.")) ;
+
+
+    options -> addOption(RealOption("pm-tol")
+                         .store(&mappingParams_.mapTol_)
+                         .defaultValue(1e-7)
+                         .description("Tolerance threshold for mapping particles onto molecular pathway."));
+    options -> addOption(RealOption("pm-extrap-dist")
+                         .store(&mappingParams_.extrapDist_)
+                         .defaultValue(10)
+                         .description("Extrapolation distance for sampling path points outside the pore when mapping particles onto molecular pathway."));
+    options -> addOption(RealOption("pm-sample-step")
+                         .store(&mappingParams_.sampleStep_)
+                         .defaultValue(0.01)
+                         .description("Arc length distance of path samples when mapping particles onto molecular pathway."));
+
+
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
                          .description("When this flag is set, the program will write additional information.")) ;
@@ -315,89 +348,97 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
     // PATH MAPPING PARAMETERS
     //-------------------------------------------------------------------------
-    
-    mappingParams_.nbhSearchCutoff_ = cutoff_ + poreMappingMargin_;
-    mappingParams_.mapTol_ = 1e-7;
-    mappingParams_.numPathSamples_ = 1000;
-    mappingParams_.extrapDist_ = 100;
+
+    // sanity checks and automatic defaults:
+    if( mappingParams_.mapTol_ <= 0.0 )
+    {
+        throw(std::runtime_error("Mapping tolerance parameter pm-tol must be positive."));
+    }
+
+    if( mappingParams_.extrapDist_ <= 0 )
+    {
+        throw(std::runtime_error("Extrapolation distance set with pm-extrap-dist may not be negative."));
+    }
+
+    if( mappingParams_.sampleStep_ <= 0 )
+    {
+        throw(std::runtime_error("Sampling step set with pm-sample-step must be positive."));
+    }
 
 
     // PREPARE DATSETS
     //-------------------------------------------------------------------------
 
-    // multiple datasets:
-    data_.setDataSetCount(4);
-    DataSetNameList dataSetNames = {"path", "path.agg", "res.map", "solv.map"};
-    ColumnHeaderList columnHeaders;
+    // prepare per frame data stream:
+    frameStreamData_.setDataSetCount(6);
+    std::vector<std::string> frameStreamDataSetNames = {
+            "pathSummary",
+            "molPathOrigPoints",
+            "molPathRadiusSpline",
+            "molPathCentreLineSpline",
+            "residuePositions",
+            "solventPositions"};
+    std::vector<std::vector<std::string>> frameStreamColumnNames;
 
-	// prepare data container for path data:
-    data_.setColumnCount(0, 5);
-    ColumnHeader columnHeaderPath = {"x", "y", "z", "s", "r"};
-    columnHeaders.push_back(columnHeaderPath);
 
-    // prepare data container for aggregate path data:
-    data_.setColumnCount(1, 5);
-    ColumnHeader columnHeaderAggregatePath = {"R.min", 
-                                              "L", 
-                                              "V", 
-                                              "N",
-                                              "N.sample"};
-    columnHeaders.push_back(columnHeaderAggregatePath);
+    // prepare container for aggregated data:
+    frameStreamData_.setColumnCount(0, 5);
+    frameStreamColumnNames.push_back({"minRadius",
+                                      "length",
+                                      "volume",
+                                      "numPath",
+                                      "numSample"});
 
-    // prepare data container for residue mapping:
-    data_.setColumnCount(2, 9);
-    ColumnHeader columnHeaderResMap = {"res.id", 
-                                       "s", 
-                                       "rho", 
-                                       "phi", 
-                                       "pl",
-                                       "pf",
-                                       "x",
-                                       "y",
-                                       "z"};
-    columnHeaders.push_back(columnHeaderResMap);
+    // prepare container for original path points:
+    frameStreamData_.setColumnCount(1, 4);
+    frameStreamColumnNames.push_back({"x", 
+                                      "y",
+                                      "z",
+                                      "r"});
 
-    // prepare data container for solvent mapping:
-    data_.setColumnCount(3, 9);
-    ColumnHeader columnHeaderSolvMap = {"res.id", 
-                                        "s", 
-                                        "rho", 
-                                        "phi", 
-                                        "pore",
-                                        "sample",
-                                        "x",
-                                        "y",
-                                        "z"};
-    columnHeaders.push_back(columnHeaderSolvMap);
+    // prepare container for path radius:
+    frameStreamData_.setColumnCount(2, 2);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrl"});
 
-    // prepare residue names:
-    t_atoms allAtoms = top.topology() -> atoms;
-    std::unordered_map<int, std::string> residueNames;
-    std::cout<<"resinfo.nr = "<<allAtoms.nres<<std::endl;
-    for(size_t i = 0; i < allAtoms.nres; i++)
-    {
-        residueNames[allAtoms.resinfo[i].nr] = std::string(*allAtoms.resinfo[i].name);        
-    } 
+    // prepare container for pathway spline:
+    frameStreamData_.setColumnCount(3, 4);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrlX",
+                                      "ctrlY",
+                                      "ctrlZ"});
 
-    // add json exporter to data:
-    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
-    jsonExporter -> setDataSetNames(dataSetNames);
-    jsonExporter -> setColumnNames(columnHeaders);
-    jsonExporter -> setResidueNames(residueNames);
-    jsonExporter -> setFileName(jsonOutputFileName_);
-    data_.addModule(jsonExporter);
+    // prepare container for residue mapping results:
+    frameStreamData_.setColumnCount(4, 9);
+    frameStreamColumnNames.push_back({"resId",
+                                      "s",
+                                      "rho",
+                                      "phi",
+                                      "poreLining",
+                                      "poreFacing",
+                                      "x",
+                                      "y",
+                                      "z"});
 
-    // add general parameters to JSON exporter:
-    jsonExporter -> addParameter("jsonOutputFileName", jsonOutputFileName_);
-    jsonExporter -> addParameter("objOutputFileName", objOutputFileName_);
+    // prepare container for solvent mapping:
+    frameStreamData_.setColumnCount(5, 9);
+    frameStreamColumnNames.push_back({"resId", 
+                                      "s",
+                                      "rho",
+                                      "phi",
+                                      "inPore",
+                                      "inSample",
+                                      "x",
+                                      "y",
+                                      "z"});
 
-    // add path finding parameters to JSON exporter:
-    for(auto it = pfParams_.begin(); it != pfParams_.end(); it++)
-    {
-        jsonExporter -> addParameter(it -> first, it -> second);
-    }
-    jsonExporter -> addParameter("cutoff", cutoff_);
-
+    // add JSON exporter to frame stream data:
+    AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
+    jsonFrameExporter -> setDataSetNames(frameStreamDataSetNames);
+    jsonFrameExporter -> setColumnNames(frameStreamColumnNames);
+    std::string frameStreamFileName = std::string("stream_") + jsonOutputFileName_;
+    jsonFrameExporter -> setFileName(frameStreamFileName);
+    frameStreamData_.addModule(jsonFrameExporter);
 
 
     // RESIDUE MAPPING DATA
@@ -683,12 +724,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
     // get data handles for this frame:
-	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
+    AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
 
 	// get data for frame number frnr into data handle:
-    dh.startFrame(frnr, fr.time);
     dhResMapping.startFrame(frnr, fr.time);
+    dhFrameStream.startFrame(frnr, fr.time);
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -826,7 +867,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // PATH FINDING
     //-------------------------------------------------------------------------
 
-
     // run path finding algorithm on current frame:
     std::cout<<"finding permeation pathway ... ";
     std::cout.flush();
@@ -834,7 +874,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
-
 
     // retrieve molecular path object:
     std::cout<<"preparing pathway object ... ";
@@ -844,30 +883,84 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
     
+
+    // which method do we use for path alignment?
+    if( pfPathAlignmentMethod_ == ePathAlignmentMethodNone )
+    {
+        // no need to do anything in this case
+    }
+    else if( pfPathAlignmentMethod_ == ePathAlignmentMethodIpp )
+    {
+        // map initial probe position onto pathway:
+        std::vector<gmx::RVec> ipp;
+        ipp.push_back(initProbePos);
+        std::vector<gmx::RVec> mappedIpp = molPath.mapPositions(
+                ipp, 
+                mappingParams_);
+
+        // shift coordinates of molecular path appropriately:
+        molPath.shift(mappedIpp.front());
+    }
+
+    // get original path points and radii:
     std::vector<gmx::RVec> pathPoints = molPath.pathPoints();
     std::vector<real> pathRadii = molPath.pathRadii();
 
-    // add path data to data handle:
-    dh.selectDataSet(0);
+    // add original path points to frame stream dataset:
+    dhFrameStream.selectDataSet(1);
+    for(size_t i = 0; i < pathPoints.size(); i++)
+    {
+        dhFrameStream.setPoint(0, pathPoints.at(i)[XX]);
+        dhFrameStream.setPoint(1, pathPoints.at(i)[YY]);
+        dhFrameStream.setPoint(2, pathPoints.at(i)[ZZ]);
+        dhFrameStream.setPoint(3, pathRadii.at(i));
+        dhFrameStream.finishPointSet();
+    }
+
+    // add radius spline knots and control points to frame stream dataset:
+    dhFrameStream.selectDataSet(2);
+    std::vector<real> radiusKnots = molPath.poreRadiusUniqueKnots();    
+    std::vector<real> radiusCtrlPoints = molPath.poreRadiusCtrlPoints();
+    for(size_t i = 0; i < radiusKnots.size(); i++)
+    {
+        dhFrameStream.setPoint(0, radiusKnots.at(i));
+        dhFrameStream.setPoint(1, radiusCtrlPoints.at(i));
+        dhFrameStream.finishPointSet();
+    }
+    
+    // add centre line spline knots and control points to frame stream dataset:
+    dhFrameStream.selectDataSet(3);
+    std::vector<real> centreLineKnots = molPath.centreLineUniqueKnots();    
+    std::vector<gmx::RVec> centreLineCtrlPoints = molPath.centreLineCtrlPoints();
+    for(size_t i = 0; i < centreLineKnots.size(); i++)
+    {
+        dhFrameStream.setPoint(0, centreLineKnots.at(i));
+        dhFrameStream.setPoint(1, centreLineCtrlPoints.at(i)[XX]);
+        dhFrameStream.setPoint(2, centreLineCtrlPoints.at(i)[YY]);
+        dhFrameStream.setPoint(3, centreLineCtrlPoints.at(i)[ZZ]);
+        dhFrameStream.finishPointSet();
+    }
+
+
+
+
+
+    std::cout<<radiusKnots.size()<<std::endl;
+    std::cout<<radiusCtrlPoints.size()<<std::endl;
+    std::cout<<centreLineKnots.size()<<std::endl;
+    std::cout<<centreLineCtrlPoints.size()<<std::endl;
+    
+
+
+
+
 
     // access path finding module result:
-    real extrapDist = 1.0;
+    // FIXME this can probably be removed ?
+    real extrapDist = 0.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
-
-    // loop over all support points of path:
-    for(int i = 0; i < nOutPoints_; i++)
-    {
-        // add to container:
-        dh.setPoint(0, pointSample[i][0]);     // x
-        dh.setPoint(1, pointSample[i][1]);     // y
-        dh.setPoint(2, pointSample[i][2]);     // z
-        dh.setPoint(3, arcLengthSample[i]);    // s
-        dh.setPoint(4, radiusSample[i]);       // r
-        dh.finishPointSet(); 
-    }
-
 
 
     // MAP PORE PARTICLES ONTO PATHWAY
@@ -888,8 +981,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     clock_t tMapResCog = std::clock();
     std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
             poreMappingSelCog, 
-            mappingParams_,
-            pbc);
+            mappingParams_);
     tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
     std::cout<<"mapped "<<poreCogMappedCoords.size()
              <<" particles in "<<1000*tMapResCog<<" ms"<<std::endl;
@@ -899,8 +991,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     clock_t tMapResCal = std::clock();
     std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
             poreMappingSelCal, 
-            mappingParams_,
-            pbc);
+            mappingParams_);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
     std::cout<<"mapped "<<poreCalMappedCoords.size()
              <<" particles in "<<1000*tMapResCal<<" ms"<<std::endl;
@@ -949,6 +1040,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     
 
     // add points inside to data frame:
+    // TODO: this functionality should probably be handled outside the main analysis loop
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         SelectionPosition pos = poreMappingSelCog.position(it->first);
@@ -964,21 +1056,21 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
     
     // now add mapped residue coordinates to data handle:
-    dh.selectDataSet(2);
+    dhFrameStream.selectDataSet(4);
     
     // add mapped residues to data container:
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
-         dh.setPoint(0, poreMappingSelCog.position(it -> first).mappedId()); // res.id
-         dh.setPoint(1, it -> second[0]);     // s
-         dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[3]);     // phi
-         dh.setPoint(4, poreLining[it -> first]);     // pore lining?
-         dh.setPoint(5, poreFacing[it -> first]);     // pore facing?
-         dh.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
-         dh.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
-         dh.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
-         dh.finishPointSet();
+         dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
+         dhFrameStream.setPoint(1, it -> second[0]);     // s
+         dhFrameStream.setPoint(2, it -> second[1]);     // rho
+         dhFrameStream.setPoint(3, it -> second[3]);     // phi
+         dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
+         dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
+         dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
+         dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
+         dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
+         dhFrameStream.finishPointSet();
     }
 
 
@@ -1000,8 +1092,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     clock_t tMapSol = std::clock();
     std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
             solvMapSel, 
-            mappingParams_,
-            pbc);
+            mappingParams_);
     tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
     std::cout<<"mapped "<<solventMappedCoords.size()
              <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
@@ -1049,47 +1140,46 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<"found "<<numSolvInsidePore<<" solvent particles inside pore in "
              <<1000*tSolInsidePore<<" ms"<<std::endl;
 
-
     // now add mapped residue coordinates to data handle:
-    dh.selectDataSet(3);
+    dhFrameStream.selectDataSet(5);
     
     // add mapped residues to data container:
     for(auto it = solventMappedCoords.begin(); 
         it != solventMappedCoords.end(); 
         it++)
     {
-         dh.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
-         dh.setPoint(1, it -> second[0]);     // s
-         dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[3]);     // phi
-         dh.setPoint(4, solvInsidePore[it -> first]);     // inside pore
-         dh.setPoint(5, solvInsideSample[it -> first]);     // inside sample
-         dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
-         dh.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
-         dh.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
-         dh.finishPointSet();
+         dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
+         dhFrameStream.setPoint(1, it -> second[0]);     // s
+         dhFrameStream.setPoint(2, it -> second[1]);     // rho
+         dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
+         dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
+         dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
+         dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+         dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+         dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+         dhFrameStream.finishPointSet();
     }
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
-    //-------------------------------------------------------------------------
-
+    //-------------------------------------------------------------------------   
 
     // add aggegate path data:
-    dh.selectDataSet(1);
+    dhFrameStream.selectDataSet(0);
 
     // only one point per frame:
-    dh.setPoint(0, molPath.minRadius().second);
-    dh.setPoint(1, molPath.length());
-    dh.setPoint(2, molPath.volume());
-    dh.setPoint(3, numSolvInsidePore); 
-    dh.setPoint(4, numSolvInsideSample); 
-    dh.finishPointSet();
-    
+    dhFrameStream.setPoint(0, molPath.minRadius().second);
+    dhFrameStream.setPoint(1, molPath.length());
+    dhFrameStream.setPoint(2, molPath.volume());
+    dhFrameStream.setPoint(3, numSolvInsidePore); 
+    dhFrameStream.setPoint(4, numSolvInsideSample); 
+    dhFrameStream.finishPointSet();
 
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
+
+    // TODO: this should be moved to a separate binary!
 
     MolecularPathObjExporter molPathExp;
     molPathExp(objOutputFileName_.c_str(),
@@ -1102,8 +1192,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<std::endl;
 
 	// finish analysis of current frame:
-    dh.finishFrame();
     dhResMapping.finishFrame();
+    dhFrameStream.finishFrame();
 }
 
 
@@ -1112,9 +1202,287 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
  *
  */
 void
-trajectoryAnalysis::finishAnalysis(int /*nframes*/)
+trajectoryAnalysis::finishAnalysis(int numFrames)
 {
-    std::cout<<"finished analysis"<<std::endl;
+    // transfer file names from user input:
+    std::string inFileName = std::string("stream_") + jsonOutputFileName_;
+    std::string outFileName = jsonOutputFileName_;
+    std::fstream inFile;
+    std::fstream outFile;
+
+    // READ PER-FRAME DATA AND AGGREGATE ALL NON-PROFILE DATA
+    // ------------------------------------------------------------------------
+
+    // TODO: this needs another pass through the infile and should collect
+    // pore summary data like length and volume
+
+    // openen per-frame data set for reading:
+    inFile.open(inFileName, std::fstream::in);
+
+    // prepare summary statistics for aggregate properties:
+    SummaryStatistics minRadiusSummary;
+    SummaryStatistics lengthSummary;
+    SummaryStatistics volumeSummary;
+    SummaryStatistics numPathSummary;
+    SummaryStatistics numSampleSummary;
+
+    // read file line by line and calculate summary statistics:
+    int linesRead = 0;
+    std::string line;
+    while( std::getline(inFile, line) )
+    {
+        // read line into JSON document:
+        rapidjson::StringStream lineStream(line.c_str());
+        rapidjson::Document lineDoc;
+        lineDoc.ParseStream(lineStream);
+
+        // sanity checks:
+        if( !lineDoc.IsObject() )
+        {
+            std::string error = "Line " + std::to_string(linesRead) + 
+            " read from" + inFileName + "is not valid JSON object.";
+            throw std::runtime_error(error);
+        }
+      
+        // calculate summary statistics of aggregate variables:
+        minRadiusSummary.update(
+                lineDoc["pathSummary"]["minRadius"][0].GetDouble());
+        lengthSummary.update(
+                lineDoc["pathSummary"]["length"][0].GetDouble());
+        volumeSummary.update(
+                lineDoc["pathSummary"]["volume"][0].GetDouble());
+        numPathSummary.update(
+                lineDoc["pathSummary"]["numPath"][0].GetDouble());
+        numSampleSummary.update(
+                lineDoc["pathSummary"]["numSample"][0].GetDouble());
+
+        // increment line counter:
+        linesRead++;
+    }
+
+    // close per frame data set:
+    inFile.close();
+    
+    // sanity check:
+    if( linesRead != numFrames )
+    {
+        throw std::runtime_error("Number of frames read does not equal number"
+        "of frames analyised.");
+    }
+
+
+    // READ PER-FRAME DATA AND AGGREGATE TIME-AVERAGED PORE PROFILE
+    // ------------------------------------------------------------------------
+
+    // define set of support points for profile evaluation:
+    // FIXME this needs more than a heuristic!
+    // FIXME also will not work when alignment = none is selected
+    std::vector<real> supportPoints;
+    int numSupportPoints = 1000;
+    real extrapDist = 1.0;
+    real step = (lengthSummary.max() + 2.0*extrapDist) / (numSupportPoints - 1);
+    for(size_t i = 0; i < numSupportPoints; i++)
+    {
+        supportPoints.push_back(-0.5*lengthSummary.max() - extrapDist + i*step);
+    }
+
+    // open JSON data file in read mode:
+    inFile.open(inFileName.c_str(), std::fstream::in);
+    
+    // prepare containers for profile summaries:
+    std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
+
+    // read file line by line:
+    int linesProcessed = 0;
+    while( std::getline(inFile, line) )
+    {
+        std::cout<<"linesProcessed = "<<linesProcessed<<std::endl;
+
+        // read line into JSON document:
+        rapidjson::StringStream lineStream(line.c_str());
+        rapidjson::Document lineDoc;
+        lineDoc.ParseStream(lineStream);
+
+        // sanity checks:
+        if( !lineDoc.IsObject() )
+        {
+            std::string error = "Line " + std::to_string(linesProcessed) + 
+            " read from" + inFileName + "is not valid JSON object.";
+            throw std::runtime_error(error);
+        }
+
+        // create molecular path:
+        MolecularPath molPath(lineDoc);
+
+        // sample radius at support points and add to summary statistics:
+        std::vector<real> radiusSample = molPath.sampleRadii(supportPoints); 
+        for(size_t i = 0; i < radiusSample.size(); i++)
+        {
+            radiusSummary.at(i).update(radiusSample.at(i));
+        }
+
+        // increment line counter:
+        linesProcessed++;
+    }
+
+    // sanity check:
+    if( linesProcessed != numFrames )
+    {
+        std::string error = "Number of lines read from JSON file does not"
+        "equal number of frames processed!"; 
+        throw std::runtime_error(error);
+    }
+
+    // close filestream object:
+    inFile.close();
+
+    
+
+    // CREATING OUTPUT JSON
+    // ------------------------------------------------------------------------
+
+    // TODO also need to write density and energy profiles
+
+    // prepare JSON document for output:
+    rapidjson::Document outDoc;
+    rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
+    outDoc.SetObject();
+
+    // create JSON object for reproducibility information:
+    // TODO this should probably get its own class
+    rapidjson::Value reproInfo;
+    reproInfo.SetObject();
+    reproInfo.AddMember(
+            "version",
+            chapVersionString(),
+            alloc);
+    reproInfo.AddMember(
+            "commandLine",
+            std::string(gmx::getProgramContext().commandLine()),
+            alloc);
+
+    // add reproducibility information to output JSON:
+    outDoc.AddMember(
+            "reproducibilityInformation",
+            reproInfo,
+            alloc);
+
+    // create JSON object for pore summary data:
+    rapidjson::Value pathSummary;
+    pathSummary.SetObject();
+
+    SummaryStatisticsJsonConverter ssjc;
+    pathSummary.AddMember(
+            "minRadius",
+            ssjc.convert(minRadiusSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "length",
+            ssjc.convert(lengthSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "volume",
+            ssjc.convert(volumeSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "numPath",
+            ssjc.convert(numPathSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "numSample",
+            ssjc.convert(numSampleSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+
+    // add summary data to output document:
+    outDoc.AddMember("pathSummary", pathSummary, alloc);
+
+
+    // create JSON object for pore profile:
+    rapidjson::Value pathProfile;
+    pathProfile.SetObject();
+
+    // create JSON arrays to hold pore profile values:
+    rapidjson::Value supportPts(rapidjson::kArrayType);
+    rapidjson::Value radiusMin(rapidjson::kArrayType);
+    rapidjson::Value radiusMax(rapidjson::kArrayType);
+    rapidjson::Value radiusMean(rapidjson::kArrayType);
+    rapidjson::Value radiusSd(rapidjson::kArrayType);    
+
+    // fill JSON arrays with values::
+    for(size_t i = 0; i < supportPoints.size(); i++)
+    {
+        // support points:
+        supportPts.PushBack(supportPoints.at(i), alloc);
+
+        // radius:
+        radiusMin.PushBack(radiusSummary.at(i).min(), alloc);
+        radiusMax.PushBack(radiusSummary.at(i).max(), alloc);
+        radiusMean.PushBack(radiusSummary.at(i).mean(), alloc);
+        radiusSd.PushBack(radiusSummary.at(i).sd(), alloc);
+    }
+
+    // add JSON arrays to pore profile object:
+    pathProfile.AddMember("s", supportPts, alloc);
+    pathProfile.AddMember("radiusMin", radiusMin, alloc);
+    pathProfile.AddMember("radiusMax", radiusMax, alloc);
+    pathProfile.AddMember("radiusMean", radiusMean, alloc);
+    pathProfile.AddMember("radiusSd", radiusSd, alloc);
+    
+    // add pore profile to output document:
+    outDoc.AddMember("pathProfile", pathProfile, alloc);
+
+
+    // WRITING OUTPUT JSON TO FILE
+    // ------------------------------------------------------------------------
+
+    // stringify output document:
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    outDoc.Accept(writer);
+    std::string outLine(buffer.GetString(), buffer.GetSize());
+    
+    // open outgoing file stream:
+    outFile.open(outFileName, std::fstream::out);
+
+    // write JSON output to file:
+    outFile<<outLine<<std::endl;
+
+    // close out file stream:
+    outFile.close();
+
+
+    // COPYING PER-FRAME DATA TO FINAL OUTPUT FILE
+    // ------------------------------------------------------------------------
+    
+    // open file with per-frame data and output data:
+    inFile.open(inFileName, std::fstream::in);
+    outFile.open(outFileName, std::fstream::app);
+
+    // append input file to output file line by line:    
+    int linesCopied = 0;
+    std::string copyLine;
+    while( std::getline(inFile, copyLine) )
+    {
+        // append line to out file:
+        outFile<<copyLine<<std::endl;
+
+        // increment line counter:
+        linesCopied++;
+    }
+
+    // close file streams:
+    inFile.close();
+    outFile.close();
+
+    // sanity checks:
+    if( linesCopied != numFrames )
+    {
+        throw std::runtime_error("Could not copy all lines from per-frame data"
+        "file to output data file.");
+    }
+
+    // delete temporary file:
+    std::remove(inFileName.c_str());
 }
 
 
@@ -1123,10 +1491,6 @@ trajectoryAnalysis::finishAnalysis(int /*nframes*/)
 void
 trajectoryAnalysis::writeOutput()
 {
-    std::cout<<"datSetCount = "<<data_.dataSetCount()<<std::endl
-             <<"columnCount = "<<data_.columnCount()<<std::endl
-             <<"frameCount = "<<data_.frameCount()<<std::endl
-             <<std::endl;
-}
 
+}
 

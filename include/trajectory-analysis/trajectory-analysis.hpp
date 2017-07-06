@@ -77,7 +77,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	SelectionList                    sel_;			// selection of the small particle groups
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
 
-    AnalysisData                     data_;			// raw data container
+    AnalysisData                     frameStreamData_;
     AnalysisData                     dataResMapping_;
     AnalysisData                     dataResMappingPdb_;
 
@@ -119,6 +119,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     bool pfInitProbePosIsSet_;
     std::vector<real> pfChanDirVec_;
     bool pfChanDirVecIsSet_;
+    ePathAlignmentMethod pfPathAlignmentMethod_;
+
 
     // simulated annealing parameters:
     int64_t saRandomSeed_;

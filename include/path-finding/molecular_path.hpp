@@ -4,14 +4,22 @@
 #include <vector>
 #include <map>
 
-
 #include <gromacs/math/vec.h>
 #include <gromacs/pbcutil/pbc.h>
 #include <gromacs/utility/real.h>
 #include <gromacs/selection/selection.h>
 
+#include "rapidjson/document.h"
+
 #include "geometry/spline_curve_1D.hpp"
 #include "geometry/spline_curve_3D.hpp"
+
+
+/*!
+ * Enum for different methods for aligning molecular pathways between frames.
+ */
+enum ePathAlignmentMethod {ePathAlignmentMethodNone, 
+                           ePathAlignmentMethodIpp};
 
 
 /*
@@ -22,10 +30,9 @@ class PathMappingParameters
     public:
 
         // parameters values:
-        real nbhSearchCutoff_;
         real mapTol_;
         real extrapDist_;
-        int numPathSamples_;
+        real sampleStep_;
 };
 
 
@@ -54,15 +61,27 @@ class MolecularPath
 {
     public:
 
-        // costructor and destructor:
-        MolecularPath(std::vector<gmx::RVec> &pathPoints,
-                      std::vector<real> &poreRadii);
+        // costructors and destructor:
+        MolecularPath(
+                std::vector<gmx::RVec> &pathPoints,
+                std::vector<real> &poreRadii);
+        MolecularPath(
+                const rapidjson::Document &doc);
+                /*
+        MolecularPath(
+                std::vector<real> poreRadiusKnots,
+                std::vector<real> poreRadiusCtrlPoints,
+                std::vector<real> centreLineKnots,
+                std::vector<gmx::RVec> centreLineCtrlPoints);*/
         ~MolecularPath();
 
         // interface for mapping particles onto pathway:
-        std::map<int, gmx::RVec> mapSelection(gmx::Selection mapSel,
-                                              PathMappingParameters params,
-                                              t_pbc *nbhSearchPbc);
+        std::vector<gmx::RVec> mapPositions(
+                const std::vector<gmx::RVec> &positions,
+                const PathMappingParameters &params);
+        std::map<int, gmx::RVec> mapSelection(
+                const gmx::Selection &mapSel,
+                const PathMappingParameters &params); 
         
         // check if points lie inside pore:
         std::map<int, bool> checkIfInside(
@@ -78,13 +97,21 @@ class MolecularPath
         std::vector<gmx::RVec> pathPoints();
         std::vector<real> pathRadii();
 
-        // access properties of path:
+        // access aggregate properties of path:
         real length();
         std::pair<real, real> minRadius();
         real volume();
         real radius(real);
         real sLo();
         real sHi();
+
+        // access properties of splines
+        std::vector<real> poreRadiusKnots() const;
+        std::vector<real> poreRadiusUniqueKnots() const;
+        std::vector<real> poreRadiusCtrlPoints() const;
+        std::vector<real> centreLineKnots() const;
+        std::vector<real> centreLineUniqueKnots() const;
+        std::vector<gmx::RVec> centreLineCtrlPoints() const;
 
         // sample points from centreline:
         std::vector<real> sampleArcLength(int nPoints, real extrapDist);
@@ -99,6 +126,9 @@ class MolecularPath
         std::vector<real> sampleRadii(int nPoints, real extrapDist);
         std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
 
+        // change internal coordinate representation of path:
+        void shift(const gmx::RVec &shift);
+        
 
     private:
 
@@ -107,6 +137,14 @@ class MolecularPath
 
         // utilities for sampling functions:
         inline real sampleArcLenStep(int nPoints, real extrapDist); 
+
+        // utilities for path mapping:
+        inline gmx::RVec mapPosition(
+                const gmx::RVec &cartCoord,
+                const std::vector<real> &arcLenSample,
+                const std::vector<gmx::RVec> &pathPointSample,
+                const real mapTol);
+        inline int numSamplePoints(const PathMappingParameters &params);
 
         // original path points and corresponding radii:
         std::vector<gmx::RVec> pathPoints_;
@@ -121,7 +159,6 @@ class MolecularPath
         real openingHi_;
         real length_;
 };
-
 
 #endif
 

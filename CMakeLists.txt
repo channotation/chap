@@ -46,7 +46,7 @@ link_directories( /usr/local/fftw/lib/ )
 # set compiler and linker flags:
 set(CMAKE_CXX_FLAGS "-Wall -O3 -g")
 
-set(LAPACK_LINKER_FLAGS "-llapacke -llapack -lblas")
+#set(LAPACK_LINKER_FLAGS "-llapacke -llapack -lblas")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}" )
 
 
@@ -76,7 +76,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 # find LAPACK:
 find_package(LAPACK REQUIRED)
 
-#message("lapack = " ${LAPACK_LIBRARIES})
+message("lapack = " ${LAPACK_LIBRARIES})
 
 
 # Find Boost Library
@@ -106,6 +106,7 @@ set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llap
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
+target_link_libraries(chap lapacke lapack blas)
 
 
 # Compile Tests

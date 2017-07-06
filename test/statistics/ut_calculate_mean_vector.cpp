@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "statistics-utilities/calculate_mean_vector.hpp"
+#include "statistics/calculate_mean_vector.hpp"
 
 
 /*
