@@ -34,6 +34,7 @@
 #include "io/summary_statistics_json_converter.hpp"
 
 #include "statistics/summary_statistics.hpp"
+#include "statistics/histogram_density_estimator.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -1159,6 +1160,11 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
          dhFrameStream.finishPointSet();
     }
+
+    
+    // ESTIMATE SOLVENT DENSITY
+    //-------------------------------------------------------------------------
+
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
