@@ -20,6 +20,8 @@
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
+#include "config/version.hpp"
+
 #include "geometry/spline_curve_1D.hpp"
 #include "geometry/spline_curve_3D.hpp"
 #include "geometry/cubic_spline_interp_1D.hpp"
@@ -1340,6 +1342,25 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
     outDoc.SetObject();
 
+    // create JSON object for reproducibility information:
+    // TODO this should probably get its own class
+    rapidjson::Value reproInfo;
+    reproInfo.SetObject();
+    reproInfo.AddMember(
+            "version",
+            chapVersionString(),
+            alloc);
+    reproInfo.AddMember(
+            "commandLine",
+            std::string(gmx::getProgramContext().commandLine()),
+            alloc);
+
+    // add reproducibility information to output JSON:
+    outDoc.AddMember(
+            "reproducibilityInformation",
+            reproInfo,
+            alloc);
+
     // create JSON object for pore summary data:
     rapidjson::Value pathSummary;
     pathSummary.SetObject();
@@ -1371,8 +1392,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
 
     // create JSON object for pore profile:
-    rapidjson::Value poreProfile;
-    poreProfile.SetObject();
+    rapidjson::Value pathProfile;
+    pathProfile.SetObject();
 
     // create JSON arrays to hold pore profile values:
     rapidjson::Value supportPts(rapidjson::kArrayType);
@@ -1395,14 +1416,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     }
 
     // add JSON arrays to pore profile object:
-    poreProfile.AddMember("s", supportPts, alloc);
-    poreProfile.AddMember("radiusMin", radiusMin, alloc);
-    poreProfile.AddMember("radiusMax", radiusMax, alloc);
-    poreProfile.AddMember("radiusMean", radiusMean, alloc);
-    poreProfile.AddMember("radiusSd", radiusSd, alloc);
+    pathProfile.AddMember("s", supportPts, alloc);
+    pathProfile.AddMember("radiusMin", radiusMin, alloc);
+    pathProfile.AddMember("radiusMax", radiusMax, alloc);
+    pathProfile.AddMember("radiusMean", radiusMean, alloc);
+    pathProfile.AddMember("radiusSd", radiusSd, alloc);
     
     // add pore profile to output document:
-    outDoc.AddMember("poreProfile", poreProfile, alloc);
+    outDoc.AddMember("pathProfile", pathProfile, alloc);
 
 
     // WRITING OUTPUT JSON TO FILE
