@@ -1461,6 +1461,9 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         throw std::runtime_error("Could not copy all lines from per-frame data"
         "file to output data file.");
     }
+
+    // delete temporary file:
+    std::remove(inFileName.c_str());
 }
 
 
@@ -1471,5 +1474,4 @@ trajectoryAnalysis::writeOutput()
 {
 
 }
-
 
