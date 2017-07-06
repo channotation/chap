@@ -1271,14 +1271,20 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     }
 
 
-
-
-    // defin set of support points for profile evaluation:
-    std::vector<real> supportPoints = {-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0};
-
-
     // READ PER-FRAME DATA AND AGGREGATE TIME-AVERAGED PORE PROFILE
     // ------------------------------------------------------------------------
+
+    // define set of support points for profile evaluation:
+    // FIXME this needs more than a heuristic!
+    // FIXME also will not work when alignment = none is selected
+    std::vector<real> supportPoints;
+    int numSupportPoints = 1000;
+    real extrapDist = 1.0;
+    real step = (lengthSummary.max() + 2.0*extrapDist) / (numSupportPoints - 1);
+    for(size_t i = 0; i < numSupportPoints; i++)
+    {
+        supportPoints.push_back(-0.5*lengthSummary.max() - extrapDist + i*step);
+    }
 
     // open JSON data file in read mode:
     inFile.open(inFileName.c_str(), std::fstream::in);
