@@ -64,12 +64,9 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saCoolingFactor_(0.99)
     , saStepLengthFactor_(0.01)
     , saUseAdaptiveCandGen_(false)
-{
-    //
-    registerAnalysisDataset(&data_, "somedata");
-    data_.setMultipoint(true);              // mutliple support points 
-    
-       // register dataset:
+{  
+    // register dataset:
+    // TODO: this data set should be made obsolete
     registerAnalysisDataset(&dataResMapping_, "resMapping");
 
 
@@ -369,81 +366,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // PREPARE DATSETS
     //-------------------------------------------------------------------------
 
-    // multiple datasets:
-    data_.setDataSetCount(4);
-    DataSetNameList dataSetNames = {"path", "path.agg", "res.map", "solv.map"};
-    ColumnHeaderList columnHeaders;
-
-	// prepare data container for path data:
-    data_.setColumnCount(0, 5);
-    ColumnHeader columnHeaderPath = {"x", "y", "z", "s", "r"};
-    columnHeaders.push_back(columnHeaderPath);
-
-    // prepare data container for aggregate path data:
-    data_.setColumnCount(1, 5);
-    ColumnHeader columnHeaderAggregatePath = {"R.min", 
-                                              "L", 
-                                              "V", 
-                                              "N",
-                                              "N.sample"};
-    columnHeaders.push_back(columnHeaderAggregatePath);
-
-    // prepare data container for residue mapping:
-    data_.setColumnCount(2, 9);
-    ColumnHeader columnHeaderResMap = {"res.id", 
-                                       "s", 
-                                       "rho", 
-                                       "phi", 
-                                       "pl",
-                                       "pf",
-                                       "x",
-                                       "y",
-                                       "z"};
-    columnHeaders.push_back(columnHeaderResMap);
-
-    // prepare data container for solvent mapping:
-    data_.setColumnCount(3, 9);
-    ColumnHeader columnHeaderSolvMap = {"res.id", 
-                                        "s", 
-                                        "rho", 
-                                        "phi", 
-                                        "pore",
-                                        "sample",
-                                        "x",
-                                        "y",
-                                        "z"};
-    columnHeaders.push_back(columnHeaderSolvMap);
-
-    // prepare residue names:
-    t_atoms allAtoms = top.topology() -> atoms;
-    std::unordered_map<int, std::string> residueNames;
-    std::cout<<"resinfo.nr = "<<allAtoms.nres<<std::endl;
-    for(size_t i = 0; i < allAtoms.nres; i++)
-    {
-        residueNames[allAtoms.resinfo[i].nr] = std::string(*allAtoms.resinfo[i].name);        
-    } 
-
-    // add json exporter to data:
-    AnalysisDataJsonExporterPointer jsonExporter(new AnalysisDataJsonExporter);
-    jsonExporter -> setDataSetNames(dataSetNames);
-    jsonExporter -> setColumnNames(columnHeaders);
-    jsonExporter -> setResidueNames(residueNames);
-    jsonExporter -> setFileName(jsonOutputFileName_);
-//    data_.addModule(jsonExporter);
-
-    // add general parameters to JSON exporter:
-    jsonExporter -> addParameter("jsonOutputFileName", jsonOutputFileName_);
-    jsonExporter -> addParameter("objOutputFileName", objOutputFileName_);
-
-    // add path finding parameters to JSON exporter:
-    for(auto it = pfParams_.begin(); it != pfParams_.end(); it++)
-    {
-        jsonExporter -> addParameter(it -> first, it -> second);
-    }
-    jsonExporter -> addParameter("cutoff", cutoff_);
-
-
-
     // prepare per frame data stream:
     frameStreamData_.setDataSetCount(6);
     std::vector<std::string> frameStreamDataSetNames = {
@@ -511,8 +433,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
     jsonFrameExporter -> setDataSetNames(frameStreamDataSetNames);
     jsonFrameExporter -> setColumnNames(frameStreamColumnNames);
-    // TODO: make this a parameter? ot temporary file name?
-    std::string frameStreamFileName = "stream.json";
+    std::string frameStreamFileName = std::string("stream_") + jsonOutputFileName_;
     jsonFrameExporter -> setFileName(frameStreamFileName);
     frameStreamData_.addModule(jsonFrameExporter);
 
@@ -800,12 +721,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
     // get data handles for this frame:
-	AnalysisDataHandle dh = pdata -> dataHandle(data_);
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
 
 	// get data for frame number frnr into data handle:
-    dh.startFrame(frnr, fr.time);
     dhResMapping.startFrame(frnr, fr.time);
     dhFrameStream.startFrame(frnr, fr.time);
 
@@ -1032,26 +951,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
 
-    // add path data to data handle:
-    dh.selectDataSet(0);
 
     // access path finding module result:
+    // FIXME this can probably be removed ?
     real extrapDist = 0.0;
     std::vector<real> arcLengthSample = molPath.sampleArcLength(nOutPoints_, extrapDist);
     std::vector<gmx::RVec> pointSample = molPath.samplePoints(arcLengthSample);
     std::vector<real> radiusSample = molPath.sampleRadii(arcLengthSample);
-
-    // loop over all support points of path:
-    for(int i = 0; i < nOutPoints_; i++)
-    {
-        // add to container:
-        dh.setPoint(0, pointSample[i][0]);     // x
-        dh.setPoint(1, pointSample[i][1]);     // y
-        dh.setPoint(2, pointSample[i][2]);     // z
-        dh.setPoint(3, arcLengthSample[i]);    // s
-        dh.setPoint(4, radiusSample[i]);       // r
-        dh.finishPointSet(); 
-    }
 
 
     // MAP PORE PARTICLES ONTO PATHWAY
@@ -1131,6 +1037,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     
 
     // add points inside to data frame:
+    // TODO: this functionality should probably be handled outside the main analysis loop
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         SelectionPosition pos = poreMappingSelCog.position(it->first);
@@ -1146,21 +1053,21 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
     
     // now add mapped residue coordinates to data handle:
-    dh.selectDataSet(2);
+    dhFrameStream.selectDataSet(4);
     
     // add mapped residues to data container:
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
-         dh.setPoint(0, poreMappingSelCog.position(it -> first).mappedId()); // res.id
-         dh.setPoint(1, it -> second[0]);     // s
-         dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[3]);     // phi
-         dh.setPoint(4, poreLining[it -> first]);     // pore lining?
-         dh.setPoint(5, poreFacing[it -> first]);     // pore facing?
-         dh.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
-         dh.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
-         dh.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
-         dh.finishPointSet();
+         dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
+         dhFrameStream.setPoint(1, it -> second[0]);     // s
+         dhFrameStream.setPoint(2, it -> second[1]);     // rho
+         dhFrameStream.setPoint(3, it -> second[3]);     // phi
+         dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
+         dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
+         dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
+         dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
+         dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
+         dhFrameStream.finishPointSet();
     }
 
 
@@ -1230,47 +1137,46 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<"found "<<numSolvInsidePore<<" solvent particles inside pore in "
              <<1000*tSolInsidePore<<" ms"<<std::endl;
 
-
     // now add mapped residue coordinates to data handle:
-    dh.selectDataSet(3);
+    dhFrameStream.selectDataSet(5);
     
     // add mapped residues to data container:
     for(auto it = solventMappedCoords.begin(); 
         it != solventMappedCoords.end(); 
         it++)
     {
-         dh.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
-         dh.setPoint(1, it -> second[0]);     // s
-         dh.setPoint(2, it -> second[1]);     // rho
-         dh.setPoint(3, it -> second[0]);     // phi // FIXME index wrong, but JSON cant handle NaN
-         dh.setPoint(4, solvInsidePore[it -> first]);     // inside pore
-         dh.setPoint(5, solvInsideSample[it -> first]);     // inside sample
-         dh.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
-         dh.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
-         dh.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
-         dh.finishPointSet();
+         dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
+         dhFrameStream.setPoint(1, it -> second[0]);     // s
+         dhFrameStream.setPoint(2, it -> second[1]);     // rho
+         dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
+         dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
+         dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
+         dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+         dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+         dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+         dhFrameStream.finishPointSet();
     }
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
-    //-------------------------------------------------------------------------
-
+    //-------------------------------------------------------------------------   
 
     // add aggegate path data:
-    dh.selectDataSet(1);
+    dhFrameStream.selectDataSet(0);
 
     // only one point per frame:
-    dh.setPoint(0, molPath.minRadius().second);
-    dh.setPoint(1, molPath.length());
-    dh.setPoint(2, molPath.volume());
-    dh.setPoint(3, numSolvInsidePore); 
-    dh.setPoint(4, numSolvInsideSample); 
-    dh.finishPointSet();
-    
+    dhFrameStream.setPoint(0, molPath.minRadius().second);
+    dhFrameStream.setPoint(1, molPath.length());
+    dhFrameStream.setPoint(2, molPath.volume());
+    dhFrameStream.setPoint(3, numSolvInsidePore); 
+    dhFrameStream.setPoint(4, numSolvInsideSample); 
+    dhFrameStream.finishPointSet();
 
 
     // WRITE PORE TO OBJ FILE
     //-------------------------------------------------------------------------
+
+    // TODO: this should be moved to a separate binary!
 
     MolecularPathObjExporter molPathExp;
     molPathExp(objOutputFileName_.c_str(),
@@ -1283,7 +1189,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<std::endl;
 
 	// finish analysis of current frame:
-    dh.finishFrame();
     dhResMapping.finishFrame();
     dhFrameStream.finishFrame();
 }
@@ -1296,9 +1201,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 void
 trajectoryAnalysis::finishAnalysis(int numFrames)
 {
-    // TODO: make this dynamical
-    std::string inFileName = "stream.json";
-    std::string outFileName = "outfile.json";
+    // transfer file names from user input:
+    std::string inFileName = std::string("stream_") + jsonOutputFileName_;
+    std::string outFileName = jsonOutputFileName_;
 
     // READ PER-FRAME DATA AND AGGREGATE ALL NON-PROFILE DATA
     // ------------------------------------------------------------------------
