@@ -38,6 +38,10 @@ class HistogramDensityEstimator : public AbstractDensityEstimator
         virtual SplineCurve1D estimate(
                 std::vector<real> &samples);
 
+        // setter methods for parameters:
+        virtual void setParameters(
+                const DensityEstimatorParameters &params);
+
         // setter methods:
         void setBinWidth(real binWidth);
 

@@ -81,6 +81,17 @@ HistogramDensityEstimator::estimate(
 }
 
 
+/*
+ *
+ */
+void
+HistogramDensityEstimator::setParameters(
+        const DensityEstimatorParameters &params)
+{
+    setBinWidth( params.binWidth() );
+}
+
+
 /*!
  * Setter method for assigning a bin width for the histogram. Should be called
  * at least once prior to calling evaluate().

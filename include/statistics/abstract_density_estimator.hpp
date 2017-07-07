@@ -9,6 +9,24 @@
 /*
  *
  */
+class DensityEstimatorParameters
+{
+    public:
+
+        void setBinWidth(real binWidth);
+
+        real binWidth() const;
+
+    private:
+
+        real binWidth_;
+    
+};
+
+
+/*
+ *
+ */
 class AbstractDensityEstimator
 {
     public:
@@ -18,12 +36,16 @@ class AbstractDensityEstimator
                 std::vector<real> &samples) = 0;
 
 
-        // setter functions for parameters:
-        void setBw(real bw);
+        // setter function for parameters:
+        virtual void setParameters(
+                const DensityEstimatorParameters &params) = 0;
 
     private:
 
+
 };
+
+
 
 #endif
 
