@@ -371,14 +371,15 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     //-------------------------------------------------------------------------
 
     // prepare per frame data stream:
-    frameStreamData_.setDataSetCount(6);
+    frameStreamData_.setDataSetCount(7);
     std::vector<std::string> frameStreamDataSetNames = {
             "pathSummary",
             "molPathOrigPoints",
             "molPathRadiusSpline",
             "molPathCentreLineSpline",
             "residuePositions",
-            "solventPositions"};
+            "solventPositions",
+            "solventDensity"};
     std::vector<std::vector<std::string>> frameStreamColumnNames;
 
 
@@ -432,6 +433,11 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                       "x",
                                       "y",
                                       "z"});
+
+    // prepare container for solvent density:
+    frameStreamData_.setColumnCount(6, 10);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrl"});
 
     // add JSON exporter to frame stream data:
     AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
@@ -1165,6 +1171,64 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // ESTIMATE SOLVENT DENSITY
     //-------------------------------------------------------------------------
 
+    // TODO this entire section can easily be made its own class
+
+    // build a vector of sample points inside the pathway:
+    std::vector<real> solventSampleCoordS;
+    solventSampleCoordS.reserve(solventMappedCoords.size());
+    for(auto isInsidePath : solvInsideSample)
+    {
+        // is this particle inside the pathway?
+        if( isInsidePath.second )
+        {
+            // add arc length coordinate to sample vector:
+            solventSampleCoordS.push_back(
+                    solventMappedCoords[isInsidePath.first][SS]);
+        }
+    }
+
+    // create pointer to density estimator:
+    std::unique_ptr<AbstractDensityEstimator> densityEstimator;
+
+    // TODO case distinction for kernel density
+    DensityEstimatorParameters densityEstimationParameters;
+    if( true )
+    {
+        densityEstimationParameters.setBinWidth(0.1);
+
+        densityEstimator.reset(new HistogramDensityEstimator());
+        densityEstimator -> setParameters(densityEstimationParameters);
+    }
+
+    // estimate density of solvent particles along arc length coordinate:
+    std::cout<<"estimating solvent density...";
+    std::cout.flush();
+    SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
+            solventSampleCoordS);
+    std::cout<<" done"<<std::endl;
+
+
+    std::cout<<"ctrlPoints.size() = "<<solventDensityCoordS.ctrlPoints().size()<<"  ";
+    std::cout<<"uniqueKnots.size = "<<solventDensityCoordS.uniqueKnots().size()<<"  ";
+    std::cout<<std::endl;
+
+
+    // add spline curve parameters to data handle:
+    // 
+    
+    dhFrameStream.selectDataSet(6);
+    for(size_t i = 0; i < solventDensityCoordS.ctrlPoints().size(); i++)
+    {
+        dhFrameStream.setPoint(
+                0, 
+                solventDensityCoordS.ctrlPoints().at(i));
+        dhFrameStream.setPoint(
+                1, 
+                solventDensityCoordS.uniqueKnots().at(i));
+        dhFrameStream.finishPointSet();
+    }
+    
+    std::cout<<"added to data handle"<<std::endl;
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER

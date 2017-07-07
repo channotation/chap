@@ -45,6 +45,7 @@ class AbstractSplineCurve
         int nCtrlPoints() const;
         int nKnots() const;
         std::vector<real> knotVector() const;
+        std::vector<real> uniqueKnots() const;
 
         // method to shift the internal coordinate system:
         void shift(const gmx::RVec &shift);
