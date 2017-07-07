@@ -17,6 +17,7 @@ class HistogramDensityEstimator : public AbstractDensityEstimator
 {
     friend class HistogramDensityEstimatorTest;
     FRIEND_TEST(HistogramDensityEstimatorTest, HistogramDensityEstimatorBreaksTest);
+    FRIEND_TEST(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest);
     FRIEND_TEST(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest);
 
     public:
@@ -42,7 +43,10 @@ class HistogramDensityEstimator : public AbstractDensityEstimator
                 real rangeHi);
         std::vector<real> createMidpoints(
                 const std::vector<real> &breaks);
-
+        std::vector<real> calculateDensity(
+                const std::vector<real> &samples,
+                const std::vector<real> &breaks);
+    
 };
 
 #endif

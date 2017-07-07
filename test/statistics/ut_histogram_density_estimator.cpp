@@ -25,7 +25,7 @@ class HistogramDensityEstimatorTest : public ::testing::Test
             std::normal_distribution<real> distribution(mu, sd);
 
             // create a random sample:
-            int numSamples = 1e5;
+            int numSamples = 1e4;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distribution(generator) );
@@ -85,11 +85,13 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorBreaksTest)
 /*
  *
  */
-TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
+TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
 {
     // floating point comparison tolerance:
     real eps = 10*std::numeric_limits<real>::epsilon();
 
+    // need to sort test data manually in this test:
+    std::sort(testData_.begin(), testData_.end());
 
     // create histogram estimator and set bindwidth:
     HistogramDensityEstimator hde;
@@ -102,17 +104,148 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
     ASSERT_THROW(hde.setBinWidth(0.0), std::logic_error);
 
     // some bin widths to try:
-    std::vector<real> binWidth = {1.0, 0.1, 1e-5, std::sqrt(2.0)};
+    // NOTE: if bin width too small, spline interpolation will fail!
+    std::vector<real> binWidth = {1.0, 0.1, 1e-2, 0.1*std::sqrt(2.0)};
 
-    // loop over bin widths and check that breaks are correct:
-    for(auto it = binWidth.begin(); it != binWidth.end(); it++)
+    // perform tests for each binwidth value:
+    for(auto bw : binWidth)
     {
         // set bin width:
-        hde.setBinWidth(*it);
+        hde.setBinWidth(bw);
 
-        // estimate density:
-        SplineCurve1D density = hde.estimate(testData_);
+        // create breaks and estimate density:
+        std::vector<real> breaks = hde.createBreaks(
+                testData_.front(),
+                testData_.back());       
+        std::vector<real> density = hde.calculateDensity(
+                testData_,
+                breaks);
 
+        // ensure that density values are semipositive definite:
+        for(auto d : density)
+        {
+            ASSERT_LE(0.0, d);
+        }
+
+        // densities should sum to one:
+        real sum = 0.0;
+        for(auto d : density)
+        {
+            sum += d;
+        }
+        ASSERT_NEAR(1.0, sum, eps);
+
+        // first and last bin should be empty by constructrion:
+        ASSERT_NEAR(0.0, density.front(), 0.0);
+        ASSERT_NEAR(0.0, density.back(), 0.0);
     }
+}
+
+
+
+/*
+ *
+ */
+TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
+{
+    // floating point comparison tolerance:
+    real eps = std::numeric_limits<real>::epsilon();
+
+    // create histogram estimator and set bindwidth:
+    HistogramDensityEstimator hde;
+
+    // check that exception is thrown if no bin width is set:
+    ASSERT_THROW(hde.estimate(testData_), std::logic_error);
+
+    // check that setting a negative of zero bin width does not work:
+    ASSERT_THROW(hde.setBinWidth(-1.0), std::logic_error);
+    ASSERT_THROW(hde.setBinWidth(0.0), std::logic_error);
+
+    // some bin widths to try:
+    // NOTE: if bin width too small, spline interpolation will fail!
+    std::vector<real> binWidth = {1.0, 0.1, 1e-2, 0.1*std::sqrt(2.0)};
+    binWidth = {1.0, 0.1, 0.01, 0.1*std::sqrt(2.0)};
+
+    // get data range:
+    real dataMin = *std::min_element(testData_.begin(), testData_.end());
+    real dataMax = *std::max_element(testData_.begin(), testData_.end());
+
+    // check density computed for all values of bin width:
+    for(auto bw : binWidth)
+    {
+        // estimate density at this binwidth:
+        hde.setBinWidth(bw);
+        SplineCurve1D densitySpline = hde.estimate(testData_);
+
+        // number of evaluation points:
+        // (number is large so that probability integral quadrature is simple)
+        int numEval = 10000;
+
+        // evaluate density above data range:
+        for(int i = 0; i < numEval; i++)
+        {
+            // eval point above data range:
+            real eval = i*bw + dataMax + 2.0*bw;
+            
+            // evaluate density:
+            real density = densitySpline.evaluate(
+                    eval,
+                    0,
+                    eSplineEvalDeBoor);
+
+            // this should always be zero:
+            ASSERT_NEAR(0.0, density, std::sqrt(eps));
+        }
+ 
+        // evaluate density below data range:
+        for(int i = 0; i < numEval; i++)
+        {
+            // eval point below data range: 
+            real eval = -i*bw + dataMin - 0.5*bw;
+            
+            // evaluate density:
+            real density = densitySpline.evaluate(
+                    eval,
+                    0,
+                    eSplineEvalDeBoor);
+
+            // this should always be zero:
+            ASSERT_NEAR(0.0, density, std::sqrt(eps));
+        }
+
+        // evaluate spline within data range:
+        std::vector<real> evalPoints;
+        std::vector<real> evalDensities;
+        real dataRange = dataMax - dataMin;
+        real evalStep = (dataRange + 2.0*bw ) /(numEval);
+        for(int i = 0; i < numEval; i++)
+        {
+            // calculate evaluation point:
+            real eval = dataMin - bw + i*evalStep;
+            evalPoints.push_back(eval);
+
+            // evaluate density at this point:
+            real density = densitySpline.evaluate(
+                    eval,
+                    0,
+                    eSplineEvalDeBoor);
+            evalDensities.push_back(density);
+        }
+
+        // assert positive semi-definiteness:
+        for(auto d : evalDensities)
+        {
+            ASSERT_LE(0.0, d);
+        }
+
+        // check that integral over data range equals one:
+        real integral = 0.0;
+        for(auto d : evalDensities)
+        {
+            integral += d;
+        }
+        integral *= evalStep;
+        ASSERT_NEAR(1.0, integral, std::sqrt(eps));
+   }
 }
 

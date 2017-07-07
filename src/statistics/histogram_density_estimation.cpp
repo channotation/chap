@@ -3,6 +3,7 @@
 #include <string>
 
 #include "geometry/cubic_spline_interp_1D.hpp"
+#include "geometry/linear_spline_interp_1D.hpp"
 
 #include "statistics/histogram_density_estimator.hpp"
 
@@ -35,8 +36,6 @@ HistogramDensityEstimator::estimate(
     // make sure input data is sorted:
     std::sort(samples.begin(), samples.end());
 
-    std::cout<<"samples.fron = "<<samples.front()<<std::endl;
-
     // set up break points for this data set: 
     std::vector<real> breaks = createBreaks(
             samples.front(),
@@ -44,56 +43,40 @@ HistogramDensityEstimator::estimate(
 
     // compute midpoints corresponding to these breakpoints:
     std::vector<real> midpoints = createMidpoints(breaks);
-    
-    // loop over intervals and count samples:
-    std::vector<int> counts;
-    counts.reserve(midpoints.size());
-    auto boundLo = samples.begin();
-    auto boundHi = samples.end();
-    for(size_t i = 0; i < breaks.size() - 1; i++)
+
+    // emergency break for histogram size:
+    // (If number of bins gets too large, the spline interpolation code will
+    // fail with a segfault. This hardcoded limit is supposed to prevent that 
+    // situation, but in practice the reasonable size limit for number of 
+    // histogram bins is probably lower due to performance constraints.)
+    int maxBinNumber = 25000;
+    if( midpoints.size() > maxBinNumber )
     {
-        // iterator to first element greater equal lower break point:
-        boundLo = std::lower_bound(samples.begin(), samples.end(), breaks[i]);
-
-        // iterator to first element strictly greater than upper break point:
-        boundHi = std::upper_bound(boundLo, samples.end(), breaks[i+1]);
-
-        // count number of samples in this range:
-        counts.push_back(std::distance(boundLo, boundHi));
+        throw std::runtime_error("Number of bins exceeds limit for spline "
+        "interpolation! Need to increase bin width.");
     }
+    
+    // calculate density:
+    std::vector<real> density = calculateDensity(samples, breaks);
 
     // sanity check:
-    if( counts.size() != midpoints.size() )
+    if( density.size() != midpoints.size() )
     {
         throw std::logic_error("Histogram has " + 
-        std::string(std::to_string(counts.size())) + " and " + 
+        std::string(std::to_string(density.size())) + " and " + 
         std::string(std::to_string(midpoints.size())) + " midpoints!");
     }
 
-    // sum over counts:
-    int sum = std::accumulate(counts.begin(), counts.end(), 0.0);
-
-    // sanity check:
-    if( sum != samples.size() )
-    {
-        throw std::logic_error("Histogram counts sum to " +
-        std::string(std::to_string(sum)) + " but number of samples is " +
-        std::string(std::to_string(samples.size())) + "!");
-    }
-
-    // calculate density:
-    std::vector<real> density;
-    density.resize(counts.size());
+    // scale by inverse bin width to get proper density:
     std::transform(
-            counts.begin(),
-            counts.end(),
             density.begin(),
-            std::bind2nd(std::divides<real>(), sum));
-
+            density.end(),
+            density.begin(),
+            std::bind2nd(std::multiplies<real>(), 1.0/binWidth_));
 
     // finally create spline curve from this:
-    CubicSplineInterp1D Interp;
-    return Interp(midpoints, density, eSplineInterpBoundaryHermite);
+    LinearSplineInterp1D Interp;
+    return Interp(midpoints, density);
 }
 
 
@@ -125,12 +108,12 @@ HistogramDensityEstimator::createBreaks(
 {
     // will shift by half a bin width past lower endpoint:
     real halfBinWidth = 0.5*binWidth_;
-    real breaksLo = rangeLo - halfBinWidth;
+    real breaksLo = rangeLo - 3.0*halfBinWidth;
 
     // build vector of breaks:
     std::vector<real> breaks;
     breaks.push_back(breaksLo);
-    while( breaks.back() <= rangeHi )
+    while( breaks.back() <= rangeHi + 3.0*halfBinWidth )
     {
         breaks.push_back(breaks.back() + binWidth_);
     }
@@ -160,5 +143,61 @@ HistogramDensityEstimator::createMidpoints(
 
     // return midpoints:
     return midpoints;
+}
+
+
+/*
+ *
+ */
+std::vector<real>
+HistogramDensityEstimator::calculateDensity(
+        const std::vector<real> &samples,
+        const std::vector<real> &breaks)
+{
+    // loop over intervals and count samples:
+    std::vector<int> counts;
+    counts.reserve(breaks.size() - 1);
+    auto boundLo = samples.begin();
+    auto boundHi = samples.end();
+    for(size_t i = 0; i < breaks.size() - 1; i++)
+    {
+        // iterator to first element greater equal lower break point:
+        boundLo = std::upper_bound(boundLo, samples.end(), breaks[i]);
+
+        // iterator to first element strictly greater than upper break point:
+        boundHi = std::upper_bound(boundLo, samples.end(), breaks[i+1]);
+
+        // count number of samples in this range:
+        counts.push_back(std::distance(boundLo, boundHi));
+    }
+
+    // sum over counts:
+    int sum = std::accumulate(counts.begin(), counts.end(), 0.0);
+
+    // sanity check:
+    if( sum != samples.size() )
+    {
+        throw std::logic_error("Histogram counts sum to " +
+        std::string(std::to_string(sum)) + " but number of samples is " +
+        std::string(std::to_string(samples.size())) + "!");
+    }
+
+    // endpoint bins should be empty by construction:
+    if( counts.front() != 0 || counts.back() != 0 )
+    {
+        throw std::logic_error("Histogram endpoint bins are not empty!");
+    }
+
+    // calculate density:
+    std::vector<real> density;
+    density.resize(counts.size());
+    std::transform(
+            counts.begin(),
+            counts.end(),
+            density.begin(),
+            std::bind2nd(std::divides<real>(), sum));
+
+    // return vector of densities:
+    return(density);
 }
 
