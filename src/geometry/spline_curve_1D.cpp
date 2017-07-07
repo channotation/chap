@@ -10,10 +10,10 @@ SplineCurve1D::SplineCurve1D(int degree,
                              std::vector<real> knotVector,
                              std::vector<real> ctrlPoints)
 {
-std::cout<<"SplineCurve1D Constructor"<<std::endl;
     nCtrlPoints_ = ctrlPoints.size();
     nKnots_ = knotVector.size();
     degree_ = degree;
+
     // ensure minimal number of control points for given degree:
     if( nCtrlPoints_ < degree_ + 1 )
     {
