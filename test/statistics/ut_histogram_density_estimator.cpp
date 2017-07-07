@@ -6,14 +6,17 @@
 #include "statistics/histogram_density_estimator.hpp"
 
 
-/*
- *
+/*!
+ * \brief Test fixture for the HistogramDensityEstimator.
  */
 class HistogramDensityEstimatorTest : public ::testing::Test
 {
     public:
 
-        // constructor to set up test data:
+        /*!
+         * Constructor is used to set up a random sample drawn from as 
+         * Gaussian distribution.
+         */
         HistogramDensityEstimatorTest()
         {
             // parameters of normal distribution:
@@ -38,8 +41,10 @@ class HistogramDensityEstimatorTest : public ::testing::Test
 };
 
 
-/*
- *
+/*!
+ * This test checks that breakpoints are correctly constructed to cover the 
+ * entire data range, be correctly ordered, and equidistant with spacing
+ * equal to bin width. The test is carried out for a wide range of bin widths.
  */
 TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorBreaksTest)
 {
@@ -82,8 +87,13 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorBreaksTest)
 }
 
 
-/*
- *
+/*!
+ * This test checks that the raw density estimate prior to spline interpolation
+ * yields valid values. In particular, it ascertains that the density in each
+ * bin is greater or equal to zero, that the sum of densities over all bins is
+ * equal to one, and that the density in the first and last bin is zero. 
+ * Additionally, it checks that exceptions are thrown if no valid bandwidth is
+ * set.
  */
 TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
 {
@@ -143,8 +153,12 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
 
 
 
-/*
- *
+/*!
+ * This test checks that the public interface for histogram density estimation 
+ * yields a valid probability density. In particular, it makes sure that the
+ * denisty outside the data range is zero, that the density within the data 
+ * range is positive semi-definite, and that the integral over the density
+ * spline equals one.
  */
 TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
 {

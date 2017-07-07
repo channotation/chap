@@ -7,11 +7,9 @@
 
 #include "statistics/histogram_density_estimator.hpp"
 
-// TODO rmove
-#include <iostream>
 
-/*
- *
+/*!
+ * Sets initial bin width to zero.
  */
 HistogramDensityEstimator::HistogramDensityEstimator()
     : binWidth_(0.0)
@@ -20,8 +18,11 @@ HistogramDensityEstimator::HistogramDensityEstimator()
 }
 
 
-/*
- *
+/*!
+ * Public interface for Density estimation. Takes a scalar set of samples and 
+ * returns a one-dimensional spline curve representing the probability density
+ * of the samples. The spline curve is normalised such that its integral is
+ * one.
  */
 SplineCurve1D
 HistogramDensityEstimator::estimate(
@@ -81,7 +82,8 @@ HistogramDensityEstimator::estimate(
 
 
 /*!
- * Setter method for assigning a bin width for the histogram.
+ * Setter method for assigning a bin width for the histogram. Should be called
+ * at least once prior to calling evaluate().
  */
 void
 HistogramDensityEstimator::setBinWidth(
@@ -98,8 +100,15 @@ HistogramDensityEstimator::setBinWidth(
 }
 
 
-/*
- *
+/*!
+ * Auxiliary function for creating break points covering a given data range.
+ * The break points are spaced equidistantly (the spacing is the bin width), 
+ * starting from 1.5 bin widths  below the lower end of the data range and 
+ * reaching up to at least 1.5 bin widths above the data range. This ensures
+ * that the entire data range is covered and that the first and last bin are
+ * always empty. This convention simplifies the construction of the 
+ * SplineCurve1D interpolating the density, which will employs simple constant
+ * extrapolation.
  */
 std::vector<real>
 HistogramDensityEstimator::createBreaks(
@@ -123,8 +132,10 @@ HistogramDensityEstimator::createBreaks(
 }
 
 
-/*
- *
+/*!
+ * Auxiliary function for computing midpoints from a given set of break points.
+ * Mitpoins are simply the average of two subsequent break points and form the
+ * evaluation points when building a SplineCurve1D interpolating the density.
  */
 std::vector<real>
 HistogramDensityEstimator::createMidpoints(
@@ -146,8 +157,13 @@ HistogramDensityEstimator::createMidpoints(
 }
 
 
-/*
- *
+/*!
+ * Auxiliary function for calculating the probability density in each bin 
+ * (strictly speaking this is a probability mass function rather than a 
+ * probability density function). This function loops over the vector of break
+ * points and in each interval counts the number of samples that fall into this
+ * interval. The counts are then normalised by the number of samples to obtain
+ * density. The function assumes that the set of samples is sorted. 
  */
 std::vector<real>
 HistogramDensityEstimator::calculateDensity(

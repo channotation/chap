@@ -10,8 +10,17 @@
 #include "statistics/abstract_density_estimator.hpp"
 
 
-/*
+/*!
+ * \brief One-dimensional density estimate using a histogram.
  *
+ * This class provides a method estimate() for estimating a probability 
+ * density of from a sample of scalar values. It uses a histogram with
+ * uniformly spaced bins, where the bin width can be set using setBinWidth().
+ *
+ * The resulting density is then interpolated linearly using 
+ * LinearSplineInterp1D and the result is returned as a SplineCurve1D object.
+ * Linear rather than higher order interpolation is used to avoid artifacts
+ * where the interpolation method introduces locally negative densities.
  */
 class HistogramDensityEstimator : public AbstractDensityEstimator
 {
