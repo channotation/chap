@@ -41,6 +41,7 @@ SplineCurve1D::SplineCurve1D(int degree,
 }
 
 
+
 /*
  *
  */

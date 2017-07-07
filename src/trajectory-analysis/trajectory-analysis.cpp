@@ -379,7 +379,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
             "molPathCentreLineSpline",
             "residuePositions",
             "solventPositions",
-            "solventDensity"};
+            "solventDensitySpline"};
     std::vector<std::vector<std::string>> frameStreamColumnNames;
 
 
@@ -1213,6 +1213,23 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::cout<<std::endl;
 
 
+
+    //
+    for(int i = 0; i < 10; i++)
+    {
+        real eval = -2 + i*0.4;
+
+        real d = solventDensityCoordS.evaluate(
+                eval,
+                0,
+                eSplineEvalDeBoor);
+
+        std::cout<<"eval = "<<eval<<"  "
+                 <<"d = "<<d<<std::endl;
+    }
+
+
+
     // add spline curve parameters to data handle:
     // 
     
@@ -1361,6 +1378,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     
     // prepare containers for profile summaries:
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
+    std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
 
     // read file line by line:
     int linesProcessed = 0;
@@ -1390,6 +1408,82 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         {
             radiusSummary.at(i).update(radiusSample.at(i));
         }
+
+
+
+        if( !lineDoc["solventDensitySpline"]["ctrl"].IsArray() )
+        {
+            std::cout<<"BUH"<<std::endl;
+        }
+
+
+
+
+
+        // TODO: this should get its own class:
+
+        std::vector<real> solventDensityKnots;
+        std::vector<real> solventDensityCtrlPoints;
+        for(size_t i = 0; i < lineDoc["solventDensitySpline"]["knots"].Size(); i++)
+        {
+            solventDensityKnots.push_back(
+                    lineDoc["solventDensitySpline"]["knots"][i].GetDouble());
+            solventDensityCtrlPoints.push_back(
+                    lineDoc["solventDensitySpline"]["ctrl"][i].GetDouble());
+
+            std::cout<<" i = "<<i<<"  "
+                     <<" knot = "<<solventDensityKnots.back()<<"  "
+                     <<" ctrl = "<<solventDensityCtrlPoints.back()<<"  "
+                     <<std::endl;
+        }
+        solventDensityKnots.push_back(
+                solventDensityKnots.back());
+        solventDensityKnots.insert(
+                solventDensityKnots.begin(),
+                solventDensityKnots.front());
+
+        std::cout<<"knots.size = "<<solventDensityKnots.size()<<"  ";
+        std::cout<<"ctrl.size = "<<solventDensityCtrlPoints.size()<<"  "
+                 <<std::endl;
+
+
+        for(size_t i = 0; i < solventDensityCtrlPoints.size(); i++)
+        {
+            std::cout<<" i = "<<i<<"  "
+                     <<" knot = "<<solventDensityKnots.at(i)<<"  "
+                     <<" ctrl = "<<solventDensityCtrlPoints.at(i)<<"  "
+                     <<std::endl;
+
+        }
+
+
+        SplineCurve1D solventDensitySpline(
+                1,
+                solventDensityKnots,
+                solventDensityCtrlPoints);
+        std::vector<real> solventDensitySample;
+        for(auto s : supportPoints)
+        {
+            solventDensitySample.push_back(solventDensitySpline.evaluate(
+                    s,
+                    0,
+                    eSplineEvalDeBoor));
+            std::cout<<"solventDensitySample = "<<solventDensitySample.back()<<"  "
+                     <<"s = "<<s<<std::endl;
+        }
+        
+        std::cout<<"sample.size = "<<solventDensitySample.size()<<"  "
+                 <<"summary.size = "<<solventDensitySummary.size()<<"  "
+                 <<std::endl;
+
+        for(size_t i = 0; i < solventDensitySample.size(); i++)
+        {
+            solventDensitySummary.at(i).update(solventDensitySample.at(i));
+        }
+        
+
+
+
 
         // increment line counter:
         linesProcessed++;
@@ -1473,10 +1567,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // create JSON arrays to hold pore profile values:
     rapidjson::Value supportPts(rapidjson::kArrayType);
+
     rapidjson::Value radiusMin(rapidjson::kArrayType);
     rapidjson::Value radiusMax(rapidjson::kArrayType);
     rapidjson::Value radiusMean(rapidjson::kArrayType);
     rapidjson::Value radiusSd(rapidjson::kArrayType);    
+
+    rapidjson::Value densityMin(rapidjson::kArrayType);
+    rapidjson::Value densityMax(rapidjson::kArrayType);
+    rapidjson::Value densityMean(rapidjson::kArrayType);
+    rapidjson::Value densitySd(rapidjson::kArrayType);    
 
     // fill JSON arrays with values::
     for(size_t i = 0; i < supportPoints.size(); i++)
@@ -1489,14 +1589,26 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         radiusMax.PushBack(radiusSummary.at(i).max(), alloc);
         radiusMean.PushBack(radiusSummary.at(i).mean(), alloc);
         radiusSd.PushBack(radiusSummary.at(i).sd(), alloc);
+
+        // density:
+        densityMin.PushBack(solventDensitySummary.at(i).min(), alloc);
+        densityMax.PushBack(solventDensitySummary.at(i).max(), alloc);
+        densityMean.PushBack(solventDensitySummary.at(i).mean(), alloc);
+        densitySd.PushBack(solventDensitySummary.at(i).sd(), alloc);
     }
 
     // add JSON arrays to pore profile object:
     pathProfile.AddMember("s", supportPts, alloc);
+
     pathProfile.AddMember("radiusMin", radiusMin, alloc);
     pathProfile.AddMember("radiusMax", radiusMax, alloc);
     pathProfile.AddMember("radiusMean", radiusMean, alloc);
     pathProfile.AddMember("radiusSd", radiusSd, alloc);
+
+    pathProfile.AddMember("densityMin", densityMin, alloc);
+    pathProfile.AddMember("densityMax", densityMax, alloc);
+    pathProfile.AddMember("densityMean", densityMean, alloc);
+    pathProfile.AddMember("densitySd", densitySd, alloc);
     
     // add pore profile to output document:
     outDoc.AddMember("pathProfile", pathProfile, alloc);
