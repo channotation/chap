@@ -14,7 +14,7 @@ color change rgb 7 1.000000 1.000000 1.000000
 # load molecule:
 mol delete top
 if { [molinfo top] == -1 } {
-    mol new pr.gro
+    mol new glyr.gro
 }
 
 
@@ -132,7 +132,7 @@ foreach rid $res_id pl $pore_lining pf $pore_facing {
 
 draw color blue
 #draw material Transparent
-source ~/repos/tcl-obj/src/wobj.tcl
+source ~/Repos/tcl-obj/src/wobj.tcl
 
 
 ###############################################################################
@@ -141,7 +141,7 @@ source ~/repos/tcl-obj/src/wobj.tcl
 
 
 # import OBJ data:
-set filename pore.obj
+set filename output.obj
 set obj [WOBJ::import_wavefront_obj $filename]
 
 # draw OBJ mesh:
