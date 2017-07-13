@@ -1383,16 +1383,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         }
 
 
-
-        if( !lineDoc["solventDensitySpline"]["ctrl"].IsArray() )
-        {
-            std::cout<<"BUH"<<std::endl;
-        }
-
-
-
-
-
         // TODO: this should get its own class:
 
         // get spline parameters from JSON:
