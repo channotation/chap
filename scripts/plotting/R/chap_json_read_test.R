@@ -1,5 +1,8 @@
 
-setwd("/sansom/s117/scro2967/repos/chap/bin")
+setwd("/home/gianni/Desktop/chap-demo/data")
+
+library(ggplot2)
+library(jsonlite)
 
 
 
@@ -56,7 +59,7 @@ ggplot(as.data.frame(json.frame$solventPositions),
 
 
 
-filename <- "traj.json"
+filename <- "output.json"
 outfile <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
 
 

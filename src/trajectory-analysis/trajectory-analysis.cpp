@@ -259,7 +259,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Seed for RNG used in simulated annealing. "));
     options -> addOption(IntegerOption("sa-max-cool")
                           .store(&saMaxCoolingIter_)
-                          .defaultValue(0)
+                          .defaultValue(1000)
                           .description("Maximum number of cooling iterations in one simulated annealing run. Defaults to 1000."));
     options -> addOption(IntegerOption("sa-cost-samples")
                          .store(&saNumCostSamples_)
@@ -283,7 +283,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Step length factor used in candidate generation. Defaults to 0.001.")) ;
     options -> addOption(IntegerOption("nm-max-iter")
                          .store(&nmMaxIter_)
-                         .defaultValue(25)
+                         .defaultValue(100)
                          .description("Number of Nelder-Mead simplex iterations.")) ;
     options -> addOption(RealOption("nm-init-shift")
                          .store(&pfParams_["nmInitShift"])
