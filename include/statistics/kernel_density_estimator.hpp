@@ -27,6 +27,7 @@ class KernelDensityEstimator : public AbstractDensityEstimator
                 const DensityEstimationParameters &params);
         void setBandWidth(const real bandWidth);
         void setMaxEvalPointDist(const real maxEvalPointDist);
+        void setEvalRangeCutoff(const real evalRangeCutoff);
         void setKernelFunction(const eKernelFunction kernelFunction);
 
     private:
@@ -34,11 +35,10 @@ class KernelDensityEstimator : public AbstractDensityEstimator
         // internal parameters:
         real bandWidth_;
         real maxEvalPointDist_;
+        real evalRangeCutoff_;
         eKernelFunction kernelFunction_;
 
-
-
-        //
+        // auxiliary functions:
         std::vector<real> createEvaluationPoints(
                 const std::vector<real> &samples);
         size_t calculateNumEvalPoints(

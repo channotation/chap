@@ -52,6 +52,18 @@ DensityEstimationParameters::setMaxEvalPointDist(
 
 
 /*!
+ * Sets evaluation range cutoff to the given value. Note that this will by 
+ * multiplied by the bandwidth.
+ */
+void
+DensityEstimationParameters::setEvaluationRangeCutoff(
+        real evalRangeCutoff)
+{
+    evalRangeCutoff_ = evalRangeCutoff;    
+}
+
+
+/*!
  * Sets the kernel function to the given value and the corresponding flag to 
  * true.
  */
@@ -122,6 +134,26 @@ bool
 DensityEstimationParameters::maxEvalPointDistIsSet() const
 {
 
+}
+
+
+/*!
+ * Returns the value of the evaluation range cutoff.
+ */
+real
+DensityEstimationParameters::evalRangeCutoff() const
+{
+    return evalRangeCutoff_;
+}
+
+
+/*!
+ * Returns a flag indicating whether the evaluation range cutoff has been set.
+ */
+bool
+DensityEstimationParameters::evalRangeCutoffIsSet() const
+{
+    return evluationRangeCutoffIsSet_;
 }
 
 

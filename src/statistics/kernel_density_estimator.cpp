@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "geometry/linear_spline_interp_1D.hpp"
 #include "statistics/kernel_density_estimator.hpp"
 
 
@@ -11,20 +12,18 @@ SplineCurve1D
 KernelDensityEstimator::estimate(
         const std::vector<real> &samples)
 {
-
     // construct evaluation points:
     std::vector<real> evalPoints = createEvaluationPoints(
             samples);
    
-
     // determine density at evaluation points:
     std::vector<real> density = calculateDensity(
             samples,
             evalPoints);
 
-
-    // interpolate density between sample points
-
+    // interpolate density between sample points:
+    LinearSplineInterp1D Interp;
+    return Interp(evalPoints, density);
 }
 
 
@@ -52,6 +51,15 @@ KernelDensityEstimator::setParameters(
     else
     {
         throw std::runtime_error("Kernel bandwidth is not set!");
+    }
+
+    if( params.evalRangeCutoffIsSet() )
+    {
+        setEvalRangeCutoff(params.evalRangeCutoff());
+    }
+    else
+    {
+        throw std::runtime_error("Evaluation range cutoff is not set!");
     }
 
     if( params.maxEvalPointDistIsSet() )
@@ -105,6 +113,25 @@ KernelDensityEstimator::setMaxEvalPointDist(
 
 
 /*!
+ * Sets the evaluation range cutoff to a given value. Throws an exception if
+ * the value is negative.
+ */
+void
+KernelDensityEstimator::setEvalRangeCutoff(
+        const real evalRangeCutoff)
+{
+    // sanity check:
+    if( evalRangeCutoff < 0 )
+    {
+        throw std::logic_error("Evaluation range cutoff may not be negative!");
+    }
+
+    // set internal parameter:
+    evalRangeCutoff_ = evalRangeCutoff;
+}
+
+
+/*!
  * Sets kernel function to the given value.
  */
 void
@@ -115,8 +142,22 @@ KernelDensityEstimator::setKernelFunction(
 }
 
 
-/*
+/*!
+ * Auxiliary function that creates a set of equidistant evaluation points at 
+ * which the density will be evaluated. 
  *
+ * The points are chosen such that the  entire data range plus an extra margin 
+ * is covered. The extra margin is chosen as some factor times the bandwidth, 
+ * where the factor can be set via setEvalRangeCutoff(). The margin is added
+ * to each end of the data range. This is done so that the density at the 
+ * endpoints decays to almost zero (for Kernels with local support, it can be 
+ * exactly zero).
+ *
+ * The spacing of the evaluation points can be controlled using 
+ * setMaxEvalPointDist(), which sets the upper limit for the distance between
+ * two subsequent evaluation points. The real distance is calculated by 
+ * requiring that the number of evaluation points be a power of two, in order
+ * to facilitate the evaluation of the density using an FFT-based algorithm.
  */
 std::vector<real>
 KernelDensityEstimator::createEvaluationPoints(
@@ -125,6 +166,10 @@ KernelDensityEstimator::createEvaluationPoints(
     // find range covered by data:
     real rangeLo = *std::min_element(samples.begin(), samples.end());
     real rangeHi = *std::max_element(samples.begin(), samples.end());
+
+    // extend this by multiple of bandwidth:
+    rangeLo -= evalRangeCutoff_ * bandWidth_;
+    rangeLo += evalRangeCutoff_ * bandWidth_;
 
     // find required number of evaluation points and corresponding step:
     real range = rangeHi - rangeLo;
@@ -203,5 +248,4 @@ KernelDensityEstimator::calculateDensity(
     // return density:
     return(density);
 }
-
 
