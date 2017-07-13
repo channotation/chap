@@ -1191,7 +1191,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::unique_ptr<AbstractDensityEstimator> densityEstimator;
 
     // TODO case distinction for kernel density
-    DensityEstimatorParameters densityEstimationParameters;
+    DensityEstimationParameters densityEstimationParameters;
     if( true )
     {
         densityEstimationParameters.setBinWidth(0.1);

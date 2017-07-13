@@ -40,9 +40,7 @@ class HistogramDensityEstimator : public AbstractDensityEstimator
 
         // setter methods for parameters:
         virtual void setParameters(
-                const DensityEstimatorParameters &params);
-
-        // setter methods:
+                const DensityEstimationParameters &params);
         void setBinWidth(real binWidth);
 
     private:

@@ -81,14 +81,25 @@ HistogramDensityEstimator::estimate(
 }
 
 
-/*
+/*!
+ * Implements the parameter setting method for the HistogramDensityEstimator.
+ * This checks if all required parameters have been set and passes their values 
+ * on to the relevant setter methods.
  *
+ * Currently only a bin qith parameter is required.
  */
 void
 HistogramDensityEstimator::setParameters(
-        const DensityEstimatorParameters &params)
+        const DensityEstimationParameters &params)
 {
-    setBinWidth( params.binWidth() );
+    if( params.binWidthIsSet() )
+    {
+        setBinWidth( params.binWidth() );
+    }
+    else
+    {
+        throw std::runtime_error("Histogram bin width parameter is not set!");
+    }
 }
 
 
