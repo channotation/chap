@@ -3,10 +3,11 @@
 
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include "gromacs/utility/real.h"
 
 #include "geometry/spline_curve_1D.hpp"
-
 #include "statistics/abstract_density_estimator.hpp"
 #include "statistics/kernel_function.hpp"
 
@@ -16,11 +17,15 @@
  */
 class KernelDensityEstimator : public AbstractDensityEstimator
 {
+    friend class KernelDensityEstimatorTest;
+    FRIEND_TEST(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest);
+    FRIEND_TEST(KernelDensityEstimatorTest, KernelDensityEstimatorGaussianTest);
+
     public:
         
         // density estimation interface:
         virtual SplineCurve1D estimate(
-                const std::vector<real> &samples);
+                std::vector<real> &samples);
 
         // implementation of parameter setting interface:
         virtual void setParameters(

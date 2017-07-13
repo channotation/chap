@@ -10,7 +10,7 @@
  */
 SplineCurve1D
 KernelDensityEstimator::estimate(
-        const std::vector<real> &samples)
+        std::vector<real> &samples)
 {
     // construct evaluation points:
     std::vector<real> evalPoints = createEvaluationPoints(
@@ -20,6 +20,8 @@ KernelDensityEstimator::estimate(
     std::vector<real> density = calculateDensity(
             samples,
             evalPoints);
+
+    // TODO: need to set endpoints to zero for proper constant extrapolation
 
     // interpolate density between sample points:
     LinearSplineInterp1D Interp;
@@ -206,7 +208,7 @@ KernelDensityEstimator::calculateNumEvalPoints(
     size_t numPoints = std::ceil(range / maxEvalPointDist_) + 1;
 
     // round this up to the nearest power of two:
-    std::pow(2, std::ceil(std::log2(numPoints)));
+    numPoints = std::pow(2, std::ceil(std::log2(numPoints)));
 
     // return number of points:
     return numPoints;
