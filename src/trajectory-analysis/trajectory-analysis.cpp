@@ -435,7 +435,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                       "z"});
 
     // prepare container for solvent density:
-    frameStreamData_.setColumnCount(6, 10);
+    frameStreamData_.setColumnCount(6, 2);
     frameStreamColumnNames.push_back({"knots", 
                                       "ctrl"});
 
@@ -1207,45 +1207,18 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             solventSampleCoordS);
     std::cout<<" done"<<std::endl;
 
-
-    std::cout<<"ctrlPoints.size() = "<<solventDensityCoordS.ctrlPoints().size()<<"  ";
-    std::cout<<"uniqueKnots.size = "<<solventDensityCoordS.uniqueKnots().size()<<"  ";
-    std::cout<<std::endl;
-
-
-
-    //
-    for(int i = 0; i < 10; i++)
-    {
-        real eval = -2 + i*0.4;
-
-        real d = solventDensityCoordS.evaluate(
-                eval,
-                0,
-                eSplineEvalDeBoor);
-
-        std::cout<<"eval = "<<eval<<"  "
-                 <<"d = "<<d<<std::endl;
-    }
-
-
-
-    // add spline curve parameters to data handle:
-    // 
-    
+    // add spline curve parameters to data handle:   
     dhFrameStream.selectDataSet(6);
     for(size_t i = 0; i < solventDensityCoordS.ctrlPoints().size(); i++)
     {
         dhFrameStream.setPoint(
                 0, 
-                solventDensityCoordS.ctrlPoints().at(i));
+                solventDensityCoordS.uniqueKnots().at(i));
         dhFrameStream.setPoint(
                 1, 
-                solventDensityCoordS.uniqueKnots().at(i));
+                solventDensityCoordS.ctrlPoints().at(i));
         dhFrameStream.finishPointSet();
     }
-    
-    std::cout<<"added to data handle"<<std::endl;
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
@@ -1422,6 +1395,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
         // TODO: this should get its own class:
 
+        // get spline parameters from JSON:
         std::vector<real> solventDensityKnots;
         std::vector<real> solventDensityCtrlPoints;
         for(size_t i = 0; i < lineDoc["solventDensitySpline"]["knots"].Size(); i++)
@@ -1430,11 +1404,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                     lineDoc["solventDensitySpline"]["knots"][i].GetDouble());
             solventDensityCtrlPoints.push_back(
                     lineDoc["solventDensitySpline"]["ctrl"][i].GetDouble());
-
-            std::cout<<" i = "<<i<<"  "
-                     <<" knot = "<<solventDensityKnots.back()<<"  "
-                     <<" ctrl = "<<solventDensityCtrlPoints.back()<<"  "
-                     <<std::endl;
         }
         solventDensityKnots.push_back(
                 solventDensityKnots.back());
@@ -1442,48 +1411,26 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 solventDensityKnots.begin(),
                 solventDensityKnots.front());
 
-        std::cout<<"knots.size = "<<solventDensityKnots.size()<<"  ";
-        std::cout<<"ctrl.size = "<<solventDensityCtrlPoints.size()<<"  "
-                 <<std::endl;
-
-
-        for(size_t i = 0; i < solventDensityCtrlPoints.size(); i++)
-        {
-            std::cout<<" i = "<<i<<"  "
-                     <<" knot = "<<solventDensityKnots.at(i)<<"  "
-                     <<" ctrl = "<<solventDensityCtrlPoints.at(i)<<"  "
-                     <<std::endl;
-
-        }
-
-
+        // construct Spline curve;
         SplineCurve1D solventDensitySpline(
                 1,
                 solventDensityKnots,
                 solventDensityCtrlPoints);
+
+        // sample from spline curve and add to summary statistics:
         std::vector<real> solventDensitySample;
-        for(auto s : supportPoints)
+        for(auto eval : supportPoints)
         {
             solventDensitySample.push_back(solventDensitySpline.evaluate(
-                    s,
+                    eval,
                     0,
                     eSplineEvalDeBoor));
-            std::cout<<"solventDensitySample = "<<solventDensitySample.back()<<"  "
-                     <<"s = "<<s<<std::endl;
         }
-        
-        std::cout<<"sample.size = "<<solventDensitySample.size()<<"  "
-                 <<"summary.size = "<<solventDensitySummary.size()<<"  "
-                 <<std::endl;
-
         for(size_t i = 0; i < solventDensitySample.size(); i++)
         {
             solventDensitySummary.at(i).update(solventDensitySample.at(i));
         }
         
-
-
-
 
         // increment line counter:
         linesProcessed++;
