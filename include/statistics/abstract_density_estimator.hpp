@@ -1,9 +1,10 @@
-#ifndef ABSRTACT_DENSITY_ESTIMATOR_HPP
-#define ABSRTACT_DENSITY_ESTIMATOR_HPP
+#ifndef ABSTRACT_DENSITY_ESTIMATOR_HPP
+#define ABSTRACT_DENSITY_ESTIMATOR_HPP
 
 #include "gromacs/utility/real.h"
 
 #include "geometry/spline_curve_1D.hpp"
+#include "statistics/kernel_function.hpp"
 
 
 /*!
@@ -29,15 +30,37 @@ class DensityEstimationParameters
 
         // setter methods:
         void setBinWidth(real binWidth);
+        void setBandWidth(real bandWidth);
+        void setMaxEvalPointDist(real maxEvalPointDist);
+        void setKernelFunction(eKernelFunction kernelFunction);
 
         // getter methods:
         real binWidth() const;
-        bool binWidthIsSet() const;
+        bool binWidthIsSet() const; 
+
+        real bandWidth() const;
+        bool bandWidthIsSet() const;
+
+        real maxEvalPointDist() const;
+        bool maxEvalPointDistIsSet() const;
+
+        eKernelFunction kernelFunction() const;
+        bool kernelFunctionIsSet() const;
+
 
     private:
 
         real binWidth_;
         bool binWidthIsSet_;
+
+        real bandWidth_;
+        bool bandWidthIsSet_;
+
+        real maxEvalPointDist_;
+        bool maxEvalPointDistIsSet_;
+
+        eKernelFunction kernelFunction_;
+        bool kernelFunctionIsSet_;
     
 };
 

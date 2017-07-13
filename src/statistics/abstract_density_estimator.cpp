@@ -27,6 +27,44 @@ DensityEstimationParameters::setBinWidth(
 
 
 /*!
+ * Sets the value of the band width parameter to the given value and the 
+ * corresponding flag to true.
+ */
+void
+DensityEstimationParameters::setBandWidth(
+        real bandWidth)
+{
+    bandWidth_ = bandWidth;
+    bandWidthIsSet_ = true;
+}
+
+
+/*!
+ * Sets the value of the maximum permitted distance between two evaluation 
+ * points.
+ */
+void
+DensityEstimationParameters::setMaxEvalPointDist(
+        real maxEvalPointDist)
+{
+    maxEvalPointDist_ = maxEvalPointDist;
+}
+
+
+/*!
+ * Sets the kernel function to the given value and the corresponding flag to 
+ * true.
+ */
+void
+DensityEstimationParameters::setKernelFunction(
+        eKernelFunction kernelFunction)
+{
+    kernelFunction_ = kernelFunction;
+    kernelFunctionIsSet_ = true;
+}
+
+
+/*!
  * Returns the bin width parameter.
  */
 real
@@ -43,5 +81,66 @@ bool
 DensityEstimationParameters::binWidthIsSet() const
 {
     return binWidthIsSet_;
+}
+
+
+/*!
+ * Returns the band width parameter.
+ */
+real
+DensityEstimationParameters::bandWidth() const
+{
+    return bandWidth_;
+}
+
+
+/*!
+ * Returns a flag indicating whether the band width parameter has been set.
+ */
+bool
+DensityEstimationParameters::bandWidthIsSet() const
+{
+    return bandWidthIsSet_;
+}
+
+
+/*!
+ * Returns the maximum distance between two evaluation points.
+ */
+real
+DensityEstimationParameters::maxEvalPointDist() const
+{
+    return maxEvalPointDist_;
+}
+
+
+/*!
+ * Returns a flag indicating whether the maximum distance between two 
+ * evaluation points has been set.
+ */
+bool
+DensityEstimationParameters::maxEvalPointDistIsSet() const
+{
+
+}
+
+
+/*!
+ * Returns a flag indicating wether kernel function has been set.
+ */
+eKernelFunction
+DensityEstimationParameters::kernelFunction() const
+{
+    return kernelFunction_;
+}
+
+
+/*!
+ * Returns a function indicating whether kernel function has been set.
+ */
+bool
+DensityEstimationParameters::kernelFunctionIsSet() const
+{
+    return kernelFunctionIsSet_;
 }
 
