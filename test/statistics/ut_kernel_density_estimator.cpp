@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <limits>
 #include <random>
 
 #include <gtest/gtest.h>
@@ -28,7 +29,7 @@ class KernelDensityEstimatorTest : public ::testing::Test
             std::normal_distribution<real> distribution(mu, sd);
 
             // create a random sample:
-            size_t numSamples = 1e4;
+            size_t numSamples = 1;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distribution(generator) );
@@ -90,15 +91,43 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
 /*
  *
  */
-TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorGaussianTest)
-{
-    
+TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorGaussianDensityTest)
+{    
+    real eps = std::sqrt(std::numeric_limits<real>::epsilon());
 
+    // create kernel density estimator and set parameters:
+    // (note that large cutoff makes probability mass outside cutoff range
+    // negligible).
     KernelDensityEstimator kde;
+    kde.setBandWidth(1.0);
+    kde.setEvalRangeCutoff(100.0); 
+    kde.setMaxEvalPointDist(0.1);
     kde.setKernelFunction(eKernelFunctionGaussian);
     
+//    std::vector<real> bandWidths = {10.0, 1.0, 0.1, 0.01, 1e-5};
 
+    // get evaluation points and calculate density:
+    std::vector<real> evalPoints = kde.createEvaluationPoints(testData_);
+    std::vector<real> density = kde.calculateDensity(testData_, evalPoints);
 
+    // assert non-negativity of density:
+    for(auto d : density)
+    {
+        ASSERT_LE(0.0, d);
+    }
+
+    // get actual evaluation point distance:
+    real evalPointDist = (evalPoints.back() - evalPoints.front());
+    evalPointDist /= (evalPoints.size() - 1);
+
+    // assert that density integrates to one:
+    real integral = 0.0;
+    for(auto d : density)
+    {
+        integral += d;
+    }
+    integral *= evalPointDist;
+    ASSERT_NEAR(1.0, integral, eps);
 
 }
 

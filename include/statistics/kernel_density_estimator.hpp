@@ -18,8 +18,12 @@
 class KernelDensityEstimator : public AbstractDensityEstimator
 {
     friend class KernelDensityEstimatorTest;
-    FRIEND_TEST(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest);
-    FRIEND_TEST(KernelDensityEstimatorTest, KernelDensityEstimatorGaussianTest);
+    FRIEND_TEST(
+            KernelDensityEstimatorTest, 
+            KernelDensityEstimatorEvalPointTest);
+    FRIEND_TEST(
+            KernelDensityEstimatorTest, 
+            KernelDensityEstimatorGaussianDensityTest);
 
     public:
         
