@@ -98,5 +98,12 @@ class AbstractDensityEstimator
         bool parametersSet_ = false;
 };
 
+
+/*!
+ * Enum for the various classes derived from AbstractDensityEstimator.
+ */
+enum eDensityEstimator {eDensityEstimatorHistogram,
+                        eDensityEstimatorKernel};
+
 #endif
 

@@ -14,6 +14,8 @@
 #include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
 
+#include "statistics/abstract_density_estimator.hpp"
+
 using namespace gmx;
 
 
@@ -140,9 +142,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     // path mapping parameters:
     PathMappingParameters mappingParams_;
 
-
-
-
+    // density estimation parameters:
+    eDensityEstimator deMethod_;
+    DensityEstimationParameters deParams_;
 
 
     bool debug_output_;
