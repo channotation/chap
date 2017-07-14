@@ -382,7 +382,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Extrapolation distance for sampling "
                                       "path points outside the pore when "
                                       "mapping particles onto molecular "
-                                      "pathway."));
+                                      "pathway. Should be large enough to "
+                                      "sample a sufficient portion of the "
+                                      "bulk regime to reliably estimate bulk "
+                                      "solvent density."));
 
     options -> addOption(RealOption("pm-sample-step")
                          .store(&mappingParams_.sampleStep_)
@@ -415,6 +418,33 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "probability density of the solvent "
                                       "particles along the permeation "
                                       "pathway"));
+    
+    options -> addOption(RealOption("de-res")
+                         .store(&deResolution_)
+                         .defaultValue(0.01)
+                         .description("Spatial resolution of the density "
+                                      "estimator. In case of a historgam, "
+                                      "this is the bin widtj, in case of a "
+                                      "kernel density estimator, this is the "
+                                      "spacing of the evaluation points."));
+
+    // TODO add functionality to determine this automatically
+    options -> addOption(RealOption("de-bandwidth")
+                         .store(&deBandWidth_)
+                         .defaultValue(0.1)
+                         .description("Bandwidth for the kernel density "
+                                      "estimator. Ignored for other "
+                                      "methods."));
+
+    options -> addOption(RealOption("de-eval-cutoff")
+                         .store(&deEvalRangeCutoff_)
+                         .defaultValue(5)
+                         .description("Evaluation range cutoff for kernel "
+                                      "density estimator in multiples of "
+                                      "bandwidth. Ignored for other methods. "
+                                      "Ensures that the density falls off "
+                                      "smoothly to zero outside the data "
+                                      "range."));
 
 
     // MISC PARAMETERS
@@ -490,14 +520,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     // which estimator will be used?
     if( deMethod_ == eDensityEstimatorHistogram )
     {
-        deParams_.setBinWidth(0.1);
+        deParams_.setBinWidth(deResolution_);
     }
     else if( deMethod_ == eDensityEstimatorKernel )
     {
         deParams_.setKernelFunction(eKernelFunctionGaussian);
-        deParams_.setBandWidth(0.1);
-        deParams_.setEvalRangeCutoff(5.0);
-        deParams_.setMaxEvalPointDist(0.01);
+        deParams_.setBandWidth(deBandWidth_);
+        deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
+        deParams_.setMaxEvalPointDist(deResolution_);
     }
 
 
@@ -1476,7 +1506,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // FIXME also will not work when alignment = none is selected
     std::vector<real> supportPoints;
     int numSupportPoints = 1000;
-    real extrapDist = 1.0;
+    real extrapDist = mappingParams_.extrapDist_;
     real step = (lengthSummary.max() + 2.0*extrapDist) / (numSupportPoints - 1);
     for(size_t i = 0; i < numSupportPoints; i++)
     {

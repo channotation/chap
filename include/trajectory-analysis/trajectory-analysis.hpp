@@ -145,6 +145,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     // density estimation parameters:
     eDensityEstimator deMethod_;
     DensityEstimationParameters deParams_;
+    real deResolution_;
+    real deBandWidth_;
+    real deEvalRangeCutoff_;
 
 
     bool debug_output_;
@@ -163,7 +166,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 							t_pbc *pbc,
 							const Selection refSelection);
 };
-
 
 #endif
 
