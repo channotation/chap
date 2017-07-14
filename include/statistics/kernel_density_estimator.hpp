@@ -29,7 +29,7 @@ class KernelDensityEstimator : public AbstractDensityEstimator
             KernelDensityEstimatorGaussianRawDensityTest);
     FRIEND_TEST(
             KernelDensityEstimatorTest, 
-            KernelDensityEstimatorGaussianInterpolatedDensityTest);
+            KernelDensityEstimatorGaussianInterpDensityTest);
 
     public:
         
@@ -66,6 +66,9 @@ class KernelDensityEstimator : public AbstractDensityEstimator
         std::vector<real> calculateDensity(
                 const std::vector<real> &samples,
                 const std::vector<real> &evalPoints);
+        void endpointDensityToZero(
+                std::vector<real> &density,
+                std::vector<real> &evalPoints);
 };
 
 #endif

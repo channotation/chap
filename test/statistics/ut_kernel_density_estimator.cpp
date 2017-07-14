@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "statistics/kernel_density_estimator.hpp"
-
+#include <fstream>
 
 /*
  *
@@ -21,15 +21,15 @@ class KernelDensityEstimatorTest : public ::testing::Test
         KernelDensityEstimatorTest()
         {
             // parameters of normal distribution:
-            real mu = -1.0;
-            real sd = 3.0;
+            real mu = mu_;
+            real sd = sd_;
 
             // prepare random distribution:
             std::default_random_engine generator;
             std::normal_distribution<real> distribution(mu, sd);
 
             // create a random sample:
-            size_t numSamples = 1;
+            size_t numSamples = 100;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distribution(generator) );
@@ -39,6 +39,8 @@ class KernelDensityEstimatorTest : public ::testing::Test
     protected:
 
         std::vector<real> testData_;
+        real sd_ = 0.1;
+        real mu_ = 0.0;
 };
 
 
@@ -116,17 +118,24 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
         real dataHi = *std::max_element(testData_.begin(), testData_.end());
 
         // assert that data range is covered:
-        ASSERT_GE(dataLo, evalPoints.front());
-        ASSERT_LE(dataHi, evalPoints.back());
+        ASSERT_GE(
+                dataLo + std::numeric_limits<real>::epsilon(), 
+                evalPoints.front());
+        ASSERT_LE(
+                dataHi - std::numeric_limits<real>::epsilon(),
+                evalPoints.back());
     }
 }
 
 
 /*!
  * This test checks that the kernel density estimator with a 
- * GaussianKernelFunction estimates a valid probability density. In particular
- * it asserts that all densities are non-negative and that the overall 
- * probability density integrates to one.
+ * GaussianKernelFunction estimates a valid probability density. To be precise,
+ * it asserts that all densities are non-negative. it does NOT check whether
+ * the probability density inegrates to one, as this is done by in the 
+ * subsequent test on the interpolated density (this has the advantage that the
+ * integration step can be chosen independent of the evaluation step and band
+ * width).
  */
 TEST_F(
         KernelDensityEstimatorTest, 
@@ -136,7 +145,7 @@ TEST_F(
     real eps = std::sqrt(std::numeric_limits<real>::epsilon());
 
     // define a number of bandwidths to test:    
-    std::vector<real> bandWidths = {10.0, 1.0, 0.1, 0.01, 1e-5};
+    std::vector<real> bandWidths = {10.0, 1.0, 0.1, 0.01, 0.001};
 
     // perform tests for all the above bandwidths:
     for(auto bw : bandWidths)
@@ -146,8 +155,8 @@ TEST_F(
         // negligible).
         KernelDensityEstimator kde;
         kde.setBandWidth(bw);
-        kde.setEvalRangeCutoff(10.0); 
-        kde.setMaxEvalPointDist(0.1*bw); // if >> bw, integral is not one
+        kde.setEvalRangeCutoff(3.0); 
+        kde.setMaxEvalPointDist(sd_);
         kde.setKernelFunction(eKernelFunctionGaussian);
 
         // get evaluation points and calculate density:
@@ -159,19 +168,6 @@ TEST_F(
         {
             ASSERT_LE(0.0, d);
         }
-
-        // get actual evaluation point distance:
-        real evalPointDist = (evalPoints.back() - evalPoints.front());
-        evalPointDist /= (evalPoints.size() - 1);
-
-        // assert that density integrates to one:
-        real integral = 0.0;
-        for(auto d : density)
-        {
-            integral += d;
-        }
-        integral *= evalPointDist;
-        ASSERT_NEAR(1.0, integral, eps);
     }
 }
 
@@ -183,14 +179,70 @@ TEST_F(
         KernelDensityEstimatorTest, 
         KernelDensityEstimatorGaussianInterpDensityTest)
 {
-    // create kernel density estimator and assert parameter failures:
-    KernelDensityEstimator kde;
- 
+    // set parameter ranges:
+    std::vector<real> bandWidths = {10.0, 1.0, 1e-1, 1e-2, 1e-3};
+    std::vector<real> evalPointDistanceFactors = {1.0, 1e-1, 1e-2};
 
+    // conduct test for all bandwidths:
+    for(bw : bandWidths)
+    {
+        // vary evluation step relative to bandwidth:
+        for(evalPointDistFac : evalPointDistanceFactors)
+        {
+            // create kernel density estimator and set parameters:
+            KernelDensityEstimator kde;
+            DensityEstimationParameters params;
+            params.setBandWidth(bw);
+            params.setEvalRangeCutoff(5.0); 
+            params.setMaxEvalPointDist(evalPointDistFac*bw);
+            params.setKernelFunction(eKernelFunctionGaussian);
+            kde.setParameters(params);
 
-    // create parameter container and assert failure:
-    DensityEstimationParameters params;
-    params.setBandWidth(1.0);
+            // obtain density as spline curve:
+            SplineCurve1D densitySpline = kde.estimate(testData_);
+
+            // find density range:
+            real margin = 3*bw;
+            real rangeLo = densitySpline.knotVector().front() - margin;
+            real rangeHi = densitySpline.knotVector().back() + margin;
+            
+            // create evaluation points covering data range:
+            size_t numEvalPoints = 10000;
+            real evalStep = (rangeHi - rangeLo) / (numEvalPoints - 1);
+            std::vector<real> evalPoints;
+            for(size_t i = 0; i < numEvalPoints; i++ )
+            {
+                evalPoints.push_back(rangeLo + i*evalStep);
+            }
+            
+            // assert non-negativity of interpolated density:
+            for(auto eval : evalPoints)
+            {
+                ASSERT_LE(0.0, densitySpline.evaluate(eval, 0, eSplineEvalDeBoor));
+            }
+           
+            // assert that density outside data range is zero:
+            ASSERT_NEAR(
+                    0.0, 
+                    densitySpline(rangeLo, 0, eSplineEvalDeBoor),
+                    std::numeric_limits<real>::epsilon());
+            ASSERT_NEAR(
+                    0.0, 
+                    densitySpline(rangeHi, 0, eSplineEvalDeBoor),
+                    std::numeric_limits<real>::epsilon());
+
+            // assert that density integrates to one:
+            real integral = 0.0;
+            for(eval : evalPoints)
+            {
+                integral += densitySpline(eval, 0, eSplineEvalDeBoor);
+            }
+            integral *= evalStep;
+            ASSERT_NEAR(
+                    1.0, 
+                    integral, 
+                    std::sqrt(std::numeric_limits<real>::epsilon()));
+        }
+    }
 }
-
 

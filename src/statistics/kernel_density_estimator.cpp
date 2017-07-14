@@ -28,6 +28,10 @@ KernelDensityEstimator::estimate(
             evalPoints);
 
     // TODO: need to set endpoints to zero for proper constant extrapolation
+    endpointDensityToZero(
+            density,
+            evalPoints);
+
 
     // interpolate density between sample points:
     LinearSplineInterp1D Interp;
@@ -78,6 +82,9 @@ KernelDensityEstimator::setParameters(
     {
         throw std::runtime_error("Maximum evluation point distance is not set!");
     }
+
+    // set flag:
+    parametersSet_ = true;
 }
 
 
@@ -182,7 +189,7 @@ KernelDensityEstimator::createEvaluationPoints(
 
     // extend this by multiple of bandwidth:
     rangeLo -= evalRangeCutoff_ * bandWidth_;
-    rangeLo += evalRangeCutoff_ * bandWidth_;
+    rangeHi += evalRangeCutoff_ * bandWidth_;
 
     // calculate data range:
     // (this enforces a minimum of 512 evaluation points)
@@ -270,5 +277,40 @@ KernelDensityEstimator::calculateDensity(
 
     // return density:
     return(density);
+}
+
+
+/*!
+ * Auxiliary function for setting the density at the endpoints of the 
+ * evaluation range to zero. This is done so that the SplineCurve1D returned
+ * by evaluate() will return zero when extrapolating linearly. This in turn 
+ * guarantees that the resulting spline curve will be integrable/normalisable. 
+ *
+ * Note that unless the kernel used for density estimation has only local 
+ * support, the density will never be exactly zero, but the probability mass
+ * far from the data range is generally negligible. The parameter set with
+ * setEvalRangeCutoff() can be used to achieve a smooth transition between the
+ * actual density and zero at the endpoints, as it controls how for the 
+ * evaluation range extends beyond the data range (in multiples of the band
+ * width). For normally distributed data, a cutoff of about three will ensure
+ * that the probability mass neglected at the endpoints is less then 1%. Tests
+ * indicate that a value of five is save for a wide variety of band widths and
+ * evaluation steps.
+ */
+void
+KernelDensityEstimator::endpointDensityToZero(
+        std::vector<real> &density,
+        std::vector<real> &evalPoints)
+{
+    // get evaluation point step length:
+    real step = (evalPoints.back() - evalPoints.front())/(evalPoints.size() - 1);
+
+    // append extra evaluation point at either side of the range:
+    evalPoints.push_back(evalPoints.back() + step);
+    evalPoints.insert(evalPoints.begin(), evalPoints.front() - step);
+
+    // add zero density at either end of density vector:
+    density.push_back(0.0);
+    density.insert(density.begin(), 0.0);
 }
 
