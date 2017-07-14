@@ -98,6 +98,7 @@ KernelDensityEstimator::setBandWidth(
  * Sets the maximum evaluation point distance parameter to the given value. 
  * Throws an exception if value is not positive.
  */
+// FIXME do we need a safeguard to make this smaller than the bandwidth?
 void
 KernelDensityEstimator::setMaxEvalPointDist(
         const real maxEvalPointDist)
@@ -160,6 +161,10 @@ KernelDensityEstimator::setKernelFunction(
  * two subsequent evaluation points. The real distance is calculated by 
  * requiring that the number of evaluation points be a power of two, in order
  * to facilitate the evaluation of the density using an FFT-based algorithm.
+ *
+ * This function also enforces a minimum of 512 sampling points to deal with 
+ * situations where there are only very few data points very close to one 
+ * another.
  */
 std::vector<real>
 KernelDensityEstimator::createEvaluationPoints(
@@ -173,13 +178,22 @@ KernelDensityEstimator::createEvaluationPoints(
     rangeLo -= evalRangeCutoff_ * bandWidth_;
     rangeLo += evalRangeCutoff_ * bandWidth_;
 
-    // find required number of evaluation points and corresponding step:
+    // calculate data range:
+    // (this enforces a minimum of 512 evaluation points)
+    size_t minNumEvalPoints = 512;
     real range = rangeHi - rangeLo;
+    if( range < minNumEvalPoints*maxEvalPointDist_ )
+    {
+        range = minNumEvalPoints*maxEvalPointDist_;
+    }
+
+    // find required number of evaluation points and corresponding step:
     size_t numEvalPoints = calculateNumEvalPoints(range);
     real deltaEvalPoints = range/(numEvalPoints - 1);
 
     // create set of evalPoints:
-    std::vector<real> evalPoints(numEvalPoints, rangeLo);
+    real evalPointsLo = 0.5*(rangeHi + rangeLo) - 0.5*range;
+    std::vector<real> evalPoints(numEvalPoints, evalPointsLo);
     for(size_t i = 0; i < numEvalPoints; i++)
     {
         evalPoints[i] += i*deltaEvalPoints;
@@ -231,7 +245,7 @@ KernelDensityEstimator::calculateDensity(
     std::vector<real> density(evalPoints.size(), 0.0);
 
     // normalisation constant:
-    real normalisation = 1.0 / samples.size() * bandWidth_;
+    real normalisation = 1.0 / (samples.size() * bandWidth_);
     normalisation *= Kernel -> normalisingFactor();
 
     // loop over evaluation points:
@@ -240,7 +254,8 @@ KernelDensityEstimator::calculateDensity(
         // density is sum over kernel distances:
         for(auto sample : samples)
         {
-            density[i] += Kernel -> operator()( evalPoints[i] -sample );
+            density[i] += Kernel -> operator()( 
+                    (evalPoints[i] - sample)/bandWidth_ );
         }
 
         // normalise density at this evaluation point:
