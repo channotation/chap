@@ -5,8 +5,19 @@
 #include "statistics/kernel_density_estimator.hpp"
 
 
-/*
+/*!
+ * Public interface for density estimation. Returns a SplineCurve1D 
+ * representing the kernel density estimate calculated for the given sample 
+ * vector. Will throw an exception if called before parameters have been set
+ * using setParameters().
  *
+ * Internally, this will create a set of evaluation points covering the entire
+ * data range plus some user specified margin using createEvaluationPoints().
+ * It then uses a user specified AbstractKernelFunction to estimate the 
+ * probability density of the samples and adds one additional density point at
+ * either end of the evaluation range to ensure that the density is zero 
+ * outside this range. The density points are then linearly interpolated and 
+ * the result is returned as a SplineCurve1D.
  */
 SplineCurve1D
 KernelDensityEstimator::estimate(
@@ -27,11 +38,10 @@ KernelDensityEstimator::estimate(
             samples,
             evalPoints);
 
-    // TODO: need to set endpoints to zero for proper constant extrapolation
+    // set endpoint density to zero:
     endpointDensityToZero(
             density,
             evalPoints);
-
 
     // interpolate density between sample points:
     LinearSplineInterp1D Interp;
@@ -39,8 +49,22 @@ KernelDensityEstimator::estimate(
 }
 
 
-/*
+/*!
+ * Implements the parameter setting interface defined in 
+ * AbstractDensityEstimator. This function can be used to set the parameters
+ * controlling the kernel density estimator. It will throw exceptions if any
+ * required parameter is not set in the given DensityEstimationParameters
+ * object or if any of the given parameters has a nonsensical value.
  *
+ * In particular the following parameters are expected to be set:
+ *
+ * @param params.kernelFunction_ - an eKernelFunction specifying the kernel to 
+ * be used
+ * @param params.bandWidth_ - a real giving the kernel band width
+ * @param params.evalRangeCutoff_ - a real specifying the cutoff of the 
+ * evaluation range in multiples of the bandWidth
+ * @param params.maxEvalPointDist - a real specifying the maximum distance 
+ * between two subsequent evaluation points
  */
 void
 KernelDensityEstimator::setParameters(
@@ -242,8 +266,26 @@ KernelDensityEstimator::calculateNumEvalPoints(
 }
 
 
-/*
+/*!
+ * Auxiliary function that carries out the actual kernel density estimation.
+ * This is currently implemented as individual summations at each evaluation
+ * point, i.e.
  *
+ * \f[
+ *      p(x) = \frac{1}{h N} \sum_{i=1}^{N} K\left( \frac{x - x_i}{h} \right)
+ * \f]
+ *
+ * where \f$ h \f$ is the bandwidth, \f$ N \f$ is the number of samples, and
+ * \f$ K(x) \f$ is a kernel function implemented as a class derived from
+ * AbstractKernelFunction.
+ *
+ * Note that this is relatively costly for large sample sizes or many 
+ * evaluation points and should in the future be replaced by a more efficient
+ * FFT-based algorithm.
+ *
+ * \todo Implement the convolution as FFT. Note that Gromacs provides a wrapper
+ * for Fourier transforms that should remain valid even if the library drops
+ * FFTW.
  */
 std::vector<real>
 KernelDensityEstimator::calculateDensity(

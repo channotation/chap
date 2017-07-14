@@ -12,8 +12,23 @@
 #include "statistics/kernel_function.hpp"
 
 
-/*
+/*!
+ * \brief One-dimensional density estimation using a kernel formalism.
  *
+ * This class provides a method estimate() for estimating the probability 
+ * density from a sample of scalar values. It uses one of the classes derived
+ * from AbstractKernelFunction to calculate the density according to
+ *
+ * \f[
+ *      p(x_j) = \frac{1}{h N} \sum_{i=1}^{N} K\left( \frac{x_j - x_i}{h} \right)
+ * \f]
+ *
+ * with a band width \f$ h \f$. The evaluation points \f$ x_j \f$ are spaced
+ * uniformly and are no further than a user specified distance apart. 
+ *
+ * The resulting density is interpolated linearly using LinearSplineInterp1D
+ * in order to avoid overshoots resulting in negative densities that may 
+ * occur with higher order interpolation.
  */
 class KernelDensityEstimator : public AbstractDensityEstimator
 {
