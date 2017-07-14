@@ -5,10 +5,11 @@
 #include <gtest/gtest.h>
 
 #include "statistics/kernel_density_estimator.hpp"
-#include <fstream>
 
-/*
- *
+
+/*!
+ * Test fixture for testing the KernelDensityEstimator. Provides a simple 
+ * vector of test data sampled from a Gaussian distribution.
  */
 class KernelDensityEstimatorTest : public ::testing::Test
 {
@@ -40,7 +41,7 @@ class KernelDensityEstimatorTest : public ::testing::Test
 
         std::vector<real> testData_;
         real sd_ = 0.1;
-        real mu_ = 0.0;
+        real mu_ = -std::sqrt(2.0);
 };
 
 
@@ -172,8 +173,12 @@ TEST_F(
 }
 
 
-/*
- *
+/*! 
+ * This test checks that the spline curve returned by the 
+ * KernelDensityEstimator using a GaussianKernelFunction is a valid probability 
+ * density. In particular, it asserts that it only evaluates to positive 
+ * values, that it integrates to one and that it is zero outside of the data
+ * range.
  */
 TEST_F(
         KernelDensityEstimatorTest, 
