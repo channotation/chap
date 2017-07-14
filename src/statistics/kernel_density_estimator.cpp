@@ -12,6 +12,12 @@ SplineCurve1D
 KernelDensityEstimator::estimate(
         std::vector<real> &samples)
 {
+    // parameters set?
+    if( !parametersSet_ )
+    {
+        throw std::runtime_error("kernel density estimation parameters not set!");
+    }
+
     // construct evaluation points:
     std::vector<real> evalPoints = createEvaluationPoints(
             samples);
@@ -86,7 +92,7 @@ KernelDensityEstimator::setBandWidth(
     // sanity check
     if( bandWidth <= 0.0 )
     {
-        throw std::logic_error("Bandwidth may not be negative.");
+        throw std::logic_error("Bandwidth must be psotitive!");
     }
 
     // set internal band width parameter:
@@ -107,7 +113,7 @@ KernelDensityEstimator::setMaxEvalPointDist(
     if( maxEvalPointDist <= 0.0 )
     {
         throw std::logic_error("Maximum distance between evaluation points "
-        "must be positive.");
+        "must be positive!");
     }
 
     // set avlue of internal parameter:

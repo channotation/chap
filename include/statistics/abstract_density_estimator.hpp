@@ -32,7 +32,7 @@ class DensityEstimationParameters
         void setBinWidth(real binWidth);
         void setBandWidth(real bandWidth);
         void setMaxEvalPointDist(real maxEvalPointDist);
-        void setEvaluationRangeCutoff(real evalRangeCutoff);
+        void setEvalRangeCutoff(real evalRangeCutoff);
         void setKernelFunction(eKernelFunction kernelFunction);
 
         // getter methods:
@@ -64,7 +64,7 @@ class DensityEstimationParameters
         bool maxEvalPointDistIsSet_;
 
         real evalRangeCutoff_;
-        bool evluationRangeCutoffIsSet_;
+        bool evalRangeCutoffIsSet_;
 
         eKernelFunction kernelFunction_;
         bool kernelFunctionIsSet_;
@@ -92,9 +92,10 @@ class AbstractDensityEstimator
         virtual void setParameters(
                 const DensityEstimationParameters &params) = 0;
 
-    private:
+    protected:
 
-
+        // flags:
+        bool parametersSet_ = false;
 };
 
 #endif

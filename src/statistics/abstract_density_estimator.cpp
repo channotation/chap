@@ -8,6 +8,14 @@
 DensityEstimationParameters::DensityEstimationParameters()
     : binWidth_(-1.0)
     , binWidthIsSet_(false)
+    , bandWidth_(-1.0)
+    , bandWidthIsSet_(false)
+    , maxEvalPointDist_(-1.0)
+    , maxEvalPointDistIsSet_(false)
+    , evalRangeCutoff_(-1.0)
+    , evalRangeCutoffIsSet_(false)
+    , kernelFunction_(eKernelFunctionGaussian)
+    , kernelFunctionIsSet_(false)
 {
 
 }
@@ -48,6 +56,7 @@ DensityEstimationParameters::setMaxEvalPointDist(
         real maxEvalPointDist)
 {
     maxEvalPointDist_ = maxEvalPointDist;
+    maxEvalPointDistIsSet_ = true;
 }
 
 
@@ -56,10 +65,11 @@ DensityEstimationParameters::setMaxEvalPointDist(
  * multiplied by the bandwidth.
  */
 void
-DensityEstimationParameters::setEvaluationRangeCutoff(
+DensityEstimationParameters::setEvalRangeCutoff(
         real evalRangeCutoff)
 {
     evalRangeCutoff_ = evalRangeCutoff;    
+    evalRangeCutoffIsSet_ = true;
 }
 
 
@@ -133,7 +143,7 @@ DensityEstimationParameters::maxEvalPointDist() const
 bool
 DensityEstimationParameters::maxEvalPointDistIsSet() const
 {
-
+    return maxEvalPointDistIsSet_;
 }
 
 
@@ -153,7 +163,7 @@ DensityEstimationParameters::evalRangeCutoff() const
 bool
 DensityEstimationParameters::evalRangeCutoffIsSet() const
 {
-    return evluationRangeCutoffIsSet_;
+    return evalRangeCutoffIsSet_;
 }
 
 

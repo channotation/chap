@@ -43,6 +43,40 @@ class KernelDensityEstimatorTest : public ::testing::Test
 
 
 /*!
+ * This test checks that exceptions are thrown in case of unset or nonsensical
+ * parameters.
+ */
+TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorParameterTest)
+{
+    // create density estimator and parameter container:
+    KernelDensityEstimator kde;
+    DensityEstimationParameters params;
+
+    // assert exception in case of unset parameters:
+    ASSERT_THROW(kde.estimate(testData_), std::runtime_error);
+
+    // assert exceptions parameters:
+    ASSERT_THROW(kde.setBandWidth(-1.0), std::logic_error);
+    ASSERT_THROW(kde.setBandWidth(0.0), std::logic_error);
+    ASSERT_THROW(kde.setMaxEvalPointDist(-1.0), std::logic_error);
+    ASSERT_THROW(kde.setMaxEvalPointDist(0.0), std::logic_error);
+    ASSERT_THROW(kde.setEvalRangeCutoff(-1.0), std::logic_error);
+
+    // assert exceptions on unset parameters:
+    ASSERT_THROW(kde.setParameters(params), std::runtime_error);
+    params.setKernelFunction(eKernelFunctionGaussian);
+    ASSERT_THROW(kde.setParameters(params), std::runtime_error);
+    params.setBandWidth(1.0);
+    ASSERT_THROW(kde.setParameters(params), std::runtime_error);
+    params.setEvalRangeCutoff(3.0);
+    ASSERT_THROW(kde.setParameters(params), std::runtime_error);
+    params.setMaxEvalPointDist(1.0);
+    ASSERT_NO_THROW(kde.setParameters(params));
+}
+
+
+
+/*!
  * This test checks that the evaluation points are calculated correctly.
  * Specifically they are required to be well ordered and to cover the complete
  * data range. In addition, it is checked that the number of evaluation points
@@ -88,10 +122,15 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
 }
 
 
-/*
- *
+/*!
+ * This test checks that the kernel density estimator with a 
+ * GaussianKernelFunction estimates a valid probability density. In particular
+ * it asserts that all densities are non-negative and that the overall 
+ * probability density integrates to one.
  */
-TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorGaussianDensityTest)
+TEST_F(
+        KernelDensityEstimatorTest, 
+        KernelDensityEstimatorGaussianRawDensityTest)
 {    
     // integral over density should be within eps of one:
     real eps = std::sqrt(std::numeric_limits<real>::epsilon());
@@ -135,4 +174,23 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorGaussianDensityTest)
         ASSERT_NEAR(1.0, integral, eps);
     }
 }
+
+
+/*
+ *
+ */
+TEST_F(
+        KernelDensityEstimatorTest, 
+        KernelDensityEstimatorGaussianInterpDensityTest)
+{
+    // create kernel density estimator and assert parameter failures:
+    KernelDensityEstimator kde;
+ 
+
+
+    // create parameter container and assert failure:
+    DensityEstimationParameters params;
+    params.setBandWidth(1.0);
+}
+
 

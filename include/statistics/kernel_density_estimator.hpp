@@ -20,10 +20,16 @@ class KernelDensityEstimator : public AbstractDensityEstimator
     friend class KernelDensityEstimatorTest;
     FRIEND_TEST(
             KernelDensityEstimatorTest, 
+            KernelDensityEstimatorParameterTest);
+    FRIEND_TEST(
+            KernelDensityEstimatorTest, 
             KernelDensityEstimatorEvalPointTest);
     FRIEND_TEST(
             KernelDensityEstimatorTest, 
-            KernelDensityEstimatorGaussianDensityTest);
+            KernelDensityEstimatorGaussianRawDensityTest);
+    FRIEND_TEST(
+            KernelDensityEstimatorTest, 
+            KernelDensityEstimatorGaussianInterpolatedDensityTest);
 
     public:
         
@@ -34,12 +40,11 @@ class KernelDensityEstimator : public AbstractDensityEstimator
         // implementation of parameter setting interface:
         virtual void setParameters(
                 const DensityEstimationParameters &params);
-        void setBandWidth(const real bandWidth);
-        void setMaxEvalPointDist(const real maxEvalPointDist);
-        void setEvalRangeCutoff(const real evalRangeCutoff);
-        void setKernelFunction(const eKernelFunction kernelFunction);
 
     private:
+
+        // flag indicating whether parameters have been set:
+        bool paramtersSet_;
 
         // internal parameters:
         real bandWidth_;
@@ -47,7 +52,13 @@ class KernelDensityEstimator : public AbstractDensityEstimator
         real evalRangeCutoff_;
         eKernelFunction kernelFunction_;
 
-        // auxiliary functions:
+        // auxiliary functions for parameter setting:
+        void setBandWidth(const real bandWidth);
+        void setMaxEvalPointDist(const real maxEvalPointDist);
+        void setEvalRangeCutoff(const real evalRangeCutoff);
+        void setKernelFunction(const eKernelFunction kernelFunction);
+
+        // auxiliary functions for density estimation:
         std::vector<real> createEvaluationPoints(
                 const std::vector<real> &samples);
         size_t calculateNumEvalPoints(
