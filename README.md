@@ -2,6 +2,15 @@
 
 ## Installation ##
 
+### Prerequisites ###
+
+Prior to installing CHAP, make sure that you have the following libraries and tools installed:
+
+1. The [cmake](https://cmake.org/) tool in version 2.8.8 or higher. This will typically available through your system's package manager. For example on Ubuntu you can install cmake by typing `sudp apt-get install cmake`.
+2. 
+
+### Quick and Dirty Installation
+
 1. From `build` directory, issue `cmake ..`.
 2. Then issue `make -j 12` from same directory.
 3. Issue `make install`.
