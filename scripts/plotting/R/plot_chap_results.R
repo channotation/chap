@@ -1,94 +1,100 @@
+################################################################################
+# SETTINGS
+################################################################################
 
-setwd("/home/gianni/Desktop/chap-demo/data")
+# libraries:
+library(ggplot2)  # plotting
+library(jsonlite) # parsing JSON files
 
-library(ggplot2)
-library(jsonlite)
+# working directory:
+setwd("~/repos/chap/bin")
 
-
-
-readLineN <- function(filename, n)
-{
-  # open connection:
-  con <- file(filename, "r")
-  
-  # skip lines:
-  count <- 0
-  while( count < n )
-  {
-    readLines(con, n = 1)
-    count <- count + 1 
-  }
-  
-  # read line of interest
-  lineN <- readLines(con, n = 1)
-  
-  # close connection:
-  close(con)
-  
-  # return line of interest:
-  return(lineN)
-}
-
-
-
-filename <- "traj.json"
-json.frame <- fromJSON(readLineN(filename, 1), flatten = TRUE)
-
-
-ggplot(melt(as.data.frame(json.frame$pathSummary)),
-       aes(x = variable,
-           y = value,
-           fill = variable)) +
-  geom_bar(stat = "identity") +
-  facet_wrap(~ variable,
-             scales = "free")
-
-
-
-
-
-ggplot(as.data.frame(json.frame$solventPositions),
-       aes(x = s)) +
-  geom_histogram()
-
-
-
-
-
-
-
-
-
+# name of data file:
 filename <- "output.json"
-outfile <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
 
 
+################################################################################
+# DATA READ-IN
+################################################################################
+
+# load first line from JSON file:
+dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
 
 
-ggplot(as.data.frame(outfile$pathProfile),
-       aes(x = s,
-           y = radiusMean,
-           ymin = radiusMean - radiusSd,
-           ymax = radiusMean + radiusSd)) +
+################################################################################
+# PLOTTING
+################################################################################
+
+# Radius Profile
+#-------------------------------------------------------------------------------
+
+plt.radius <- ggplot(as.data.frame(dat$pathProfile),
+                     aes(x = s,
+                         y = radiusMean,
+                         ymin = radiusMean - radiusSd,
+                         ymax = radiusMean + radiusSd)) +
   geom_ribbon(alpha = 0.2,
               aes(ymin = radiusMin,
                   ymax = radiusMax)) +
   geom_ribbon(alpha = 0.4) +
-  geom_line()
+  geom_line() +
+  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
+  ylab(expression(paste(R~~bgroup("(",nm,")")))) +
+  ggtitle("Time Averaged Radius Profile")
+
+plt.radius
+
+# save plot to as files:
+ggsave("radius_profile.png", plt.radius)
+ggsave("radius_profile.pdf", plt.radius)
 
 
+# Pore Hydration / Solvent Density Profile
+#-------------------------------------------------------------------------------
 
-ggplot(as.data.frame(outfile$pathProfile),
-       aes(x = s,
-           y = densityMean,
-           ymin = densityMean - densitySd,
-           ymax = densityMean + densitySd)) +
+plt.density <- ggplot(as.data.frame(dat$outfile$pathProfile),
+                      aes(x = s,
+                          y = densityMean,
+                          ymin = densityMean - densitySd,
+                          ymax = densityMean + densitySd)) +
   geom_ribbon(alpha = 0.2,
               aes(ymin = densityMin,
                   ymax = densityMax)) +
   geom_ribbon(alpha = 0.4) +
-  geom_line()
+  geom_line() +
+  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
+  ylab(expression(paste(n~~bgroup("(",nm^{-3},")")))) +
+  ggtitle("Time Averaged Solvent Number Density")
 
+plt.density
+
+# save plot as file:
+ggsave("solvent_number_density.png", plt.density)
+ggsave("solvent_number_density.pdf", plt.density)
+
+
+# Energy Profile
+#-------------------------------------------------------------------------------
+
+plt.energy <- ggplot(as.data.frame(dat$pathProfile),
+                     aes(x = s,
+                         y = energyMean)) +
+  geom_ribbon(alpha = 0.4,
+              aes(ymin = energyMean - energySd,
+                  ymax = energyMean + energySd)) +
+  geom_ribbon(alpha = 0.2,
+              aes(ymin = energyMin,
+                  ymax = energyMax)) +
+  geom_line() +
+  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
+  ylab(expression(paste(G~~bgroup("(",k[B]*T,")")))) +
+  ggtitle("Solvent Free Energy Profile")
+
+plt.energy
+
+# save plot to file:
+ggsave("energy_profile.png", plt.energy)
+ggsave("energy_profile.pdf", plt.energy)
 
 
 
