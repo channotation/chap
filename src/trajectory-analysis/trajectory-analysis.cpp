@@ -551,12 +551,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 5);
+    frameStreamData_.setColumnCount(0, 7);
     frameStreamColumnNames.push_back({"minRadius",
                                       "length",
                                       "volume",
                                       "numPath",
-                                      "numSample"});
+                                      "numSample",
+                                      "solventRangeLo",
+                                      "solventRangeHi"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -1390,6 +1392,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.finishPointSet();
     }
 
+    // track range covered by solvent:
+    real solventRangeLo = solventDensityCoordS.uniqueKnots().front();
+    real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
+
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------   
@@ -1403,7 +1409,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(2, molPath.volume());
     dhFrameStream.setPoint(3, numSolvInsidePore); 
     dhFrameStream.setPoint(4, numSolvInsideSample); 
+    dhFrameStream.setPoint(5, solventRangeLo); 
+    dhFrameStream.setPoint(6, solventRangeHi); 
     dhFrameStream.finishPointSet();
+
+
+//    std::cout<<"solventRangeLo = "<<solventRangeLo<<"  ";
+  //  std::cout<<"solventRangeHi = "<<solventRangeLo<<std::endl;
 
 
     // WRITE PORE TO OBJ FILE
@@ -1455,6 +1467,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics volumeSummary;
     SummaryStatistics numPathSummary;
     SummaryStatistics numSampleSummary;
+    SummaryStatistics solventRangeLoSummary;
+    SummaryStatistics solventRangeHiSummary;
 
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
@@ -1485,6 +1499,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["numPath"][0].GetDouble());
         numSampleSummary.update(
                 lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        solventRangeLoSummary.update(
+                lineDoc["pathSummary"]["solventRangeLo"][0].GetDouble());
+        solventRangeHiSummary.update(
+                lineDoc["pathSummary"]["solventRangeHi"][0].GetDouble());
 
         // increment line counter:
         linesRead++;
@@ -1507,14 +1525,25 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // define set of support points for profile evaluation:
     // FIXME this needs more than a heuristic!
     // FIXME also will not work when alignment = none is selected
+    // TODO number of support points should be use settable
     std::vector<real> supportPoints;
     int numSupportPoints = 1000;
+    real supportPointsLo = solventRangeLoSummary.min() + 0.5;
+    real supportPointsHi = solventRangeHiSummary.max() - 0.5;
+    real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);
+    for(size_t i = 0; i < numSupportPoints; i++)
+    {
+        supportPoints.push_back(supportPointsLo + i*supportPointsStep);
+    }
+   
+    /* // old solution:
     real extrapDist = mappingParams_.extrapDist_;
     real step = (lengthSummary.max() + 2.0*extrapDist) / (numSupportPoints - 1);
     for(size_t i = 0; i < numSupportPoints; i++)
     {
         supportPoints.push_back(-0.5*lengthSummary.max() - extrapDist + i*step);
     }
+    */
 
     // open JSON data file in read mode:
     inFile.open(inFileName.c_str(), std::fstream::in);
