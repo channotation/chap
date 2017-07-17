@@ -20,6 +20,9 @@
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
+#include "aggregation/number_density_calculator.hpp"
+#include "aggregation/boltzmann_energy_calculator.hpp"
+
 #include "config/version.hpp"
 
 #include "geometry/spline_curve_1D.hpp"
@@ -34,6 +37,8 @@
 #include "io/summary_statistics_json_converter.hpp"
 
 #include "statistics/summary_statistics.hpp"
+#include "statistics/histogram_density_estimator.hpp"
+#include "statistics/kernel_density_estimator.hpp"
 
 #include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
 #include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
@@ -121,83 +126,84 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
 
 
-    // OPTIONS
+    // GENERAL OPTIONS
     //-------------------------------------------------------------------------
 
-    // hardcoded defaults for multivalue options:
-    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
-
-	// get (required) selection option for the reference group: 
-	options -> addOption(SelectionOption("reference")
+	options -> addOption(SelectionOption("sel-pathway")
 	                     .store(&refsel_).required()
-		                 .description("Reference group that defines the channel (normally 'Protein'): "));
+		                 .description("Reference group that defines the "
+                                      "permeation pathway (usually "
+                                      "'Protein') "));
 
-	// get (required) selection options for the small particle groups:
-	options -> addOption(SelectionOption("select")
+	options -> addOption(SelectionOption("sel-solvent")
                          .storeVector(&sel_).required()
-	                     .description("Group of small particles to calculate density of (normally 'Water'):"));
+	                     .description("Group of small particles to calculate "
+                                      "density of (usually 'Water')"));
 
-   	// get (optional) selection options for the initial probe position selection:
-	options -> addOption(SelectionOption("ippsel")
-                         .store(&ippsel_)
-                         .storeIsSet(&ippselIsSet_)
-	                     .description("Reference group from which to determine the initial probe position for the pore finding algorithm. If unspecified, this defaults to the overall pore forming group. Will be overridden if init-probe-pos is set explicitly."));
 
-    
-    // get (optional) selection option for the neighbourhood search cutoff:
-    options -> addOption(RealOption("margin")
-	                     .store(&poreMappingMargin_)
-                         .defaultValue(0.9)
-                         .description("Margin for residue mapping."));
+    // OUTPUT OPTIONS
+    // ------------------------------------------------------------------------
 
-    // file name for output json:
+    // TODO: remove
+    options -> addOption(StringOption("ppfn")
+                         .store(&poreParticleFileName_)
+                         .defaultValue("pore_particles.dat")
+                         .description("Name of file containing pore particle "
+                                      "positions over time."));
+
+    // TODO remove
+    options -> addOption(StringOption("spfn")
+                         .store(&smallParticleFileName_)
+                         .defaultValue("small_particles.dat")
+                         .description("Name of file containing small particle "
+                                      "positions (i.e. water particle "
+                                      "positions) over time."));
+
+    // TODO: find better solution for this
+    options -> addOption(StringOption("o")
+                         .store(&poreProfileFileName_)
+                         .defaultValue("pore_profile.dat")
+                         .description("Name of file containing pore radius, "
+                                      "small particle density, and small "
+                                      "particle energy as function of the "
+                                      "permeation coordinate."));
+
+    // TODO: is this used?
+    options -> addOption(IntegerOption("num-out-pts")
+                         .store(&nOutPoints_)
+                         .defaultValue(1000)
+                         .description("Number of sample points of pore centre "
+                                      "line that are written to output."));
+
+    // TODO: more exressive or shorter command line flag?
     options -> addOption(StringOption("json")
 	                     .store(&jsonOutputFileName_)
                          .defaultValue("output.json")
                          .description("File name for JSON output."));
 
+    // TODO find better solution for this
     options -> addOption(StringOption("obj")
 	                     .store(&objOutputFileName_)
                          .defaultValue("output.obj")
                          .description("File name for OBJ output (testing)."));
 
+    // TODO find better solution for this.
     options -> addOption(StringOption("resm")
 	                     .store(&resMappingOutFileName_)
                          .defaultValue("res_mapping.dat")
                          .description("Residue mapping data (testing)."));
 
-    // get (optional) selection option for the neighbourhood search cutoff:
-    options -> addOption(DoubleOption("cutoff")
-	                     .store(&cutoff_)
-                         .description("Cutoff for distance calculation (0 = no cutoff)"));
 
+    // PATH FINDING PARAMETERS
+    //-------------------------------------------------------------------------
 
-    // output options:
-    options -> addOption(StringOption("ppfn")
-                         .store(&poreParticleFileName_)
-                         .defaultValue("pore_particles.dat")
-                         .description("Name of file containing pore particle positions over time."));
-    options -> addOption(StringOption("spfn")
-                         .store(&smallParticleFileName_)
-                         .defaultValue("small_particles.dat")
-                         .description("Name of file containing small particle positions (i.e. water particle positions) over time."));
-    options -> addOption(StringOption("o")
-                         .store(&poreProfileFileName_)
-                         .defaultValue("pore_profile.dat")
-                         .description("Name of file containing pore radius, small particle density, and small particle energy as function of the permeation coordinate."));
-    options -> addOption(IntegerOption("num-out-pts")
-                         .store(&nOutPoints_)
-                         .defaultValue(1000)
-                         .description("Number of sample points of pore centre line that are written to output."));
+    // TODO: make this enum
+    options -> addOption(StringOption("pf-method")
+                         .store(&pfMethod_)
+                         .defaultValue("inplane-optim")
+                         .description("Path finding method. Only "
+                                      "inplane-optim is implemented so far."));
 
-
-
-    // get parameters of path-finding agorithm:
-    options -> addOption(RealOption("pf-vdwr-fallback")
-                         .store(&pfDefaultVdwRadius_)
-                         .storeIsSet(&pfDefaultVdwRadiusIsSet_)
-                         .defaultValue(-1.0)
-                         .description("Fallback van-der-Waals radius for atoms that are not listed in van-der-Waals radius database"));
     const char * const allowedVdwRadiusDatabase[] = {"hole_amberuni",
                                                      "hole_bondi",
                                                      "hole_hardcore",
@@ -208,7 +214,28 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(EnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
                          .enumValue(allowedVdwRadiusDatabase)
                          .store(&pfVdwRadiusDatabase_)
-                         .description("Database of van-der-Waals radii to be used in pore finding"));
+                         .description("Database of van-der-Waals radii to be "
+                                      "used in pore finding"));
+
+    options -> addOption(RealOption("pf-vdwr-fallback")
+                         .store(&pfDefaultVdwRadius_)
+                         .storeIsSet(&pfDefaultVdwRadiusIsSet_)
+                         .defaultValue(-1.0)
+                         .description("Fallback van-der-Waals radius for "
+                                      "atoms that are not listed in "
+                                      "van-der-Waals radius database. If "
+                                      "negative, an error will be thrown if "
+                                      "the database does not contain a "
+                                      "van-der-Waals radii for all particles "
+                                      "in the pathway defining group."));
+
+    options -> addOption(StringOption("pf-vdwr-json")
+                         .store(&pfVdwRadiusJson_)
+                         .storeIsSet(&pfVdwRadiusJsonIsSet_)
+                         .description("JSON file with user defined "
+                                      "van-der-Waals radii. Will be "
+                                      "ignored unless -pf-vdwr-database is "
+                                      "set to 'user'."));
 
     const char * const allowedPathAlignmentMethod[] = {"none",
                                                        "ipp"};
@@ -216,97 +243,221 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(EnumOption<ePathAlignmentMethod>("pf-align-method")
                          .enumValue(allowedPathAlignmentMethod)
                          .store(&pfPathAlignmentMethod_)
-                         .description("Method for aligning pathway coordinates across time steps."));
+                         .description("Method for aligning pathway "
+                                      "coordinates across time steps"));
 
-    options -> addOption(StringOption("pf-vdwr-json")
-                         .store(&pfVdwRadiusJson_)
-                         .storeIsSet(&pfVdwRadiusJsonIsSet_)
-                         .description("User-defined set of van-der-Waals records in JSON format. Will be ignored unless -pf-vdwr-database is set to 'user'."));
-    options -> addOption(StringOption("pf-method")
-                         .store(&pfMethod_)
-                         .defaultValue("inplane-optim")
-                         .description("Path finding method. Only inplane-optim is implemented so far."));
     options -> addOption(RealOption("pf-probe-step")
                          .store(&pfParams_["pfProbeStepLength"])
                          .defaultValue(0.025)
-                         .description("Step length for probe movement. Defaults to 0.025 nm."));
-    options -> addOption(RealOption("probe-radius")
+                         .description("Step length for probe movement."));
+
+    // TODO: remove this
+    options -> addOption(RealOption("pf-probe-radius")
                          .store(&pfParams_["pfProbeRadius"])
                          .defaultValue(0.0)
-                         .description("Radius of probe. Defaults to 0.0, buggy for other values!"));
+                         .description("BUGGY! Radius of probe."));
+
     options -> addOption(RealOption("pf-max-free-dist")
                          .store(&pfParams_["pfProbeMaxRadius"])
                          .defaultValue(1.0)
-                         .description("Maximum radius of pore. Defaults to 1.0, buggy for larger values."));
+                         .description("Maximum radius of pore."));
+
     options -> addOption(IntegerOption("pf-max-probe-steps")
                          .store(&pfMaxProbeSteps_)
                          .defaultValue(10000)
-                         .description("Maximum number of steps the probe is moved in either direction."));
+                         .description("Maximum number of steps the probe is "
+                                      "moved in either direction."));
+
+    options -> addOption(SelectionOption("pf-sel-ipp")
+                         .store(&ippsel_)
+                         .storeIsSet(&ippselIsSet_)
+	                     .description("Reference group from which to "
+                                      "determine the initial probe position "
+                                      "for the path finding algorithm. If "
+                                      "unspecified, this defaults to the "
+                                      "overall path defining group. Will be "
+                                      "overridden if init-probe-pos is set "
+                                      "explicitly."));
+
     options -> addOption(RealOption("pf-init-probe-pos")
                          .storeVector(&pfInitProbePos_)
                          .storeIsSet(&pfInitProbePosIsSet_)
                          .valueCount(3)
-                         .description("Initial position of probe in probe-based pore finding algorithms. If this is set explicitly, it will overwrite the COM-based initial position set with the ippselflag."));
+                         .description("Initial position of probe in "
+                                      "probe-based pore finding algorithms. "
+                                      "If set explicitly, it will overwrite "
+                                      "the COM-based initial position set "
+                                      "with the ippselflag."));
+
+    std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
     options -> addOption(RealOption("pf-chan-dir-vec")
                          .storeVector(&pfChanDirVec_)
                          .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
-                         .description("Channel direction vector; will be normalised to unit vector internally. Defaults to (0, 0, 1)."));
-    options -> addOption(Int64Option("sa-random-seed")
+                         .description("Channel direction vector. Will be "
+                                      "normalised to unit vector internally. "
+                                      "If unset pore is assumed to be "
+                                      "oriented in z-direction."));
+   
+    // TODO: should be possible to determine this automatically from
+    // max-free-dist and largest vdW radius
+    options -> addOption(DoubleOption("pf-cutoff")
+	                     .store(&cutoff_)
+                         .defaultValue(0.0)
+                         .description("Cutoff for distance searches in path "
+                                      "finding algorithm. A value of zero "
+                                      "or less means no cutoff is applied."));
+ 
+
+
+    // OPTIMISATION PARAMETERS
+    //-------------------------------------------------------------------------
+
+    options -> addOption(Int64Option("sa-seed")
                          .store(&saRandomSeed_)
                          .storeIsSet(&saRandomSeedIsSet_)
-                         .description("Seed for RNG used in simulated annealing. "));
-    options -> addOption(IntegerOption("sa-max-cool")
+                         .description("Seed used in pseudo random number "
+                                      "generation for simulated annealing. "
+                                      "If not set explicitly, a random seed "
+                                      "is used."));
+
+    options -> addOption(IntegerOption("sa-max-iter")
                           .store(&saMaxCoolingIter_)
-                          .defaultValue(1000)
-                          .description("Maximum number of cooling iterations in one simulated annealing run. Defaults to 1000."));
+                          .defaultValue(0)
+                          .description("Maximum number of cooling iterations "
+                                       "in one simulated annealing run."));
+                          
+    // TODO remove this
     options -> addOption(IntegerOption("sa-cost-samples")
                          .store(&saNumCostSamples_)
                          .defaultValue(10)
-                         .description("NOT IMPLEMENTED! Number of cost samples considered for convergence tolerance. Defaults to 10."));
+                         .description("NOT IMPLEMENTED! Number of cost samples"
+                                      " considered for convergence tolerance."));
+
+    // TODO remove this
     options -> addOption(RealOption("sa-conv-tol")
                          .store(&pfParams_["saConvTol"])
                          .defaultValue(1e-3)
-                         .description("Relative tolerance for simulated annealing."));
+                         .description("Simulated annealing relative tolerance."));
+
     options -> addOption(RealOption("sa-init-temp")
                          .store(&pfParams_["saInitTemp"])
                          .defaultValue(0.1)
-                         .description("Initital temperature for simulated annealing. Defaults to 0.1."));
+                         .description("Simulated annealing initial "
+                                      "temperature."));
+
     options -> addOption(RealOption("sa-cooling-fac")
                          .store(&pfParams_["saCoolingFactor"])
                          .defaultValue(0.98)
-                         .description("Cooling factor using in simulated annealing. Defaults to 0.98."));
+                         .description("Simulated annealing cooling factor."));
+
     options -> addOption(RealOption("sa-step")
                          .store(&pfParams_["saStepLengthFactor"])
                          .defaultValue(0.001)
-                         .description("Step length factor used in candidate generation. Defaults to 0.001.")) ;
+                         .description("Step length factor used in candidate "
+                                      "generation. Defaults to 0.001."));
+
     options -> addOption(IntegerOption("nm-max-iter")
                          .store(&nmMaxIter_)
                          .defaultValue(100)
-                         .description("Number of Nelder-Mead simplex iterations.")) ;
+                         .description("Number of Nelder-Mead simplex "
+                                      "iterations in path finding algorithm."));
+
     options -> addOption(RealOption("nm-init-shift")
                          .store(&pfParams_["nmInitShift"])
                          .defaultValue(0.1)
-                         .description("Distance of vertices in initial Nelder-Mead simplex.")) ;
+                         .description("Distance of vertices in initial "
+                                      "Nelder-Mead simplex."));
 
+
+    // PATH MAPPING PARAMETERS
+    //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-tol")
                          .store(&mappingParams_.mapTol_)
                          .defaultValue(1e-7)
-                         .description("Tolerance threshold for mapping particles onto molecular pathway."));
+                         .description("Tolerance threshold for mapping "
+                                      "particles onto molecular pathway."));
+
     options -> addOption(RealOption("pm-extrap-dist")
                          .store(&mappingParams_.extrapDist_)
                          .defaultValue(10)
-                         .description("Extrapolation distance for sampling path points outside the pore when mapping particles onto molecular pathway."));
+                         .description("Extrapolation distance for sampling "
+                                      "path points outside the pore when "
+                                      "mapping particles onto molecular "
+                                      "pathway. Should be large enough to "
+                                      "sample a sufficient portion of the "
+                                      "bulk regime to reliably estimate bulk "
+                                      "solvent density."));
+
     options -> addOption(RealOption("pm-sample-step")
                          .store(&mappingParams_.sampleStep_)
                          .defaultValue(0.01)
-                         .description("Arc length distance of path samples when mapping particles onto molecular pathway."));
+                         .description("Arc length distance of path samples "
+                                      "when mapping particles onto molecular "
+                                      "pathway."));
+
+    options -> addOption(RealOption("pm-pl-margin")
+	                     .store(&poreMappingMargin_)
+                         .defaultValue(0.9)
+                         .description("Margin for determining pathway lining "
+                                      "residues. A residue is considered to "
+                                      "be pathway lining if it is no further "
+                                      "than the local path radius plus this "
+                                      "margin from the pathway's centre "
+                                      "line."));
 
 
+    // DENSITY ESTIMATION PARAMETERS
+    //-------------------------------------------------------------------------
+
+    const char * const allowedDensityEstimationMethod[] = {"histogram",
+                                                           "kernel"};
+    deMethod_ = eDensityEstimatorKernel;
+    options -> addOption(EnumOption<eDensityEstimator>("de-method")
+                         .enumValue(allowedDensityEstimationMethod)
+                         .store(&deMethod_)
+                         .description("Method used for estimating the "
+                                      "probability density of the solvent "
+                                      "particles along the permeation "
+                                      "pathway"));
+    
+    options -> addOption(RealOption("de-res")
+                         .store(&deResolution_)
+                         .defaultValue(0.01)
+                         .description("Spatial resolution of the density "
+                                      "estimator. In case of a historgam, "
+                                      "this is the bin widtj, in case of a "
+                                      "kernel density estimator, this is the "
+                                      "spacing of the evaluation points."));
+
+    // TODO add functionality to determine this automatically
+    options -> addOption(RealOption("de-bandwidth")
+                         .store(&deBandWidth_)
+                         .defaultValue(0.1)
+                         .description("Bandwidth for the kernel density "
+                                      "estimator. Ignored for other "
+                                      "methods."));
+
+    options -> addOption(RealOption("de-eval-cutoff")
+                         .store(&deEvalRangeCutoff_)
+                         .defaultValue(5)
+                         .description("Evaluation range cutoff for kernel "
+                                      "density estimator in multiples of "
+                                      "bandwidth. Ignored for other methods. "
+                                      "Ensures that the density falls off "
+                                      "smoothly to zero outside the data "
+                                      "range."));
+
+
+    // MISC PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // TODO: remove this
     options -> addOption(BooleanOption("debug-output")
                          .store(&debug_output_)
-                         .description("When this flag is set, the program will write additional information.")) ;
+                         .description("When this flag is set, the program "
+                                      "will write additional information."));
 }
 
 
@@ -366,28 +517,48 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     }
 
 
+    // DENSITY ESTIMATION PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // which estimator will be used?
+    if( deMethod_ == eDensityEstimatorHistogram )
+    {
+        deParams_.setBinWidth(deResolution_);
+    }
+    else if( deMethod_ == eDensityEstimatorKernel )
+    {
+        deParams_.setKernelFunction(eKernelFunctionGaussian);
+        deParams_.setBandWidth(deBandWidth_);
+        deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
+        deParams_.setMaxEvalPointDist(deResolution_);
+    }
+
+
     // PREPARE DATSETS
     //-------------------------------------------------------------------------
 
     // prepare per frame data stream:
-    frameStreamData_.setDataSetCount(6);
+    frameStreamData_.setDataSetCount(7);
     std::vector<std::string> frameStreamDataSetNames = {
             "pathSummary",
             "molPathOrigPoints",
             "molPathRadiusSpline",
             "molPathCentreLineSpline",
             "residuePositions",
-            "solventPositions"};
+            "solventPositions",
+            "solventDensitySpline"};
     std::vector<std::vector<std::string>> frameStreamColumnNames;
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 5);
+    frameStreamData_.setColumnCount(0, 7);
     frameStreamColumnNames.push_back({"minRadius",
                                       "length",
                                       "volume",
                                       "numPath",
-                                      "numSample"});
+                                      "numSample",
+                                      "solventRangeLo",
+                                      "solventRangeHi"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -431,6 +602,11 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
                                       "x",
                                       "y",
                                       "z"});
+
+    // prepare container for solvent density:
+    frameStreamData_.setColumnCount(6, 2);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrl"});
 
     // add JSON exporter to frame stream data:
     AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
@@ -1000,7 +1176,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // check if particles are pore-lining:
     std::cout<<"checking which residues are pore-lining ... ";
     clock_t tResPoreLining = std::clock();
-    std::map<int, bool> poreLining = molPath.checkIfInside(poreCogMappedCoords, poreMappingMargin_);
+    std::map<int, bool> poreLining = molPath.checkIfInside(
+            poreCogMappedCoords, 
+            poreMappingMargin_);
     int nPoreLining = 0;
     for(auto jt = poreLining.begin(); jt != poreLining.end(); jt++)
     {
@@ -1061,16 +1239,16 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // add mapped residues to data container:
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
-         dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
-         dhFrameStream.setPoint(1, it -> second[0]);     // s
-         dhFrameStream.setPoint(2, it -> second[1]);     // rho
-         dhFrameStream.setPoint(3, it -> second[3]);     // phi
-         dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
-         dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
-         dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
-         dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
-         dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
-         dhFrameStream.finishPointSet();
+        dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
+        dhFrameStream.setPoint(1, it -> second[0]);     // s
+        dhFrameStream.setPoint(2, it -> second[1]);     // rho
+        dhFrameStream.setPoint(3, it -> second[3]);     // phi
+        dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
+        dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
+        dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
+        dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
+        dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
+        dhFrameStream.finishPointSet();
     }
 
 
@@ -1160,6 +1338,64 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhFrameStream.finishPointSet();
     }
 
+    
+    // ESTIMATE SOLVENT DENSITY
+    //-------------------------------------------------------------------------
+
+    // TODO this entire section can easily be made its own class
+
+    // build a vector of sample points inside the pathway:
+    std::vector<real> solventSampleCoordS;
+    solventSampleCoordS.reserve(solventMappedCoords.size());
+    for(auto isInsidePath : solvInsideSample)
+    {
+        // is this particle inside the pathway?
+        if( isInsidePath.second )
+        {
+            // add arc length coordinate to sample vector:
+            solventSampleCoordS.push_back(
+                    solventMappedCoords[isInsidePath.first][SS]);
+        }
+    }
+
+    // create density estimator:
+    std::unique_ptr<AbstractDensityEstimator> densityEstimator;
+    if( deMethod_ == eDensityEstimatorHistogram )
+    {
+        densityEstimator.reset(new HistogramDensityEstimator());
+    }
+    else if( deMethod_ == eDensityEstimatorKernel )
+    {
+        densityEstimator.reset(new KernelDensityEstimator());
+    }
+
+    // set parameters for density estimation:
+    densityEstimator -> setParameters(deParams_);
+
+    // estimate density of solvent particles along arc length coordinate:
+    std::cout<<"estimating solvent density...";
+    std::cout.flush();
+    SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
+            solventSampleCoordS);
+    std::cout<<" done"<<std::endl;
+
+    // add spline curve parameters to data handle:   
+    dhFrameStream.selectDataSet(6);
+    for(size_t i = 0; i < solventDensityCoordS.ctrlPoints().size(); i++)
+    {
+        dhFrameStream.setPoint(
+                0, 
+                solventDensityCoordS.uniqueKnots().at(i));
+        dhFrameStream.setPoint(
+                1, 
+                solventDensityCoordS.ctrlPoints().at(i));
+        dhFrameStream.finishPointSet();
+    }
+
+    // track range covered by solvent:
+    real solventRangeLo = solventDensityCoordS.uniqueKnots().front();
+    real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
+
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------   
@@ -1173,7 +1409,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(2, molPath.volume());
     dhFrameStream.setPoint(3, numSolvInsidePore); 
     dhFrameStream.setPoint(4, numSolvInsideSample); 
+    dhFrameStream.setPoint(5, solventRangeLo); 
+    dhFrameStream.setPoint(6, solventRangeHi); 
     dhFrameStream.finishPointSet();
+
+
+//    std::cout<<"solventRangeLo = "<<solventRangeLo<<"  ";
+  //  std::cout<<"solventRangeHi = "<<solventRangeLo<<std::endl;
 
 
     // WRITE PORE TO OBJ FILE
@@ -1225,6 +1467,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics volumeSummary;
     SummaryStatistics numPathSummary;
     SummaryStatistics numSampleSummary;
+    SummaryStatistics solventRangeLoSummary;
+    SummaryStatistics solventRangeHiSummary;
 
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
@@ -1255,6 +1499,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["numPath"][0].GetDouble());
         numSampleSummary.update(
                 lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        solventRangeLoSummary.update(
+                lineDoc["pathSummary"]["solventRangeLo"][0].GetDouble());
+        solventRangeHiSummary.update(
+                lineDoc["pathSummary"]["solventRangeHi"][0].GetDouble());
 
         // increment line counter:
         linesRead++;
@@ -1277,20 +1525,33 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // define set of support points for profile evaluation:
     // FIXME this needs more than a heuristic!
     // FIXME also will not work when alignment = none is selected
+    // TODO number of support points should be use settable
     std::vector<real> supportPoints;
     int numSupportPoints = 1000;
-    real extrapDist = 1.0;
+    real supportPointsLo = solventRangeLoSummary.min() + 0.5;
+    real supportPointsHi = solventRangeHiSummary.max() - 0.5;
+    real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);
+    for(size_t i = 0; i < numSupportPoints; i++)
+    {
+        supportPoints.push_back(supportPointsLo + i*supportPointsStep);
+    }
+   
+    /* // old solution:
+    real extrapDist = mappingParams_.extrapDist_;
     real step = (lengthSummary.max() + 2.0*extrapDist) / (numSupportPoints - 1);
     for(size_t i = 0; i < numSupportPoints; i++)
     {
         supportPoints.push_back(-0.5*lengthSummary.max() - extrapDist + i*step);
     }
+    */
 
     // open JSON data file in read mode:
     inFile.open(inFileName.c_str(), std::fstream::in);
     
     // prepare containers for profile summaries:
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
+    std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
+    std::vector<SummaryStatistics> energySummary(supportPoints.size());
 
     // read file line by line:
     int linesProcessed = 0;
@@ -1320,6 +1581,65 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         {
             radiusSummary.at(i).update(radiusSample.at(i));
         }
+
+
+        // TODO: this should get its own class:
+
+        // get spline parameters from JSON:
+        std::vector<real> solventDensityKnots;
+        std::vector<real> solventDensityCtrlPoints;
+        for(size_t i = 0; i < lineDoc["solventDensitySpline"]["knots"].Size(); i++)
+        {
+            solventDensityKnots.push_back(
+                    lineDoc["solventDensitySpline"]["knots"][i].GetDouble());
+            solventDensityCtrlPoints.push_back(
+                    lineDoc["solventDensitySpline"]["ctrl"][i].GetDouble());
+        }
+        solventDensityKnots.push_back(
+                solventDensityKnots.back());
+        solventDensityKnots.insert(
+                solventDensityKnots.begin(),
+                solventDensityKnots.front());
+
+        // construct Spline curve;
+        SplineCurve1D solventDensitySpline(
+                1,
+                solventDensityKnots,
+                solventDensityCtrlPoints);
+
+        // sample from spline curve:
+        std::vector<real> solventDensitySample;
+        for(auto eval : supportPoints)
+        {
+            solventDensitySample.push_back(solventDensitySpline.evaluate(
+                    eval,
+                    0,
+                    eSplineEvalDeBoor));
+        }
+
+
+        // get total number of particles in sample for this time step:
+        int totalNumber = lineDoc["pathSummary"]["numSample"][0].GetDouble();
+
+        // convert to number density and add to summary statistic:
+        NumberDensityCalculator ndc;
+        solventDensitySample = ndc(
+                solventDensitySample, 
+                radiusSample, 
+                totalNumber);
+        for(size_t i = 0; i < solventDensitySample.size(); i++)
+        {
+            solventDensitySummary.at(i).update(solventDensitySample.at(i));
+        }
+       
+        // convert to energy and add to summary statistic:
+        BoltzmannEnergyCalculator bec;
+        std::vector<real> energySample = bec.calculate(solventDensitySample);
+        for(size_t i = 0; i < energySample.size(); i++)
+        {
+            energySummary.at(i).update(energySample.at(i));
+        }
+
 
         // increment line counter:
         linesProcessed++;
@@ -1403,10 +1723,21 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // create JSON arrays to hold pore profile values:
     rapidjson::Value supportPts(rapidjson::kArrayType);
+
     rapidjson::Value radiusMin(rapidjson::kArrayType);
     rapidjson::Value radiusMax(rapidjson::kArrayType);
     rapidjson::Value radiusMean(rapidjson::kArrayType);
     rapidjson::Value radiusSd(rapidjson::kArrayType);    
+
+    rapidjson::Value densityMin(rapidjson::kArrayType);
+    rapidjson::Value densityMax(rapidjson::kArrayType);
+    rapidjson::Value densityMean(rapidjson::kArrayType);
+    rapidjson::Value densitySd(rapidjson::kArrayType);    
+
+    rapidjson::Value energyMin(rapidjson::kArrayType);
+    rapidjson::Value energyMax(rapidjson::kArrayType);
+    rapidjson::Value energyMean(rapidjson::kArrayType);
+    rapidjson::Value energySd(rapidjson::kArrayType);    
 
     // fill JSON arrays with values::
     for(size_t i = 0; i < supportPoints.size(); i++)
@@ -1419,14 +1750,37 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         radiusMax.PushBack(radiusSummary.at(i).max(), alloc);
         radiusMean.PushBack(radiusSummary.at(i).mean(), alloc);
         radiusSd.PushBack(radiusSummary.at(i).sd(), alloc);
+
+        // density:
+        densityMin.PushBack(solventDensitySummary.at(i).min(), alloc);
+        densityMax.PushBack(solventDensitySummary.at(i).max(), alloc);
+        densityMean.PushBack(solventDensitySummary.at(i).mean(), alloc);
+        densitySd.PushBack(solventDensitySummary.at(i).sd(), alloc);
+
+        // energy:
+        energyMin.PushBack(energySummary.at(i).min(), alloc);
+        energyMax.PushBack(energySummary.at(i).max(), alloc);
+        energyMean.PushBack(energySummary.at(i).mean(), alloc);
+        energySd.PushBack(energySummary.at(i).sd(), alloc);
     }
 
     // add JSON arrays to pore profile object:
     pathProfile.AddMember("s", supportPts, alloc);
+
     pathProfile.AddMember("radiusMin", radiusMin, alloc);
     pathProfile.AddMember("radiusMax", radiusMax, alloc);
     pathProfile.AddMember("radiusMean", radiusMean, alloc);
     pathProfile.AddMember("radiusSd", radiusSd, alloc);
+
+    pathProfile.AddMember("densityMin", densityMin, alloc);
+    pathProfile.AddMember("densityMax", densityMax, alloc);
+    pathProfile.AddMember("densityMean", densityMean, alloc);
+    pathProfile.AddMember("densitySd", densitySd, alloc);
+
+    pathProfile.AddMember("energyMin", energyMin, alloc);
+    pathProfile.AddMember("energyMax", energyMax, alloc);
+    pathProfile.AddMember("energyMean", energyMean, alloc);
+    pathProfile.AddMember("energySd", energySd, alloc);
     
     // add pore profile to output document:
     outDoc.AddMember("pathProfile", pathProfile, alloc);

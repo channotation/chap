@@ -45,6 +45,22 @@ AbstractSplineCurve::knotVector() const
 }
 
 
+/*
+ *
+ */
+std::vector<real>
+AbstractSplineCurve::uniqueKnots() const
+{
+    // extract unique knots from knot vector:
+    std::vector<real> uniqueKnots(
+            knotVector_.begin() + degree_,
+            knotVector_.end() - degree_);
+
+    // return unique knots:
+    return uniqueKnots;
+}
+
+
 /*!
  * Function to shift the spline parameter by a given offset. Internally,
  * this function simply subtracts the second element in the given RVec from 

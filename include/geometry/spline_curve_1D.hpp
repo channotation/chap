@@ -21,19 +21,23 @@ class SplineCurve1D : public AbstractSplineCurve
     public:
 
         // constructor and destructor:
-        SplineCurve1D(int degree, 
-                      std::vector<real> knotVector,
-                      std::vector<real> ctrlPoints);
+        SplineCurve1D(
+                int degree, 
+                std::vector<real> knotVector,
+                std::vector<real> ctrlPoints);
+                
         SplineCurve1D();
         ~SplineCurve1D();
 
         // public interfact for spline evaluation:
-        real evaluate(real &evalPoint, 
-                      unsigned int derivOrder, 
-                      eSplineEvalMethod method);
-        real operator()(real &evalPoint, 
-                        unsigned int derivOrder,
-                        eSplineEvalMethod method);
+        real evaluate(
+                real &evalPoint, 
+                unsigned int derivOrder, 
+                eSplineEvalMethod method);
+        real operator()(
+                real &evalPoint, 
+                unsigned int derivOrder,
+                eSplineEvalMethod method);
 
         // getter function for control points:
         std::vector<real> ctrlPoints() const;

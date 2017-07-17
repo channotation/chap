@@ -20,6 +20,13 @@
  * Note that while standard deviation and variance are strictly speaking 
  * undefined for less then two data points, this class will return a value of
  * zero in this case to simplify data handling in the context of JSON.
+ *
+ * Note furthermore that this class will always skip infinite values and in 
+ * this case no variable is updated (the counter also stays at zero). As a
+ * precaution for situatuation where no (finite) values have been passed to 
+ * the update() method, all returned statistics are capped at the minimum and 
+ * maximum real number, i.e. no infinity is ever returned to allow 
+ * compatibility with JSON.
  */
 class SummaryStatistics
 {
@@ -51,6 +58,7 @@ class SummaryStatistics
 
         // internal auxiliary functions:
         inline real varFromSumSquaredMeanDiff() const;
+        inline real mendInfinity(real value) const;
 };
 
 #endif
