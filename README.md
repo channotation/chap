@@ -34,25 +34,64 @@ source tree and from there run `cmake`, `make`, `make check`, and
 `make install`.
 
 ~~~
+#!bash
 cd chap
 mkdir build
 cd build
+cmake ..
+make
+make check
+sudo make install
 ~~~
+
+CMake will automatically find all dependencies (and inform you of missing ones)
+`make1 will compile the code (you can use the `make -j` flag to speed this up 
+on multicore machines to speed this up), `make check` runs a suite of unit 
+tests, and `make install` will place the binary in `/usr/local/chap` (so you
+need sudo rights for this last step.
 
 
 ## Usage ##
 
+### Running CHAP ###
+
+To run chap on a MD trajectory, you simply need to to provide the name of the
+trajectory file and the corresponding topology (which is required to assign
+a van-der-Waals radius to each particle when finding the permeation pathway):
 
 ```
 #!bash
-
-./chap -chan-dir-vec 0 0 1 -init-probe-pos 0 0 0 -max-free-dist 1 -pf-method optim-direction -probe-radius 1 -probe-step 0.2 -sa-conv-tol 1e-3 -sa-cooling-fac 0.9 -sa-cost-samples 10 -sa-init-temp 100 -sa-max-cool 1000 -sa-random-seed 15011991 -sa-step 0.1 -f pr.gro -n pr.ndx
+chap -f trajectory.xtc -s topology.tpr
 ```
 
-## Visualisation ##
+This will create a file `output.json` which contains all results in newline
+delimited [JSON](http://www.json.org/) format. The next section describes how
+the results file is organised and how to visualise your results.
 
-CHAP will write PDB files containing the positions and radii of the probe spheres, where the radii are contained in the "beta" column. To visualise path:
+For a complete list of all options and a brief online helpyou can type 
+`chap -h`.
 
-1. Load PDB file into VMD.
-2. In Tcl console issue `set sel [atomselect top "name PORE"]` to select all pore pseudo-particles.
-3. Then issue `$sel set radius [$sel get beta]` to get correct radii.
+
+## Visualising Results ##
+
+### Output File Structure ###
+
+The results file returned by CHAP is organised as a newline delimted JSON file
+which means that each line is a valid JSON object that can be read and parsed
+individually. The first line contains results aggregated over all trajectory
+frames and each subsequent line contains information for one trajectory frame
+(in the appropriate order). As an end user you will typically only need to look
+at the first line and under `chap/scripts/plotting/` you can find ready made
+scripts for visualising the results.
+
+## Plotting CHAP Results in R ##
+
+An example script for plotting CHAP results in R can be found under 
+`chap/scripts/plotting/R/plot_chap_results.R`. 
+
+
+## Plotting CHAP Results in Python ##
+
+Python scripts for plotting CHAP results are currently under development. 
+Please be patient.
+
