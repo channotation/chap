@@ -20,6 +20,9 @@
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
+#include "aggregation/number_density_calculator.hpp"
+#include "aggregation/boltzmann_energy_calculator.hpp"
+
 #include "config/version.hpp"
 
 #include "geometry/spline_curve_1D.hpp"
@@ -1519,6 +1522,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // prepare containers for profile summaries:
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
     std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
+    std::vector<SummaryStatistics> energySummary(supportPoints.size());
 
     // read file line by line:
     int linesProcessed = 0;
@@ -1574,7 +1578,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 solventDensityKnots,
                 solventDensityCtrlPoints);
 
-        // sample from spline curve and add to summary statistics:
+        // sample from spline curve:
         std::vector<real> solventDensitySample;
         for(auto eval : supportPoints)
         {
@@ -1583,15 +1587,56 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                     0,
                     eSplineEvalDeBoor));
         }
+
+
+        // get total number of particles in sample for this time step:
+        int totalNumber = lineDoc["pathSummary"]["numSample"][0].GetDouble();
+
+        // convert to number density and add to summary statistic:
+        NumberDensityCalculator ndc;
+        solventDensitySample = ndc(
+                solventDensitySample, 
+                radiusSample, 
+                totalNumber);
         for(size_t i = 0; i < solventDensitySample.size(); i++)
         {
             solventDensitySummary.at(i).update(solventDensitySample.at(i));
         }
-        
+       
+        // convert to energy and add to summary statistic:
+        BoltzmannEnergyCalculator bec;
+        std::vector<real> energySample = bec.calculate(solventDensitySample);
+        for(size_t i = 0; i < energySample.size(); i++)
+        {
+            energySummary.at(i).update(energySample.at(i));
+        }
+
 
         // increment line counter:
         linesProcessed++;
     }
+
+
+    for(auto ss : energySummary)
+    {
+        if( std::isinf(ss.min()) )
+        {
+            throw std::logic_error("Min is Inf!");
+        }
+        if( std::isinf(ss.max()) )
+        {
+            throw std::logic_error("Max is Inf!");
+        }
+        if( std::isinf(ss.mean()) )
+        {
+            throw std::logic_error("Mean is Inf!");
+        }
+        if( std::isinf(ss.sd()) )
+        {
+            throw std::logic_error("Sd is Inf!");
+        }
+    }
+
 
     // sanity check:
     if( linesProcessed != numFrames )
@@ -1682,6 +1727,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     rapidjson::Value densityMean(rapidjson::kArrayType);
     rapidjson::Value densitySd(rapidjson::kArrayType);    
 
+    rapidjson::Value energyMin(rapidjson::kArrayType);
+    rapidjson::Value energyMax(rapidjson::kArrayType);
+    rapidjson::Value energyMean(rapidjson::kArrayType);
+    rapidjson::Value energySd(rapidjson::kArrayType);    
+
     // fill JSON arrays with values::
     for(size_t i = 0; i < supportPoints.size(); i++)
     {
@@ -1699,6 +1749,12 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         densityMax.PushBack(solventDensitySummary.at(i).max(), alloc);
         densityMean.PushBack(solventDensitySummary.at(i).mean(), alloc);
         densitySd.PushBack(solventDensitySummary.at(i).sd(), alloc);
+
+        // energy:
+        energyMin.PushBack(energySummary.at(i).min(), alloc);
+        energyMax.PushBack(energySummary.at(i).max(), alloc);
+        energyMean.PushBack(energySummary.at(i).mean(), alloc);
+        energySd.PushBack(energySummary.at(i).sd(), alloc);
     }
 
     // add JSON arrays to pore profile object:
@@ -1713,6 +1769,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathProfile.AddMember("densityMax", densityMax, alloc);
     pathProfile.AddMember("densityMean", densityMean, alloc);
     pathProfile.AddMember("densitySd", densitySd, alloc);
+
+    pathProfile.AddMember("energyMin", energyMin, alloc);
+    pathProfile.AddMember("energyMax", energyMax, alloc);
+    pathProfile.AddMember("energyMean", energyMean, alloc);
+    pathProfile.AddMember("energySd", energySd, alloc);
     
     // add pore profile to output document:
     outDoc.AddMember("pathProfile", pathProfile, alloc);

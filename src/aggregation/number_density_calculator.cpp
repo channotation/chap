@@ -7,7 +7,9 @@
 /*!
  * Public interface for calculating the number density of particles given 
  * probability density and local radius, as well as overall number of particles
- * in the sample.
+ * in the sample. 
+ *
+ * Note that the input probability density is assumed to by normalised to one!
  */
 std::vector<real>
 NumberDensityCalculator::operator()(

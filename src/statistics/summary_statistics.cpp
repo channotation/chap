@@ -6,11 +6,13 @@
 
 /*!
  * Initialises all summary statistics and the sample counter as
- * zero.
+ * zero. Minimum and maximum are initialised as the largest and smallest 
+ * representable real number respectively. This is done instead of using 
+ * infinities because JSON can not represent infinities.
  */
 SummaryStatistics::SummaryStatistics()
-    : min_(std::numeric_limits<real>::infinity())
-    , max_(-std::numeric_limits<real>::infinity())
+    : min_(std::numeric_limits<real>::max())
+    , max_(-std::numeric_limits<real>::max())
     , mean_(0.0)
     , sumSquaredMeanDiff_(0.0)
     , num_(0.0)
@@ -26,6 +28,12 @@ SummaryStatistics::SummaryStatistics()
 void
 SummaryStatistics::update(const real newValue)
 {
+    // handle infinities:
+    if( std::isinf(newValue) )
+    {
+        return;
+    }
+
     // increment number of samples:
     num_++;
 
@@ -54,7 +62,14 @@ SummaryStatistics::update(const real newValue)
 real
 SummaryStatistics::min() const
 {
-    return min_;
+    if( num_ > 0 )
+    {
+        return mendInfinity( min_ );
+    }
+    else
+    {
+        return -std::numeric_limits<real>::max();
+    }
 }
 
 
@@ -64,7 +79,15 @@ SummaryStatistics::min() const
 real
 SummaryStatistics::max() const
 {
-    return max_;
+    // handle case of no data:
+    if( num_ > 0 )
+    {
+       return mendInfinity( max_ );
+    }
+    else
+    {
+        return std::numeric_limits<real>::max();
+    }
 }
 
 
@@ -74,7 +97,7 @@ SummaryStatistics::max() const
 real
 SummaryStatistics::mean() const
 {
-    return mean_;
+    return mendInfinity( mean_ );
 }
 
 
@@ -91,7 +114,7 @@ SummaryStatistics::var() const
     }
     else
     {
-        return varFromSumSquaredMeanDiff();
+        return mendInfinity( varFromSumSquaredMeanDiff() );
     }
 }
 
@@ -108,7 +131,7 @@ SummaryStatistics::sd() const
     }
     else
     {
-        return std::sqrt( varFromSumSquaredMeanDiff() );
+        return mendInfinity( std::sqrt( varFromSumSquaredMeanDiff() ) );
     }
 }
 
@@ -134,5 +157,32 @@ inline real
 SummaryStatistics::varFromSumSquaredMeanDiff() const
 {
     return sumSquaredMeanDiff_ / (num_ - 1.0);
+}
+
+
+/*!
+ * Auxiliary function for handling infinities. The getter methods for all
+ * summary statistics call this function on the returned value and this 
+ * functions turns negative and positive infinities into the smallest and 
+ * largest real number respectively.
+ */
+real
+SummaryStatistics::mendInfinity(real value) const
+{
+    if( std::isinf(value) )
+    {
+        if( value < 0.0 )
+        {
+            return -std::numeric_limits<real>::max();
+        }
+        else
+        {
+            return std::numeric_limits<real>::max();
+        }
+    }
+    else
+    {
+        return value;
+    }
 }
 
