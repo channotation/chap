@@ -8,7 +8,7 @@ Prior to installing CHAP, make sure that you have the following libraries and to
 
 1. The [CMake](https://cmake.org/) tool in version 2.8.8 or higher. This will 
 typically available through your system's package manager. For example, on 
-Ubuntu you can install CMAKE by typing `sudp apt-get install cmake`.
+Ubuntu you can install CMake by typing `sudp apt-get install cmake`.
 2. The BLAS and LAPACK linear algebra libraries. This will typically already be
 installed on your system and are otherwise available through your package 
 manager. On Ubuntu, type `sudo apt-get install libblas-dev liblapack-dev` to
@@ -27,12 +27,17 @@ CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included
 as a header only library, so you don't need to do anything about this.
 
 
-### Quick and Dirty Installation
+### Quick and Dirty Installation ###
 
-1. From `build` directory, issue `cmake ..`.
-2. Then issue `make -j 12` from same directory.
-3. Issue `make install`.
-4. From `bin` directory issue `./runAllTests` to make sure compilation went well.
+To install CHAP, unpack the source, create a `build` directory parallel to the
+source tree and from there run `cmake`, `make`, `make check`, and 
+`make install`.
+
+~~~
+cd chap
+mkdir build
+cd build
+~~~
 
 
 ## Usage ##
