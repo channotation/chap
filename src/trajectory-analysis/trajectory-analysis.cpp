@@ -1616,28 +1616,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         linesProcessed++;
     }
 
-
-    for(auto ss : energySummary)
-    {
-        if( std::isinf(ss.min()) )
-        {
-            throw std::logic_error("Min is Inf!");
-        }
-        if( std::isinf(ss.max()) )
-        {
-            throw std::logic_error("Max is Inf!");
-        }
-        if( std::isinf(ss.mean()) )
-        {
-            throw std::logic_error("Mean is Inf!");
-        }
-        if( std::isinf(ss.sd()) )
-        {
-            throw std::logic_error("Sd is Inf!");
-        }
-    }
-
-
     // sanity check:
     if( linesProcessed != numFrames )
     {

@@ -51,23 +51,7 @@ BoltzmannEnergyCalculator::calculate(
             [this](real x) -> real{return -std::log(x)*energyUnitFactor_;});
 
     // replace infinities by finite values:
-    //mendInfinities(energy);
-
-    for(auto e : energy)
-    {
-        if( std::isinf(e) )
-        {
-//            throw std::logic_error("Inf encountered!");
-        }
-    }
-
-    for(auto e : energy)
-    {
-        if( std::isnan(e) )
-        {
-//            throw std::logic_error("NaN encountered!");
-        }
-    }
+    mendInfinities(energy);
 
     // return vector of energies:
     return energy;
@@ -136,8 +120,11 @@ BoltzmannEnergyCalculator::setEnergyUnits(
 }
 
 
-/*
- *
+/*!
+ * Auxiliary function for dealing with infinities resulting from zero 
+ * densities. Instead of using actual infinities, the relevant values are 
+ * replaced by the largest and smallest representable real value. This 
+ * facilitates writing output to JSON.
  */
 void
 BoltzmannEnergyCalculator::mendInfinities(std::vector<real> &energy)
@@ -148,7 +135,7 @@ BoltzmannEnergyCalculator::mendInfinities(std::vector<real> &energy)
         {
             if( *it < 0.0  )
             {
-                *it = std::numeric_limits<real>::min();
+                *it = -std::numeric_limits<real>::max();
             }
             else
             {
