@@ -68,7 +68,7 @@ This will create a file `output.json` which contains all results in newline
 delimited [JSON](http://www.json.org/) format. The next section describes how
 the results file is organised and how to visualise your results.
 
-For a complete list of all options and a brief online helpyou can type 
+For a complete list of all options and a brief online help you can type 
 `chap -h`.
 
 
@@ -79,12 +79,40 @@ For a complete list of all options and a brief online helpyou can type
 The results file returned by CHAP is organised as a newline delimted JSON file
 which means that each line is a valid JSON object that can be read and parsed
 individually. The first line contains results aggregated over all trajectory
-frames and each subsequent line contains information for one trajectory frame
-(in the appropriate order). As an end user you will typically only need to look
-at the first line and under `chap/scripts/plotting/` you can find ready made
-scripts for visualising the results.
+frames and each subsequent line contains information for one specific 
+trajectory frame (in the appropriate order). As an end user you will typically 
+only need to look at the first line and under `chap/scripts/plotting/` you can 
+find ready made scripts for visualising the results.
 
 ## Plotting CHAP Results in R ##
+
+Start by reading the first line of the CHAP output file into R and parse the 
+results using a library such as 
+[jsonlite](https://cran.r-project.org/web/packages/jsonlite/index.html)
+
+~~~
+library(jsonlite) # parsing JSON files
+
+dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
+~~~
+
+The now contains a named list that maintains the structure of the results file.
+
+In `dat$pathSummary` you can find a summary of the overall properties of the
+permeation pathway such as its length, volume, and minimum radius. All these
+quantities aggregated over time and you are provided a set of summary 
+statistics (minimum, maximum, mean, and standard deviation) that indicate how 
+much these variables varied over time.
+
+The object `dat$pathProfile` represents a table of pathway radius, solvent
+density, and solvent free energy along the centre line of the pore (this object
+can be coerced to a data frame). All three quantities are again aggregated 
+over time and you are again provided with a set of summary statistics.
+
+Lastly, in `dat$reproducibilityInformation` you can find some information on 
+the CHAP version used to generate the data as well as the parameters that were
+used. This is intended to help you to reproduce your results as the software
+evolves.
 
 An example script for plotting CHAP results in R can be found under 
 `chap/scripts/plotting/R/plot_chap_results.R`. 
