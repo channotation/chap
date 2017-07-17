@@ -92,7 +92,6 @@ results using a library such as
 
 ~~~
 library(jsonlite) # parsing JSON files
-
 dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
 ~~~
 
@@ -109,6 +108,26 @@ density, and solvent free energy along the centre line of the pore (this object
 can be coerced to a data frame). All three quantities are again aggregated 
 over time and you are again provided with a set of summary statistics.
 
+As an example, you can visualise the radius along the permation pathway and its
+variation over time using the following script:
+~~~
+library(ggplot2)
+ggplot(as.data.frame(dat$pathProfile),
+       aes(x = s,
+           y = radiusMean)) +
+  geom_ribbon(alpha = 0.4,
+              aes(ymin = radiusMean - radiusSd,
+                  ymax = radiusMean + radiusSd)) +
+  geom_ribbon(alpha = 0.2,
+              aes(ymin = radiusMin,
+                  ymax = radiusMax)) +
+  geom_ribbon(alpha = 0.4) +
+  geom_line()
+~~~
+This will generate a line graph of the time averaged radius with two ribbons
+representing the one standard deviation interval and the range between minimum
+and maximum radius. 
+
 Lastly, in `dat$reproducibilityInformation` you can find some information on 
 the CHAP version used to generate the data as well as the parameters that were
 used. This is intended to help you to reproduce your results as the software
@@ -118,7 +137,7 @@ An example script for plotting CHAP results in R can be found under
 `chap/scripts/plotting/R/plot_chap_results.R`. 
 
 
-### Plotting CHAP Results in Python ##'
+### Plotting CHAP Results in Python ###
 
 Python scripts for plotting CHAP results are currently under development. 
 Please be patient.
