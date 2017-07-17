@@ -84,7 +84,7 @@ trajectory frame (in the appropriate order). As an end user you will typically
 only need to look at the first line and under `chap/scripts/plotting/` you can 
 find ready made scripts for visualising the results.
 
-## Plotting CHAP Results in R ##
+### Plotting CHAP Results in R ###
 
 Start by reading the first line of the CHAP output file into R and parse the 
 results using a library such as 
@@ -118,7 +118,7 @@ An example script for plotting CHAP results in R can be found under
 `chap/scripts/plotting/R/plot_chap_results.R`. 
 
 
-## Plotting CHAP Results in Python ##
+### Plotting CHAP Results in Python ##'
 
 Python scripts for plotting CHAP results are currently under development. 
 Please be patient.
