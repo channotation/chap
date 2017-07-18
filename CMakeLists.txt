@@ -74,9 +74,19 @@ add_definitions(${GROMACS_DEFINITIONS})
 #------------------------------------------------------------------------------
 
 # find LAPACK:
+find_package(BLAS)
 find_package(LAPACK REQUIRED)
+#find_package(LAPACKE REQUIRED)
+if(LAPACK_FOUND AND BLAS_FOUND)
+    set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+endif()
 
+set(LAPACKE_LIBRARIES "/usr/lib/liblapacke.so")
+
+message("blas = " ${BLAS_LIBRARIES})
 message("lapack = " ${LAPACK_LIBRARIES})
+message("lapackblas = " ${lapackblas_libraries})
+message("lapacke = " ${LAPACKE_LIBRARIES})
 
 
 # Find Boost Library
@@ -106,7 +116,10 @@ set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llap
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
-target_link_libraries(chap lapacke lapack blas)
+target_link_libraries(chap ${LAPACKE_LIBRARIES})
+target_link_libraries(chap ${LAPACK_LIBRARIES})
+target_link_libraries(chap ${BLAS_LIBRARIES})
+#target_link_libraries(chap lapacke lapack blas)
 
 
 # Compile Tests
@@ -116,7 +129,7 @@ target_link_libraries(chap lapacke lapack blas)
 # (this does not work if called from CMakeLists.txt in test subdirectory)
 include(CTest)
 
-# add test subdirectory:
+# add test subdirectory:S
 add_subdirectory(test)
 
 
