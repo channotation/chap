@@ -142,3 +142,44 @@ An example script for plotting CHAP results in R can be found under
 Python scripts for plotting CHAP results are currently under development. 
 Please be patient.
 
+
+### Molecular Visualisation in VMD ###
+
+Visualising CHAP pore surfaces in VMD is possible, but this component of the
+program is still under development and contains some known and possibly 
+more unknown bugs. Moreover, the workflow will likely change from what
+is described below in the near future.
+
+In addtion to the main results file in JSON format, CHAP produces two more
+output files, `output.obj` and `res_mapping.dat`. These contain a pore 
+surface mesh in 
+[Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file) format
+data identifying the pore lining and pore facing residues respectively.
+
+Under `chap/scripts/visualisation/vmd` you can find the `pore_lining.tcl`
+script, which allows you to visualise the pore together with your protein 
+molecule in VMD. To do this you need to open the Tk Console in VMD and 
+specify the names of three files:
+
+~~~
+#Tcl
+set FILE_STRUCTURE structure.gro
+set FILE_PORE_LINING res_mapping.dat
+set FILE_PORE_SURFACE output.obj
+~~~
+
+You can then load the data by sourcing the `pore_lining.tcl` script:
+
+~~~
+#Tcl
+source pore_lining.tcl
+~~~
+
+Note however that this script uses a itself sources the `wobj.tcl` script
+(which contains an OBJ parser), which must be present in the same directory.
+
+
+### Molecular Visualisation in PyMol ###
+
+PyMol scripts for visualising CHAP results are currently under development.
+Please be patient.
