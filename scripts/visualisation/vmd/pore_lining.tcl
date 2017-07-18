@@ -2,6 +2,20 @@
 # SETUP
 ###############################################################################
 
+# check that all required variables are set:
+if { [info exists FILE_STRUCTURE] == 0 } {
+    puts "ERROR: Variable FILE_STRUCTURE is not set!"
+    return
+}
+if { [info exists FILE_PORE_LINING] == 0 } {
+    puts "ERROR: Variable FILE_PORE_LINING is not set!"
+    return
+}
+if { [info exists FILE_PORE_SURFACE] == 0 } {
+    puts "ERROR: Variable FILE_PORE_SURFACE is not set!"
+    return
+}
+
 # global settings:
 axes location Off
 color Display Background white
@@ -12,9 +26,10 @@ display rendermode GLSL
 color change rgb 7 1.000000 1.000000 1.000000
 
 # load molecule:
+set file_prot $FILE_STRUCTURE
 mol delete top
 if { [molinfo top] == -1 } {
-    mol new glyr.gro
+    mol new $file_prot
 }
 
 
@@ -77,7 +92,7 @@ proc import_pore_lining {filename} {
 
 
 # read pore lining data from file:
-set filename "res_mapping.dat"
+set filename $FILE_PORE_LINING
 set pore_lining_data [import_pore_lining $filename]
 
 
@@ -132,7 +147,7 @@ foreach rid $res_id pl $pore_lining pf $pore_facing {
 
 draw color blue
 #draw material Transparent
-source ~/Repos/tcl-obj/src/wobj.tcl
+source wobj.tcl
 
 
 ###############################################################################
@@ -141,7 +156,7 @@ source ~/Repos/tcl-obj/src/wobj.tcl
 
 
 # import OBJ data:
-set filename output.obj
+set filename $FILE_PORE_SURFACE
 set obj [WOBJ::import_wavefront_obj $filename]
 
 # draw OBJ mesh:

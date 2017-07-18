@@ -95,7 +95,7 @@ plt.energy
 # save plot to file:
 ggsave("energy_profile.png", plt.energy)
 ggsave("energy_profile.pdf", plt.energy)
-
+  
 
 
 
