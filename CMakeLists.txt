@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 2.8.8)
 project(CHAP)
 
 
-
 # Prepare Version Header and Config Header
 #------------------------------------------------------------------------------
 
@@ -81,7 +80,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 #------------------------------------------------------------------------------
 
 # find LAPACK:
-find_package(BLAS)
+find_package(CBLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 find_package(LAPACKE NO_MODULE)
@@ -125,7 +124,7 @@ target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${LAPACK_LIBRARIES})
-target_link_libraries(chap ${BLAS_LIBRARIES})
+target_link_libraries(chap ${CBLAS_LIBRARIES})
 #target_link_libraries(chap lapacke lapack blas)
 
 
@@ -137,7 +136,7 @@ target_link_libraries(chap ${BLAS_LIBRARIES})
 include(CTest)
 
 # add test subdirectory:S
-add_subdirectory(test)
+#add_subdirectory(test)
 
 
 # Install Destinations
