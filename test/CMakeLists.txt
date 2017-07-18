@@ -2,7 +2,6 @@
 # -----------------------------------------------------------------------------
 
 # build tests only if GTest is available:
-find_package(GTest)
 if( GTEST_FOUND )
 
     # create target for running make check:

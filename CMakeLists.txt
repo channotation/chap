@@ -31,6 +31,13 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 # 
 #------------------------------------------------------------------------------
 
+find_package(GTest Required)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+
+# 
+#------------------------------------------------------------------------------
+
 
 # bring header files into build environment:
 include_directories(${CHAP_SOURCE_DIR}/include)
@@ -115,6 +122,7 @@ add_executable(chap ${SRC_FILES})
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
+target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${LAPACK_LIBRARIES})
