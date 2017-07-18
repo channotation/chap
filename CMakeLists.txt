@@ -63,7 +63,7 @@ else()
 endif()
 
 # find Gromacs package, add include direcotries and definitions:
-find_package(GROMACS 2016 REQUIRED)
+find_package(GROMACS 5.0 REQUIRED)
 gromacs_check_double(GMX_DOUBLE)
 gromacs_check_compiler(CXX)
 include_directories(${GROMACS_INCLUDE_DIRS})
