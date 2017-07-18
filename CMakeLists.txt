@@ -31,7 +31,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 # 
 #------------------------------------------------------------------------------
 
-find_package(GTest Required)
+find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 
@@ -83,12 +83,11 @@ add_definitions(${GROMACS_DEFINITIONS})
 # find LAPACK:
 find_package(BLAS)
 find_package(LAPACK REQUIRED)
-#find_package(LAPACKE REQUIRED)
-if(LAPACK_FOUND AND BLAS_FOUND)
-    set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-endif()
 
-set(LAPACKE_LIBRARIES "/sbcb/packages/opt/Linux_x86_64/lapack/3.7.1/lib/liblapacke.a")
+find_package(LAPACKE NO_MODULE)
+include_directories(${LAPACKE_INCLUDE_DIRS})
+
+
 
 message("blas = " ${BLAS_LIBRARIES})
 message("lapack = " ${LAPACK_LIBRARIES})
