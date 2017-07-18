@@ -27,9 +27,5 @@ if( GTEST_FOUND )
     # (if the color option is not set some test fail)
     add_test(runAllTests runAllTests --gtest_color=yes)
 
-    # also explicitly create binary:
-    # TODO: remove this in release:
-    install(TARGETS runAllTests DESTINATION /sansom/s117/scro2967/repos/chap/bin)
-
 endif()
 
