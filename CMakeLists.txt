@@ -83,7 +83,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 find_package(CBLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
-find_package(LAPACKE NO_MODULE)
+find_package(LAPACKE REQUIRED)
 include_directories(${LAPACKE_INCLUDE_DIRS})
 
 
