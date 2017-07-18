@@ -746,7 +746,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     auto lastSlash = radiusFilePath.find_last_of('/');
     radiusFilePath.replace(radiusFilePath.begin() + lastSlash + 1, 
                            radiusFilePath.end(), 
-                           "data/vdwradii/");
+                           "share/data/vdwradii/");
         
     // select appropriate database file:
     if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
