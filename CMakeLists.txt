@@ -81,7 +81,7 @@ if(LAPACK_FOUND AND BLAS_FOUND)
     set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 endif()
 
-set(LAPACKE_LIBRARIES "/usr/lib/liblapacke.so")
+set(LAPACKE_LIBRARIES "/sbcb/packages/opt/Linux_x86_64/lapack/3.7.1/lib/liblapacke.a")
 
 message("blas = " ${BLAS_LIBRARIES})
 message("lapack = " ${LAPACK_LIBRARIES})
