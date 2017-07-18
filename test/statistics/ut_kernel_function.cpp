@@ -56,7 +56,7 @@ TEST_F(KernelFunctionTest, KernelFunctionGaussianTest)
 
     // assert normalisation of kernel:
     real integral = 0.0;
-    for(eval : evalPoints)
+    for(auto eval : evalPoints)
     {
         integral += Kernel -> operator()(eval);
     }
