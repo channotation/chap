@@ -45,7 +45,7 @@ sudo make install
 ~~~
 
 CMake will automatically find all dependencies (and inform you of missing ones)
-`make1 will compile the code (you can use the `make -j` flag to speed this up 
+`make` will compile the code (you can use the `make -j` flag to speed this up 
 on multicore machines to speed this up), `make check` runs a suite of unit 
 tests, and `make install` will place the binary in `/usr/local/chap` (so you
 need sudo rights for this last step.
@@ -162,7 +162,6 @@ molecule in VMD. To do this you need to open the Tk Console in VMD and
 specify the names of three files:
 
 ~~~
-#Tcl
 set FILE_STRUCTURE structure.gro
 set FILE_PORE_LINING res_mapping.dat
 set FILE_PORE_SURFACE output.obj
@@ -171,7 +170,6 @@ set FILE_PORE_SURFACE output.obj
 You can then load the data by sourcing the `pore_lining.tcl` script:
 
 ~~~
-#Tcl
 source pore_lining.tcl
 ~~~
 
