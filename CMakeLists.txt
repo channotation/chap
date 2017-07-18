@@ -127,7 +127,7 @@ add_subdirectory(test)
 #set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap/bin")
 
 # where to install executable on the system:
-install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 # also install data:
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share DESTINATION ${CMAKE_INSTALL_PREFIX})
