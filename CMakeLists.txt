@@ -52,8 +52,7 @@ link_directories( /usr/local/fftw/lib/ )
 # set compiler and linker flags:
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -O1 -g")
 
-#set(LAPACK_LINKER_FLAGS "-llapacke -llapack -lblas")
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}" )
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 
 
 # Find Gromacs Library
@@ -80,17 +79,9 @@ add_definitions(${GROMACS_DEFINITIONS})
 #------------------------------------------------------------------------------
 
 # find LAPACK:
-find_package(CBLAS REQUIRED)
-find_package(LAPACK REQUIRED)
-
 find_package(LAPACKE REQUIRED)
 include_directories(${LAPACKE_INCLUDE_DIRS})
 
-
-
-message("blas = " ${BLAS_LIBRARIES})
-message("lapack = " ${LAPACK_LIBRARIES})
-message("lapackblas = " ${lapackblas_libraries})
 message("lapacke = " ${LAPACKE_LIBRARIES})
 
 
@@ -123,9 +114,6 @@ target_link_libraries(chap ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
-target_link_libraries(chap ${LAPACK_LIBRARIES})
-target_link_libraries(chap ${CBLAS_LIBRARIES})
-#target_link_libraries(chap lapacke lapack blas)
 
 
 # Compile Tests
