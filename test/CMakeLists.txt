@@ -2,7 +2,6 @@
 # -----------------------------------------------------------------------------
 
 # build tests only if GTest is available:
-find_package(GTest)
 if( GTEST_FOUND )
 
     # create target for running make check:
@@ -21,15 +20,14 @@ if( GTEST_FOUND )
     # add executable to run all tests and link libraries:
     add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
     set_target_properties(runAllTests PROPERTIES COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
-    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} lapacke lapack blas pthread)
+    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} pthread)
+    target_link_libraries(runAllTests ${LAPACKE_LIBRARIES})
+    target_link_libraries(runAllTests ${LAPACK_LIBRARIES})
+    target_link_libraries(runAllTests ${BLAS_LIBRARIES})
 
     # make ctest aware of test executable:
     # (if the color option is not set some test fail)
     add_test(runAllTests runAllTests --gtest_color=yes)
-
-    # also explicitly create binary:
-    # TODO: remove this in release:
-    install(TARGETS runAllTests DESTINATION /sansom/s117/scro2967/repos/chap/bin)
 
 endif()
 

@@ -189,10 +189,10 @@ TEST_F(
     std::vector<real> evalPointDistanceFactors = {1.0, 1e-1, 1e-2};
 
     // conduct test for all bandwidths:
-    for(bw : bandWidths)
+    for(auto bw : bandWidths)
     {
         // vary evluation step relative to bandwidth:
-        for(evalPointDistFac : evalPointDistanceFactors)
+        for(auto evalPointDistFac : evalPointDistanceFactors)
         {
             // create kernel density estimator and set parameters:
             KernelDensityEstimator kde;
@@ -238,7 +238,7 @@ TEST_F(
 
             // assert that density integrates to one:
             real integral = 0.0;
-            for(eval : evalPoints)
+            for(auto eval : evalPoints)
             {
                 integral += densitySpline(eval, 0, eSplineEvalDeBoor);
             }

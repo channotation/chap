@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 #include "aggregation/number_density_calculator.hpp"

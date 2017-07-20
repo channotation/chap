@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 2.8.8)
 project(CHAP)
 
 
-
 # Prepare Version Header and Config Header
 #------------------------------------------------------------------------------
 
@@ -26,6 +25,13 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 # configure header files:
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
+
+
+# 
+#------------------------------------------------------------------------------
+
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
 
 
 # 
@@ -74,9 +80,18 @@ add_definitions(${GROMACS_DEFINITIONS})
 #------------------------------------------------------------------------------
 
 # find LAPACK:
+find_package(CBLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
+find_package(LAPACKE REQUIRED)
+include_directories(${LAPACKE_INCLUDE_DIRS})
+
+
+
+message("blas = " ${BLAS_LIBRARIES})
 message("lapack = " ${LAPACK_LIBRARIES})
+message("lapackblas = " ${lapackblas_libraries})
+message("lapacke = " ${LAPACKE_LIBRARIES})
 
 
 # Find Boost Library
@@ -105,8 +120,12 @@ add_executable(chap ${SRC_FILES})
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
+target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
-target_link_libraries(chap lapacke lapack blas)
+target_link_libraries(chap ${LAPACKE_LIBRARIES})
+target_link_libraries(chap ${LAPACK_LIBRARIES})
+target_link_libraries(chap ${CBLAS_LIBRARIES})
+#target_link_libraries(chap lapacke lapack blas)
 
 
 # Compile Tests
@@ -116,7 +135,7 @@ target_link_libraries(chap lapacke lapack blas)
 # (this does not work if called from CMakeLists.txt in test subdirectory)
 include(CTest)
 
-# add test subdirectory:
+# add test subdirectory:S
 add_subdirectory(test)
 
 
@@ -127,7 +146,7 @@ add_subdirectory(test)
 #set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap/bin")
 
 # where to install executable on the system:
-install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 # also install data:
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share DESTINATION ${CMAKE_INSTALL_PREFIX})
