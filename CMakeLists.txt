@@ -50,7 +50,7 @@ link_directories( /usr/local/fftw/lib/ )
 #file(GLOB SOURCES "src/*.cpp")
 
 # set compiler and linker flags:
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O1 -g")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O1 -g")
 
 #set(LAPACK_LINKER_FLAGS "-llapacke -llapack -lblas")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}" )
