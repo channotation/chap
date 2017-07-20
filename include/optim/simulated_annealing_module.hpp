@@ -13,14 +13,18 @@
 #include "optim/optimisation.hpp"
 
 
-typedef std::function<real(real*)> costFunction;
-
-
+/*
+ *
+ */
 enum eSimAnTerm {CONVERGENCE = 101, 
                  MAX_COOLING_ITER = 102, 
                  NO_CAND_ACCEPTED = 103};
 
 
+
+/*
+ *
+ */
 class SimulatedAnnealingModule : public OptimisationModule
 {
 	friend class SimulatedAnnealingModuleTest;
@@ -88,7 +92,6 @@ class SimulatedAnnealingModule : public OptimisationModule
         gmx::UniformRealDistribution<real> candAccDistr_; 	
 
 		// functors and function type members:
-		costFunction evaluateCost;
         ObjectiveFunction objFun_;
 
 		// member functions
