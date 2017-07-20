@@ -138,7 +138,7 @@ NelderMeadModule::setInitGuess(std::vector<real> guess)
     simplex_.push_back(guessPoint);
 
     // add additional vertices to create a simplex of proper dimensionality:
-    for(int i = 0; i < guess.size(); i++)
+    for(size_t i = 0; i < guess.size(); i++)
     {
         // copy guess point and perturb j-th component:
         OptimSpacePoint vertex = guessPoint;        

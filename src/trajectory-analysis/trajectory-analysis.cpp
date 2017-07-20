@@ -32,7 +32,6 @@
 
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/json_doc_importer.hpp"
-#include "io/analysis_data_json_exporter.hpp"
 #include "io/analysis_data_json_frame_exporter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 
@@ -467,7 +466,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
  * 
  */
 void
-trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
+trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                  const TopologyInformation &top)
 {
     // PATH FINDING PARAMETERS
@@ -630,13 +629,13 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings &settings,
     int j = 1;
     AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
     const char *fnResMapping = resMappingOutFileName_.c_str();
-    std::vector<char*> headerResMapping = {"t", 
-                                           "mappedId", 
-                                           "s", 
-                                           "rho", 
-                                           "phi", 
-                                           "poreLining", 
-                                           "poreFacing"};
+    std::vector<std::string> headerResMapping = {"t", 
+                                                 "mappedId", 
+                                                 "s", 
+                                                 "rho", 
+                                                 "phi", 
+                                                 "poreLining", 
+                                                 "poreFacing"};
     lfpltResMapping -> setFileName(fnResMapping);
     lfpltResMapping -> setHeader(headerResMapping);
     lfpltResMapping -> setPrecision(5);    // TODO: different treatment for integers?
@@ -897,7 +896,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 {
 	// get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
-    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
+//    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
     // get data handles for this frame:
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
@@ -1527,7 +1526,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // FIXME also will not work when alignment = none is selected
     // TODO number of support points should be use settable
     std::vector<real> supportPoints;
-    int numSupportPoints = 1000;
+    size_t numSupportPoints = 1000;
     real supportPointsLo = solventRangeLoSummary.min() + 0.5;
     real supportPointsHi = solventRangeHiSummary.max() - 0.5;
     real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);

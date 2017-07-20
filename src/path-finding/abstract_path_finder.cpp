@@ -11,9 +11,9 @@
  * parameters.
  */
 AbstractPathFinder::AbstractPathFinder(std::map<std::string, real> params)
-    : path_()
+    : params_(params)
+    , path_()
     , radii_()
-    , params_(params)
 {
 
 }

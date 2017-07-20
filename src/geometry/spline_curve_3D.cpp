@@ -105,7 +105,7 @@ SplineCurve3D::evaluate(real &evalPoint,
     std::vector<real> ctrlCoefsX;
     std::vector<real> ctrlCoefsY;
     std::vector<real> ctrlCoefsZ;
-    for(unsigned int i = 0; i < nCtrlPoints_; i++)
+    for(int i = 0; i < nCtrlPoints_; i++)
     {
         ctrlCoefsX.push_back(ctrlPoints_.at(i)[0]);
         ctrlCoefsY.push_back(ctrlPoints_.at(i)[1]);
@@ -287,13 +287,13 @@ int
 SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
 {
     // index of closest ctrlPoint:
-    int idx;
+    int idx = -1;   // initialised as negative to provoke errors
 
     // initialise shortest distance:
     real shortestDist = std::numeric_limits<real>::infinity();
 
     // loop over all control points:
-    for(int i = 0; i < ctrlPoints_.size(); i++)
+    for(size_t i = 0; i < ctrlPoints_.size(); i++)
     {
         // calculate distance to this point:
         real sqDist = (ctrlPoints_[i][0] - point[0])*(ctrlPoints_[i][0] - point[0]) +
@@ -327,12 +327,13 @@ SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
  * length!
  *
  * TODO: implement angular coordinate!
+ * TODO: remove tolerance argument, this is superseded by Boosts bit argument
  */
 gmx::RVec 
 SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                       real lo,
                                       real hi, 
-                                      real tol)
+                                      real /*tol*/)
 {
     // internal parameters:
     boost::uintmax_t maxIter = 100;

@@ -19,7 +19,7 @@ AnalysisDataLongFormatPlotModule::AnalysisDataLongFormatPlotModule()
 /*
  *
  */
-AnalysisDataLongFormatPlotModule::AnalysisDataLongFormatPlotModule(int i)
+AnalysisDataLongFormatPlotModule::AnalysisDataLongFormatPlotModule(int /*i*/)
     : precision_(5)
 {
 
@@ -41,7 +41,8 @@ AnalysisDataLongFormatPlotModule::flags() const
  *
  */
 void                                                                            
-AnalysisDataLongFormatPlotModule::pointsAdded(const gmx::AnalysisDataPointSetRef &points)      
+AnalysisDataLongFormatPlotModule::pointsAdded(
+        const gmx::AnalysisDataPointSetRef &points)      
 {
     // check that file is open:
     if( file_.is_open() == true ) 
@@ -50,7 +51,7 @@ AnalysisDataLongFormatPlotModule::pointsAdded(const gmx::AnalysisDataPointSetRef
         file_<<points.header().x()<<"\t";
         
         // loop over columns in data set:
-        for(unsigned int i = 0; i < points.columnCount() - 1; i++)
+        for(int i = 0; i < points.columnCount() - 1; i++)
         {
             file_<<points.values()[i].value()<<"\t";
         }
@@ -66,7 +67,8 @@ AnalysisDataLongFormatPlotModule::pointsAdded(const gmx::AnalysisDataPointSetRef
  * Opens filestream for output writing.
  */
 void 
-AnalysisDataLongFormatPlotModule::dataStarted(gmx::AbstractAnalysisData *data)
+AnalysisDataLongFormatPlotModule::dataStarted(
+        gmx::AbstractAnalysisData* /*data*/)
 {
     // check that file name is set:
     if( strlen(fileName_) > 0 )
@@ -95,7 +97,8 @@ AnalysisDataLongFormatPlotModule::dataStarted(gmx::AbstractAnalysisData *data)
  * Nothing to do here.
  */
 void 
-AnalysisDataLongFormatPlotModule::frameStarted(const gmx::AnalysisDataFrameHeader &frame)
+AnalysisDataLongFormatPlotModule::frameStarted(
+        const gmx::AnalysisDataFrameHeader& /*frame*/)
 {
 
 }
@@ -105,7 +108,8 @@ AnalysisDataLongFormatPlotModule::frameStarted(const gmx::AnalysisDataFrameHeade
  * Nothing to do here.
  */
 void 
-AnalysisDataLongFormatPlotModule::frameFinished(const gmx::AnalysisDataFrameHeader &frame)
+AnalysisDataLongFormatPlotModule::frameFinished(
+        const gmx::AnalysisDataFrameHeader& /*frame*/)
 {
 
 }

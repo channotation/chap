@@ -28,7 +28,7 @@ class HistogramDensityEstimatorTest : public ::testing::Test
             std::normal_distribution<real> distribution(mu, sd);
 
             // create a random sample:
-            int numSamples = 1e4;
+            size_t numSamples = 1e4;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distribution(generator) );

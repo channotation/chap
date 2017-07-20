@@ -114,16 +114,16 @@ class MolecularPath
         std::vector<gmx::RVec> centreLineCtrlPoints() const;
 
         // sample points from centreline:
-        std::vector<real> sampleArcLength(int nPoints, real extrapDist);
-        std::vector<gmx::RVec> samplePoints(int nPoints, real extrapDist);
+        std::vector<real> sampleArcLength(size_t nPoints, real extrapDist);
+        std::vector<gmx::RVec> samplePoints(size_t nPoints, real extrapDist);
         std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);
-        std::vector<gmx::RVec> sampleTangents(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleTangents(size_t nPoints, real extrapDist);
         std::vector<gmx::RVec> sampleTangents(std::vector<real> arcLengthSample);
-        std::vector<gmx::RVec> sampleNormTangents(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleNormTangents(size_t nPoints, real extrapDist);
         std::vector<gmx::RVec> sampleNormTangents(std::vector<real> arcLengthSample);
-        std::vector<gmx::RVec> sampleNormals(int nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleNormals(size_t nPoints, real extrapDist);
         std::vector<gmx::RVec> sampleNormals(std::vector<real> arcLengthSample);
-        std::vector<real> sampleRadii(int nPoints, real extrapDist);
+        std::vector<real> sampleRadii(size_t nPoints, real extrapDist);
         std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
 
         // change internal coordinate representation of path:
@@ -136,7 +136,7 @@ class MolecularPath
         const real PI_ = std::acos(-1.0);
 
         // utilities for sampling functions:
-        inline real sampleArcLenStep(int nPoints, real extrapDist); 
+        inline real sampleArcLenStep(size_t nPoints, real extrapDist); 
 
         // utilities for path mapping:
         inline gmx::RVec mapPosition(

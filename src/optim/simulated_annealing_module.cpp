@@ -25,7 +25,7 @@ SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
 												   real coolingFactor,
 												   real stepLengthFactor,
 												   real *initState,
-												   costFunction cf,
+												   costFunction /*cf*/, // TODO: remove obsolete argument
 												   bool useAdaptiveCandidateGeneration)
 	: useAdaptiveCandidateGeneration_(useAdaptiveCandidateGeneration)
 	, seed_(randomSeed)

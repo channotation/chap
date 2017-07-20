@@ -52,7 +52,7 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
     knotVector_.clear();
 
     // copy internal knots:
-    for(int i = 0; i < knotVector.size(); i++)
+    for(size_t i = 0; i < knotVector.size(); i++)
     {
         knotVector_.push_back(knotVector[i]);
     }

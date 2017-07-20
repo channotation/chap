@@ -142,9 +142,6 @@ TEST_F(
         KernelDensityEstimatorTest, 
         KernelDensityEstimatorGaussianRawDensityTest)
 {    
-    // integral over density should be within eps of one:
-    real eps = std::sqrt(std::numeric_limits<real>::epsilon());
-
     // define a number of bandwidths to test:    
     std::vector<real> bandWidths = {10.0, 1.0, 0.1, 0.01, 0.001};
 

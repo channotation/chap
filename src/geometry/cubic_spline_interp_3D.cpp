@@ -77,8 +77,8 @@ CubicSplineInterp3D::interpolate(std::vector<real> &param,
     //-------------------------------------------------------------------------
 
     // dimension of system and number of right hand sides:
-    int nDat = points.size();
-    int nSys = nDat + 2;
+    size_t nDat = points.size();
+    size_t nSys = nDat + 2;
 
     // allocate system matrix:
     real subDiag[nSys - 1];
@@ -98,7 +98,7 @@ CubicSplineInterp3D::interpolate(std::vector<real> &param,
     //-------------------------------------------------------------------------
 
     // number of right hand sides is one:
-    int nRhs = 3;
+    size_t nRhs = 3;
 
     // allocate right hand side:
     real rhsMat[nSys * nRhs];
@@ -112,7 +112,7 @@ CubicSplineInterp3D::interpolate(std::vector<real> &param,
     assembleRhs(param, z, rhsZ, bc);
 
     // assemble rhs vectors into matrix:
-    for(unsigned int i = 0; i < nSys; i++)
+    for(size_t i = 0; i < nSys; i++)
     {
         rhsMat[i] = rhsX[i];
         rhsMat[i + nSys] = rhsY[i];
@@ -147,7 +147,7 @@ CubicSplineInterp3D::interpolate(std::vector<real> &param,
 
     // create vectorial representation of coefficients:
     std::vector<gmx::RVec> coefs;
-    for(unsigned int i = 0; i < nSys; i++)
+    for(size_t i = 0; i < nSys; i++)
     {
         coefs.push_back(gmx::RVec(rhsMat[i],
                                   rhsMat[i + nSys],
@@ -184,7 +184,7 @@ CubicSplineInterp3D::calcChordLength(const std::vector<gmx::RVec> &points)
     chordLength.push_back(0.0);
 
     // calculate chord length parameter for all subsequent points:
-    for(unsigned int i = 1; i < points.size(); i++)
+    for(size_t i = 1; i < points.size(); i++)
     {
         // calculate difference between subsequent points:
         gmx::RVec dVec;
