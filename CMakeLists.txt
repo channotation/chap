@@ -136,7 +136,7 @@ target_link_libraries(chap ${CBLAS_LIBRARIES})
 include(CTest)
 
 # add test subdirectory:S
-#add_subdirectory(test)
+add_subdirectory(test)
 
 
 # Install Destinations
