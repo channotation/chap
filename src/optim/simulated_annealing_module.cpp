@@ -28,8 +28,6 @@ SimulatedAnnealingModule::~SimulatedAnnealingModule()
 	delete[] crntState_;
 	delete[] candState_;
 	delete[] bestState_;
-
-	delete[] costSamples_;
 }
 
 
@@ -60,27 +58,6 @@ SimulatedAnnealingModule::setParams(std::map<std::string, real> params)
     {
         std::cerr<<"ERROR: No maximum number of cooling iterations given!"<<std::endl;
         std::abort();
-    }
-
-    // number of cost samples:
-    if( params.find("saNumCostSamples") != params.end() )
-    {
-        numCostSamples_ = params["saNumCostSamples"];
-    }
-    else
-    {
-        std::cerr<<"ERROR: No number of cost samples given!"<<std::endl;
-        std::abort();
-    }
-
-    // convergence tolerance parameter:
-    if( params.find("saConvRelTol") != params.end() )
-    {
-        convRelTol_ = params["saConvRelTol"];
-    }
-    else
-    {
-        convRelTol_ = std::sqrt(std::numeric_limits<real>::epsilon());
     }
 
     // initial temperature:
@@ -184,9 +161,6 @@ SimulatedAnnealingModule::getOptimPoint()
 eSimAnTerm
 SimulatedAnnealingModule::anneal()
 {
-    // allocate memory for cost samples:
-    costSamples_ = new real[numCostSamples_];
-
    	// get cost of inital states:
     std::vector<real> crntStateVec(crntState_, crntState_ + stateDim_);
     std::vector<real> candStateVec(candState_, candState_ + stateDim_);
@@ -214,53 +188,39 @@ SimulatedAnnealingModule::annealIsotropic()
 	// start annealing loop:
 	while(true)
 	{
-		// start sampling loop:
-		for(int i = 0; i < numCostSamples_; i++)
-		{
-        //std::cout<<"i = "<<i<<std::endl;
-			// generate a candidate state:
-			generateCandidateStateIsotropic();
+        // generate a candidate state:
+        generateCandidateStateIsotropic();
 
-			// TODO: check boundary conditions!
-			
-			// evaluate cost function:
-            std::vector<real> candStateVec;
-            candStateVec.assign(candState_, candState_ + stateDim_);
-			candCost_ = objFun_(candStateVec);
+        // TODO: check boundary conditions!
+        
+        // evaluate cost function:
+        std::vector<real> candStateVec;
+        candStateVec.assign(candState_, candState_ + stateDim_);
+        candCost_ = objFun_(candStateVec);
 
-            // accept candidate?
-			if( acceptCandidateState() == true )
-			{
-				// candidate state becomes current state:
-				cblas_scopy(stateDim_, candState_, 1, crntState_, 1);
-				crntCost_ = candCost_;
-				// is new state also the best state?
-				if( candCost_ > bestCost_ )
-				{
-					cblas_scopy(stateDim_, candState_, 1, bestState_, 1);
-					bestCost_ = candCost_;
-				}
-			}
+        // accept candidate?
+        if( acceptCandidateState() == true )
+        {
+            // candidate state becomes current state:
+            cblas_scopy(stateDim_, candState_, 1, crntState_, 1);
+            crntCost_ = candCost_;
+            // is new state also the best state?
+            if( candCost_ > bestCost_ )
+            {
+                cblas_scopy(stateDim_, candState_, 1, bestState_, 1);
+                bestCost_ = candCost_;
+            }
+        }
 
-			// save current best cost:
-			costSamples_[i] = bestCost_;
-	
-			// reduce temperature:
-			cool();
-			nCoolingIter++;
+        // reduce temperature:
+        cool();
+        nCoolingIter++;
 
-			// maximum step number reached?
-			if( nCoolingIter >= maxCoolingIter_ )
-			{
-				return(MAX_COOLING_ITER);
-			}
-		}	
-
-		// convergence reached?
-		if( isConvergedIsotropic() )
-		{
-			return(CONVERGENCE);
-		}
+        // maximum step number reached?
+        if( nCoolingIter >= maxCoolingIter_ )
+        {
+            return(MAX_COOLING_ITER);
+        }
 	}
 }
 
@@ -299,33 +259,6 @@ SimulatedAnnealingModule::generateCandidateStateIsotropic()
 
 
 /*
- * Generates a candidate state in the neighbourhood of the current state, where
- * the step direction is chosen to reflect the local shape of the cost 
- * function. 
- */
-/*
-void 
-SimulatedAnnealingModule::generateCandidateStateAdaptive()
-{
-	// generate random direction in state space:
-	real stateDir[stateDim_];
-	for(int i = 0; i < stateDim_; i++)
-	{
-		stateDir[i] = candGenDistr_(rng_);
-	}
-
-	// copy current state to candidate state:
-	cblas_scopy(stateDim_, crntState_, 1, candState_, 1);	
-
-	// should adaptive candidate generation be used?
-	// candidate state is current state plus adapted random direction:
-	cblas_sgemv(CblasRowMajor, CblasNoTrans, stateDim_, stateDim_, 
-	            stepLengthFactor_, adaptationMatrix_, stateDim_, stateDir, 1, 1.0, 
-				candState_, 1);
-}
-*/
-
-/*
  * Decides whether to accept or reject a candidate state. Returns true if 
  * candidate state is accepted.
  */
@@ -340,29 +273,5 @@ SimulatedAnnealingModule::acceptCandidateState()
 	
 	// should candidate be accepted:
 	return (r < accProb);
-}
-
-
-/*
- * Checks is isotropic algorithm has converged. The criterion used here is that
- * the improvement of best cost over the last numCostSamples samples has been 
- * smaller than a tolerance threshold.
- */
-bool
-SimulatedAnnealingModule::isConvergedIsotropic()
-{
-	// get mean and minimum of candidate costs:
-	real meanCost =  calculateArrayMean(numCostSamples_, costSamples_);
-	real minCost = *std::min_element(costSamples_, costSamples_ + numCostSamples_);
-
-	// check convergence criterion:
-	if( std::abs( (meanCost - minCost)/minCost ) < convRelTol_ )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 

@@ -41,7 +41,6 @@ class SimulatedAnnealingModule : public OptimisationModule
 		// getter functions (used in unit tests):
 		int getStateDim(){return stateDim_;};
 		int getMaxCoolingIter(){return maxCoolingIter_;};
-		int getNumCandSamples(){return numCostSamples_;};
 		int getSeed(){return seed_;};
 
 		real getTemp(){return temp_;};
@@ -69,10 +68,7 @@ class SimulatedAnnealingModule : public OptimisationModule
 		int seed_;	    		// seed for random number generator
 		int stateDim_;	    	// dimension of state space
 		int maxCoolingIter_;	// maximum number of cooling steps
-		int numCostSamples_;    // candidate states generate per check of convergence criterion
 	
-		real convRelTol_;
-
 		// internal state variables:
 		real temp_;		    	// temperature
 		real coolingFactor_;	// temperature reduction factor
@@ -85,8 +81,6 @@ class SimulatedAnnealingModule : public OptimisationModule
 		real crntCost_; 		// cost function value at current state
 		real candCost_;	    	// cost function value at candidate state
 		real bestCost_;			// cost function value at best state
-
-		real *costSamples_;
 
         // random number generation:
 		gmx::DefaultRandomEngine rng_;		
