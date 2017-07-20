@@ -98,10 +98,8 @@ TEST_F(SimulatedAnnealingModuleTest, IsotropicRosenbrockTest)
     std::map<std::string, real> params;
 	params["saUseAdaptiveCandidateGeneration"] = 0;
     params["saRandomSeed"] = randomSeed_;
-	params["saMaxCoolingIter"] = 10000;
+	params["saMaxCoolingIter"] = 100000;
 	params["saNumCostSamples"] = 500;
-    params["saXi"] = xi_;
-	params["saConvRelTol"] = 1e-14;
 	params["saInitTemp"] = 3000;
 	params["saCoolingFactor"] = 0.99;
 	params["saStepLengthFactor"] = 0.001;

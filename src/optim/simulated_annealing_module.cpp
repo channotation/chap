@@ -2,9 +2,6 @@
 #include <numeric>
 #include <functional>
 
-#include <cblas.h>
-#include <lapacke.h>
-
 #include "optim/simulated_annealing_module.hpp"
 #include "statistics/misc_stats_utilities.hpp"
 
@@ -187,20 +184,18 @@ SimulatedAnnealingModule::annealIsotropic()
         // TODO: check boundary conditions!
         
         // evaluate cost function:
-        std::vector<real> candStateVec;
-//        candStateVec.assign(candState_, candState_ + stateDim_);
         candCost_ = objFun_(candState_);
 
         // accept candidate?
         if( acceptCandidateState() == true )
         {
             // candidate state becomes current state:
-            cblas_scopy(stateDim_, candState_.data(), 1, crntState_.data(), 1);
+            crntState_ = candState_;
             crntCost_ = candCost_;
             // is new state also the best state?
             if( candCost_ > bestCost_ )
             {
-                cblas_scopy(stateDim_, candState_.data(), 1, bestState_.data(), 1);
+                bestState_ = candState_;                
                 bestCost_ = candCost_;
             }
         }
@@ -243,17 +238,10 @@ void
 SimulatedAnnealingModule::generateCandidateStateIsotropic()
 {
 	// generate random direction in state space:
-	real stateDir[stateDim_];
 	for(int i = 0; i < stateDim_; i++)
 	{
-		stateDir[i] = candGenDistr_(rng_);
+        candState_[i] = crntState_[i] + stepLengthFactor_*candGenDistr_(rng_);
 	}
-
-	// copy current state to candidate state:
-	cblas_scopy(stateDim_, crntState_.data(), 1, candState_.data(), 1);	
-
-	// candidate state is current state plus random direction:
-	cblas_saxpy(stateDim_, stepLengthFactor_, stateDir, 1, candState_.data(), 1);
 }
 
 
