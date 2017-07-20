@@ -41,7 +41,7 @@ class MolecularPathObjExporter
                                                  gmx::RVec normal,
                                                  real radius,
                                                  real angleIncrement,
-                                                 int nIncrements);
+                                                 size_t nIncrements);
 
         // 
         gmx::RVec orthogonalVector(gmx::RVec vec);

@@ -62,9 +62,9 @@ class BoltzmannEnergyCalculator
     private:
 
         // internal variables:
+        real energyUnitFactor_;
         real temperature_;
         bool temperatureIsSet_;
-        real energyUnitFactor_;
 
         // internal constants:
         const real cGasConstantKiloJoulePerMol_ = 0.0083144598;

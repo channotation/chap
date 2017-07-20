@@ -156,7 +156,7 @@ WavefrontObjExporter::write(std::string fileName,
         writeGroup(it -> groupname_);
 
         // write faces in this group:
-        for(int j = 0; j < it -> faces_.size(); j++)
+        for(size_t j = 0; j < it -> faces_.size(); j++)
         {
             writeFace(it -> faces_[j]);
         }
@@ -171,7 +171,7 @@ WavefrontObjExporter::write(std::string fileName,
  * Writes a comment line to an OBJ file.
  */
 void
-WavefrontObjExporter::writeComment(char *comment)
+WavefrontObjExporter::writeComment(std::string comment)
 {
     obj_ <<"# "<<comment<<std::endl;
 }

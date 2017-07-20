@@ -26,8 +26,8 @@ MolecularPathObjExporter::operator()(std::string fileName,
 {
     std::cout<<"begin molpath"<<std::endl;
 
-    real d = 0.1;
-    real r = 1;
+//    real d = 0.1;
+//    real r = 1;
 
     real extrapDist = 1.0;
 
@@ -35,7 +35,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
     int nPhi = 100;
 
 
-    real deltaLen = molPath.length() / (nLen - 1);
+//    real deltaLen = molPath.length() / (nLen - 1);
     real deltaPhi = 2.0*PI_/(nPhi - 1);
 
 
@@ -145,7 +145,7 @@ MolecularPathObjExporter::vertexRing(gmx::RVec base,
                                      gmx::RVec normal,
                                      real radius,
                                      real angleIncrement,
-                                     int nIncrements)
+                                     size_t nIncrements)
 {
     // make sure input normal vector is normalised:
     unitv(normal, normal);
@@ -155,7 +155,7 @@ MolecularPathObjExporter::vertexRing(gmx::RVec base,
     vertices.reserve(nIncrements);
 
     // sample vertices in a ring around the base point: 
-    for(unsigned int j = 0; j < nIncrements; j++)
+    for(size_t j = 0; j < nIncrements; j++)
     {
         // rotate normal vector:
         gmx::RVec rotNormal = rotateAboutAxis(normal, tangent, j*angleIncrement);
