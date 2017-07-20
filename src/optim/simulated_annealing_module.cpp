@@ -9,57 +9,6 @@
 #include "statistics/misc_stats_utilities.hpp"
 
 
-/*
- * Constructor.
- *
- * Note that the candidate generation range is [-sqrt(3), sqrt(3)), which gives
- * a standard deviation of 1.0 for a uniform distribution.
- */
-SimulatedAnnealingModule::SimulatedAnnealingModule(int stateDim,
-                                                   int randomSeed,
-												   int maxCoolingIter,
-												   int numCostSamples,
-												   real /*xi*/,
-												   real convRelTol,
-												   real initTemp,
-												   real coolingFactor,
-												   real stepLengthFactor,
-												   real *initState,
-												   costFunction /*cf*/, // TODO: remove obsolete argument
-												   bool /*useAdaptiveCandidateGeneration*/)
-	: seed_(randomSeed)
-	, stateDim_(stateDim)
-	, maxCoolingIter_(maxCoolingIter)
-	, numCostSamples_(numCostSamples)
-	, convRelTol_(convRelTol)
-	, temp_(initTemp)
-	, coolingFactor_(coolingFactor)
-	, stepLengthFactor_(stepLengthFactor)
-	, rng_(seed_)
-	, candGenDistr_(-std::sqrt(3.0f), std::sqrt(3.0f))
-	, candAccDistr_(0.0, 1.0)
-//	, evaluateCost(cf)
-{
-	// allocate memory for internal state vectors:
-	crntState_ = new real[stateDim_];
-	candState_ = new real[stateDim_];
-	bestState_ = new real[stateDim_];
-
-	// initialise state vectors:
-	cblas_scopy(stateDim_, initState, 1, crntState_, 1);
-	cblas_scopy(stateDim_, initState, 1, candState_, 1);
-	cblas_scopy(stateDim_, initState, 1, bestState_, 1);
-
-	// get cost of inital states:
-//	crntCost_ = evaluateCost(crntState_);
-//	candCost_ = evaluateCost(candState_);
-//	bestCost_ = evaluateCost(bestState_);
-
-	// allocate candidate cost vector:
-	costSamples_ = new real[numCostSamples_];
-}
-
-
 /*!
  * Simple constructor. Creates an SimulatedAnnealingModule object, but does
  * not set any of its properties.
@@ -416,5 +365,4 @@ SimulatedAnnealingModule::isConvergedIsotropic()
 		return false;
 	}
 }
-
 

@@ -28,21 +28,8 @@ class SimulatedAnnealingModule : public OptimisationModule
 	public:
 
         // constructors and destructors:
-		SimulatedAnnealingModule(int stateDim,
-								 int randomSeed,
-								 int maxCoolingIter,
-								 int numCovSamples,
-								 real xi,
-								 real convRelTol,
-								 real initTemp,
-								 real coolingFactor,
-								 real stepLengthFactor,
-								 real *initState,
-								 costFunction cf,
-								 bool useAdaptiveCandidateGeneration);
         SimulatedAnnealingModule();
 		~SimulatedAnnealingModule();
-
 
         // public interface:
         virtual void setParams(std::map<std::string, real> params);
