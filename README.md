@@ -9,9 +9,9 @@ Prior to installing CHAP, make sure that you have the following libraries and to
 1. The [CMake](https://cmake.org/) tool in version 2.8.8 or higher. This will 
 typically available through your system's package manager. For example, on 
 Ubuntu you can install CMake by typing `sudp apt-get install cmake`.
-2. The BLAS and LAPACK linear algebra libraries. This will typically already be
+2. The BLAS and LAPACKE linear algebra libraries. This will typically already be
 installed on your system and are otherwise available through your package 
-manager. On Ubuntu, type `sudo apt-get install libblas-dev liblapack-dev` to
+manager. On Ubuntu, type `sudo apt-get install libblas-dev liblapacke-dev` to
 install both.
 3. The [Google Test](https://github.com/google/googletest) unit testing 
 framework. This needs to be compiled from source using CMake.
