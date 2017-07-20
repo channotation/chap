@@ -27,7 +27,7 @@ AnalysisDataJsonFrameExporter::flags() const
  */
 void
 AnalysisDataJsonFrameExporter::dataStarted(
-        gmx::AbstractAnalysisData *data)
+        gmx::AbstractAnalysisData* /* data */)
 {
     // open file and overwrite if it already exists:
     file_.open(fileName_.c_str(), std::fstream::out);
@@ -133,7 +133,7 @@ AnalysisDataJsonFrameExporter::pointsAdded(
  */
 void
 AnalysisDataJsonFrameExporter::frameFinished(
-        const gmx::AnalysisDataFrameHeader &frame)
+        const gmx::AnalysisDataFrameHeader& /*frame*/)
 {
     // open output file separately for each frame:
     file_.open(fileName_.c_str(), std::fstream::app);

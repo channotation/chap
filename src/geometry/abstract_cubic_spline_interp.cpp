@@ -162,7 +162,7 @@ AbstractCubicSplineInterp::prepareKnotVector(std::vector<real> &x)
     }
 
     // copy support points:
-    for(int i = 0; i < x.size(); i++)
+    for(size_t i = 0; i < x.size(); i++)
     {
         knotVector.push_back(x.at(i));
     }
@@ -209,7 +209,7 @@ AbstractCubicSplineInterp::estimateEndpointDeriv(std::vector<real> &x,
             fDeltaLo = (f.at(0) - f.at(2))/xDeltaLo;
             fDeltaHi = (f.at(1) - f.at(0))/xDeltaHi;
         }
-        else if( endpoint == eSplineInterpEndpointHi )
+        else // no else if to avoid uniinitialised variable error
         {
             xDeltaLo = x.at(nDat - 1) - x.at(nDat - 2); 
             xDeltaHi = x.at(nDat - 3) - x.at(nDat - 1);
@@ -236,7 +236,7 @@ AbstractCubicSplineInterp::estimateEndpointDeriv(std::vector<real> &x,
            fLo = f.at(0);
            xLo = f.at(0);
         }
-        else if( endpoint == eSplineInterpEndpointHi )
+        else // no else if to avoid uninitialised variable error
         {
            fHi = f.at(nDat - 1);
            xHi = x.at(nDat - 1);

@@ -12,7 +12,7 @@
 void 
 OptimSpacePoint::add(OptimSpacePoint other)
 {
-    for(int i = 0; i < this -> first.size(); i++)
+    for(size_t i = 0; i < this -> first.size(); i++)
     {
         this -> first[i] += other.first[i];
     }   
@@ -27,7 +27,7 @@ OptimSpacePoint::add(OptimSpacePoint other)
 void
 OptimSpacePoint::addScaled(OptimSpacePoint other, real fac)
 {
-    for(int i = 0; i < this -> first.size(); i++)
+    for(size_t i = 0; i < this -> first.size(); i++)
     {
         this -> first[i] += other.first[i] * fac;
     }   
@@ -41,7 +41,7 @@ OptimSpacePoint::addScaled(OptimSpacePoint other, real fac)
 void
 OptimSpacePoint::scale(real fac)
 {
-    for(int i = 0; i < this -> first.size(); i++)
+    for(size_t i = 0; i < this -> first.size(); i++)
     {
         this -> first[i] *= fac;
     }       
@@ -56,7 +56,7 @@ real
 OptimSpacePoint::dist2(OptimSpacePoint other)
 {
     real d = 0.0;
-    for(int i = 0; i < this -> first.size(); i++)
+    for(size_t i = 0; i < this -> first.size(); i++)
     {
         d += (this->first[i] - other.first[i]) * (this->first[i] - other.first[i]);
     }

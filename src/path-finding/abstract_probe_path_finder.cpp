@@ -7,17 +7,18 @@
 /*
  *
  */
-AbstractProbePathFinder::AbstractProbePathFinder(std::map<std::string, real> params,
-                                                 gmx::RVec initProbePos,
-//                                                 gmx::AnalysisNeighborhoodSearch *nbSearch,
-                                                 t_pbc pbc,
-                                                 gmx::AnalysisNeighborhoodPositions porePos,
-                                                 std::vector<real> vdwRadii)
+AbstractProbePathFinder::AbstractProbePathFinder(
+        std::map<std::string, real> params,
+        gmx::RVec initProbePos,
+//      gmx::AnalysisNeighborhoodSearch *nbSearch,
+        t_pbc pbc,
+        gmx::AnalysisNeighborhoodPositions porePos,
+        std::vector<real> vdwRadii)
     : AbstractPathFinder(params)
 //    , nbSearch_(nbSearch)
+    , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , crntProbePos_()
-    , vdwRadii_(vdwRadii)
     , nbh_()
 {
     // set parameters:
@@ -71,60 +72,13 @@ AbstractProbePathFinder::AbstractProbePathFinder(std::map<std::string, real> par
 }
 
 
-
-/*
- * Constructor.
- *
- * TODO: nbSearch is currently passed as a raw pointer. This avoids copying, 
- * but is also rather not so elegent. Might be better to use a unique_ptr or 
- * shared_ptr? Maybe ask Gromacs mailing list about this?
- */
-/*
-AbstractProbePathFinder::AbstractProbePathFinder(real probeStepLength,
-                                                 real probeRadius,
-                                                 real maxFreeDist,
-                                                 int maxProbeSteps,
-                                                 gmx::RVec &initProbePos,
-                                                 std::vector<real> &vdwRadii,
-                                                 gmx::AnalysisNeighborhoodSearch *nbSearch,
-                                                 int saRandomSeed,
-                                                 int saMaxCoolingIter,
-                                                 int saNumCostSamples,
-                                                 real saXi,
-                                                 real saConvRelTol,
-                                                 real saInitTemp,
-                                                 real saCoolingFactor,
-                                                 real saStepLengthFactor,
-                                                 bool saUseAdaptiveCandGen)
-    : AbstractPathFinder()
-    , maxProbeSteps_(maxProbeSteps)
-    , probeStepLength_(probeStepLength)
-    , probeRadius_(probeRadius)
-    , maxProbeRadius_(maxFreeDist)
-    , vdwRadii_(vdwRadii)
-    , initProbePos_(initProbePos)
-    , crntProbePos_()
-    , nbSearch_(nbSearch)
-    , saRandomSeed_(saRandomSeed)
-    , saMaxCoolingIter_(saMaxCoolingIter)
-    , saNumCostSamples_(saNumCostSamples)
-    , saXi_(saXi)
-    , saConvRelTol_(saConvRelTol)
-    , saInitTemp_(saInitTemp)
-    , saCoolingFactor_(saCoolingFactor)
-    , saStepLengthFactor_(saStepLengthFactor)
-    , saUseAdaptiveCandGen_(saUseAdaptiveCandGen)
-{
-
-}
-*/
-
 /*
  * Finds the minimal free distance, i.e. the shortest distance between the 
  * probe and the closest van-der-Waals surface.
  */
 real
-AbstractProbePathFinder::findMinimalFreeDistance(std::vector<real> optimSpacePos)
+AbstractProbePathFinder::findMinimalFreeDistance(
+        std::vector<real> optimSpacePos)
 {
     // internal variables:
     real pairDist;              // distance between probe and pore atom

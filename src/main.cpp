@@ -18,13 +18,17 @@ int main(int argc, char **argv)
 {
     // hack to suppress Gromacs output:
     std::vector<char*> modArgv(argv, argv + argc);
-    modArgv.push_back("-quiet");
+    char quiet[7] = "-quiet";
+    modArgv.push_back(quiet);
     modArgv.push_back(nullptr);
     argv = modArgv.data();
     argc++;
 
     // run trajectory analysis:
 	int status =  gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
+
+    // return status:
+    return status;
 }
 
 

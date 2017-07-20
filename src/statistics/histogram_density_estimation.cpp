@@ -51,7 +51,7 @@ HistogramDensityEstimator::estimate(
     // fail with a segfault. This hardcoded limit is supposed to prevent that 
     // situation, but in practice the reasonable size limit for number of 
     // histogram bins is probably lower due to performance constraints.)
-    int maxBinNumber = 25000;
+    size_t maxBinNumber = 25000;
     if( midpoints.size() > maxBinNumber )
     {
         throw std::runtime_error("Number of bins exceeds limit for spline "
@@ -211,7 +211,7 @@ HistogramDensityEstimator::calculateDensity(
     }
 
     // sum over counts:
-    int sum = std::accumulate(counts.begin(), counts.end(), 0.0);
+    size_t sum = std::accumulate(counts.begin(), counts.end(), 0.0);
 
     // sanity check:
     if( sum != samples.size() )

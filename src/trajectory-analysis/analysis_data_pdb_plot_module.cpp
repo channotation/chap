@@ -21,7 +21,7 @@ AnalysisDataPdbPlotModule::AnalysisDataPdbPlotModule()
 /*
  *
  */
-AnalysisDataPdbPlotModule::AnalysisDataPdbPlotModule(int i)
+AnalysisDataPdbPlotModule::AnalysisDataPdbPlotModule(int /*i*/)
     : precision_(5)
 {
 
@@ -43,7 +43,8 @@ AnalysisDataPdbPlotModule::flags() const
  *
  */
 void                                                                            
-AnalysisDataPdbPlotModule::pointsAdded(const gmx::AnalysisDataPointSetRef &points)      
+AnalysisDataPdbPlotModule::pointsAdded(
+        const gmx::AnalysisDataPointSetRef &points)      
 {
     // check that file is open:
     if( file_.is_open() == true )
@@ -80,7 +81,8 @@ AnalysisDataPdbPlotModule::pointsAdded(const gmx::AnalysisDataPointSetRef &point
  * Opens filestream for output writing.
  */
 void 
-AnalysisDataPdbPlotModule::dataStarted(gmx::AbstractAnalysisData *data)
+AnalysisDataPdbPlotModule::dataStarted(
+        gmx::AbstractAnalysisData* /*data*/)
 {
 
 }
@@ -90,7 +92,8 @@ AnalysisDataPdbPlotModule::dataStarted(gmx::AbstractAnalysisData *data)
  * 
  */
 void 
-AnalysisDataPdbPlotModule::frameStarted(const gmx::AnalysisDataFrameHeader &frame)
+AnalysisDataPdbPlotModule::frameStarted(
+        const gmx::AnalysisDataFrameHeader &frame)
 {
     // make sure that file name is given:
     if( strlen(fileName_) > 0 )
@@ -114,7 +117,8 @@ AnalysisDataPdbPlotModule::frameStarted(const gmx::AnalysisDataFrameHeader &fram
  * 
  */
 void 
-AnalysisDataPdbPlotModule::frameFinished(const gmx::AnalysisDataFrameHeader &frame)
+AnalysisDataPdbPlotModule::frameFinished(
+        const gmx::AnalysisDataFrameHeader& /*frame*/)
 {
     // add box size to PDB file:
     // TODO: is this necessary?

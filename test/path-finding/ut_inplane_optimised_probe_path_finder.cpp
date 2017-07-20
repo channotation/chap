@@ -122,7 +122,7 @@ class InplaneOptimisedProbePathFinderTest : public ::testing::Test
                 // rotate around x-axis:
                 gmx_mat4_init_rotation(XX, PI_/2.0, rotMat);
             }
-            else if( alongAxis = ZZ )
+            else if( alongAxis == ZZ )
             {
                 // nothing to do:
                 gmx_mat4_init_rotation(ZZ, 0.0, rotMat);

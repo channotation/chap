@@ -259,7 +259,7 @@ MolecularPath::mapPosition(const gmx::RVec &cartCoord,
     {
         distances.push_back( distance2(cartCoord, pathPointSample[j]) );
     }
-    int idxMinDist = std::min_element(distances.begin(), distances.end()) - distances.begin();
+    size_t idxMinDist = std::min_element(distances.begin(), distances.end()) - distances.begin();
 
     // refine mapping by distance minimisation:
     gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(
@@ -366,7 +366,7 @@ MolecularPath::mapSelection(const gmx::Selection &mapSel,
 
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
-    for(size_t i = 0; i < mapSel.posCount(); i++)
+    for(int i = 0; i < mapSel.posCount(); i++)
     {
         try
         {
@@ -643,14 +643,9 @@ MolecularPath::minRadius()
     int idxMin = std::distance(r.begin(), itMin);
 
     // determine bracketing interval:
-    real sMin;
-    real sMax;
-    if( itMin > r.begin() && itMin < r.end() )
-    {
-        sMin = s[idxMin - 1];
-        sMax = s[idxMin + 1];
-    }
-    else if( itMin == r.begin() )
+    real sMin = s[idxMin - 1];
+    real sMax = s[idxMin + 1];
+    if( itMin == r.begin() )
     {
         sMin = s[idxMin];
         sMax = s[idxMin + 1];
@@ -700,7 +695,7 @@ MolecularPath::volume()
 {
     // initialise number of intervals larger than number of spline intervals:
     // (this ensures that function is polynomial on each interval)
-    int numIntervals = (poreRadius_.nKnots()) - 2*poreRadius_.degree() - 1;
+    size_t numIntervals = (poreRadius_.nKnots()) - 2*poreRadius_.degree() - 1;
 
     // integration interval:
     real h = length_/numIntervals;
@@ -749,7 +744,7 @@ MolecularPath::volume()
  * specified distance beyond the openings of the pore.
  */
 std::vector<real>
-MolecularPath::sampleArcLength(int nPoints,
+MolecularPath::sampleArcLength(size_t nPoints,
                                real extrapDist)
 {
     // get spacing of points in arc length:
@@ -758,7 +753,7 @@ MolecularPath::sampleArcLength(int nPoints,
     // evaluate spline to obtain sample points:
     std::vector<real> arcLengthSample;
     arcLengthSample.reserve(nPoints);
-    for(int i = 0; i < nPoints; i++)
+    for(size_t i = 0; i < nPoints; i++)
     {
         // calculate evaluation point:
         arcLengthSample.push_back( openingLo_ - extrapDist + i*arcLenStep );  
@@ -777,7 +772,7 @@ MolecularPath::sampleArcLength(int nPoints,
  * Cartesian coordinates.
  */
 std::vector<gmx::RVec>
-MolecularPath::samplePoints(int nPoints,
+MolecularPath::samplePoints(size_t nPoints,
                             real extrapDist)
 {
     // sample equidistant arc length values:
@@ -815,7 +810,7 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
  * the extrapolation range on either side. 
  */
 std::vector<gmx::RVec>
-MolecularPath::sampleTangents(int nPoints, real extrapDist)
+MolecularPath::sampleTangents(size_t nPoints, real extrapDist)
 {
     // sample equidistant arc length values:
     std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
@@ -854,7 +849,7 @@ MolecularPath::sampleTangents(std::vector<real> arcLengthSample)
  */
 
 std::vector<gmx::RVec>
-MolecularPath::sampleNormTangents(int nPoints, real extrapDist)
+MolecularPath::sampleNormTangents(size_t nPoints, real extrapDist)
 {
     // sample equidistant arc length values:
     std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
@@ -901,7 +896,7 @@ MolecularPath::sampleNormTangents(std::vector<real> arcLengthSample)
  * \todo This needs to be implemented.
  */
 std::vector<gmx::RVec>
-MolecularPath::sampleNormals(int nPoints, real extrapDist)
+MolecularPath::sampleNormals(size_t nPoints, real extrapDist)
 {
     // sample equidistant arc length values:
     std::vector<real> arcLengthSteps = sampleArcLength(nPoints, extrapDist);
@@ -915,7 +910,7 @@ MolecularPath::sampleNormals(int nPoints, real extrapDist)
  * \todo This needs to be implemented.
  */
 std::vector<gmx::RVec>
-MolecularPath::sampleNormals(std::vector<real> arcLengthSample)
+MolecularPath::sampleNormals(std::vector<real> /* arcLengthSample */)
 {
     // evaluate spline to obtain sample points:
     std::vector<gmx::RVec> normals;
@@ -930,7 +925,7 @@ MolecularPath::sampleNormals(std::vector<real> arcLengthSample)
  * Sampling extends the specified distance beyond the openings of the pore.
  */
 std::vector<real>
-MolecularPath::sampleRadii(int nPoints,
+MolecularPath::sampleRadii(size_t nPoints,
                            real extrapDist)
 {
     // get spacing of points in arc length:
@@ -1001,7 +996,7 @@ MolecularPath::shift(const gmx::RVec &shift)
  * control points.
  */
 real
-MolecularPath::sampleArcLenStep(int nPoints, real extrapDist)
+MolecularPath::sampleArcLenStep(size_t nPoints, real extrapDist)
 {
     // get spacing of points in arc length:
     return (this -> length() + 2.0*extrapDist)/(nPoints - 1);

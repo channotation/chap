@@ -292,9 +292,6 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
     // floating point comparison threshold:
     real eps = 1e-5;
 
-    // cubic spline:
-    int degree = 3;
-
     // define helix parameters:
     const real PI = std::acos(-1.0);
     real tStart = 0.0;
@@ -303,7 +300,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
     real b = 0.875/(tEnd - tStart);
 
     // create a point set describing a helix:
-    int nParams = 1e2;
+    size_t nParams = 1e2;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -356,9 +353,6 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
     // floating point comparison threshold:
     real eps = 10*std::numeric_limits<real>::epsilon();
     
-    // cubic spline:
-    int degree = 3;
-
     // define helix parameters:
     const real PI = std::acos(-1.0);
     real tStart = 0.0;
@@ -367,7 +361,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
     real b = 1.223/(tEnd - tStart);
 
     // create a point set describing a helix:
-    int nParams = 100;
+    size_t nParams = 100;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -434,9 +428,6 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
     // floating point comparison threshold:
     real eps = 1e-3;
 
-    // cubic spline:
-    int degree = 3;
-
     // define helix parameters:
     const real PI = std::acos(-1.0);
     real tStart = -2.0*PI;
@@ -446,7 +437,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
     real c = 0.005;
 
     // create a point set describing a logarithmically spiral helix:
-    int nParams = 15;
+    size_t nParams = 15;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -527,9 +518,6 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     // check that all original points are found to lie on the curve:
     for(unsigned int i = 0; i < f.size(); i++)
     {
-        // find closest control point:
-        int idxClosest = Spl.closestCtrlPoint(f.at(i));
-
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
                                                      -2.1,
@@ -563,10 +551,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     
     // loop over all test points:
     for(unsigned int i = 0; i < pts.size(); i++)
-    {
-        // find closest control point:
-        int idxClosest = Spl.closestCtrlPoint(pts.at(i));
-   
+    {   
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      -10,
@@ -588,7 +573,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     real a = 1.0;
 
     // create a point set describing a circle:
-    int nParams = 25;
+    size_t nParams = 25;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -611,18 +596,18 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     // check that all original points are found to lie on the curve:
     for(unsigned int i = 0; i < points.size(); i++)
     {
-        // find closest control point:
-        int idxClosest = Spl.closestCtrlPoint(points.at(i));
-
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
                                                      tStart,
                                                      tEnd,
                                                      eps);
 
+        
+
         // check identity with analytical solution:
-//        ASSERT_NEAR(params[i], curvi[0], eps);
-//        ASSERT_NEAR(0.0, curvi[1], eps);    
+        // TODO: is this supposed to be removed?
+        ASSERT_NEAR(params[i], curvi[0], eps);
+        ASSERT_NEAR(0.0, curvi[1], eps);    
     }
 
     // define a new set of test points:
@@ -638,19 +623,16 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
              par, 
              par, 
              par, 
-             2.0*par};
-    dTrue = {0.0, 
-             2.5*2.5, 
+             2.0f*par};
+    dTrue = {0.0f, 
+             2.5f*2.5f, 
              a*a, 
-             (0.5*a)*(0.5*a), 
-             0.0};
+             (0.5f*a)*(0.5f*a), 
+             0.0f};
 
     // check that test points are evaluated correctly:
     for(unsigned int i = 0; i < pts.size(); i++)
     {
-        // find closest control point:
-        int idxClosest = Spl.closestCtrlPoint(pts.at(i));
-
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      0.5*par,
@@ -658,8 +640,9 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
                                                      1e-7);
 
         // check identity with analytical solution:
-//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//        ASSERT_NEAR(dTrue[i], curvi[1], eps);
+        // TODO: was this supposed to be removed
+        ASSERT_NEAR(sTrue[i], curvi[0], eps);
+        ASSERT_NEAR(dTrue[i], curvi[1], eps);
     }   
 }
 

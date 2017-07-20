@@ -60,8 +60,8 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     //-------------------------------------------------------------------------
 
     // dimension of system and number of right hand sides:
-    int nDat = x.size();
-    int nSys = nDat + 2;
+    size_t nDat = x.size();
+    size_t nSys = nDat + 2;
 
     // allocate memory for lhs matrix diagonal entries:
     real subDiag[nSys - 1];
@@ -81,7 +81,7 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     //-------------------------------------------------------------------------
 
     // number of right hand sides is one:
-    int nRhs = 1;
+    size_t nRhs = 1;
  
     // initialise right hand side:
     real rhsVec[nSys * nRhs];
@@ -118,7 +118,7 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     // create vector of control points:
     std::vector<real> ctrlPoints;
     ctrlPoints.resize(nSys);
-    for(unsigned int i = 0; i < nSys; i++)
+    for(size_t i = 0; i < nSys; i++)
     {
         ctrlPoints.at(i) = rhsVec[i];
     }
