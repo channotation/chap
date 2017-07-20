@@ -13,17 +13,13 @@
 #include "optim/optimisation.hpp"
 
 
-/*
+/*!
+ * \brief Multidimensional optimisation using simulated annealing.
  *
- */
-enum eSimAnTerm {CONVERGENCE = 101, 
-                 MAX_COOLING_ITER = 102, 
-                 NO_CAND_ACCEPTED = 103};
-
-
-
-/*
+ * This class implements a simple version of the classic simulated annealing
+ * algorithm for multidimensional optimisation. 
  *
+ * \todo Document parameters properly. 
  */
 class SimulatedAnnealingModule : public OptimisationModule
 {
@@ -66,7 +62,7 @@ class SimulatedAnnealingModule : public OptimisationModule
 	private:
 
         // internal driver for annealing procedure:
-        eSimAnTerm anneal();
+        void anneal();
 
 		// parameters:
 		int seed_;	    		// seed for random number generator
@@ -95,13 +91,10 @@ class SimulatedAnnealingModule : public OptimisationModule
         ObjectiveFunction objFun_;
 
 		// member functions
-		eSimAnTerm annealIsotropic();
+		void annealIsotropic();
 		void cool();
 		void generateCandidateStateIsotropic();
-		void updateAdaptationMatrix();
-
 		bool acceptCandidateState();
-		bool isConvergedIsotropic();
 };
 
 #endif
