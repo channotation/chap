@@ -20,14 +20,11 @@ SimulatedAnnealingModule::SimulatedAnnealingModule()
 
 
 /*!
- * Custom destructor to free memory.
+ * Was used to free memory, now obsolete.
  */
 SimulatedAnnealingModule::~SimulatedAnnealingModule()
 {
-	// free memory occupied by internal state vectors:
-	delete[] crntState_;
-	delete[] candState_;
-	delete[] bestState_;
+
 }
 
 
@@ -116,15 +113,10 @@ SimulatedAnnealingModule::setInitGuess(std::vector<real> guess)
     // set optimisation space dimension:
     stateDim_ = guess.size();
 
-    // allocate memory for internal state vectors:
-	crntState_ = new real[stateDim_];
-	candState_ = new real[stateDim_];
-	bestState_ = new real[stateDim_];
-
 	// initialise state vectors:
-    std::copy(guess.begin(), guess.end(), crntState_);
-    std::copy(guess.begin(), guess.end(), candState_);
-    std::copy(guess.begin(), guess.end(), bestState_);
+    crntState_ = guess;
+    candState_ = guess;
+    bestState_ = guess;
 }
 
 
@@ -147,7 +139,7 @@ OptimSpacePoint
 SimulatedAnnealingModule::getOptimPoint()
 {
     OptimSpacePoint res;
-    res.first.assign(bestState_, bestState_ + stateDim_);
+    res.first = bestState_;
     res.second = bestCost_;
 
     return res;
@@ -166,12 +158,9 @@ void
 SimulatedAnnealingModule::anneal()
 {
    	// get cost of inital states:
-    std::vector<real> crntStateVec(crntState_, crntState_ + stateDim_);
-    std::vector<real> candStateVec(candState_, candState_ + stateDim_);
-    std::vector<real> bestStateVec(bestState_, bestState_ + stateDim_);
-    crntCost_ = objFun_(crntStateVec);
-    candCost_ = objFun_(candStateVec);
-    bestCost_ = objFun_(bestStateVec);
+    crntCost_ = objFun_(crntState_);
+    candCost_ = objFun_(candState_);
+    bestCost_ = objFun_(bestState_);
 
     // adaptive annealing not implemented:
     annealIsotropic();
@@ -199,19 +188,19 @@ SimulatedAnnealingModule::annealIsotropic()
         
         // evaluate cost function:
         std::vector<real> candStateVec;
-        candStateVec.assign(candState_, candState_ + stateDim_);
-        candCost_ = objFun_(candStateVec);
+//        candStateVec.assign(candState_, candState_ + stateDim_);
+        candCost_ = objFun_(candState_);
 
         // accept candidate?
         if( acceptCandidateState() == true )
         {
             // candidate state becomes current state:
-            cblas_scopy(stateDim_, candState_, 1, crntState_, 1);
+            cblas_scopy(stateDim_, candState_.data(), 1, crntState_.data(), 1);
             crntCost_ = candCost_;
             // is new state also the best state?
             if( candCost_ > bestCost_ )
             {
-                cblas_scopy(stateDim_, candState_, 1, bestState_, 1);
+                cblas_scopy(stateDim_, candState_.data(), 1, bestState_.data(), 1);
                 bestCost_ = candCost_;
             }
         }
@@ -261,10 +250,10 @@ SimulatedAnnealingModule::generateCandidateStateIsotropic()
 	}
 
 	// copy current state to candidate state:
-	cblas_scopy(stateDim_, crntState_, 1, candState_, 1);	
+	cblas_scopy(stateDim_, crntState_.data(), 1, candState_.data(), 1);	
 
 	// candidate state is current state plus random direction:
-	cblas_saxpy(stateDim_, stepLengthFactor_, stateDir, 1, candState_, 1);
+	cblas_saxpy(stateDim_, stepLengthFactor_, stateDir, 1, candState_.data(), 1);
 }
 
 

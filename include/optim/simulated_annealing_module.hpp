@@ -51,9 +51,9 @@ class SimulatedAnnealingModule : public OptimisationModule
 		real getCandStateAt(int i){return candState_[i];};
 		real getBestStateAt(int i){return bestState_[i];};
 
-		real* getCrntState(){return crntState_;};
-		real* getCandState(){return candState_;};
-		real* getBestState(){return bestState_;};
+		std::vector<real> getCrntState(){return crntState_;};
+		std::vector<real> getCandState(){return candState_;};
+		std::vector<real> getBestState(){return bestState_;};
 
 		real getCrntCost(){return crntCost_;};
 		real getCandCost(){return candCost_;};
@@ -74,12 +74,15 @@ class SimulatedAnnealingModule : public OptimisationModule
 		real coolingFactor_;	// temperature reduction factor
 		real stepLengthFactor_;	// factor for candidate generation step
 
-		real *crntState_;		// current state in optimisation space
-		real *candState_;		// candidate state in optimisation space
-		real *bestState_;		// best state vector in optimisation space
+        std::vector<real> crntState_;
+        std::vector<real> candState_;
+        std::vector<real> bestState_;
+		//real *crntState_;		// current state in optimisation space
+		//real *candState_;		// candidate state in optimisation space
+		//real *bestState_;		// best state vector in optimisation space
 
 		real crntCost_; 		// cost function value at current state
-		real candCost_;	    	// cost function value at candidate state
+		real candCost_;    	// cost function value at candidate state
 		real bestCost_;			// cost function value at best state
 
         // random number generation:
