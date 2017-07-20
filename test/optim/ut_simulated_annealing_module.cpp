@@ -1,7 +1,7 @@
 #include <vector>
 #include <limits>
 
-#include <lapacke.h>
+//#include <lapacke.h>
 
 #include "optim/simulated_annealing_module.hpp"
 
@@ -76,57 +76,7 @@ class SimulatedAnnealingModuleTest : public ::testing::Test
 			// return value of Rosenbrock function at this point:
 			return -(a - x)*(a - x) - b*(y - x*x)*(y - x*x);      
         }
-
-
-
 };
-
-
-/*
- * Check that the cooling schedule works correctly.
- */
-TEST_F(SimulatedAnnealingModuleTest, CoolingTest)
-{
-    // create simulated annealing module:
-    SimulatedAnnealingModule sam;
-
-	// set parameters:
-    std::map<std::string, real> params;
-	params["saUseAdaptiveCandidateGeneration"] = 0;
-    params["saRandomSeed"] = randomSeed_;
-	params["saMaxCoolingIter"] = 10000;
-	params["saNumCostSamples"] = 500;
-    params["saXi"] = xi_;
-	params["saConvRelTol"] = 1e-14;
-	params["saInitTemp"] = 300;
-	params["saCoolingFactor"] = 0.98;
-	params["saStepLengthFactor"] = 0.001;
-    sam.setParams(params);
-
-    // set initial state:
-	std::vector<real> guess = {3.5, -2.0};
-    sam.setInitGuess(guess);
-
-    // set objective function:
-    sam.setObjFun(rosenbrock);
-	
-	// perform cooling step:
-	sam.cool();
-
-	// check that temperature has decreased by correct amount:
-	ASSERT_FLOAT_EQ(sam.getTemp(), params["saInitTemp"]*params["saCoolingFactor"]);
-
-	// perform 9 more cooling steps:
-	int additionalCoolingSteps = 9;
-	for(int i = 0; i < additionalCoolingSteps; i++)
-	{
-		sam.cool();
-	}
-
-	// check that successive cooling also works:
-	ASSERT_FLOAT_EQ(sam.getTemp(), params["saInitTemp"]*std::pow(params["saCoolingFactor"], additionalCoolingSteps + 1));
-}
-
 
 
 /*
@@ -148,10 +98,8 @@ TEST_F(SimulatedAnnealingModuleTest, IsotropicRosenbrockTest)
     std::map<std::string, real> params;
 	params["saUseAdaptiveCandidateGeneration"] = 0;
     params["saRandomSeed"] = randomSeed_;
-	params["saMaxCoolingIter"] = 10000;
+	params["saMaxCoolingIter"] = 100000;
 	params["saNumCostSamples"] = 500;
-    params["saXi"] = xi_;
-	params["saConvRelTol"] = 1e-14;
 	params["saInitTemp"] = 3000;
 	params["saCoolingFactor"] = 0.99;
 	params["saStepLengthFactor"] = 0.001;
