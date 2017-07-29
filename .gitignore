@@ -3,6 +3,7 @@ build/*
 bin/*
 doc/*
 scripts/misc/*
+performance/*
 
 # temporary files:
 *.swp
