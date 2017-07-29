@@ -27,12 +27,45 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
 
 
-# 
+# Find Linear Algebra Libraries
+#------------------------------------------------------------------------------
+
+# find LAPACK:
+find_package(LAPACKE REQUIRED)
+include_directories(${LAPACKE_INCLUDE_DIRS})
+
+
+# Find Boost Library
+#------------------------------------------------------------------------------
+
+find_package(Boost REQUIRED)
+
+
+# Find Google Test Library
 #------------------------------------------------------------------------------
 
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
+
+# Find Gromacs Library
+#------------------------------------------------------------------------------
+
+# handle different Gromacs suffixes:
+option(GMX_DOUBLE "Use double precision" OFF)
+set(GMX_SUFFIX "" CACHE STRING "Suffix for the GROMACS installation to use (empty for default)")
+if (GMX_DOUBLE AND NOT GMX_SUFFIX)
+	set(GROMACS_SUFFIX "_d")
+else()
+	set(GROMACS_SUFFIX ${GMX_SUFFIX})
+endif()
+
+# find Gromacs package, add include direcotries and definitions:
+find_package(GROMACS 5.1 REQUIRED)
+gromacs_check_double(GMX_DOUBLE)
+gromacs_check_compiler(CXX)
+include_directories(${GROMACS_INCLUDE_DIRS})
+add_definitions(${GROMACS_DEFINITIONS})
 
 # 
 #------------------------------------------------------------------------------
@@ -55,42 +88,6 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -O1 -g")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 
 
-# Find Gromacs Library
-#------------------------------------------------------------------------------
-
-# handle different Gromacs suffixes:
-option(GMX_DOUBLE "Use double precision" OFF)
-set(GMX_SUFFIX "" CACHE STRING "Suffix for the GROMACS installation to use (empty for default)")
-if (GMX_DOUBLE AND NOT GMX_SUFFIX)
-	set(GROMACS_SUFFIX "_d")
-else()
-	set(GROMACS_SUFFIX ${GMX_SUFFIX})
-endif()
-
-# find Gromacs package, add include direcotries and definitions:
-find_package(GROMACS 5.1 REQUIRED)
-gromacs_check_double(GMX_DOUBLE)
-gromacs_check_compiler(CXX)
-include_directories(${GROMACS_INCLUDE_DIRS})
-add_definitions(${GROMACS_DEFINITIONS})
-
-
-# Find Linear Algebra Libraries
-#------------------------------------------------------------------------------
-
-# find LAPACK:
-find_package(LAPACKE REQUIRED)
-include_directories(${LAPACKE_INCLUDE_DIRS})
-
-message("lapacke = " ${LAPACKE_LIBRARIES})
-
-
-# Find Boost Library
-#------------------------------------------------------------------------------
-
-find_package(Boost REQUIRED)
-
-#message("boost = " ${LAPACK_LIBRARIES})
 
 
 
@@ -110,10 +107,10 @@ add_executable(chap ${SRC_FILES})
 #message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
 set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
-target_link_libraries(chap ${GROMACS_LIBRARIES})
-target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
-target_link_libraries(chap ${BOOST_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
+target_link_libraries(chap ${BOOST_LIBRARIES})
+target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(chap ${GROMACS_LIBRARIES})
 
 
 # Compile Tests
