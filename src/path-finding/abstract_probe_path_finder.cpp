@@ -86,7 +86,6 @@ AbstractProbePathFinder::findMinimalFreeDistance(
 
     // loop over all pairs:
     gmx::AnalysisNeighborhoodPair pair;
-    int i = 0;
     while( nbPairSearch.findNextPair(&pair) )
     {
         // get pair distance:
@@ -102,9 +101,7 @@ AbstractProbePathFinder::findMinimalFreeDistance(
         {
             minimalFreeDistance = pairDist - poreAtomVdwRadius;
         }
-        i++;
     }
-//    std::cout<<"i = "<<i<<std::endl;
 
     // return radius of maximal free sphere:
     return minimalFreeDistance; 

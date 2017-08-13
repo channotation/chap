@@ -101,15 +101,12 @@ InplaneOptimisedProbePathFinder::setParameters(
     {
         // user given cutoff:
         nbhCutoff_ = params.nbhCutoff();
-        std::cout<<"USER CUTOFF = "<<nbhCutoff_<<std::endl;
     }
     else
     {
         // calculate cutoff automatically:
         real safetyMargin = std::sqrt(std::numeric_limits<real>::epsilon());
         nbhCutoff_ = params.maxProbeRadius() + maxVdwRadius_ + safetyMargin;
-        std::cout<<"maxProbeRadius = "<<params.maxProbeRadius()<<std::endl;
-        std::cout<<"AUTOMATIC CUTOFF = "<<nbhCutoff_<<std::endl;
     }
 
     // set flag to true:
@@ -310,11 +307,6 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         path_.push_back(crntProbePos_);
         radii_.push_back(nmm.getOptimPoint().second);     
     }
-    std::cout<<std::endl;
-    std::cout<<"numProbeSteps = "<<numProbeSteps<<"  "
-             <<"maxProbeSteps = "<<maxProbeSteps_<<"  "
-             <<"finalProbeRadius = "<<radii_.back()<<"  "
-             <<"maxProbeRadius = "<<maxProbeRadius_<<std::endl;
 }
 
 
