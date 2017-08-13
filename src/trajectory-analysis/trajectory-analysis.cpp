@@ -57,7 +57,6 @@ using namespace gmx;
 trajectoryAnalysis::trajectoryAnalysis()
     : cutoff_(0.0)
     , pfMethod_("inplane-optim")
-    , pfProbeStepLength_(0.1)
     , pfProbeRadius_(0.0)
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
@@ -245,7 +244,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "coordinates across time steps"));
 
     options -> addOption(RealOption("pf-probe-step")
-                         .store(&pfPar_["pfProbeStepLength"])
+                         .store(&pfProbeStepLength_)
                          .defaultValue(0.025)
                          .description("Step length for probe movement."));
 
@@ -483,7 +482,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
     pfPar_["pfCylRad"] = pfMaxProbeRadius_;
     pfPar_["pfCylNumSteps"] = pfPar_["pfProbeMaxSteps"];
-    pfPar_["pfCylStepLength"] = pfPar_["pfProbeStepLength"];
+    pfPar_["pfCylStepLength"] = pfProbeStepLength_;
 
     pfPar_["saMaxCoolingIter"] = saMaxCoolingIter_;
     pfPar_["saRandomSeed"] = saRandomSeed_;
@@ -495,7 +494,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // 
     pfParams_.setProbeStepLength(pfProbeStepLength_);
     pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
-    std::cout<<"maxFreeDist = "<<pfMaxProbeRadius_<<std::endl;
     pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
     
     if( cutoffIsSet_ )
