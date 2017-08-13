@@ -286,11 +286,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
  
         // current position becomes best position in plane: 
         crntProbePos_ = optimToConfig(nmm.getOptimPoint().first);
-       
-        // add result to path container: 
-        path_.push_back(crntProbePos_);
-        radii_.push_back(nmm.getOptimPoint().second);     
-        
+               
         // increment probe step counter:
         numProbeSteps++;
 //        std::cout<<"probe step = "<<numProbeSteps<<std::endl;
@@ -309,10 +305,16 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         {
             break;
         }
-    }
 
+        // add result to path container: 
+        path_.push_back(crntProbePos_);
+        radii_.push_back(nmm.getOptimPoint().second);     
+    }
+    std::cout<<std::endl;
     std::cout<<"numProbeSteps = "<<numProbeSteps<<"  "
-             <<"maxProbeSteps = "<<maxProbeSteps_<<std::endl;
+             <<"maxProbeSteps = "<<maxProbeSteps_<<"  "
+             <<"finalProbeRadius = "<<radii_.back()<<"  "
+             <<"maxProbeRadius = "<<maxProbeRadius_<<std::endl;
 }
 
 
