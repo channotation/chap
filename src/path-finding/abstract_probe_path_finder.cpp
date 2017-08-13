@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <functional>
 #include <iostream>
 #include <limits>
 
@@ -10,17 +12,16 @@
 AbstractProbePathFinder::AbstractProbePathFinder(
         std::map<std::string, real> params,
         gmx::RVec initProbePos,
-//      gmx::AnalysisNeighborhoodSearch *nbSearch,
         t_pbc pbc,
         gmx::AnalysisNeighborhoodPositions porePos,
         std::vector<real> vdwRadii)
     : AbstractPathFinder(params)
-//    , nbSearch_(nbSearch)
     , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
     , crntProbePos_()
     , nbh_()
 {
+
     // set parameters:
     if( params.find("pfProbeRadius") != params.end() )
     {
@@ -32,38 +33,23 @@ AbstractProbePathFinder::AbstractProbePathFinder(
         std::abort();
     }
 
-    if( params.find("pfProbeStepLength") != params.end() )
-    {
-        probeStepLength_ = params["pfProbeStepLength"];
-    }
-    else
-    {
-        std::cerr<<"ERROR: No probe step length given!"<<std::endl;
-        std::abort();
-    }
+    // find maximum vdw radius:
+    maxVdwRadius_ = *std::max_element(vdwRadii.begin(), vdwRadii.end());
+}
 
-    if( params.find("pfProbeMaxRadius") != params.end() )
-    {
-        maxProbeRadius_ = params["pfProbeMaxRadius"];
-    }
-    else
-    {
-        std::cerr<<"ERROR: Max probe radius not given!"<<std::endl;
-        std::abort();
-    }
 
-    if( params.find("pfProbeMaxSteps") != params.end() )
-    {
-        maxProbeSteps_ = params["pfProbeMaxSteps"];
-    }
-    else
-    {
-        std::cerr<<"ERROR: max probe steps not given!"<<std::endl;
-        std::abort();
-    } 
-
+/*!
+ * Sets parameters of the AnalysisNeighborhood object meinted by this class and
+ * initialises an AnalysisneighborhoodSearch.
+ */
+void
+AbstractProbePathFinder::prepareNeighborhoodSearch(
+    t_pbc pbc,
+    gmx::AnalysisNeighborhoodPositions porePos,
+    real cutoff)
+{
     // prepare analysis neighborhood:
-    nbh_.setCutoff(0.0);
+    nbh_.setCutoff(cutoff);
     nbh_.setXYMode(false);
     nbh_.setMode(gmx::AnalysisNeighborhood::eSearchMode_Automatic);
 
@@ -100,6 +86,7 @@ AbstractProbePathFinder::findMinimalFreeDistance(
 
     // loop over all pairs:
     gmx::AnalysisNeighborhoodPair pair;
+    int i = 0;
     while( nbPairSearch.findNextPair(&pair) )
     {
         // get pair distance:
@@ -107,9 +94,7 @@ AbstractProbePathFinder::findMinimalFreeDistance(
         pairDist = std::sqrt(pair.distance2());
 
         // get vdW radius of reference atom:
-        // TODO: factor in vdW radius!
         poreAtomVdwRadius = vdwRadii_.at(pair.refIndex());
-        //poreAtomVdwRadius = 0.0;
 
         // update void radius if necessary:
         // TODO: factor in probe radius!
@@ -117,7 +102,9 @@ AbstractProbePathFinder::findMinimalFreeDistance(
         {
             minimalFreeDistance = pairDist - poreAtomVdwRadius;
         }
+        i++;
     }
+//    std::cout<<"i = "<<i<<std::endl;
 
     // return radius of maximal free sphere:
     return minimalFreeDistance; 

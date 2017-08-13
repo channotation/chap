@@ -19,39 +19,29 @@ class AbstractProbePathFinder : public AbstractPathFinder
     public:
 
         // constructor:
-        AbstractProbePathFinder(real probeStepLength, 
-                                real probeRadius,
-                                real maxFreeDist,
-                                int maxProbeSteps,
-                                gmx::RVec &initProbePos,
-                                std::vector<real> &vdwRadii,
-                                gmx::AnalysisNeighborhoodSearch *nbSearch,
-                                int saRandomSeed,
-                                int saMaxCoolingIter,
-                                int saNumCostSamples,
-                                real saXi,
-                                real saConvRelTol,
-                                real saInitTemp,
-                                real saCoolingFactor,
-                                real saStepLengthFactor,
-                                bool saUseAdaptiveCandGen);
-
         AbstractProbePathFinder(std::map<std::string, real> params,
                                 gmx::RVec initProbePos,
-//                                gmx::AnalysisNeighborhoodSearch *nbSearch,
                                 t_pbc pbc,
                                 gmx::AnalysisNeighborhoodPositions porePos,
                                 std::vector<real> vdwRadii);
 
     protected:
 
+        // auxiliary functions for setting neighborhood search parameters:
+        void prepareNeighborhoodSearch(
+                t_pbc pbc,
+                gmx::AnalysisNeighborhoodPositions porePos,
+                real cutoff);
 
 
         int maxProbeSteps_;
         real probeStepLength_;
         real probeRadius_;
         real maxProbeRadius_;
+        real nbhCutoff_;
+
         std::vector<real> vdwRadii_;
+        real maxVdwRadius_;
 
         gmx::RVec initProbePos_;
         gmx::RVec crntProbePos_;
@@ -61,9 +51,8 @@ class AbstractProbePathFinder : public AbstractPathFinder
         gmx::AnalysisNeighborhoodSearch nbSearch_;
         
         real findMinimalFreeDistance(std::vector<real> optimSpacePos);
-        // TODO: need a second freeDistance function here that allows a different
-        // implementation for the initial optimisation problem
 
+        // conversion between optimisation space and configruation space:
         virtual gmx::RVec optimToConfig(std::vector<real> optimSpacePos) = 0;
 };
 

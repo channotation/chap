@@ -21,14 +21,20 @@ class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
         InplaneOptimisedProbePathFinder(std::map<std::string, real> params,
                                         gmx::RVec initProbePos,
                                         gmx::RVec chanDirVec,
-//                                        gmx::AnalysisNeighborhoodSearch *nbSearch,
                                         t_pbc pbc,
                                         gmx::AnalysisNeighborhoodPositions porePos,
                                         std::vector<real> vdwRadii);
 
+        // interface for setting parameters:
+        void setParameters(const PathFindingParameters &params);
+
+        // public interface for path finding:
         void findPath();
 
     private:
+
+        gmx::AnalysisNeighborhoodPositions porePos_;
+        t_pbc pbc_;
 
         gmx::RVec chanDirVec_;
         gmx::RVec orthVecU_;

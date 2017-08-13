@@ -250,6 +250,14 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
                                         nbhPos,
                                         vdwRadii);
 
+    // set path finder parameters:
+    // TODO: have to transfer all parameters from constructor to here:
+    PathFindingParameters par;
+    par.setProbeStepLength(params["pfProbeStepLength"]);
+    par.setMaxProbeRadius(params["pfProbeMaxRadius"]);
+    par.setMaxProbeSteps(params["pfProbeMaxSteps"]);
+    pfm.setParameters(par);
+
     // find and extract path and path points:
     pfm.findPath();
     std::vector<real> radii = pfm.pathRadii();
@@ -369,6 +377,14 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
                                         pbc_,
                                         nbhPos,
                                         vdwRadii);
+
+    // set path finder parameters:
+    // TODO: have to transfer all parameters from constructor to here:
+    PathFindingParameters par;
+    par.setProbeStepLength(params["pfProbeStepLength"]);
+    par.setMaxProbeRadius(params["pfProbeMaxRadius"]);
+    par.setMaxProbeSteps(params["pfProbeMaxSteps"]);
+    pfm.setParameters(par);
 
     // find and extract path and path points:
     pfm.findPath();
@@ -490,6 +506,14 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirT
                                         pbc_,
                                         nbhPos,
                                         vdwRadii);
+
+    // set path finder parameters:
+    // TODO: have to transfer all parameters from constructor to here:
+    PathFindingParameters par;
+    par.setProbeStepLength(params["pfProbeStepLength"]);
+    par.setMaxProbeRadius(params["pfProbeMaxRadius"]);
+    par.setMaxProbeSteps(params["pfProbeMaxSteps"]);
+    pfm.setParameters(par);
 
     // find and extract path and path points:
     pfm.findPath();

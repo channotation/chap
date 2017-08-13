@@ -59,7 +59,6 @@ trajectoryAnalysis::trajectoryAnalysis()
     , pfMethod_("inplane-optim")
     , pfProbeStepLength_(0.1)
     , pfProbeRadius_(0.0)
-    , pfMaxFreeDist_(1.0)
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
     , pfChanDirVec_(3)
@@ -246,18 +245,18 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "coordinates across time steps"));
 
     options -> addOption(RealOption("pf-probe-step")
-                         .store(&pfParams_["pfProbeStepLength"])
+                         .store(&pfPar_["pfProbeStepLength"])
                          .defaultValue(0.025)
                          .description("Step length for probe movement."));
 
     // TODO: remove this
     options -> addOption(RealOption("pf-probe-radius")
-                         .store(&pfParams_["pfProbeRadius"])
+                         .store(&pfPar_["pfProbeRadius"])
                          .defaultValue(0.0)
                          .description("BUGGY! Radius of probe."));
 
     options -> addOption(RealOption("pf-max-free-dist")
-                         .store(&pfParams_["pfProbeMaxRadius"])
+                         .store(&pfMaxProbeRadius_)
                          .defaultValue(1.0)
                          .description("Maximum radius of pore."));
 
@@ -302,6 +301,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
 	                     .store(&cutoff_)
+                         .storeIsSet(&cutoffIsSet_)
                          .defaultValue(0.0)
                          .description("Cutoff for distance searches in path "
                                       "finding algorithm. A value of zero "
@@ -335,23 +335,23 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     // TODO remove this
     options -> addOption(RealOption("sa-conv-tol")
-                         .store(&pfParams_["saConvTol"])
+                         .store(&pfPar_["saConvTol"])
                          .defaultValue(1e-3)
                          .description("Simulated annealing relative tolerance."));
 
     options -> addOption(RealOption("sa-init-temp")
-                         .store(&pfParams_["saInitTemp"])
+                         .store(&pfPar_["saInitTemp"])
                          .defaultValue(0.1)
                          .description("Simulated annealing initial "
                                       "temperature."));
 
     options -> addOption(RealOption("sa-cooling-fac")
-                         .store(&pfParams_["saCoolingFactor"])
+                         .store(&pfPar_["saCoolingFactor"])
                          .defaultValue(0.98)
                          .description("Simulated annealing cooling factor."));
 
     options -> addOption(RealOption("sa-step")
-                         .store(&pfParams_["saStepLengthFactor"])
+                         .store(&pfPar_["saStepLengthFactor"])
                          .defaultValue(0.001)
                          .description("Step length factor used in candidate "
                                       "generation. Defaults to 0.001."));
@@ -363,7 +363,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "iterations in path finding algorithm."));
 
     options -> addOption(RealOption("nm-init-shift")
-                         .store(&pfParams_["nmInitShift"])
+                         .store(&pfPar_["nmInitShift"])
                          .defaultValue(0.1)
                          .description("Distance of vertices in initial "
                                       "Nelder-Mead simplex."));
@@ -479,22 +479,29 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     }
 
     // set parameters in map:
-    pfParams_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
+    pfPar_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
 
-    pfParams_["pfCylRad"] = pfParams_["pfProbeMaxRadius"];
-    pfParams_["pfCylNumSteps"] = pfParams_["pfProbeMaxSteps"];
-    pfParams_["pfCylStepLength"] = pfParams_["pfProbeStepLength"];
+    pfPar_["pfCylRad"] = pfMaxProbeRadius_;
+    pfPar_["pfCylNumSteps"] = pfPar_["pfProbeMaxSteps"];
+    pfPar_["pfCylStepLength"] = pfPar_["pfProbeStepLength"];
 
-    pfParams_["saMaxCoolingIter"] = saMaxCoolingIter_;
-    pfParams_["saRandomSeed"] = saRandomSeed_;
-    pfParams_["saNumCostSamples"] = saNumCostSamples_;
+    pfPar_["saMaxCoolingIter"] = saMaxCoolingIter_;
+    pfPar_["saRandomSeed"] = saRandomSeed_;
+    pfPar_["saNumCostSamples"] = saNumCostSamples_;
 
-    pfParams_["nmMaxIter"] = nmMaxIter_;
+    pfPar_["nmMaxIter"] = nmMaxIter_;
 
-	// set cutoff distance for grid search as specified in user input:
-	nb_.setCutoff(cutoff_);
-	std::cout<<"Setting cutoff to: "<<cutoff_<<std::endl;
 
+    // 
+    pfParams_.setProbeStepLength(pfProbeStepLength_);
+    pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
+    std::cout<<"maxFreeDist = "<<pfMaxProbeRadius_<<std::endl;
+    pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
+    
+    if( cutoffIsSet_ )
+    {
+        pfParams_.setNbhCutoff(cutoff_);
+    }
 
     // PATH MAPPING PARAMETERS
     //-------------------------------------------------------------------------
@@ -996,12 +1003,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     if( pfMethod_ == "inplane-optim" )
     {
         // create inplane-optimised path finder:
-        pfm.reset(new InplaneOptimisedProbePathFinder(pfParams_,
+        pfm.reset(new InplaneOptimisedProbePathFinder(pfPar_,
                                                       initProbePos,
                                                       chanDirVec,
                                                       *pbc,
                                                       refSelection,
-                                                      selVdwRadii));
+                                                      selVdwRadii));        
     }
     else if( pfMethod_ == "optim-direction" )
     {
@@ -1011,17 +1018,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     else if( pfMethod_ == "naive-cylindrical" )
     {        
         // create the naive cylindrical path finder:
-        pfm.reset(new NaiveCylindricalPathFinder(pfParams_,
+        pfm.reset(new NaiveCylindricalPathFinder(pfPar_,
                                                  initProbePos,
                                                  chanDirVec));
     }
 
-
-
-
-
-
-
+    // set parameters:
+    pfm -> setParameters(pfParams_);
 
 
 

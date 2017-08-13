@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 
 #include <gromacs/math/vec.h>
 
@@ -16,11 +17,12 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
         std::map<std::string, real> params,
         gmx::RVec initProbePos,
         gmx::RVec chanDirVec,
-//        gmx::AnalysisNeighborhoodSearch *nbSearch,
         t_pbc pbc,
         gmx::AnalysisNeighborhoodPositions porePos,
         std::vector<real> vdwRadii)
     : AbstractProbePathFinder(params, initProbePos, pbc, porePos, vdwRadii)
+    , porePos_(porePos)
+    , pbc_(pbc)
     , chanDirVec_(chanDirVec)
     , orthVecU_(0.0, 0.0, 0.0)
     , orthVecW_(0.0, 0.0, 0.0)
@@ -79,7 +81,39 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
     {
         std::cout<<"ERROR: basis vectors not orthogonal!"<<std::endl;
     }
- 
+}
+
+
+/*
+ *
+ */
+void
+InplaneOptimisedProbePathFinder::setParameters(
+        const PathFindingParameters &params)
+{
+    // set parameters:
+    probeStepLength_ = params.probeStepLength();
+    maxProbeRadius_ = params.maxProbeRadius();
+    maxProbeSteps_ = params.maxProbeSteps();
+
+    // has cutoff been set by user:
+    if( params.nbhCutoffIsSet() )
+    {
+        // user given cutoff:
+        nbhCutoff_ = params.nbhCutoff();
+        std::cout<<"USER CUTOFF = "<<nbhCutoff_<<std::endl;
+    }
+    else
+    {
+        // calculate cutoff automatically:
+        real safetyMargin = std::sqrt(std::numeric_limits<real>::epsilon());
+        nbhCutoff_ = params.maxProbeRadius() + maxVdwRadius_ + safetyMargin;
+        std::cout<<"maxProbeRadius = "<<params.maxProbeRadius()<<std::endl;
+        std::cout<<"AUTOMATIC CUTOFF = "<<nbhCutoff_<<std::endl;
+    }
+
+    // set flag to true:
+    parametersSet_ = true;
 }
 
 
@@ -89,6 +123,18 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
 void
 InplaneOptimisedProbePathFinder::findPath()
 {
+    // sanity check:
+    if( !parametersSet_ )
+    {
+        throw std::logic_error("Path finding parameters have not been set.");
+    }
+
+    // prepare neighborhood search:
+    prepareNeighborhoodSearch(
+            pbc_,
+            porePos_,
+            nbhCutoff_);
+
     // optimise initial position:
     optimiseInitialPos();
     
@@ -264,6 +310,9 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
             break;
         }
     }
+
+    std::cout<<"numProbeSteps = "<<numProbeSteps<<"  "
+             <<"maxProbeSteps = "<<maxProbeSteps_<<std::endl;
 }
 
 
