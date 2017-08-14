@@ -260,7 +260,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
                      <<std::endl;*/
 
             // lower index limit for loop over helper array:
-            int rLo = 0;
+            int rLo = 999999;
             if( ik >= -1 )
             {
                 rLo = 1;
@@ -271,7 +271,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             }
 
             // upper index limit for loop over helper array:
-            int rHi = 0;
+            int rHi = -9999;
             if( i - 1 <= pk )
             {
                 rHi = k - 1;
@@ -282,13 +282,13 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             }
 
             // sum over helper array to compute value of derivative:
-            for(size_t r = rLo; r <= rHi; r++)
+            for(int r = rLo; r <= rHi; r++)
             {
                 a[s2][r] = (a[s1][r] - a[s1][r-1])/ndu[pk+1][ik + r];
                 d += a[s2][r]*ndu[ik+r][pk];
 
-
-/*                std::cout<<"  "
+/*
+                std::cout<<"  "
                          <<"r = "<<r<<"  "
                          <<"ndu[pk+1][r] = "<<ndu[pk+1][r]<<"  "
                          <<"ndu[ik+r][pk] = "<<ndu[ik+r][pk]<<"  "
@@ -321,10 +321,11 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             // assign value of derivative to output matrix:
             ders[k][i] = d;
 
-/*            std::cout<<"k = "<<k<<"  "
+            std::cout<<"k = "<<k<<"  "
                      <<"i = "<<i<<"  "
                      <<"d = "<<d<<"  "
-                     <<std::endl;*/
+                     <<"ders[k][i] = "<<ders[k][i]<<"  "
+                     <<std::endl;
 
             // switch rows:
             int tmp = s1;
@@ -352,7 +353,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         }
         std::cout<<std::endl;
     }
-
+    std::cout<<std::endl;
 
     // return output matrix:
     return ders;
