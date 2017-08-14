@@ -68,7 +68,7 @@ BSplineBasisSet::operator()(
     std::vector<real> basisSet(nBasis, 0.0);
     for(size_t i = 0; i < nonzeroBasisElements[deriv].size(); i++)
     {
-        basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[deriv][i];
+        basisSet.at(i + knotSpanIdx - degree) = nonzeroBasisElements.at(deriv).at(i);
     }
 
     // return basis set:
@@ -195,7 +195,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         left[i] = eval - knots[knotSpanIdx + 1 - i];
         right[i] = knots[knotSpanIdx + i] - eval;
 
-        // 
+        // calculate the actual coefficients:
         real saved = 0.0;
         for(size_t j = 0; j < i; j++)
         {
@@ -207,8 +207,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         }
         ndu[i][i] = saved;
     }
-        
-    
+         
 
     // allocate matrix of output values:
     std::vector<std::vector<real>> ders(deriv+1, std::vector<real>(degree+1));
@@ -237,6 +236,12 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             // temporary variable for summing up to derivative at this (k,1);
             real d = 0.0;
 
+/*            std::cout<<"d creation"<<"  "
+                     <<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"d = "<<d<<"  "
+                     <<std::endl;*/
+
             // differences wrt current derivative degree:
             int ik = i - k;
             int pk = degree - k;
@@ -248,6 +253,11 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
                 a[s2][0] - a[s1][0]/ndu[pk + 1][ik];
                 d = a[s2][0]*ndu[ik][pk];
             }
+/*            std::cout<<"d post first if"<<"  "
+                     <<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"d = "<<d<<"  "
+                     <<std::endl;*/
 
             // lower index limit for loop over helper array:
             int rLo = 0;
@@ -266,6 +276,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             {
                 rHi = k - 1;
             }
+            else
             {
                 rHi = degree - i;
             }
@@ -273,9 +284,27 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             // sum over helper array to compute value of derivative:
             for(size_t r = rLo; r <= rHi; r++)
             {
-                a[s2][r] = (a[s1][r] - a[s1][r-1])/ndu[pk+1][r];
+                a[s2][r] = (a[s1][r] - a[s1][r-1])/ndu[pk+1][ik + r];
                 d += a[s2][r]*ndu[ik+r][pk];
+
+
+/*                std::cout<<"  "
+                         <<"r = "<<r<<"  "
+                         <<"ndu[pk+1][r] = "<<ndu[pk+1][r]<<"  "
+                         <<"ndu[ik+r][pk] = "<<ndu[ik+r][pk]<<"  "
+                         <<"a[s1][r] = "<<a[s1][r]<<"  "
+                         <<"a[s1][r-1] = "<<a[s1][r-1]<<"  "
+                         <<"a[s2][r] = "<<a[s2][r]<<"  "
+                         <<"d = "<<d<<"  "
+                         <<"ik = "<<ik<<"  "
+                         <<"pk = "<<pk<<"  "
+                         <<std::endl;*/
             }
+/*            std::cout<<"d post loop"<<"  "
+                     <<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"d = "<<d<<"  "
+                     <<std::endl;*/
 
             // additional summand:
             if( i <= pk )
@@ -283,9 +312,19 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
                 a[s2][k] = -a[s1][k-1]/ndu[pk+1][i];
                 d += a[s2][k]*ndu[i][pk];
             }
+/*            std::cout<<"d post second if"<<"  "
+                     <<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"d = "<<d<<"  "
+                     <<std::endl;*/
 
             // assign value of derivative to output matrix:
             ders[k][i] = d;
+
+/*            std::cout<<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"d = "<<d<<"  "
+                     <<std::endl;*/
 
             // switch rows:
             int tmp = s1;
@@ -304,6 +343,16 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         }
         fac *= degree - k;
     }
+
+    for(int i = 0; i < ders.size(); i++)
+    {
+        for(int j = 0; j < ders.at(i).size(); j++)
+        {
+            std::cout<<ders[i][j]<<"\t";
+        }
+        std::cout<<std::endl;
+    }
+
 
     // return output matrix:
     return ders;

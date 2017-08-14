@@ -248,19 +248,12 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
         // loop over basis (derivatives):
         for(int j = 0; j < basisSet.size(); j++)
         {
-            std::cout<<"i = "<<i<<"  "
-                     <<"j = "<<j<<"  "
-                     <<"B = "<<basisSet[j]<<"  "
-                     <<"refVal = "<<refValCubic[i*basisSet.size() + j]<<"  "
-                     <<std::endl;
-
-            // check agreement with reference values:
-            /*
+            // check agreement with reference values:            
             ASSERT_NEAR(
                     refValCubic[i*basisSet.size() + j],
                     basisSet[j],
                     std::numeric_limits<real>::epsilon());
-*/
+
             // increment sum over basis elements:
             unity += basisSet[j];
         }
@@ -268,13 +261,119 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
         // check partition of unity property:
         ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
     }
-
 }
 
 
+/*
+ *
+ */
+TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
+{
+    // specify degree and derivative order:
+    int deriv = 1;
+    int degree = 3;
+
+    // reference values:
+    std::vector<real> refValCubic = {
+            -0.85714286,  0.8571429,  0.0000000,  0.0000000,  0.00000000,  0.0000000, 0.00000000,
+            -0.27988338, -0.1046829,  0.2774235,  0.1071429,  0.00000000,  0.0000000, 0.00000000,
+             0.00000000,  0.0000000, -0.3333333,  0.0000000,  0.33333333,  0.0000000, 0.00000000,
+             0.00000000,  0.0000000,  0.0000000, -0.5833333,  0.48958333,  0.0937500, 0.00000000,
+            -0.01749271, -0.2350583, -0.1760204,  0.4285714,  0.00000000,  0.0000000, 0.00000000,
+             0.00000000,  0.0000000,  0.0000000, -0.3183948, -0.02224038,  0.2821545, 0.05848068,
+             0.00000000,  0.0000000,  0.0000000,  0.0000000,  0.00000000, -0.8571429, 0.85714286};
+
+    // create basis set functor:
+    BSplineBasisSet B;
+
+    // create appropriate knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // evaluate basis (derivatives) at this point:
+        std::vector<real> basisSet = B(
+                evalPoints_[i],
+                knots,
+                degree,
+                deriv);
+
+        // loop over basis (derivatives):
+        for(int j = 0; j < basisSet.size(); j++)
+        {
+
+            std::cout<<"j = "<<j<<"  "
+                     <<"B = "<<basisSet[j]<<"  "
+                     <<"ref = "<<refValCubic[i*basisSet.size() + j]<<"  "
+                     <<std::endl;
+
+            // check agreement with reference values:
+/*            
+            ASSERT_NEAR(
+                    refValCubic[i*basisSet.size() + j],
+                    basisSet[j],
+                    std::numeric_limits<real>::epsilon());*/
+        }
+    }
+}
 
 
+/*
+ *
+ */
+TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
+{
+    // specify degree and derivative order:
+    int deriv = 2;
+    int degree = 3;
 
+    // reference values:
+    std::vector<real> refValCubic = {
+            0.48979592, -0.9183673,  0.42857143,  0.0000000,  0.0000000,  0.00000000, 0.0000000,
+            0.27988338, -0.3640671, -0.05867347,  0.1428571,  0.0000000,  0.00000000, 0.0000000,
+            0.00000000,  0.0000000,  1.33333333, -2.6666667,  1.3333333,  0.00000000, 0.0000000,
+            0.00000000,  0.0000000,  0.00000000,  0.3333333, -0.7083333,  0.37500000, 0.0000000,
+            0.06997085,  0.1902332, -0.54591837,  0.2857143,  0.0000000,  0.00000000, 0.0000000,
+            0.00000000,  0.0000000,  0.00000000,  0.2462654, -0.4113694,  0.03716744, 0.1279366,
+            0.00000000,  0.0000000,  0.00000000,  0.0000000,  0.4285714, -0.91836735, 0.4897959};
+
+    // create basis set functor:
+    BSplineBasisSet B;
+
+    // create appropriate knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // evaluate basis (derivatives) at this point:
+        std::vector<real> basisSet = B(
+                evalPoints_[i],
+                knots,
+                degree,
+                deriv);
+
+        // loop over basis (derivatives):
+        for(int j = 0; j < basisSet.size(); j++)
+        {
+
+            std::cout<<"j = "<<j<<"  "
+                     <<"B = "<<basisSet[j]<<"  "
+                     <<"ref = "<<refValCubic[i*basisSet.size() + j]<<"  "
+                     <<std::endl;
+
+            // check agreement with reference values:
+            /*
+            ASSERT_NEAR(
+                    refValCubic[i*basisSet.size() + j],
+                    basisSet[j],
+                    std::numeric_limits<real>::epsilon());*/
+        }
+
+        std::cout<<std::endl;
+    }
+}
 
 
 
