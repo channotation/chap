@@ -15,8 +15,8 @@ BSplineBasisSet::operator()(
     size_t knotSpanIdx = findKnotSpan(eval, knots, degree);
 
     // reserve space for nonzero basis functions:
-    std::vector<real> nonzeroBasisFunctions;
-    nonzeroBasisFunctions.resize(degree + 1);
+    std::vector<real> nonzeroBasisElements;
+    nonzeroBasisElements.resize(degree + 1);
 
     // reserve space for temporary arrays:
     std::vector<real> left;
@@ -25,7 +25,7 @@ BSplineBasisSet::operator()(
     right.resize(degree + 1);
 
     // caclualte all nonzero basis functions:
-    nonzeroBasisFunctions[0] = 1.0;
+    nonzeroBasisElements[0] = 1.0;
     for(size_t i = 1; i <= degree; i++)
     {
         // calculate numerator of left and right terms in recursion formula:
@@ -36,22 +36,23 @@ BSplineBasisSet::operator()(
         real saved = 0.0;
         for(size_t j = 0; j < i; j++)
         {
-            real tmp = nonzeroBasisFunctions[j]/(right.at(j + 1) + left.at(i - j));
-/*            std::cout<<"tmp = "<<tmp<<"  "
-                     <<"saved = "<<saved<<"  "
-                     <<"knotSpanIdx = "<<knotSpanIdx<<"  "
-                     <<"B[j] = "<<nonzeroBasisFunctions[j]<<"  "
-                     <<"right[j + 1] = "<<right[j+1]<<"  "
-                     <<"left[i - j] = "<<left[i-j]<<std::endl;*/
-            
-            nonzeroBasisFunctions[j] = saved + right.at(j + 1)*tmp;
+            real tmp = nonzeroBasisElements[j]/(right.at(j + 1) + left.at(i - j));            
+            nonzeroBasisElements[j] = saved + right.at(j + 1)*tmp;
             saved = left.at(i - j)*tmp;
         }
-        nonzeroBasisFunctions[i] = saved;
+        nonzeroBasisElements[i] = saved;
+    }
+
+    // pad with zeros to create full length basis vector:
+    unsigned int nBasis = knots.size() - degree - 1;
+    std::vector<real> basisSet(nBasis, 0.0);
+    for(size_t i = 0; i < nonzeroBasisElements.size(); i++)
+    {
+        basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[i];
     }
 
     // return nonzero basis functions:
-    return nonzeroBasisFunctions;
+    return basisSet;
 }
 
 
@@ -99,4 +100,5 @@ BSplineBasisSet::findKnotSpan(
     // return index of knot span:
     return mi;
 }
+
 

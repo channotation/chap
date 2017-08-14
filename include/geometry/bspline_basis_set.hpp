@@ -32,6 +32,14 @@ class BSplineBasisSet
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree);
+
+        // method for evaluating the nonzero elements of basis:
+        /*
+        inline std::vector<real> evaluateNonzeroBasisElements(
+                real eval,
+                const std::vector<real> &knots,
+                unsigned int degree,
+                unsigned int deriv);*/
 };
 
 #endif

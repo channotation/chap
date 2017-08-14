@@ -72,12 +72,12 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
 }
 
 
-/*
- *
+/*!
+ * Checks that the sum over the entire basis is equal to one for constant 
+ * degree. This is done for spline of up to fifths degree.
  */
 TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
-{
-    
+{ 
     // create spline basis functor:
     BSplineBasisSet B;
 
@@ -102,10 +102,6 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
             real unity = 0.0;
             for(size_t j = 0; j < basis.size(); j++)
             {
-    /*            std::cout<<"j = "<<j<<"  "
-                         <<"basis[j] = "<<basis[j]<<"  "
-                         <<std::endl;*/
-
                 unity += basis[j];
             }
 
@@ -116,11 +112,102 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
 }
 
 
+/*!
+ * Checks that the BSplineBasisSet functor returns correct values for quadratic
+ * splines. This is done by asserting agreement with reference values computed
+ * with the R software, which are hardcoded into this test case. The threshold
+ * for floating point comparison is taken to be the machine precision here.
+ */
+TEST_F(BSplineBasisSetTest, BSplineBasisSetQuadraticTest)
+{
+    // do not evaluate derivatives here:
+    unsigned int deriv = 0;
+
+    // test second degree / quadratic splines:   
+    unsigned int degree = 2;
+
+    // reference values:
+    std::vector<real> refValQuadratic = {
+            1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 
+            0.32653060, 0.51275510, 0.16071430, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.50000000, 0.50000000, 0.00000000, 0.00000000, 
+            0.00000000, 0.00000000, 0.00000000, 0.87500000, 0.12500000, 0.00000000,
+            0.02040816, 0.33673469, 0.64285714, 0.00000000, 0.00000000, 0.00000000, 
+            0.00000000, 0.00000000, 0.00000000, 0.47759225, 0.45418029, 0.06822746,
+            0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 1.00000000};
+
+    // create basis set functor:
+    BSplineBasisSet B;
+ 
+    // append and prepend the apprpropriate number of knots:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // evaluate basis set:
+        std::vector<real> basisSet = B(evalPoints_[i], knots, degree, deriv);
+
+        // loop over basis:
+        for(size_t j = 0; j < basisSet.size(); j++)
+        {
+            // check agreement with reference values:
+            ASSERT_NEAR(
+                    refValQuadratic[i*basisSet.size() + j], 
+                    basisSet[j],
+                    std::numeric_limits<real>::epsilon());
+        }
+    }
+}
 
 
+/*!
+ * Checks that the BSplineBasisSet functor returns correct values for cubic 
+ * splines. This is done by asserting agreement with reference values computed
+ * with the R software, which are hardcoded into this test case. The threshold
+ * for floating point comparison is taken to be the machine precision here.
+ */
+TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
+{
+    // do not evaluate derivatives here:
+    unsigned int deriv = 0;
 
+    // test third degree / cubic splines:   
+    unsigned int degree = 3;
 
+    // reference values:
+    std::vector<real> refValCubic = {
+            1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000,
+            0.18658892, 0.46041363, 0.29942602, 0.05357143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.05555556, 0.88888889, 0.05555556, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.68055560, 0.30381940, 0.01562500, 0.00000000,
+            0.00291545, 0.10167639, 0.46683674, 0.42857143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.27443368, 0.49676188, 0.21098317, 0.01782128,
+            0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 1.00000000};
 
+    // create basis set functor:
+    BSplineBasisSet B;
+ 
+    // append and prepend the apprpropriate number of knots:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // evaluate basis set:
+        std::vector<real> basisSet = B(evalPoints_[i], knots, degree, deriv);
+
+        // loop over basis:
+        for(size_t j = 0; j < basisSet.size(); j++)
+        {
+            // check agreement with reference values:
+            ASSERT_NEAR(
+                    refValCubic[i*basisSet.size() + j], 
+                    basisSet[j],
+                    std::numeric_limits<real>::epsilon());
+        }
+    }
+}
 
 
 
