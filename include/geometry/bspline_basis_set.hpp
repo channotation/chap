@@ -22,6 +22,10 @@ class BSplineBasisSet
         std::vector<real> operator()(
                 real eval, 
                 const std::vector<real> &knots, 
+                unsigned int degree);
+        std::vector<std::vector<real>> operator()(
+                real eval, 
+                const std::vector<real> &knots, 
                 unsigned int degree, 
                 unsigned int deriv);
 

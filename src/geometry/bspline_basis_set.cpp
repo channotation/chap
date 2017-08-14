@@ -8,8 +8,7 @@ std::vector<real>
 BSplineBasisSet::operator()(
         real eval,
         const std::vector<real> &knots,
-        unsigned int degree,
-        unsigned int deriv)
+        unsigned int degree)
 {
     // find knot span for evalution point:
     size_t knotSpanIdx = findKnotSpan(eval, knots, degree);
@@ -53,6 +52,160 @@ BSplineBasisSet::operator()(
 
     // return nonzero basis functions:
     return basisSet;
+}
+
+
+/*
+ *
+ */
+std::vector<std::vector<real>>
+BSplineBasisSet::operator()(
+        real eval,
+        const std::vector<real> &knots,
+        unsigned int degree,
+        unsigned int deriv)
+{
+    // sanity checks:
+    if( deriv > degree )
+    {
+        // TODO: handle this case more gently, i.e. return zeros as appropriate:
+        std::cerr<<"ERROR: deriv > degree is not allowed!"<<std::endl;
+        std::abort();
+    }
+
+
+    // find knot span for evalution point:
+    size_t knotSpanIdx = findKnotSpan(eval, knots, degree);
+
+    //
+    std::vector<std::vector<real>> ndu(degree+1, std::vector<real>(degree+1));
+
+    // reserve space for temporary arrays:
+    std::vector<real> left;
+    left.resize(degree + 1);
+    std::vector<real> right;
+    right.resize(degree + 1);
+
+    // compute basis functions and keep coefficients required for derivatives:
+    ndu[0][0] = 1.0;
+    for(size_t i = 1; i <= degree; i++)
+    {
+        // calculate numerator of left and right terms in recursion formula:
+        left[i] = eval - knots[knotSpanIdx + 1 - i];
+        right[i] = knots[knotSpanIdx + i] - eval;
+
+        // 
+        real saved = 0.0;
+        for(size_t j = 0; j < i; j++)
+        {
+            ndu[i][j] = right[j + 1] + left[i - j];
+            real tmp = ndu[j][i - 1]/ndu[i][j];
+
+            ndu[j][i] = saved + right[j + 1]*tmp;
+            saved = left[i - j]*tmp;
+        }
+        ndu[i][i] = saved;
+    }
+        
+    
+
+    // allocate matrix of output values:
+    std::vector<std::vector<real>> ders(deriv+1, std::vector<real>(degree+1));
+
+    // copy basis functions (zero derivative) into output matrix:
+    for(size_t i = 0; i <= degree; i++)
+    {
+        ders[0][i] = ndu[i][degree];
+    }
+
+
+    // loop over function index / basis elements:
+    for(size_t i = 0; i <= degree; i++)
+    {
+        // allocate helper array:
+        std::vector<std::vector<real>> a(2, std::vector<real>(degree + 1));
+        a[0][0] = 1.0;
+
+        // indices to alternate rows in a:
+        int s1 = 0;
+        int s2 = 1;
+
+        // loop over derivatives:
+        for(size_t k = 1; k <= deriv; k++)
+        {
+            // temporary variable for summing up to derivative at this (k,1);
+            real d = 0.0;
+
+            // differences wrt current derivative degree:
+            int ik = i - k;
+            int pk = degree - k;
+
+            // if basis element index greater than derivative order, we need to
+            // compute a new element in the helper matrix:
+            if( i >= k )
+            {
+                a[s2][0] - a[s1][0]/ndu[pk + 1][ik];
+                d = a[s2][0]*ndu[ik][pk];
+            }
+
+            // lower index limit for loop over helper array:
+            int rLo = 0;
+            if( ik >= -1 )
+            {
+                rLo = 1;
+            }
+            else
+            {
+                rLo = -ik;
+            }
+
+            // upper index limit for loop over helper array:
+            int rHi = 0;
+            if( i - 1 <= pk )
+            {
+                rHi = k - 1;
+            }
+            {
+                rHi = degree - i;
+            }
+
+            // sum over helper array to compute value of derivative:
+            for(size_t r = rLo; r <= rHi; r++)
+            {
+                a[s2][r] = (a[s1][r] - a[s1][r-1])/ndu[pk+1][r];
+                d += a[s2][r]*ndu[ik+r][pk];
+            }
+
+            // additional summand:
+            if( i <= pk )
+            {
+                a[s2][k] = -a[s1][k-1]/ndu[pk+1][i];
+                d += a[s2][k]*ndu[i][pk];
+            }
+
+            // assign value of derivative to output matrix:
+            ders[k][i] = d;
+
+            // switch rows:
+            int tmp = s1;
+            s1 = s2;
+            s2 = tmp;
+        }
+    }
+
+    // multiply derivatives by correct factors (from derivative recursion):
+    int fac = degree;
+    for(size_t k = 1; k <= deriv; k++)
+    {
+        for(size_t i = 0; i < degree; i++)
+        {
+            ders[k][i] *= fac;
+        }
+        fac *= degree - k;
+    }
+
+    // return output matrix:
+    return ders;
 }
 
 

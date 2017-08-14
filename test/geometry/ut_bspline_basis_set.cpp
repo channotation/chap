@@ -96,7 +96,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
         for(size_t i = 0; i < evalPoints_.size(); i++)
         {
             // evaluate basis:
-            std::vector<real> basis = B(evalPoints_[i], knots, degree, deriv);
+            std::vector<real> basis = B(evalPoints_[i], knots, degree);
 
             // compute sum over basis functions:
             real unity = 0.0;
@@ -146,7 +146,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetQuadraticTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis set:
-        std::vector<real> basisSet = B(evalPoints_[i], knots, degree, deriv);
+        std::vector<real> basisSet = B(evalPoints_[i], knots, degree);
 
         // loop over basis:
         for(size_t j = 0; j < basisSet.size(); j++)
@@ -169,9 +169,6 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetQuadraticTest)
  */
 TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
 {
-    // do not evaluate derivatives here:
-    unsigned int deriv = 0;
-
     // test third degree / cubic splines:   
     unsigned int degree = 3;
 
@@ -195,7 +192,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis set:
-        std::vector<real> basisSet = B(evalPoints_[i], knots, degree, deriv);
+        std::vector<real> basisSet = B(evalPoints_[i], knots, degree);
 
         // loop over basis:
         for(size_t j = 0; j < basisSet.size(); j++)
@@ -210,7 +207,30 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
 }
 
 
+/*
+ *
+ */
+TEST_F(BSplineBasisSetTest, BSplineBasisSetDerivativeTest)
+{
+    int deriv = 3;
+    int degree = 3;
 
+    BSplineBasisSet B;
+
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        std::vector<std::vector<real>> basisSet = B(
+                evalPoints_[i],
+                knots,
+                degree,
+                deriv);
+
+         
+    }
+
+}
 
 
 
