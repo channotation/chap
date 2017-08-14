@@ -13,6 +13,125 @@ BSplineBasisSet::operator()(
     // find knot span for evalution point:
     size_t knotSpanIdx = findKnotSpan(eval, knots, degree);
 
+    // calculate the nonzero basis elements:
+    std::vector<real> nonzeroBasisElements = evaluateNonzeroBasisElements(
+            eval,
+            knots,
+            degree,
+            knotSpanIdx);
+
+    // pad with zeros to create full length basis vector:
+    unsigned int nBasis = knots.size() - degree - 1;
+    std::vector<real> basisSet(nBasis, 0.0);
+    for(size_t i = 0; i < nonzeroBasisElements.size(); i++)
+    {
+        basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[i];
+    }
+
+    // return nonzero basis functions:
+    return basisSet;
+}
+
+
+/*
+ *
+ */
+std::vector<real>
+BSplineBasisSet::operator()(
+        real eval,
+        const std::vector<real> &knots,
+        unsigned int degree,
+        unsigned int deriv)
+{
+    // sanity checks:
+    if( deriv > degree )
+    {
+        // TODO: handle this case more gently, i.e. return zeros as appropriate:
+        std::cerr<<"ERROR: deriv > degree is not allowed!"<<std::endl;
+        std::abort();
+    }
+
+    // find knot span for evalution point:
+    unsigned int knotSpanIdx = findKnotSpan(eval, knots, degree);
+
+    // find nonzero basis elements and their derivatives:
+    std::vector<std::vector<real>> nonzeroBasisElements;
+    nonzeroBasisElements = evaluateNonzeroBasisElements(
+            eval, 
+            knots,
+            degree,
+            deriv,
+            knotSpanIdx);
+
+    // pad with zeros to create full length basis vector:
+    unsigned int nBasis = knots.size() - degree - 1;
+    std::vector<real> basisSet(nBasis, 0.0);
+    for(size_t i = 0; i < nonzeroBasisElements[deriv].size(); i++)
+    {
+        basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[deriv][i];
+    }
+
+    // return basis set:
+    return basisSet;
+}
+
+
+/*!
+ * Finds the index of the knot span for a given evalution point \f$ x \f$ and
+ * knot vector \f$ \{t\}_{i=1}^m \f$, i.e. finds \f$ i \f$ such that
+ * \f$ t_i \leq x < t_{i+1} \f$. The special case of \f$ x = t_m \f$ is handled 
+ * as \f$ i = m - p - 1 \f$.
+ */
+size_t
+BSplineBasisSet::findKnotSpan(
+        real eval,
+        const std::vector<real> &knots,
+        unsigned int degree)
+{
+    // calculate number of basis functions from number of knots and degree:
+    unsigned int numBasisFunctions = knots.size() - degree - 1;
+
+    // handle special case of eval point at endpoint:
+    if( eval == knots.at(numBasisFunctions)  )
+    {
+//        std::cout<<"endpoint detected"<<std::endl;
+        return numBasisFunctions - 1;
+    }
+
+    unsigned int lo = degree;
+    unsigned int hi = numBasisFunctions + 1;
+    unsigned int mi = (lo + hi)/2;
+    while( eval < knots[mi] || eval >= knots[mi + 1] )
+    {
+        // update interval boundaries:
+        if( eval < knots[mi] )
+        {
+            hi = mi;
+        }
+        else
+        {
+            lo = mi;
+        }
+
+        // update interval midpoint:
+        mi = (lo + hi)/2;
+    }
+
+    // return index of knot span:
+    return mi;
+}
+
+
+/*
+ *
+ */
+std::vector<real>
+BSplineBasisSet::evaluateNonzeroBasisElements(
+        real eval,
+        const std::vector<real> &knots,
+        unsigned int degree,
+        unsigned int knotSpanIdx)
+{
     // reserve space for nonzero basis functions:
     std::vector<real> nonzeroBasisElements;
     nonzeroBasisElements.resize(degree + 1);
@@ -42,16 +161,8 @@ BSplineBasisSet::operator()(
         nonzeroBasisElements[i] = saved;
     }
 
-    // pad with zeros to create full length basis vector:
-    unsigned int nBasis = knots.size() - degree - 1;
-    std::vector<real> basisSet(nBasis, 0.0);
-    for(size_t i = 0; i < nonzeroBasisElements.size(); i++)
-    {
-        basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[i];
-    }
-
-    // return nonzero basis functions:
-    return basisSet;
+    // return vector of nonzero basis elements:
+    return nonzeroBasisElements;
 }
 
 
@@ -59,23 +170,13 @@ BSplineBasisSet::operator()(
  *
  */
 std::vector<std::vector<real>>
-BSplineBasisSet::operator()(
+BSplineBasisSet::evaluateNonzeroBasisElements(
         real eval,
         const std::vector<real> &knots,
         unsigned int degree,
-        unsigned int deriv)
+        unsigned int deriv,
+        unsigned int knotSpanIdx)
 {
-    // sanity checks:
-    if( deriv > degree )
-    {
-        // TODO: handle this case more gently, i.e. return zeros as appropriate:
-        std::cerr<<"ERROR: deriv > degree is not allowed!"<<std::endl;
-        std::abort();
-    }
-
-
-    // find knot span for evalution point:
-    size_t knotSpanIdx = findKnotSpan(eval, knots, degree);
 
     //
     std::vector<std::vector<real>> ndu(degree+1, std::vector<real>(degree+1));
@@ -207,51 +308,4 @@ BSplineBasisSet::operator()(
     // return output matrix:
     return ders;
 }
-
-
-/*!
- * Finds the index of the knot span for a given evalution point \f$ x \f$ and
- * knot vector \f$ \{t\}_{i=1}^m \f$, i.e. finds \f$ i \f$ such that
- * \f$ t_i \leq x < t_{i+1} \f$. The special case of \f$ x = t_m \f$ is handled 
- * as \f$ i = m - p - 1 \f$.
- */
-size_t
-BSplineBasisSet::findKnotSpan(
-        real eval,
-        const std::vector<real> &knots,
-        unsigned int degree)
-{
-    // calculate number of basis functions from number of knots and degree:
-    unsigned int numBasisFunctions = knots.size() - degree - 1;
-
-    // handle special case of eval point at endpoint:
-    if( eval == knots.at(numBasisFunctions)  )
-    {
-//        std::cout<<"endpoint detected"<<std::endl;
-        return numBasisFunctions - 1;
-    }
-
-    unsigned int lo = degree;
-    unsigned int hi = numBasisFunctions + 1;
-    unsigned int mi = (lo + hi)/2;
-    while( eval < knots[mi] || eval >= knots[mi + 1] )
-    {
-        // update interval boundaries:
-        if( eval < knots[mi] )
-        {
-            hi = mi;
-        }
-        else
-        {
-            lo = mi;
-        }
-
-        // update interval midpoint:
-        mi = (lo + hi)/2;
-    }
-
-    // return index of knot span:
-    return mi;
-}
-
 

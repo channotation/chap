@@ -23,7 +23,7 @@ class BSplineBasisSet
                 real eval, 
                 const std::vector<real> &knots, 
                 unsigned int degree);
-        std::vector<std::vector<real>> operator()(
+        std::vector<real> operator()(
                 real eval, 
                 const std::vector<real> &knots, 
                 unsigned int degree, 
@@ -38,12 +38,21 @@ class BSplineBasisSet
                 unsigned int degree);
 
         // method for evaluating the nonzero elements of basis:
-        /*
         inline std::vector<real> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
-                unsigned int deriv);*/
+                unsigned int knotSpanIdx);
+
+
+        // method for evaluating nonzero elements of basis (derivatives):
+        inline std::vector<std::vector<real>> evaluateNonzeroBasisElements(
+                real eval,
+                const std::vector<real> &knots,
+                unsigned int degree,
+                unsigned int deriv,
+                unsigned int knotSpanIdx);
+
 };
 
 #endif

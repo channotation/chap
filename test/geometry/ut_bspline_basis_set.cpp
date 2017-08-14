@@ -210,24 +210,63 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
 /*
  *
  */
-TEST_F(BSplineBasisSetTest, BSplineBasisSetDerivativeTest)
+TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
 {
-    int deriv = 3;
+    // specify degree and derivative order:
+    int deriv = 0;
     int degree = 3;
 
+    // reference values:
+    std::vector<real> refValCubic = {
+            1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000,
+            0.18658892, 0.46041363, 0.29942602, 0.05357143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.05555556, 0.88888889, 0.05555556, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.68055560, 0.30381940, 0.01562500, 0.00000000,
+            0.00291545, 0.10167639, 0.46683674, 0.42857143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.27443368, 0.49676188, 0.21098317, 0.01782128,
+            0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 1.00000000};
+
+    // create basis set functor:
     BSplineBasisSet B;
 
+    // create appropriate knot vector:
     std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
 
+    // loop over evaluation points:
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
-        std::vector<std::vector<real>> basisSet = B(
+        // evaluate basis (derivatives) at this point:
+        std::vector<real> basisSet = B(
                 evalPoints_[i],
                 knots,
                 degree,
                 deriv);
 
-         
+        // for zeroth order derivative will perform partition of unity test:
+        real unity = 0.0;
+
+        // loop over basis (derivatives):
+        for(int j = 0; j < basisSet.size(); j++)
+        {
+            std::cout<<"i = "<<i<<"  "
+                     <<"j = "<<j<<"  "
+                     <<"B = "<<basisSet[j]<<"  "
+                     <<"refVal = "<<refValCubic[i*basisSet.size() + j]<<"  "
+                     <<std::endl;
+
+            // check agreement with reference values:
+            /*
+            ASSERT_NEAR(
+                    refValCubic[i*basisSet.size() + j],
+                    basisSet[j],
+                    std::numeric_limits<real>::epsilon());
+*/
+            // increment sum over basis elements:
+            unity += basisSet[j];
+        }
+
+        // check partition of unity property:
+        ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
     }
 
 }
