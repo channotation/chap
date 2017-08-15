@@ -52,7 +52,10 @@ class BSplineBasisSetTest : public ::testing::Test
 /*!
  * Test that BSplineBasisSet finds the correct knot span for a number of
  * evaluation points.
+ *
+ * TODO migrate this to abstract base class
  */
+/*
 TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
 {
     // create functor:
@@ -72,7 +75,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
         ASSERT_EQ(knotSpanIdx_[i] + degree, idx);
     }
 }
-
+*/
 
 /*!
  * Checks that the sum over the entire basis is equal to one for constant 

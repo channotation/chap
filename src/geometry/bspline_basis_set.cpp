@@ -95,52 +95,6 @@ BSplineBasisSet::operator()(
 
 
 /*!
- * Finds the index of the knot span for a given evalution point \f$ x \f$ and
- * knot vector \f$ \{t\}_{i=1}^m \f$, i.e. finds \f$ i \f$ such that
- * \f$ t_i \leq x < t_{i+1} \f$. The special case of \f$ x = t_m \f$ is handled 
- * as \f$ i = m - p - 1 \f$.
- */
-size_t
-BSplineBasisSet::findKnotSpan(
-        real eval,
-        const std::vector<real> &knots,
-        unsigned int degree)
-{
-    // calculate number of basis functions from number of knots and degree:
-    unsigned int numBasisFunctions = knots.size() - degree - 1;
-
-    // handle special case of eval point at endpoint:
-    if( eval == knots.at(numBasisFunctions)  )
-    {
-//        std::cout<<"endpoint detected"<<std::endl;
-        return numBasisFunctions - 1;
-    }
-
-    unsigned int lo = degree;
-    unsigned int hi = numBasisFunctions + 1;
-    unsigned int mi = (lo + hi)/2;
-    while( eval < knots[mi] || eval >= knots[mi + 1] )
-    {
-        // update interval boundaries:
-        if( eval < knots[mi] )
-        {
-            hi = mi;
-        }
-        else
-        {
-            lo = mi;
-        }
-
-        // update interval midpoint:
-        mi = (lo + hi)/2;
-    }
-
-    // return index of knot span:
-    return mi;
-}
-
-
-/*!
  * Low level evalution of nonzero basis elements. This implements algorithm 
  * A2.2 from The NURBS book and returns a vector of length \f$ p + 1\f$ 
  * containing the nonzero B-spline basis functions \f$ B_{i,p}(x) \f$, where
