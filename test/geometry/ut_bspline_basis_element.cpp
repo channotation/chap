@@ -222,6 +222,7 @@ TEST_F(BSplineBasisElementTest, BSplineBasisElementZerothDerivativeTest)
             std::cout<<"eval = "<<evalPoints_[i]<<"  "
                      <<"j = "<<j<<"  "
                      <<"B = "<<basisElement<<"  "
+                     <<"ref = "<<refVal[i*nBasis + j]<<"  "
                      <<std::endl;
 
 
@@ -243,6 +244,60 @@ TEST_F(BSplineBasisElementTest, BSplineBasisElementZerothDerivativeTest)
 }
 
 
+/*
+ *
+ */
+TEST_F(BSplineBasisElementTest, BSplineBasisElementFirstDerivativeTest)
+{
+    // specify degree and derivative order:
+    int deriv = 1;
+    int degree = 3;
+
+    // reference values:
+    std::vector<real> refVal = {
+            -0.85714286,  0.8571429,  0.0000000,  0.0000000,  0.00000000,  0.0000000, 0.00000000,
+            -0.27988338, -0.1046829,  0.2774235,  0.1071429,  0.00000000,  0.0000000, 0.00000000,
+             0.00000000,  0.0000000, -0.3333333,  0.0000000,  0.33333333,  0.0000000, 0.00000000,
+             0.00000000,  0.0000000,  0.0000000, -0.5833333,  0.48958333,  0.0937500, 0.00000000,
+            -0.01749271, -0.2350583, -0.1760204,  0.4285714,  0.00000000,  0.0000000, 0.00000000,
+             0.00000000,  0.0000000,  0.0000000, -0.3183948, -0.02224038,  0.2821545, 0.05848068,
+             0.00000000,  0.0000000,  0.0000000,  0.0000000,  0.00000000, -0.8571429, 0.85714286};
+
+    // create basis set functor:
+    BSplineBasisElement B;
+
+    // create appropriate knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // number of basis functions:
+    int nBasis = knots.size() - degree - 1;
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // loop over basis (derivatives):
+        for(int j = 0; j < nBasis; j++)
+        {
+            // evaluate this basis function:
+            real basisElement = B(evalPoints_[i], knots, degree, j, deriv);
+
+            std::cout<<"eval = "<<evalPoints_[i]<<"  "
+                     <<"j = "<<j<<"  "
+                     <<"B = "<<basisElement<<"  "
+                     <<"ref = "<<refVal[i*nBasis + j]<<"  "
+                     <<std::endl;
+
+
+            // check agreement with reference values:            
+//            ASSERT_NEAR(
+//                    refVal[i*nBasis + j],
+//                    basisElement,
+//                    std::numeric_limits<real>::epsilon());
+        }
+
+        std::cout<<std::endl;
+    }
+}
 
 
 

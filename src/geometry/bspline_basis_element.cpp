@@ -129,17 +129,17 @@ BSplineBasisElement::evaluateDerivatives(
     std::vector<real> ders(deriv + 1);
 
     // use local support property:
-    if( eval < knots[idx] || eval >= knots[idx + degree + 1] )
+    if( (eval < knots[idx] || eval >= knots[idx + degree + 1]) )
     {
-        std::cout<<"idx = "<<idx<<"  "
+/*        std::cout<<"idx = "<<idx<<"  "
                  <<"degree = "<<degree<<"  "
                  <<"knots[idx + degree + 1] = "<<knots[idx + degree + 1]<<"  "
                  <<"knots.size = "<<knots.size()<<"  "
-                 <<std::endl;
+                 <<std::endl;*/
 
         for(int i = 0; i <= deriv; i++)
         {
-            // NOTE: this if is missing in The NURBS Book, but us necessary
+            // NOTE: this if is missing in The NURBS Book, but is necessary
             // to handle the special case of the last basis function if the
             // evaluation point is identical to that knot
             if( eval == knots.back() && idx == knots.size() - degree - 2 )
@@ -148,6 +148,7 @@ BSplineBasisElement::evaluateDerivatives(
             }
             else
             {
+//                std::cout<<"bing"<<std::endl;                             
                 ders[i] = 0.0;
             }
         }
@@ -209,13 +210,52 @@ BSplineBasisElement::evaluateDerivatives(
     ders[0] = coefs[0][degree];
    
     // compute the derivatives:
-    for(int i = 1; i <= deriv; i++)
+    for(int k = 1; k <= deriv; k++)
     {
         // 
-        for(int j = 0; j <= i; j++)
+        std::vector<real> nd(k + 1);
+        for(int i = 0; i <= k; i++)
         {
-            
+            nd[i] = coefs[i][degree - k];
         }
+
+        //
+        for(int i = 1; i <= k; i++)
+        {
+            // for efficiency, evaluate expression only if non-zero:
+            real saved;
+            if( nd[0] == 0.0 )
+            {
+                saved = 0.0;
+            }
+            else
+            {
+                saved = nd[0]/(knots[idx + degree - k + i] - knots[idx]);
+            }
+
+            //
+            for(int r = 0; r < k - i + 1; r++)
+            {
+                // left and right knots:
+                real left = knots[idx + r + 1];
+                real right = knots[idx + r + degree + i + 1];
+
+                if( nd[r + 1] == 0.0 )
+                {
+                    nd[r] = (degree - k + i)*saved;
+                    saved = 0.0;
+                }
+                else
+                {
+                    real tmp = nd[r + 1]/(right - left);
+                    nd[r] = (degree - k + i)*(saved - tmp);
+                    saved = tmp;
+                }
+            }
+        }
+
+        // copy k-th derivative to output vector:
+        ders[k] = nd[0];
     }
 
     // return vector of derivatives up to order deriv:
