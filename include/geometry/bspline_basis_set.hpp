@@ -46,7 +46,7 @@ class BSplineBasisSet : public AbstractBSplineBasis
     private:
 
         // method for evaluating the nonzero elements of basis:
-        std::vector<real> evaluateNonzeroBasisElements(
+        inline std::vector<real> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
@@ -54,7 +54,7 @@ class BSplineBasisSet : public AbstractBSplineBasis
 
 
         // method for evaluating nonzero elements of basis (derivatives):
-        std::vector<std::vector<real>> evaluateNonzeroBasisElements(
+        inline std::vector<std::vector<real>> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
