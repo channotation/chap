@@ -179,6 +179,68 @@ TEST_F(BSplineBasisElementTest, BSplineBasisElementCubicTest)
 }
 
 
+/*
+ *
+ */
+TEST_F(BSplineBasisElementTest, BSplineBasisElementZerothDerivativeTest)
+{
+    // specify degree and derivative order:
+    int deriv = 0;
+    int degree = 3;
+
+    // reference values:
+    std::vector<real> refVal = {
+            1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000,
+            0.18658892, 0.46041363, 0.29942602, 0.05357143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.05555556, 0.88888889, 0.05555556, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.68055560, 0.30381940, 0.01562500, 0.00000000,
+            0.00291545, 0.10167639, 0.46683674, 0.42857143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.27443368, 0.49676188, 0.21098317, 0.01782128,
+            0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 1.00000000};
+
+    // create basis set functor:
+    BSplineBasisElement B;
+
+    // create appropriate knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // number of basis functions:
+    int nBasis = knots.size() - degree - 1;
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // for zeroth order derivative will perform partition of unity test:
+        real unity = 0.0;
+
+        // loop over basis (derivatives):
+        for(int j = 0; j < nBasis; j++)
+        {
+            // evaluate this basis function:
+            real basisElement = B(evalPoints_[i], knots, degree, j, deriv);
+
+            std::cout<<"eval = "<<evalPoints_[i]<<"  "
+                     <<"j = "<<j<<"  "
+                     <<"B = "<<basisElement<<"  "
+                     <<std::endl;
+
+
+            // check agreement with reference values:            
+            ASSERT_NEAR(
+                    refVal[i*nBasis + j],
+                    basisElement,
+                    std::numeric_limits<real>::epsilon());
+
+            // increment sum over basis elements:
+            unity += basisElement;
+        }
+
+        std::cout<<std::endl;
+
+        // check partition of unity property:
+        ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
+    }
+}
 
 
 

@@ -29,6 +29,18 @@ class BSplineBasisElement : public AbstractBSplineBasis
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
+                unsigned int idx,
+                unsigned int deriv);
+
+
+    private:
+
+        //
+        std::vector<real> evaluateDerivatives(
+                real eval,
+                const std::vector<real> &knots,
+                unsigned int degree,
+                unsigned int idx,
                 unsigned int deriv);
 };
 
