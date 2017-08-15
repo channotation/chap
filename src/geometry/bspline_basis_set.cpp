@@ -1,8 +1,16 @@
 #include "geometry/bspline_basis_set.hpp"
 
 
-/*
- *
+/*!
+ * High level public interface for the evaluation of a complete set of B-spline
+ * basis functions. Internally this uses evaluateNonZeroBasisElements() to
+ * compute the nonzero elements of the basis at the given evaluation point. 
+ * The resulting vector of length \f$ p + 1 \f$, where \f$ p \f$ is the spline
+ * degree, is then embedded in a vector of length \f$ m - p -1 \f$ where 
+ * \f$ m \f$ is the length of the given knot vector, such that each nonzero 
+ * basis element is at the correct index. The vector returned by this function
+ * then contains the B-spline basis elements \f$ B_{i,p} \f$ with 
+ * \f$ i\in[0, m - p - 1] \f$.
  */
 std::vector<real>
 BSplineBasisSet::operator()(
@@ -33,8 +41,17 @@ BSplineBasisSet::operator()(
 }
 
 
-/*
- *
+/*!
+ * High level public interface for the evaluation of the derivatives of a 
+ * complete set of B-Spline basis functions. Internally this calls 
+ * evaluateNonzeroBasisElements() to obtain efficiently evaluate only those 
+ * basis elements and derivatives that are not equal to zero. It then selects
+ * only the derivatives of the requested degree and embeds them in a vector of
+ * zeros such that the nonzero derivatives are located at the correct index.
+ * The return value is a vector of the B-spline basis derivative 
+ * \f$ B_{i,p}^(n) \f$ with \f$ i\in[0, m - p - 1] \f$, where \f$ p \f$ is the 
+ * spline degree and and \f$ n \f$ is the order of the requested derivative 
+ * where by convention the zeroth derivative is the basis function itself.
  */
 std::vector<real>
 BSplineBasisSet::operator()(
@@ -43,12 +60,14 @@ BSplineBasisSet::operator()(
         unsigned int degree,
         unsigned int deriv)
 {
-    // sanity checks:
+    // number of basis elements:
+    unsigned int nBasis = knots.size() - degree - 1;
+
+    // derivative order higher than spline degree:
     if( deriv > degree )
     {
-        // TODO: handle this case more gently, i.e. return zeros as appropriate:
-        std::cerr<<"ERROR: deriv > degree is not allowed!"<<std::endl;
-        std::abort();
+        // simply return vector of all zeros in this case:
+        return std::vector<real>(nBasis, 0.0);
     }
 
     // find knot span for evalution point:
@@ -64,7 +83,6 @@ BSplineBasisSet::operator()(
             knotSpanIdx);
 
     // pad with zeros to create full length basis vector:
-    unsigned int nBasis = knots.size() - degree - 1;
     std::vector<real> basisSet(nBasis, 0.0);
     for(size_t i = 0; i < nonzeroBasisElements[deriv].size(); i++)
     {
@@ -122,8 +140,13 @@ BSplineBasisSet::findKnotSpan(
 }
 
 
-/*
- *
+/*!
+ * Low level evalution of nonzero basis elements. This implements algorithm 
+ * A2.2 from The NURBS book and returns a vector of length \f$ p + 1\f$ 
+ * containing the nonzero B-spline basis functions \f$ B_{i,p}(x) \f$, where
+ * \f$ p \f$ is the spline degree, \f$ x \f$ is the evaluation point, and 
+ * \f$ i \in [j-p,j] \f$ is the index of the basis function. The knot span 
+ * index \f$ j \f$ can be computed using findKnotSpan().
  */
 std::vector<real>
 BSplineBasisSet::evaluateNonzeroBasisElements(
@@ -166,8 +189,15 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
 }
 
 
-/*
- *
+/*!
+ * Low level evaluation function for nonzero basis elements and nonzero 
+ * derivatives. This implements algorithm A2.3 from The NURBS book and returns 
+ * a matrix (implemented as vector of vectors) of dimension 
+ * \f$ (n+1) \times (p+1) \f$, where the element \f$ (k,i) \f$ contains the 
+ * \f$ k \f$-th derivative of the \f$ i \f$-th B-spline basis, i.e. 
+ * \f$ B_{i,p}^{(n)}(x) \f$ with \f$ i \in [j-p,j] \f$ and \f$ k \in [0,p]\f$.
+ * Note that the knot span index \f$ j \f$ can be computed using findKnotSpan()
+ * and the 0-th derivative is by convention the basis function itself.
  */
 std::vector<std::vector<real>>
 BSplineBasisSet::evaluateNonzeroBasisElements(

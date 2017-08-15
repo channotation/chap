@@ -8,8 +8,20 @@
 #include <gromacs/utility/real.h> 
 
 
-/*
+/*!
+ * \brief Functor class for evaluating complete set of B-spline basis
+ * functions and corresponding derivatives.
  *
+ * This class implements algorithms for efficiently evaluating a complete 
+ * B-spline basis set. This is done by using algorithms A2.2 and A2.3 from The
+ * NURBS Book by Piegl and Tiller. This algorithms eveluate each required
+ * coefficient only once and are hence significantly more efficient than
+ * evaluating each basis function with an individual Cox-deBoor recursion. It
+ * is usually the most sensible algorithm to use if e.g. a spline curve needs
+ * to be evaluated.
+ *
+ * In cases where only a single basis function (or derivative thereof) is 
+ * required, BSplineBasisElement may be more efficient.
  */
 class BSplineBasisSet
 {
