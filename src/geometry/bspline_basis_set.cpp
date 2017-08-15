@@ -218,12 +218,12 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         ders[0][i] = ndu[i][degree];
     }
 
+    std::vector<std::vector<real>> a(2, std::vector<real>(degree + 1));
 
     // loop over function index / basis elements:
     for(size_t i = 0; i <= degree; i++)
     {
         // allocate helper array:
-        std::vector<std::vector<real>> a(2, std::vector<real>(degree + 1));
         a[0][0] = 1.0;
 
         // indices to alternate rows in a:
@@ -250,7 +250,8 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             // compute a new element in the helper matrix:
             if( i >= k )
             {
-                a[s2][0] - a[s1][0]/ndu[pk + 1][ik];
+                // TODO ERROR: should be = instead of - 
+                a[s2][0] = a[s1][0]/ndu[pk + 1][ik];
                 d = a[s2][0]*ndu[ik][pk];
             }
 /*            std::cout<<"d post first if"<<"  "
@@ -338,11 +339,13 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
     int fac = degree;
     for(size_t k = 1; k <= deriv; k++)
     {
-        for(size_t i = 0; i < degree; i++)
+        // TODO ERROR should be smaller equal
+        for(size_t i = 0; i <= degree; i++)
         {
             ders[k][i] *= fac;
         }
-        fac *= degree - k;
+        // TODO: bracket this:
+        fac *= (degree - k);
     }
 
     for(int i = 0; i < ders.size(); i++)
