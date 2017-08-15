@@ -11,8 +11,7 @@ BSplineBasisElement::operator()(
         const std::vector<real> &knots,
         unsigned int degree)
 {
-//    int idx = findKnotSpan(eval, knots, degree);
-
+    // uppermost knot index:
     int m = knots.size() - 1;
 
     // handle special cases:

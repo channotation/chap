@@ -50,45 +50,133 @@ class BSplineBasisElementTest : public ::testing::Test
 
 
 /*!
- *
+ * Checks that the sum over all basis functions for the entire basis set equals
+ * one for fixed degree. This is assessed for splines up to degree five.
  */
 TEST_F(BSplineBasisElementTest, BSplineBasisElementPartitionOfUnityTest)
 {
     // create functor:
     BSplineBasisElement B;
 
-    int degree = 3;
+    int maxDegree = 5;
 
-    // set up knot vector:
-    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
-
-    // size of complete basis vector:
-    int nBasis = knots.size() - degree - 1;
-
-    // loop over evaluation points:
-    for(size_t i = 0; i < evalPoints_.size(); i++)
+    // loop over degrees:
+    for(int degree = 0; degree <= maxDegree; degree++)
     {
-        real unity = 0.0;
+        // set up knot vector:
+        std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
 
-        for(size_t j = 0; j < nBasis; j++)
+        // size of complete basis vector:
+        int nBasis = knots.size() - degree - 1;
+
+        // loop over evaluation points:
+        for(size_t i = 0; i < evalPoints_.size(); i++)
         {
-            real basisElement = B(evalPoints_[i], j, knots, degree);
-            std::cout<<"eval = "<<evalPoints_[i]<<"  "
-                     <<"j = "<<j<<"  "
-                     <<"B = "<<basisElement<<"  "
-                     <<std::endl;
-            unity += basisElement;
-        }
+            real unity = 0.0;
 
-        // assert partition of unity property:
-        ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
+            for(size_t j = 0; j < nBasis; j++)
+            {
+                real basisElement = B(evalPoints_[i], j, knots, degree);
+                unity += basisElement;
+            }
+
+            // assert partition of unity property:
+            ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
+        }
     }
 }
 
 
+/*!
+ * Checks that the BSplineBasisElement functor gives the correct values for a
+ * quadratic spline. This is assessed by comparison to reference values 
+ * computes with the R software. The floating point comparison threshold is
+ * the machine epsilon.
+ */
+TEST_F(BSplineBasisElementTest, BSplineBasisElementQuadraticTest)
+{
+    // test second degree / quadratic splines:   
+    int degree = 2;
+
+    // reference values:
+    std::vector<real> refVal = {
+            1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 
+            0.32653060, 0.51275510, 0.16071430, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.50000000, 0.50000000, 0.00000000, 0.00000000, 
+            0.00000000, 0.00000000, 0.00000000, 0.87500000, 0.12500000, 0.00000000,
+            0.02040816, 0.33673469, 0.64285714, 0.00000000, 0.00000000, 0.00000000, 
+            0.00000000, 0.00000000, 0.00000000, 0.47759225, 0.45418029, 0.06822746,
+            0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 1.00000000};
+
+    // create BasisSpline functor:
+    BSplineBasisElement B;
+
+    // set up knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // size of complete basis:
+    size_t nBasis = knots.size() - degree - 1;
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // loop over basis elements:
+        for(size_t j = 0; j < nBasis; j++)
+        {
+            real basisElement = B(evalPoints_[i], j, knots, degree);
+            ASSERT_NEAR(
+                    refVal[i*nBasis + j], 
+                    basisElement, 
+                    std::numeric_limits<real>::epsilon());
+        }
+    }
+}
 
 
+/*!
+ * Checks that the BSplineBasisElement functor gives the correct values for a
+ * cubic spline. This is assessed by comparison to reference values 
+ * computes with the R software. The floating point comparison threshold is
+ * the machine epsilon.
+ */
+TEST_F(BSplineBasisElementTest, BSplineBasisElementCubicTest)
+{
+    // test third degree / cubic splines:   
+    int degree = 3;
 
+    // reference values:
+    std::vector<real> refVal = {
+            1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000,
+            0.18658892, 0.46041363, 0.29942602, 0.05357143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.05555556, 0.88888889, 0.05555556, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.68055560, 0.30381940, 0.01562500, 0.00000000,
+            0.00291545, 0.10167639, 0.46683674, 0.42857143, 0.00000000, 0.00000000, 0.00000000,
+            0.00000000, 0.00000000, 0.00000000, 0.27443368, 0.49676188, 0.21098317, 0.01782128,
+            0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 1.00000000};
+
+    // create BasisSpline functor:
+    BSplineBasisElement B;
+
+    // set up knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // size of complete basis:
+    size_t nBasis = knots.size() - degree - 1;
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        // loop over basis elements:
+        for(size_t j = 0; j < nBasis; j++)
+        {
+            real basisElement = B(evalPoints_[i], j, knots, degree);
+            ASSERT_NEAR(
+                    refVal[i*nBasis + j], 
+                    basisElement, 
+                    std::numeric_limits<real>::epsilon());
+        }
+    }
+}
 
 
 
