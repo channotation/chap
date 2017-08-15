@@ -308,10 +308,10 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
         for(int j = 0; j < basisSet.size(); j++)
         {
 
-            std::cout<<"j = "<<j<<"  "
+/*            std::cout<<"j = "<<j<<"  "
                      <<"B = "<<basisSet[j]<<"  "
                      <<"ref = "<<refValCubic[i*basisSet.size() + j]<<"  "
-                     <<std::endl;
+                     <<std::endl;*/
 
             // check agreement with reference values:
             ASSERT_NEAR(
@@ -364,10 +364,10 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
         for(int j = 0; j < basisSet.size(); j++)
         {
 
-            std::cout<<"j = "<<j<<"  "
+/*            std::cout<<"j = "<<j<<"  "
                      <<"B = "<<basisSet[j]<<"  "
                      <<"ref = "<<refValCubic[i*basisSet.size() + j]<<"  "
-                     <<std::endl;
+                     <<std::endl;*/
 
             // check agreement with reference values:
             ASSERT_NEAR(

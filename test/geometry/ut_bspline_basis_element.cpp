@@ -52,11 +52,37 @@ class BSplineBasisElementTest : public ::testing::Test
 /*!
  *
  */
-TEST_F(BSplineBasisElementTest, BSplineBasisElementKnotSpanTest)
+TEST_F(BSplineBasisElementTest, BSplineBasisElementPartitionOfUnityTest)
 {
     // create functor:
     BSplineBasisElement B;
 
+    int degree = 3;
+
+    // set up knot vector:
+    std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
+
+    // size of complete basis vector:
+    int nBasis = knots.size() - degree - 1;
+
+    // loop over evaluation points:
+    for(size_t i = 0; i < evalPoints_.size(); i++)
+    {
+        real unity = 0.0;
+
+        for(size_t j = 0; j < nBasis; j++)
+        {
+            real basisElement = B(evalPoints_[i], j, knots, degree);
+            std::cout<<"eval = "<<evalPoints_[i]<<"  "
+                     <<"j = "<<j<<"  "
+                     <<"B = "<<basisElement<<"  "
+                     <<std::endl;
+            unity += basisElement;
+        }
+
+        // assert partition of unity property:
+        ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
+    }
 }
 
 
