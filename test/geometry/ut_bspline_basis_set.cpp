@@ -59,7 +59,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
     BSplineBasisSet B;
 
     // set degree and adapt knotVector approproately:
-    unsigned int degree = 2;
+    unsigned int degree = 3;
     std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
 
     // loop over evaluation points:
@@ -67,6 +67,8 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
     {
         // asser correct knot span index:
         size_t idx = B.findKnotSpan(evalPoints_[i], knots, degree);
+        std::cout<<"eval = "<<evalPoints_[i]<<"  "
+                 <<"idx = "<<idx<<std::endl;
         ASSERT_EQ(knotSpanIdx_[i] + degree, idx);
     }
 }
@@ -290,7 +292,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
     std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
 
     // loop over evaluation points:
-    for(size_t i = 0; i < evalPoints_.size() & i < 2; i++)
+    for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis (derivatives) at this point:
         std::vector<real> basisSet = B(
@@ -309,12 +311,13 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
                      <<std::endl;
 
             // check agreement with reference values:
-/*            
             ASSERT_NEAR(
                     refValCubic[i*basisSet.size() + j],
                     basisSet[j],
-                    std::numeric_limits<real>::epsilon());*/
+                    std::numeric_limits<real>::epsilon());
         }
+
+        std::cout<<std::endl;
     }
 }
 
@@ -325,7 +328,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
 TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
 {
     // specify degree and derivative order:
-    int deriv = 0;
+    int deriv = 2;
     int degree = 3;
 
     // reference values:
@@ -345,7 +348,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
     std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
 
     // loop over evaluation points:
-    for(size_t i = 0; i < evalPoints_.size() & i < 2; i++)
+    for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis (derivatives) at this point:
         std::vector<real> basisSet = B(
@@ -364,11 +367,10 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
                      <<std::endl;
 
             // check agreement with reference values:
-            /*
             ASSERT_NEAR(
                     refValCubic[i*basisSet.size() + j],
                     basisSet[j],
-                    std::numeric_limits<real>::epsilon());*/
+                    std::numeric_limits<real>::epsilon());
         }
 
         std::cout<<std::endl;

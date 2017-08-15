@@ -177,7 +177,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         unsigned int deriv,
         unsigned int knotSpanIdx)
 {
-
+//std::cout<<"DERIVATIVE BASED METHOD"<<std::endl;
     //
     std::vector<std::vector<real>> ndu(degree+1, std::vector<real>(degree+1));
 
@@ -218,12 +218,25 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         ders[0][i] = ndu[i][degree];
     }
 
-    std::vector<std::vector<real>> a(2, std::vector<real>(degree + 1));
-
+/*
+    std::cout<<std::endl;
+    std::cout<<"ndu = "<<std::endl;
+    for( int i = 0; i <= degree; i++ )
+    {
+        for( int j = 0; j <= degree; j++ )
+        {
+            std::cout<<ndu[i][j]<<"\t";
+        }
+        std::cout<<std::endl;
+    }
+    std::cout<<std::endl;
+*/
     // loop over function index / basis elements:
     for(size_t i = 0; i <= degree; i++)
     {
+
         // allocate helper array:
+        std::vector<std::vector<real>> a(2, std::vector<real>(degree + 1));
         a[0][0] = 1.0;
 
         // indices to alternate rows in a:
@@ -254,10 +267,11 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
                 a[s2][0] = a[s1][0]/ndu[pk + 1][ik];
                 d = a[s2][0]*ndu[ik][pk];
             }
-/*            std::cout<<"d post first if"<<"  "
+/*            std::cout<<"d post frst if"<<"  "
                      <<"k = "<<k<<"  "
                      <<"i = "<<i<<"  "
                      <<"d = "<<d<<"  "
+                     <<"idx = "<<knotSpanIdx<<"  "
                      <<std::endl;*/
 
             // lower index limit for loop over helper array:
@@ -301,32 +315,52 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
                          <<"pk = "<<pk<<"  "
                          <<std::endl;*/
             }
-/*            std::cout<<"d post loop"<<"  "
+/*            std::cout<<"d post loop   "<<"  "
                      <<"k = "<<k<<"  "
                      <<"i = "<<i<<"  "
                      <<"d = "<<d<<"  "
+                     <<"idx = "<<knotSpanIdx<<"  "
                      <<std::endl;*/
 
             // additional summand:
-            if( i <= pk )
+            // TODO: there is still an error here for i = 0!
+            // 
+            // --> simply excluding i = 0 from this if block fixes the first 
+            // derivative, but not the second, so I guess that the error is in
+            // either a or ndu (either of which should be zero)!
+            //
+            // --> ndu[0][2] has the same value as in zeroth derivative test
+            // and is a basis function which passes the test, so error is 
+            // probably in a!
+            if( i <= pk & i != 0 )
             {
                 a[s2][k] = -a[s1][k-1]/ndu[pk+1][i];
                 d += a[s2][k]*ndu[i][pk];
+/*                std::cout<<"i = "<<i<<"  "
+                         <<"pk = "<<pk<<"  "
+                         <<"s1 = "<<s1<<"  "
+                         <<"s2 = "<<s2<<"  "
+                         <<"a[s1][k-1] = "<<a[s1][k-1]<<"  "
+                         <<"ndu[pk+1][i] = "<<ndu[pk+1][i]<<"  "
+                         <<"a[s2][k] = "<<a[s2][k]<<"  "
+                         <<"ndu[i][pk] = "<<ndu[i][pk]<<"  "
+                         <<std::endl;*/
             }
-/*            std::cout<<"d post second if"<<"  "
+/*            std::cout<<"d post scnd if"<<"  "
                      <<"k = "<<k<<"  "
                      <<"i = "<<i<<"  "
                      <<"d = "<<d<<"  "
+                     <<"idx = "<<knotSpanIdx<<"  "
                      <<std::endl;*/
 
             // assign value of derivative to output matrix:
             ders[k][i] = d;
 
-            std::cout<<"k = "<<k<<"  "
+/*            std::cout<<"k = "<<k<<"  "
                      <<"i = "<<i<<"  "
                      <<"d = "<<d<<"  "
                      <<"ders[k][i] = "<<ders[k][i]<<"  "
-                     <<std::endl;
+                     <<std::endl;*/
 
             // switch rows:
             int tmp = s1;
@@ -347,7 +381,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         // TODO: bracket this:
         fac *= (degree - k);
     }
-
+/*
     for(int i = 0; i < ders.size(); i++)
     {
         for(int j = 0; j < ders.at(i).size(); j++)
@@ -357,7 +391,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         std::cout<<std::endl;
     }
     std::cout<<std::endl;
-
+*/
     // return output matrix:
     return ders;
 }
