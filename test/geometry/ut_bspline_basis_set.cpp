@@ -1,16 +1,13 @@
-#include <vector>
 #include <cmath>
-#include <iostream>
 #include <limits>
-#include <algorithm>
 
 #include <gtest/gtest.h>
 
 #include "geometry/bspline_basis_set.hpp"
 
 
-/*
- *
+/*!
+ * \brief Test fixture for BSplineBasisSet functor.
  */
 class BSplineBasisSetTest : public ::testing::Test
 {
@@ -208,8 +205,9 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
 }
 
 
-/*
- *
+/*!
+ * Checks that the functor returns the correct values of the B-spline basis if
+ * evaluated through the derivative interface.
  */
 TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
 {
@@ -265,8 +263,9 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
 }
 
 
-/*
- *
+/*!
+ * Checks that the BSplineBasisSet functor returns the correct values of the 
+ * first derivative for a given set of test points.
  */
 TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
 {
@@ -313,8 +312,9 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
 }
 
 
-/*
- *
+/*!
+ * Checks that the BSplineBasisSet functor returns the correct values for the
+ * second derivatives of the basis functions for a given set of test points.
  */
 TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
 {
