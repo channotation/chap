@@ -307,16 +307,8 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
                      <<std::endl;*/
 
             // additional summand:
-            // TODO: there is still an error here for i = 0!
-            // 
-            // --> simply excluding i = 0 from this if block fixes the first 
-            // derivative, but not the second, so I guess that the error is in
-            // either a or ndu (either of which should be zero)!
-            //
-            // --> ndu[0][2] has the same value as in zeroth derivative test
-            // and is a basis function which passes the test, so error is 
-            // probably in a!
-            if( i <= pk & i != 0 )
+            // NOTE: extra check for 1 != 0 is not in Piegl's algorithm
+            if( i <= pk && i != 0 )
             {
                 a[s2][k] = -a[s1][k-1]/ndu[pk+1][i];
                 d += a[s2][k]*ndu[i][pk];
