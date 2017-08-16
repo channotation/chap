@@ -197,6 +197,10 @@ BSplineBasisSet::findKnotSpan(
  * \f$ B_{i,p}^{(n)}(x) \f$ with \f$ i \in [j-p,j] \f$ and \f$ k \in [0,p]\f$.
  * Note that the knot span index \f$ j \f$ can be computed using findKnotSpan()
  * and the 0-th derivative is by convention the basis function itself.
+ *
+ * This function does not explicitly check if the condition \f$ n \leq p \f$
+ * holds true and this situation should be handled by the calling functions 
+ * from the public interface.
  */
 std::vector<std::vector<real>>
 BSplineBasisSet::evaluateNonzeroBasisElements(
@@ -247,7 +251,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
     }
 
     // loop over function index / basis elements:
-    for(size_t i = 0; i <= degree; i++)
+    for(unsigned int i = 0; i <= degree; i++)
     {
 
         // allocate helper array:
@@ -259,14 +263,14 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         int s2 = 1;
 
         // loop over derivatives:
-        for(size_t k = 1; k <= deriv; k++)
+        for(unsigned int k = 1; k <= deriv; k++)
         {
             // temporary variable for summing up to derivative at this (k,1);
             real d = 0.0;
 
             // differences wrt current derivative degree:
             int ik = i - k;
-            int pk = degree - k;
+            unsigned int pk = degree - k;
 
             // if basis element index greater than derivative order, we need to
             // compute a new element in the helper matrix:
@@ -277,7 +281,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             }
 
             // lower index limit for loop over helper array:
-            int rLo;
+            unsigned int rLo;
             if( ik >= -1 )
             {
                 rLo = 1;
@@ -288,7 +292,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             }
 
             // upper index limit for loop over helper array:
-            int rHi;
+            unsigned int rHi;
             if( i - 1 <= pk )
             {
                 rHi = k - 1;
@@ -299,7 +303,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             }
 
             // sum over helper array to compute value of derivative:
-            for(int r = rLo; r <= rHi; r++)
+            for(unsigned int r = rLo; r <= rHi; r++)
             {
                 a[s2][r] = (a[s1][r] - a[s1][r-1])/ndu[pk+1][ik + r];
                 d += a[s2][r]*ndu[ik+r][pk];

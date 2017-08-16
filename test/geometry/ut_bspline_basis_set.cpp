@@ -28,7 +28,7 @@ class BSplineBasisSetTest : public ::testing::Test
                 unsigned int degree)
         {
             std::vector<real> knots;
-            for(int i = 0; i < degree; i++)
+            for(unsigned int i = 0; i < degree; i++)
             {
                 knots.push_back(uniqueKnots.front());
             }
@@ -36,7 +36,7 @@ class BSplineBasisSetTest : public ::testing::Test
             {
                 knots.push_back(uniqueKnots[i]);
             }
-            for(int i = 0; i < degree; i++)
+            for(unsigned int i = 0; i < degree; i++)
             {
                 knots.push_back(uniqueKnots.back());
             }
@@ -79,14 +79,10 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
     // create spline basis functor:
     BSplineBasisSet B;
 
-    // evaluate only spline itself, not derivative:
-    int deriv = 0;
-
     // loop over various degrees:
     unsigned int maxDegree = 5;
     for(unsigned int degree = 0; degree <= maxDegree; degree++)
     {
-
         // prepare knots for this degree:
         std::vector<real> knots = prepareKnotVector(uniqueKnots_, degree);
 
@@ -118,9 +114,6 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
  */
 TEST_F(BSplineBasisSetTest, BSplineBasisSetQuadraticTest)
 {
-    // do not evaluate derivatives here:
-    unsigned int deriv = 0;
-
     // test second degree / quadratic splines:   
     unsigned int degree = 2;
 
@@ -245,7 +238,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
         real unity = 0.0;
 
         // loop over basis (derivatives):
-        for(int j = 0; j < basisSet.size(); j++)
+        for(size_t j = 0; j < basisSet.size(); j++)
         {
             // check agreement with reference values:            
             ASSERT_NEAR(
@@ -300,7 +293,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
                 deriv);
 
         // loop over basis (derivatives):
-        for(int j = 0; j < basisSet.size(); j++)
+        for(size_t j = 0; j < basisSet.size(); j++)
         {
             // check agreement with reference values:
             ASSERT_NEAR(
@@ -349,7 +342,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
                 deriv);
 
         // loop over basis (derivatives):
-        for(int j = 0; j < basisSet.size(); j++)
+        for(size_t j = 0; j < basisSet.size(); j++)
         {
             // check agreement with reference values:
             ASSERT_NEAR(
