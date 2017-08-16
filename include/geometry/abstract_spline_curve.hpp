@@ -27,10 +27,13 @@ const short int RR = 1;
 const short int PP = 2;
 
 
-/*
+/*!
  * Enum for spline evaluation method.
  */
-enum eSplineEvalMethod {eSplineEvalNaive = 901, eSplineEvalDeBoor = 902};
+enum eSplineEvalMethod {
+        eSplineEvalNaive = 901, 
+        eSplineEvalDeBoor = 902,
+        eSplineEvalPiegl = 903};
 
 
 /*
@@ -77,6 +80,8 @@ class AbstractSplineCurve
         real evaluateNaive(real &evalPoint,
                            const std::vector<real> &ctrlCoefs);
         real evaluateDeBoor(real &evalPoint,
+                            const std::vector<real> &ctrlCoefs);
+        real evaluatePiegl(real evalPoint,
                             const std::vector<real> &ctrlCoefs);
         real evaluateDeriv(real &evalPoint,
                            const std::vector<real> &ctrlCoefs, 

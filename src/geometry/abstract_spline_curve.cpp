@@ -4,6 +4,7 @@
 
 #include "geometry/abstract_spline_curve.hpp"
 
+#include "geometry/bspline_basis_set.hpp"
 
 /*!
  * Getter method for spline curve degree.
@@ -192,6 +193,10 @@ AbstractSplineCurve::evaluateSplineFun(real &evalPoint,
         {
             value = evaluateDeBoor(evalPoint, ctrlCoefs);
         }
+        else if( method == eSplineEvalPiegl )
+        {
+            value = evaluatePiegl(evalPoint, ctrlCoefs);
+        }
         else
         {
             std::cerr<<"ERROR: Requested spline evaluation method not available!"<<std::endl;
@@ -251,6 +256,28 @@ AbstractSplineCurve::evaluateDeBoor(real &evalPoint,
 
     // return result of de Boor recursion:
     return deBoorRecursion(degree_, idx, evalPoint, ctrlCoefs);
+}
+
+
+/*
+ *
+ */
+real
+AbstractSplineCurve::evaluatePiegl(
+        real eval,
+        const std::vector<real> &ctrlCoefs)
+{
+    real value = 0.0;
+
+    BSplineBasisSet B;
+    std::vector<real> basisSet = B(eval, knotVector_, degree_);
+
+    for(int i = 0; i < basisSet.size(); i++)
+    {
+        value += ctrlCoefs[i] * basisSet[i];
+    }
+
+    return value;
 }
 
 

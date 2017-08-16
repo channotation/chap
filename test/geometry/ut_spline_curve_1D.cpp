@@ -13,7 +13,28 @@
 class SplineCurve1DTest : public ::testing::Test
 {
     public:
-  
+ 
+        std::vector<real> prepareKnotVector(
+                const std::vector<real> &uniqueKnots, 
+                unsigned int degree)
+        {
+            std::vector<real> knots;
+            for(unsigned int i = 0; i < degree; i++)
+            {
+                knots.push_back(uniqueKnots.front());
+            }
+            for(unsigned int i = 0; i < uniqueKnots.size(); i++)
+            {
+                knots.push_back(uniqueKnots[i]);
+            }
+            for(unsigned int i = 0; i < degree; i++)
+            {
+                knots.push_back(uniqueKnots.back());
+            }
+
+            return knots;
+        }
+ 
 };
 
 
@@ -252,5 +273,114 @@ TEST_F(SplineCurve1DTest, SplineCurve1DExtrapolationTest)
     ASSERT_NEAR(0.0,
                 SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor),
                 eps); 
+}
+
+
+
+
+
+/*
+ * TODO: remove temporary test!
+ */
+TEST_F(SplineCurve1DTest, SplineCurve1DPerformanceDeBoor)
+{
+    // linear spline:
+    unsigned int degree = 3;
+
+    // evaluate spline itself:
+    unsigned int deriv = 0;
+
+    // define data points for linear relation:
+    int nData = 1e1;
+    real xLo = -2.0;
+    real xHi = 2.0;
+    real dx = (xHi - xLo)/nData; 
+    std::vector<real> x;
+    std::vector<real> y;
+    x.reserve(nData);
+    y.reserve(nData);
+    for(int i = 0; i <= nData; i++)
+    {
+        x.push_back(i*dx + xLo);
+        y.push_back(x.back()*x.back()*x.back() - 3.0);
+    }
+
+    // create appropriate knot vector for linear interpolation:
+    std::vector<real> knots = prepareKnotVector(x, degree);
+
+    // create corresponding spline curve:
+    SplineCurve1D SplC(degree, knots, y);
+
+    // create evaluation points:
+    int nEval = 1e6;
+    std::vector<real> evalPoints;
+    evalPoints.reserve(nEval);
+    for(int i = 0; i < nEval; i++)
+    {
+        evalPoints.push_back(xLo + i*(xHi - xLo)/nEval);
+    }
+
+    // repeatedly evaluate spline curve:
+    int nReps = 1e0;
+    for(int i = 0; i < nReps; i++)
+    {
+        for(auto eval : evalPoints)
+        {
+            SplC.evaluate(eval, deriv, eSplineEvalDeBoor);
+        }
+    }
+}
+
+
+/*
+ * TODO: remove temporary test!
+ */
+TEST_F(SplineCurve1DTest, SplineCurve1DPerformancePiegl)
+{
+    // linear spline:
+    unsigned int degree = 3;
+
+    // evaluate spline itself:
+    unsigned int deriv = 0;
+
+    // define data points for linear relation:
+    int nData = 1e1;
+    real xLo = -2.0;
+    real xHi = 2.0;
+    real dx = (xHi - xLo)/nData; 
+    std::vector<real> x;
+    std::vector<real> y;
+    x.reserve(nData);
+    y.reserve(nData);
+    for(int i = 0; i <= nData; i++)
+    {
+        x.push_back(i*dx + xLo);
+        y.push_back(x.back()*x.back()*x.back() - 3.0);
+    }
+
+    // create appropriate knot vector for linear interpolation:
+    std::vector<real> knots = prepareKnotVector(x, degree);
+
+    // create corresponding spline curve:
+    SplineCurve1D SplC(degree, knots, y);
+
+    // create evaluation points:
+    int nEval = 1e6;
+    std::vector<real> evalPoints;
+    evalPoints.reserve(nEval);
+    for(int i = 0; i < nEval; i++)
+    {
+        evalPoints.push_back(xLo + i*(xHi - xLo)/nEval);
+    }
+
+    // repeatedly evaluate spline curve:
+    int nReps = 1e0;
+    for(int i = 0; i < nReps; i++)
+    {
+        for(auto eval : evalPoints)
+        {
+            SplC.evaluate(eval, deriv, eSplineEvalPiegl);
+        }
+    }
 }
 
