@@ -208,15 +208,34 @@ BSplineBasisElement::evaluateDerivatives(
 
     // copy function value to output vector:
     ders[0] = coefs[0][degree];
-   
+    // TODO: ders[0] seems to be correct! 
+    std::cout<<"ders[0] = "<<ders[0]<<std::endl<<std::endl<<std::endl;
+    
+
+    std::cout<<"coefs = "<<std::endl;
+    for(int i = 0; i < coefs.size(); i++)
+    {
+        for(int j = 0; j < coefs.at(i).size(); j++)
+        {
+            std::cout<<coefs[i][j]<<"\t";
+        }
+        std::cout<<std::endl;
+    }
+
+
     // compute the derivatives:
     for(int k = 1; k <= deriv; k++)
     {
-        // 
+        //
+        std::cout<<"copy loop"<<std::endl;
         std::vector<real> nd(k + 1);
         for(int i = 0; i <= k; i++)
         {
             nd[i] = coefs[i][degree - k];
+            std::cout<<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"nd[i] = "<<nd[i]<<"  "
+                     <<std::endl;
         }
 
         //
@@ -232,26 +251,66 @@ BSplineBasisElement::evaluateDerivatives(
             {
                 saved = nd[0]/(knots[idx + degree - k + i] - knots[idx]);
             }
+            std::cout<<"pre  loop"<<"  "
+                     <<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"nd[0] = "<<nd[0]<<"  "
+                     <<"saved = "<<saved<<"  "
+                     <<"k - i + 1 = "<<k - i + 1<<"  "
+                     <<std::endl;
 
             //
-            for(int r = 0; r < k - i + 1; r++)
+            for(int j = 0; j < k - i + 1; j++)
             {
                 // left and right knots:
-                real left = knots[idx + r + 1];
-                real right = knots[idx + r + degree + i + 1];
+                real left = knots[idx + j + 2];
+                real right = knots[idx + j + degree + i + 1];
 
-                if( nd[r + 1] == 0.0 )
+                std::cout<<"  j = "<<j<<"  "
+                         <<"left = "<<left<<"  "
+                         <<"right = "<<right<<"  "
+                         <<"nd[j + 1] = "<<nd[j+1]<<"  "
+                         <<"saved = "<<saved<<"  "
+                         <<std::endl;
+
+
+                if( nd[j + 1] == 0.0 )
                 {
-                    nd[r] = (degree - k + i)*saved;
+                    nd[j] = (degree - k + i)*saved;
                     saved = 0.0;
+                    std::cout<<"    IF"<<"  "
+                             <<"degree = "<<degree<<"  "
+                             <<"k = = "<<k<<"  "
+                             <<"i = "<<i<<"  "
+                             <<"nd[j] = "<<nd[j]<<"  "
+                             <<std::endl;
                 }
                 else
                 {
-                    real tmp = nd[r + 1]/(right - left);
-                    nd[r] = (degree - k + i)*(saved - tmp);
+                    // TODO: wrong values occur only if this ELSE is entered,
+                    // but not always when it is entered. I suspect the error 
+                    // is not caused here, but is caused by either wrong values
+                    // being used or the if being entered falsely
+                    //
+                    // error only occurs if left = -4, i.e. leftmost knot value
+                    real tmp = nd[j + 1]/(right - left);
+                    nd[j] = (degree - k + i)*(saved - tmp);
                     saved = tmp;
+                    std::cout<<"    ELSE"<<"  "
+                             <<"degree = "<<degree<<"  "
+                             <<"k = = "<<k<<"  "
+                             <<"i = "<<i<<"  "
+                             <<"tmp = "<<tmp<<"  "
+                             <<"nd[j] = "<<nd[j]<<"  "
+                             <<std::endl;
                 }
             }
+            std::cout<<"post loop"<<"  "
+                     <<"k = "<<k<<"  "
+                     <<"i = "<<i<<"  "
+                     <<"nd[0] = "<<nd[0]<<"  "
+                     <<"saved = "<<saved<<"  "
+                     <<std::endl;
         }
 
         // copy k-th derivative to output vector:
