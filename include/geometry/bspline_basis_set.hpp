@@ -65,7 +65,6 @@ class BSplineBasisSet
                 unsigned int degree,
                 unsigned int deriv,
                 unsigned int knotSpanIdx);
-
 };
 
 #endif

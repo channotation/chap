@@ -161,7 +161,6 @@ BSplineBasisSet::findKnotSpan(
     // handle special case of eval point at endpoint:
     if( eval == knots.at(numBasisFunctions)  )
     {
-//        std::cout<<"endpoint detected"<<std::endl;
         return numBasisFunctions - 1;
     }
 
@@ -207,8 +206,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         unsigned int deriv,
         unsigned int knotSpanIdx)
 {
-//std::cout<<"DERIVATIVE BASED METHOD"<<std::endl;
-    //
+    // allocate memory for temporary data matrix:
     std::vector<std::vector<real>> ndu(degree+1, std::vector<real>(degree+1));
 
     // reserve space for temporary arrays:
@@ -248,19 +246,6 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
         ders[0][i] = ndu[i][degree];
     }
 
-/*
-    std::cout<<std::endl;
-    std::cout<<"ndu = "<<std::endl;
-    for( int i = 0; i <= degree; i++ )
-    {
-        for( int j = 0; j <= degree; j++ )
-        {
-            std::cout<<ndu[i][j]<<"\t";
-        }
-        std::cout<<std::endl;
-    }
-    std::cout<<std::endl;
-*/
     // loop over function index / basis elements:
     for(size_t i = 0; i <= degree; i++)
     {
@@ -279,12 +264,6 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             // temporary variable for summing up to derivative at this (k,1);
             real d = 0.0;
 
-/*            std::cout<<"d creation"<<"  "
-                     <<"k = "<<k<<"  "
-                     <<"i = "<<i<<"  "
-                     <<"d = "<<d<<"  "
-                     <<std::endl;*/
-
             // differences wrt current derivative degree:
             int ik = i - k;
             int pk = degree - k;
@@ -293,19 +272,12 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             // compute a new element in the helper matrix:
             if( i >= k )
             {
-                // TODO ERROR: should be = instead of - 
                 a[s2][0] = a[s1][0]/ndu[pk + 1][ik];
                 d = a[s2][0]*ndu[ik][pk];
             }
-/*            std::cout<<"d post frst if"<<"  "
-                     <<"k = "<<k<<"  "
-                     <<"i = "<<i<<"  "
-                     <<"d = "<<d<<"  "
-                     <<"idx = "<<knotSpanIdx<<"  "
-                     <<std::endl;*/
 
             // lower index limit for loop over helper array:
-            int rLo = 999999;
+            int rLo;
             if( ik >= -1 )
             {
                 rLo = 1;
@@ -316,7 +288,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             }
 
             // upper index limit for loop over helper array:
-            int rHi = -9999;
+            int rHi;
             if( i - 1 <= pk )
             {
                 rHi = k - 1;
@@ -331,26 +303,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             {
                 a[s2][r] = (a[s1][r] - a[s1][r-1])/ndu[pk+1][ik + r];
                 d += a[s2][r]*ndu[ik+r][pk];
-
-/*
-                std::cout<<"  "
-                         <<"r = "<<r<<"  "
-                         <<"ndu[pk+1][r] = "<<ndu[pk+1][r]<<"  "
-                         <<"ndu[ik+r][pk] = "<<ndu[ik+r][pk]<<"  "
-                         <<"a[s1][r] = "<<a[s1][r]<<"  "
-                         <<"a[s1][r-1] = "<<a[s1][r-1]<<"  "
-                         <<"a[s2][r] = "<<a[s2][r]<<"  "
-                         <<"d = "<<d<<"  "
-                         <<"ik = "<<ik<<"  "
-                         <<"pk = "<<pk<<"  "
-                         <<std::endl;*/
             }
-/*            std::cout<<"d post loop   "<<"  "
-                     <<"k = "<<k<<"  "
-                     <<"i = "<<i<<"  "
-                     <<"d = "<<d<<"  "
-                     <<"idx = "<<knotSpanIdx<<"  "
-                     <<std::endl;*/
 
             // additional summand:
             // NOTE: extra check for 1 != 0 is not in Piegl's algorithm
@@ -358,31 +311,10 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
             {
                 a[s2][k] = -a[s1][k-1]/ndu[pk+1][i];
                 d += a[s2][k]*ndu[i][pk];
-/*                std::cout<<"i = "<<i<<"  "
-                         <<"pk = "<<pk<<"  "
-                         <<"s1 = "<<s1<<"  "
-                         <<"s2 = "<<s2<<"  "
-                         <<"a[s1][k-1] = "<<a[s1][k-1]<<"  "
-                         <<"ndu[pk+1][i] = "<<ndu[pk+1][i]<<"  "
-                         <<"a[s2][k] = "<<a[s2][k]<<"  "
-                         <<"ndu[i][pk] = "<<ndu[i][pk]<<"  "
-                         <<std::endl;*/
             }
-/*            std::cout<<"d post scnd if"<<"  "
-                     <<"k = "<<k<<"  "
-                     <<"i = "<<i<<"  "
-                     <<"d = "<<d<<"  "
-                     <<"idx = "<<knotSpanIdx<<"  "
-                     <<std::endl;*/
 
             // assign value of derivative to output matrix:
             ders[k][i] = d;
-
-/*            std::cout<<"k = "<<k<<"  "
-                     <<"i = "<<i<<"  "
-                     <<"d = "<<d<<"  "
-                     <<"ders[k][i] = "<<ders[k][i]<<"  "
-                     <<std::endl;*/
 
             // switch rows:
             int tmp = s1;
@@ -395,25 +327,13 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
     int fac = degree;
     for(size_t k = 1; k <= deriv; k++)
     {
-        // TODO ERROR should be smaller equal
         for(size_t i = 0; i <= degree; i++)
         {
             ders[k][i] *= fac;
         }
-        // TODO: bracket this:
         fac *= (degree - k);
     }
-/*
-    for(int i = 0; i < ders.size(); i++)
-    {
-        for(int j = 0; j < ders.at(i).size(); j++)
-        {
-            std::cout<<ders[i][j]<<"\t";
-        }
-        std::cout<<std::endl;
-    }
-    std::cout<<std::endl;
-*/
+
     // return output matrix:
     return ders;
 }
