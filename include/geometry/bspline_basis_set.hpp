@@ -7,8 +7,6 @@
 
 #include <gromacs/utility/real.h> 
 
-#include "geometry/abstract_bspline_basis.hpp"
-
 
 /*!
  * \brief Functor class for evaluating complete set of B-spline basis
@@ -25,7 +23,7 @@
  * In cases where only a single basis function (or derivative thereof) is 
  * required, BSplineBasisElement may be more efficient.
  */
-class BSplineBasisSet : public AbstractBSplineBasis
+class BSplineBasisSet
 {
     friend class BSplineBasisSetTest;
     FRIEND_TEST(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest);
@@ -37,6 +35,8 @@ class BSplineBasisSet : public AbstractBSplineBasis
                 real eval, 
                 const std::vector<real> &knots, 
                 unsigned int degree);
+   
+        // public interface for evaluation with derivatives:
         std::vector<real> operator()(
                 real eval, 
                 const std::vector<real> &knots, 
@@ -45,13 +45,18 @@ class BSplineBasisSet : public AbstractBSplineBasis
 
     private:
 
+        // method for finding the correct knot span:
+        size_t findKnotSpan(
+                real eval,
+                const std::vector<real> &knots,
+                unsigned int degree);
+
         // method for evaluating the nonzero elements of basis:
         inline std::vector<real> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
                 unsigned int knotSpanIdx);
-
 
         // method for evaluating nonzero elements of basis (derivatives):
         inline std::vector<std::vector<real>> evaluateNonzeroBasisElements(
