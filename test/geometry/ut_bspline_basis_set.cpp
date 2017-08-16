@@ -52,10 +52,7 @@ class BSplineBasisSetTest : public ::testing::Test
 /*!
  * Test that BSplineBasisSet finds the correct knot span for a number of
  * evaluation points.
- *
- * TODO migrate this to abstract base class
  */
-/*
 TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
 {
     // create functor:
@@ -70,12 +67,11 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
     {
         // asser correct knot span index:
         size_t idx = B.findKnotSpan(evalPoints_[i], knots, degree);
-        std::cout<<"eval = "<<evalPoints_[i]<<"  "
-                 <<"idx = "<<idx<<std::endl;
         ASSERT_EQ(knotSpanIdx_[i] + degree, idx);
     }
 }
-*/
+
+
 
 /*!
  * Checks that the sum over the entire basis is equal to one for constant 
@@ -307,20 +303,12 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
         // loop over basis (derivatives):
         for(int j = 0; j < basisSet.size(); j++)
         {
-
-/*            std::cout<<"j = "<<j<<"  "
-                     <<"B = "<<basisSet[j]<<"  "
-                     <<"ref = "<<refValCubic[i*basisSet.size() + j]<<"  "
-                     <<std::endl;*/
-
             // check agreement with reference values:
             ASSERT_NEAR(
                     refValCubic[i*basisSet.size() + j],
                     basisSet[j],
                     std::numeric_limits<real>::epsilon());
         }
-
-        std::cout<<std::endl;
     }
 }
 
@@ -363,39 +351,12 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
         // loop over basis (derivatives):
         for(int j = 0; j < basisSet.size(); j++)
         {
-
-/*            std::cout<<"j = "<<j<<"  "
-                     <<"B = "<<basisSet[j]<<"  "
-                     <<"ref = "<<refValCubic[i*basisSet.size() + j]<<"  "
-                     <<std::endl;*/
-
             // check agreement with reference values:
             ASSERT_NEAR(
                     refValCubic[i*basisSet.size() + j],
                     basisSet[j],
                     std::numeric_limits<real>::epsilon());
         }
-
-        std::cout<<std::endl;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
