@@ -97,12 +97,6 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
             real unity = 0.0;
             for(auto b = basis.begin(); b != basis.end(); b++)
             {
-                std::cout<<"eval = "<<evalPoints_[i]<<"  "
-                         <<"degree = "<<degree<<"  "
-                         <<"nKnots = "<<knots.size()<<"  "
-                         <<"nBasis = "<<basis.size()<<"  "
-                         <<"B = "<<b -> second<<"  "
-                         <<std::endl;
                 unity += b -> second;
             }
 
@@ -373,7 +367,6 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
 /*
  * TODO remove temporary test
  */
-/*
 TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_PIEGL)
 {
     unsigned int degree = 3;
@@ -405,12 +398,12 @@ TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_PIEGL)
     int nReps = 1e4;
     for(int i = 0; i < nReps; i++)
     {
-        std::vector<real> basisSet = B(eval, knots, degree);
+        SparseBasis basisSet = B(eval, knots, degree);
     }
     
 
 }
-*/
+
 
 /*
  * TODO remove temporary test
