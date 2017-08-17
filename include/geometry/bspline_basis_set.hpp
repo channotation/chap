@@ -45,7 +45,7 @@ class BSplineBasisSet
                 unsigned int degree);
    
         // public interface for evaluation with derivatives:
-        std::vector<real> operator()(
+        SparseBasis operator()(
                 real eval, 
                 const std::vector<real> &knots, 
                 unsigned int degree, 

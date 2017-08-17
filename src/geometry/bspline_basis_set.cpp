@@ -52,7 +52,7 @@ BSplineBasisSet::operator()(
  * spline degree and and \f$ n \f$ is the order of the requested derivative 
  * where by convention the zeroth derivative is the basis function itself.
  */
-std::vector<real>
+SparseBasis
 BSplineBasisSet::operator()(
         real eval,
         const std::vector<real> &knots,
@@ -62,11 +62,19 @@ BSplineBasisSet::operator()(
     // number of basis elements:
     unsigned int nBasis = knots.size() - degree - 1;
 
+    // reserve memory for sparse basis vector:
+    SparseBasis basisSet;
+    basisSet.reserve(nBasis);
+
     // derivative order higher than spline degree:
     if( deriv > degree )
     {
         // simply return vector of all zeros in this case:
-        return std::vector<real>(nBasis, 0.0);
+        for(unsigned int i = 0; i < nBasis; i++)
+        {
+            basisSet[i] = 0.0;
+        }
+        return basisSet;
     }
 
     // find knot span for evalution point:
@@ -82,10 +90,9 @@ BSplineBasisSet::operator()(
             knotSpanIdx);
 
     // pad with zeros to create full length basis vector:
-    std::vector<real> basisSet(nBasis, 0.0);
     for(size_t i = 0; i < nonzeroBasisElements[deriv].size(); i++)
     {
-        basisSet.at(i + knotSpanIdx - degree) = nonzeroBasisElements.at(deriv).at(i);
+        basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[deriv][i];
     }
 
     // return basis set:

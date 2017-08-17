@@ -218,7 +218,8 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
     int degree = 3;
 
     // reference values:
-    std::vector<real> refValCubic = {
+    int nBasis = 7;
+    std::vector<real> refVal = {
             1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000,
             0.18658892, 0.46041363, 0.29942602, 0.05357143, 0.00000000, 0.00000000, 0.00000000,
             0.00000000, 0.00000000, 0.05555556, 0.88888889, 0.05555556, 0.00000000, 0.00000000,
@@ -237,7 +238,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis (derivatives) at this point:
-        std::vector<real> basisSet = B(
+        SparseBasis basis = B(
                 evalPoints_[i],
                 knots,
                 degree,
@@ -247,16 +248,16 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetZerothDerivativeTest)
         real unity = 0.0;
 
         // loop over basis (derivatives):
-        for(size_t j = 0; j < basisSet.size(); j++)
+        for(auto b : basis)
         {
             // check agreement with reference values:            
             ASSERT_NEAR(
-                    refValCubic[i*basisSet.size() + j],
-                    basisSet[j],
+                    refVal[i*nBasis + b.first],
+                    b.second,
                     std::numeric_limits<real>::epsilon());
 
             // increment sum over basis elements:
-            unity += basisSet[j];
+            unity += b.second;
         }
 
         // check partition of unity property:
@@ -276,7 +277,8 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
     int degree = 3;
 
     // reference values:
-    std::vector<real> refValCubic = {
+    int nBasis = 7;
+    std::vector<real> refVal = {
             -0.85714286,  0.8571429,  0.0000000,  0.0000000,  0.00000000,  0.0000000, 0.00000000,
             -0.27988338, -0.1046829,  0.2774235,  0.1071429,  0.00000000,  0.0000000, 0.00000000,
              0.00000000,  0.0000000, -0.3333333,  0.0000000,  0.33333333,  0.0000000, 0.00000000,
@@ -295,19 +297,19 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetFirstDerivativeTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis (derivatives) at this point:
-        std::vector<real> basisSet = B(
+        SparseBasis basis = B(
                 evalPoints_[i],
                 knots,
                 degree,
                 deriv);
 
         // loop over basis (derivatives):
-        for(size_t j = 0; j < basisSet.size(); j++)
+        for(auto b : basis)
         {
             // check agreement with reference values:
             ASSERT_NEAR(
-                    refValCubic[i*basisSet.size() + j],
-                    basisSet[j],
+                    refVal[i*nBasis + b.first],
+                    b.second,
                     std::numeric_limits<real>::epsilon());
         }
     }
@@ -325,7 +327,8 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
     int degree = 3;
 
     // reference values:
-    std::vector<real> refValCubic = {
+    int nBasis = 7;
+    std::vector<real> refVal = {
             0.48979592, -0.9183673,  0.42857143,  0.0000000,  0.0000000,  0.00000000, 0.0000000,
             0.27988338, -0.3640671, -0.05867347,  0.1428571,  0.0000000,  0.00000000, 0.0000000,
             0.00000000,  0.0000000,  1.33333333, -2.6666667,  1.3333333,  0.00000000, 0.0000000,
@@ -344,19 +347,19 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis (derivatives) at this point:
-        std::vector<real> basisSet = B(
+        SparseBasis basis = B(
                 evalPoints_[i],
                 knots,
                 degree,
                 deriv);
 
         // loop over basis (derivatives):
-        for(size_t j = 0; j < basisSet.size(); j++)
+        for(auto b : basis)
         {
             // check agreement with reference values:
             ASSERT_NEAR(
-                    refValCubic[i*basisSet.size() + j],
-                    basisSet[j],
+                    refVal[i*nBasis + b.first],
+                    b.second,
                     std::numeric_limits<real>::epsilon());
         }
     }
