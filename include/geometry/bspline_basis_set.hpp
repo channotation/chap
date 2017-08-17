@@ -1,11 +1,19 @@
 #ifndef BSPLINE_BASIS_SET_HPP
 #define BSPLINE_BASIS_SET_HPP
 
+#include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 #include <gtest/gtest.h>
 
 #include <gromacs/utility/real.h> 
+
+
+/*
+ *
+ */
+typedef std::unordered_map<unsigned int, real> SparseBasis;
 
 
 /*!
@@ -31,7 +39,7 @@ class BSplineBasisSet
     public:
 
         // public interface for evaluation:
-        std::vector<real> operator()(
+        SparseBasis operator()(
                 real eval, 
                 const std::vector<real> &knots, 
                 unsigned int degree);
@@ -52,14 +60,14 @@ class BSplineBasisSet
                 unsigned int degree);
 
         // method for evaluating the nonzero elements of basis:
-        inline std::vector<real> evaluateNonzeroBasisElements(
+        std::vector<real> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
                 unsigned int knotSpanIdx);
 
         // method for evaluating nonzero elements of basis (derivatives):
-        inline std::vector<std::vector<real>> evaluateNonzeroBasisElements(
+        std::vector<std::vector<real>> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,

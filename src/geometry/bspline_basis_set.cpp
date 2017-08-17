@@ -12,7 +12,7 @@
  * then contains the B-spline basis elements \f$ B_{i,p} \f$ with 
  * \f$ i\in[0, m - p - 1] \f$.
  */
-std::vector<real>
+SparseBasis
 BSplineBasisSet::operator()(
         real eval,
         const std::vector<real> &knots,
@@ -28,9 +28,8 @@ BSplineBasisSet::operator()(
             degree,
             knotSpanIdx);
 
-    // pad with zeros to create full length basis vector:
-    unsigned int nBasis = knots.size() - degree - 1;
-    std::vector<real> basisSet(nBasis, 0.0);
+    // create sparse basis vector with appropriate indexing:
+    SparseBasis basisSet;
     for(size_t i = 0; i < nonzeroBasisElements.size(); i++)
     {
         basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[i];

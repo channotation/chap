@@ -91,17 +91,23 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetParitionOfUnityTest)
         for(size_t i = 0; i < evalPoints_.size(); i++)
         {
             // evaluate basis:
-            std::vector<real> basis = B(evalPoints_[i], knots, degree);
+            SparseBasis basis = B(evalPoints_[i], knots, degree);
 
             // compute sum over basis functions:
             real unity = 0.0;
-            for(size_t j = 0; j < basis.size(); j++)
+            for(auto b = basis.begin(); b != basis.end(); b++)
             {
-                unity += basis[j];
+                std::cout<<"eval = "<<evalPoints_[i]<<"  "
+                         <<"degree = "<<degree<<"  "
+                         <<"nKnots = "<<knots.size()<<"  "
+                         <<"nBasis = "<<basis.size()<<"  "
+                         <<"B = "<<b -> second<<"  "
+                         <<std::endl;
+                unity += b -> second;
             }
 
             // basis should sum to one:
-            ASSERT_NEAR(1.0, unity, std::numeric_limits<real>::epsilon());
+            ASSERT_NEAR(1.0, unity, 10*std::numeric_limits<real>::epsilon());
         }
     }
 }
@@ -119,7 +125,8 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetQuadraticTest)
     unsigned int degree = 2;
 
     // reference values:
-    std::vector<real> refValQuadratic = {
+    int nBasis = 6;
+    std::vector<real> refVal = {
             1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 
             0.32653060, 0.51275510, 0.16071430, 0.00000000, 0.00000000, 0.00000000,
             0.00000000, 0.00000000, 0.50000000, 0.50000000, 0.00000000, 0.00000000, 
@@ -138,15 +145,15 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetQuadraticTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis set:
-        std::vector<real> basisSet = B(evalPoints_[i], knots, degree);
+        SparseBasis basis = B(evalPoints_[i], knots, degree);
 
         // loop over basis:
-        for(size_t j = 0; j < basisSet.size(); j++)
+        for(auto b : basis)
         {
             // check agreement with reference values:
             ASSERT_NEAR(
-                    refValQuadratic[i*basisSet.size() + j], 
-                    basisSet[j],
+                    refVal[i*nBasis + b.first], 
+                    b.second,
                     std::numeric_limits<real>::epsilon());
         }
     }
@@ -165,7 +172,8 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
     unsigned int degree = 3;
 
     // reference values:
-    std::vector<real> refValCubic = {
+    int nBasis = 7;
+    std::vector<real> refVal = {
             1.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000,
             0.18658892, 0.46041363, 0.29942602, 0.05357143, 0.00000000, 0.00000000, 0.00000000,
             0.00000000, 0.00000000, 0.05555556, 0.88888889, 0.05555556, 0.00000000, 0.00000000,
@@ -184,15 +192,15 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetCubicTest)
     for(size_t i = 0; i < evalPoints_.size(); i++)
     {
         // evaluate basis set:
-        std::vector<real> basisSet = B(evalPoints_[i], knots, degree);
+        SparseBasis basis = B(evalPoints_[i], knots, degree);
 
         // loop over basis:
-        for(size_t j = 0; j < basisSet.size(); j++)
+        for(auto b : basis)
         {
             // check agreement with reference values:
             ASSERT_NEAR(
-                    refValCubic[i*basisSet.size() + j], 
-                    basisSet[j],
+                    refVal[i*nBasis + b.first], 
+                    b.second,
                     std::numeric_limits<real>::epsilon());
         }
     }
@@ -362,6 +370,7 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
 /*
  * TODO remove temporary test
  */
+/*
 TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_PIEGL)
 {
     unsigned int degree = 3;
@@ -398,7 +407,7 @@ TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_PIEGL)
     
 
 }
-
+*/
 
 /*
  * TODO remove temporary test
@@ -431,7 +440,7 @@ TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_DEBOOR)
     real eval = 0.0;
 
     // repeatedly evaluate basis:
-    int nReps = 1e4;
+    int nReps = 1e3;
     for(int i = 0; i < nReps; i++)
     {
         std::vector<real> basisSet;
