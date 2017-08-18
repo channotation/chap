@@ -20,7 +20,7 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
         t_pbc pbc,
         gmx::AnalysisNeighborhoodPositions porePos,
         std::vector<real> vdwRadii)
-    : AbstractProbePathFinder(params, initProbePos, pbc, porePos, vdwRadii)
+    : AbstractProbePathFinder(params, initProbePos, vdwRadii)
     , porePos_(porePos)
     , pbc_(pbc)
     , chanDirVec_(chanDirVec)
