@@ -10,16 +10,32 @@
 
 #include "geometry/abstract_spline_curve.hpp"
 
-#include "geometry/bspline_basis_set.hpp"
+#include "geometry/bspline_basis_set.hpp" // TODO this needs to goto mother class
 
 
-/*
+/*!
+ * \brief Spline curve in three dimensions.
  *
+ * This class represents spline curves in three dimensions. It internally 
+ * maintains a set of knots and three-dimensional control points, from which 
+ * the expression
+ *
+ * \f[
+ *      \mathbf{S}(s) = \sum_i \mathbf{c}_i B_{i, p}(s)
+ * \f]
+ *
+ * can be used to evaluate the curve and its derivative. This in turn also
+ * gives access to the curve's differential properties such as its length(),
+ * tangentVec(), and normalVec(). 
+ *
+ * The method arcLengthParam() can be used to change the internal
+ * representation of the curve such that it is parameterised by arc length. 
  */
 class SplineCurve3D : public AbstractSplineCurve
 {
     public:
-       
+      
+        // TODO: move to base class!
         BSplineBasisSet B_;
 
         // constructor and destructor:
@@ -27,39 +43,30 @@ class SplineCurve3D : public AbstractSplineCurve
                       std::vector<real> knotVector,
                       std::vector<gmx::RVec> ctrlPoints);
         SplineCurve3D();
-        SplineCurve3D(const SplineCurve3D &other);
-        ~SplineCurve3D();
 
-        //
+        // public interface for curve evaluation:
         gmx::RVec evaluate(const real &eval, unsigned int deriv);
-        gmx::RVec evaluateInternal(const real &eval, unsigned int deriv);
-        gmx::RVec evaluateExternal(const real &eval, unsigned int deriv);
-        gmx::RVec computeLinearCombination(const SparseBasis &basis);
 
         // reparameterisation methods:
         void arcLengthParam();
+        // map points onto curve:
+        real pointSqDist(gmx::RVec point, real eval);
+        gmx::RVec cartesianToCurvilinear(
+                gmx::RVec cartPoint,
+                real lo,
+                real hi);
 
-        // calculate properties of curve:
-        real length(real &lo, real &hi);
+        // calculate differential properties of curve:
+        real length(const real &lo, const real &hi);
         real length();
-     
-        gmx::RVec tangentVec(real &eval);
-//        gmx::RVec normalVec(real &evalPoints);
-        
-        real speed( real &eval);
+        gmx::RVec tangentVec(const real &eval);
+        gmx::RVec normalVec(const real &evalPoints);        
+        real speed(const real &eval);
 
         // utilities for accessing arc length at the control points:
         std::vector<real> ctrlPointArcLength();
         real frstPointArcLength();
         real lastPointArcLength();
-
-        // map points onto curve:
-        real pointSqDist(gmx::RVec point, real eval);
-        int closestCtrlPoint(gmx::RVec &point);
-        gmx::RVec cartesianToCurvilinear(gmx::RVec cartPoint,
-                                         real lo,
-                                         real hi,
-                                         real tol);
  
         // getter functions:
         std::vector<gmx::RVec> ctrlPoints() const;
@@ -69,17 +76,23 @@ class SplineCurve3D : public AbstractSplineCurve
         // internal variables:
         std::vector<gmx::RVec> ctrlPoints_;
 
+        // arc length lookup table utilities:
         bool arcLengthTableAvailable_;
         std::vector<real> arcLengthTable_;
 
+        // curve evaluation utilities:
+        inline gmx::RVec evaluateInternal(const real &eval, unsigned int deriv);
+        inline gmx::RVec evaluateExternal(const real &eval, unsigned int deriv);
+        inline gmx::RVec computeLinearCombination(const SparseBasis &basis);
+
         // curve length utilities:
-        real arcLengthBoole(real lo, real hi);
+        inline real arcLengthBoole(const real &lo, const real &hi);
         void prepareArcLengthTable();
         
         // arc length reparameterisation utilities:
-        real arcLengthToParam(real &arcLength);
-        bool arcLengthToParamTerm(real lo, real hi, real tol);
-        real arcLengthToParamObj(real lo, real hi, real target);
+        inline real arcLengthToParam(real &arcLength);
+        inline bool arcLengthToParamTerm(real lo, real hi, real tol);
+        inline real arcLengthToParamObj(real lo, real hi, real target);
 };
 
 #endif

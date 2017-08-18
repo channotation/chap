@@ -461,8 +461,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
                                                      -2.1,
-                                                     2.1,
-                                                     eps);
+                                                     2.1);
 
         // check identity with analytical solution:
         ASSERT_NEAR(t[i], curvi[0], eps);
@@ -495,8 +494,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      -10,
-                                                     10,
-                                                     eps);
+                                                     10);
 
         // check identity with analytical solution:
         ASSERT_NEAR(sTrue[i], curvi[0], eps);
@@ -539,8 +537,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
                                                      tStart,
-                                                     tEnd,
-                                                     eps);
+                                                     tEnd);
 
 //        std::cerr<<"i = "<<i<<"  params[i] = "<<params[i]<<"  curvi[0] = "<<curvi[0]<<std::endl;
 
@@ -576,8 +573,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      0.5*par,
-                                                     2.5*par,
-                                                     1e-7);
+                                                     2.5*par);
 
         // check identity with analytical solution:
         // FIXME: this test still fails
