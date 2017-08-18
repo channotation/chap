@@ -30,14 +30,6 @@ class SplineCurve3D : public AbstractSplineCurve
         SplineCurve3D(const SplineCurve3D &other);
         ~SplineCurve3D();
 
-        // public interface for spline evaluation:
-        gmx::RVec evaluate(real &evalPoint,
-                           unsigned int derivOrder,
-                           eSplineEvalMethod method);
-        gmx::RVec operator()(real &evalPoint,
-                             unsigned int derivOrder,
-                             eSplineEvalMethod method);
-
         //
         gmx::RVec evaluate(const real &eval, unsigned int deriv);
         gmx::RVec evaluateInternal(const real &eval, unsigned int deriv);
@@ -54,7 +46,7 @@ class SplineCurve3D : public AbstractSplineCurve
         gmx::RVec tangentVec(real &eval);
 //        gmx::RVec normalVec(real &evalPoints);
         
-        real speed(real &eval);
+        real speed( real &eval);
 
         // utilities for accessing arc length at the control points:
         std::vector<real> ctrlPointArcLength();

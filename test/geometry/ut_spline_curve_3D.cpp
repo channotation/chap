@@ -327,7 +327,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
         real evalPoint = i*(tEnd - tStart)/(nEval - 1);
 
         // evaluate spline and analytical expression at this point:
-        gmx::RVec splVal = SplC(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec splVal = SplC.evaluate(evalPoint, 0);
         gmx::RVec anaVal(a*std::cos(evalPoint), 
                          a*std::sin(evalPoint), 
                          b*evalPoint);

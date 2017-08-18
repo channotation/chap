@@ -89,54 +89,6 @@ SplineCurve3D::~SplineCurve3D()
 
 
 /*
- * Public interface for spline curve evaluation. This function Will return the 
- * (vector-valued) value of the spline curve (or its derivative) at a given
- * evaluation point.
- */
-gmx::RVec
-SplineCurve3D::evaluate(real &evalPoint,
-                        unsigned int derivOrder,
-                        eSplineEvalMethod method)
-{
-    // initialise return value:
-    gmx::RVec value(0.0, 0.0, 0.0);
-
-    // create individual vectors for each dimension:
-    // TODO: is it more efficient to do this in constructor?
-    std::vector<real> ctrlCoefsX;
-    std::vector<real> ctrlCoefsY;
-    std::vector<real> ctrlCoefsZ;
-    for(int i = 0; i < nCtrlPoints_; i++)
-    {
-        ctrlCoefsX.push_back(ctrlPoints_.at(i)[0]);
-        ctrlCoefsY.push_back(ctrlPoints_.at(i)[1]);
-        ctrlCoefsZ.push_back(ctrlPoints_.at(i)[2]);
-    } 
-
-    // evaluate spline function in each dimension:
-    real valueX = evaluateSplineFun(evalPoint, ctrlCoefsX, derivOrder, method);
-    real valueY = evaluateSplineFun(evalPoint, ctrlCoefsY, derivOrder, method);
-    real valueZ = evaluateSplineFun(evalPoint, ctrlCoefsZ, derivOrder, method);
-
-    // return result in vectorial form:
-    return gmx::RVec(valueX, valueY, valueZ);
-}
-
-
-/*
- * Public evalaution interface conveniently defined as an operator.
- */
-gmx::RVec
-SplineCurve3D::operator()(real &evalPoint,
-                          unsigned int derivOrder,
-                          eSplineEvalMethod method)
-{
-    return evaluate(evalPoint, derivOrder, method);
-}
-
-
-
-/*
  *
  */
 gmx::RVec
@@ -281,7 +233,7 @@ SplineCurve3D::arcLengthParam()
         real oldParam = arcLengthToParam(newParam); 
 
         //  evaluate spline to get new point:
-        newPoints.push_back(this -> evaluate(oldParam, 0, eSplineEvalDeBoor));
+        newPoints.push_back(this -> evaluate(oldParam, 0));
     }
 
     // interpolate new points to get arc length parameterised curve:
@@ -696,7 +648,7 @@ real
 SplineCurve3D::pointSqDist(gmx::RVec point, real eval)
 {
     // evaluate spline:
-    gmx::RVec splPoint = evaluate(eval, 0, eSplineEvalDeBoor);
+    gmx::RVec splPoint = evaluate(eval, 0);
 
     // return squared distance:
     return (splPoint[0] - point[0])*(splPoint[0] - point[0]) +
