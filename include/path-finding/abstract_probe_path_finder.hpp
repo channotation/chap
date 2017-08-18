@@ -19,10 +19,10 @@ class AbstractProbePathFinder : public AbstractPathFinder
     public:
 
         // constructor:
-        AbstractProbePathFinder(
-                std::map<std::string, real> &params,
-                const gmx::RVec &initProbePos,
-                const std::vector<real> &vdwRadii);
+        AbstractProbePathFinder(std::map<std::string, real> params,
+                                gmx::RVec initProbePos,
+                                std::vector<real> vdwRadii);
+
 
     protected:
 

@@ -211,7 +211,7 @@ AbstractPathFinder::getMolecularPath()
  * Setter function for parameters. On the base class, only changes the flag.
  */
 void
-AbstractPathFinder::setParameters(const PathFindingParameters /*&params */)
+AbstractPathFinder::setParameters(const PathFindingParameters& /*&params*/)
 {
     parametersSet_ = true;
 }
