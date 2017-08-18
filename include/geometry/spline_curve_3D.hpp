@@ -51,10 +51,10 @@ class SplineCurve3D : public AbstractSplineCurve
         real length(real &lo, real &hi);
         real length();
      
-        gmx::RVec tangentVec(real &evalPoint);
+        gmx::RVec tangentVec(real &eval);
 //        gmx::RVec normalVec(real &evalPoints);
         
-        real speed(real &evalPoint);
+        real speed(real &eval);
 
         // utilities for accessing arc length at the control points:
         std::vector<real> ctrlPointArcLength();

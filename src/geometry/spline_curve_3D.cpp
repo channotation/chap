@@ -292,6 +292,7 @@ SplineCurve3D::arcLengthParam()
 
     // update own parameters:
     this -> knotVector_ = newSpl.knotVector_;
+    this -> knots_ = newSpl.knotVector_;
     this -> ctrlPoints_ = newSpl.ctrlPoints_;
     this -> nKnots_ = newSpl.nKnots_;
     this -> nCtrlPoints_ = newSpl.nCtrlPoints_;
@@ -309,7 +310,7 @@ SplineCurve3D::length(real &lo, real &hi)
     // do we need to form a lookup table:
     if( arcLengthTableAvailable_ == false || arcLengthTable_.size() == 0 )
     {
-       prepareArcLengthTable(); 
+        prepareArcLengthTable(); 
     }
 
     // initialise length as zero::
@@ -361,9 +362,9 @@ SplineCurve3D::length()
  * the given point.
  */
 gmx::RVec
-SplineCurve3D::tangentVec(real &evalPoint)
+SplineCurve3D::tangentVec(real &eval)
 {
-    return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
+    return evaluate(eval, 1); 
 }
 
 /*
@@ -383,15 +384,10 @@ SplineCurve3D::normalVec(real &evalPoint)
  * refers to the magnitude of the tangent vector.
  */
 real
-SplineCurve3D::speed(real &evalPoint)
+SplineCurve3D::speed(real &eval)
 {
-    // calculate tangent vector:
-    gmx::RVec tangentVec = this -> tangentVec(evalPoint);
-
     // return magnitude of tangent vector:
-    return std::sqrt(tangentVec[0]*tangentVec[0] + 
-                     tangentVec[1]*tangentVec[1] +
-                     tangentVec[2]*tangentVec[2]);
+    return norm( this -> tangentVec(eval) );
 }
 
 
