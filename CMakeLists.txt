@@ -83,7 +83,7 @@ link_directories( /usr/local/fftw/lib/ )
 #file(GLOB SOURCES "src/*.cpp")
 
 # set compiler and linker flags:
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O1 -g")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
 
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 
@@ -105,7 +105,7 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
 #message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
-set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack")
+set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack -std=c++14")
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
@@ -128,7 +128,7 @@ add_subdirectory(test)
 #------------------------------------------------------------------------------
 
 # TODO: remove this for release
-#set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap/bin")
+set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

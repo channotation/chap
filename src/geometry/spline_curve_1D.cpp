@@ -3,8 +3,9 @@
 #include "geometry/spline_curve_1D.hpp"
 
 
-/*
- * Constructor.
+/*!
+ * Constructor for creating a spline curve of given degree from a set of knots
+ * and control points.
  */
 SplineCurve1D::SplineCurve1D(int degree,
                              std::vector<real> knotVector,
@@ -36,14 +37,13 @@ SplineCurve1D::SplineCurve1D(int degree,
     }
 
     // assign knot vector and control points:
-    knotVector_ = knotVector;
+    knots_ = knotVector;
     ctrlPoints_ = ctrlPoints;
 }
 
 
-
-/*
- *
+/*!
+ * Default constror for initialiser lists.
  */
 SplineCurve1D::SplineCurve1D()
 {
@@ -51,71 +51,102 @@ SplineCurve1D::SplineCurve1D()
 }
 
 
-/*
- * Destructor.
+/*!
+ * Public interface for evaluating the spline curve. In contrast to the method
+ * of the same name in SplineCurve3D, this will use constant rather than linear
+ * extrapolation when the evaluation point lies outside the range covered by
+ * the knot vector.
  */
-SplineCurve1D::~SplineCurve1D()
+real
+SplineCurve1D::evaluate(const real &eval, unsigned int deriv)
 {
-
+    // interpolation or extrapolation:
+    if( eval < knots_.front() || eval > knots_.back() )
+    {
+        return evaluateExternal(eval, deriv);
+    }
+    else
+    {
+        return evaluateInternal(eval, deriv);
+    }
 }
 
 
-/*
- * Public interface for spline evaluation. This function takes an evaluation 
- * point as an argument and returns the spline's value at this point. The 
- * actual evaluation is handled by different functions and the method argument
- * specifies which of these (a naive sum over all basis splines or de Boor's
- * recursive algorithm) should be used.
- *
- * The function can also evaluate the spline curve's derivative at a point and
- * the derivOrder argument is used to specify which order of the derivative 
- * should be evaluated. If deriOrder != 0 (the zeroth derivative is the 
- * function itself), then the method argument is ignored.
+/*!
+ * Helper function for evaluating the spline curve at points inside the range 
+ * covered by the knot vector.
  */
 real
-SplineCurve1D::evaluate(real &evalPoint, 
-                        unsigned int derivOrder, 
-                        eSplineEvalMethod method)
+SplineCurve1D::evaluateInternal(const real &eval, unsigned int deriv)
 {
-    // use constant extrapolation here:
-    if( evalPoint <= knotVector_.front() )
-    {
-        if( derivOrder > 0 )
-        {
-            return 0.0;
-        }
-        else
-        {
-            return ctrlPoints_.front();
-        }
-    }
-    if(  evalPoint >= knotVector_.back() )
-    {
-        if( derivOrder > 0 )
-        {
-            return 0.0;
-        }
-        else
-        {
-            return ctrlPoints_.back();
-        }
-    }
+    // container for basis functions or derivatives:
+    SparseBasis basis;
 
-    // one-dimensional case is just evaluation of spline function:
-    return evaluateSplineFun(evalPoint, ctrlPoints_, derivOrder, method);
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // evaluate B-spline basis:
+        basis = B_(eval, knots_, degree_);
+    }
+    else
+    {
+        // evaluate B-spline basis derivatives:
+        basis = B_(eval, knots_, degree_, deriv); 
+    }
+    
+    // return value of spline curve (derivative) at given evalaution point:
+    return computeLinearCombination(basis);
+ 
 }
 
 
-/*
- * Evaluation interface conveniently defined as operator.
+/*!
+ * Helper function for evaluating the spline curve at points outside the range
+ * covered by the knot vector. Constant extrapolation is used here!
  */
 real
-SplineCurve1D::operator()(real &evalPoint, 
-                          unsigned int derivOrder, 
-                          eSplineEvalMethod method)
+SplineCurve1D::evaluateExternal(const real &eval, unsigned int deriv)
 {
-    // actual compuatation is handled by evaluate method:
-    return evaluate(evalPoint, derivOrder, method);
+    // which boundary is extrapolation based on?
+    real boundary;
+    if( eval < knots_.front() )
+    {
+        boundary = knots_.front();
+    }
+    else
+    {
+        boundary = knots_.back();
+    }
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // return value of curve at boundary:
+        SparseBasis basis = B_(boundary, knots_, degree_);
+        return computeLinearCombination(basis);
+    }
+    else
+    {
+        // for linear extrapolation, second and higher order deriv are zero:
+        return 0.0;
+    }
+}
+
+
+/*!
+ * Auxiliary function for computing the linear combination of basis functions
+ * weighted by control points.
+ */
+real
+SplineCurve1D::computeLinearCombination(const SparseBasis &basis)
+{
+    real value = 0.0; 
+    for(auto b : basis)
+    {
+        value += b.second * ctrlPoints_[b.first];
+    }
+
+    return value;
 }
 
 

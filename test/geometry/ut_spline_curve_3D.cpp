@@ -20,12 +20,9 @@ class SplineCurve3DTest : public ::testing::Test
 
 
 /*
- * Uses a simple linear interpolating spline to test whether naive evaluation 
- * works correctly. Evaluation points are chosen to be the control points and
- * the interval midpoints.
+ *
  */
-
-TEST_F(SplineCurve3DTest, SplineCurve3DLinearNaiveTest)
+TEST_F(SplineCurve3DTest, SplineCurve3DLinearTest)
 {
     // floating point comparison threshold:
     real eps = std::numeric_limits<real>::epsilon();
@@ -59,7 +56,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLinearNaiveTest)
     // check if spline is evaluates to control points at original data points:
     for(unsigned int i = 0; i < t.size(); i++)
     {
-        gmx::RVec value = SplC.evaluate(t[i], derivOrder, eSplineEvalNaive);
+        gmx::RVec value = SplC.evaluate(t[i], derivOrder);
         ASSERT_NEAR(f[i][0], value[0], eps);
         ASSERT_NEAR(f[i][1], value[1], eps);
         ASSERT_NEAR(f[i][2], value[2], eps);
@@ -69,65 +66,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLinearNaiveTest)
     for(unsigned int i = 0; i < t.size() - 1; i++)
     {
         real midpoint = (t[i] + t[i+1])/2.0; 
-        gmx::RVec value = SplC.evaluate(midpoint, derivOrder, eSplineEvalNaive);
-        ASSERT_NEAR((f[i][0] + f[i+1][0])/2.0, value[0], eps);
-        ASSERT_NEAR((f[i][1] + f[i+1][1])/2.0, value[1], eps);
-        ASSERT_NEAR((f[i][2] + f[i+1][2])/2.0, value[2], eps);
-    }
-}
-
-
-/*
- * Uses a simple linear interpolating spline to test whether de Boor evaluation
- * works correctly. Evaluation points are chosen to be the control points and
- * the interval midpoints.
- */
-
-TEST_F(SplineCurve3DTest, SplineCurve3DLinearDeBoorTest)
-{
-    // floating point comparison threshold:
-    real eps = std::numeric_limits<real>::epsilon();
-
-    // linear spline:
-    int degree = 1;
-
-    // evaluate spline itself:
-    unsigned int derivOrder = 0;
-
-    // define data points for linear relation:
-    std::vector<real> t = {-2.0, -1.0, 0.0, 1.0, 2.0};
-    std::vector<gmx::RVec> f = {gmx::RVec(-2.0,  2.0,  2.0),
-                                gmx::RVec(-1.0,  1.0,  2.5),
-                                gmx::RVec( 0.0,  0.0,  3.0),
-                                gmx::RVec( 1.0, -1.0,  3.5),
-                                gmx::RVec( 2.0, -2.0,  4.0)};
-
-    // create appropriate knot vector for linear interpolation:
-    std::vector<real> knots;
-    knots.push_back(t.front());
-    for(unsigned int i = 0; i < t.size(); i++)
-    {
-        knots.push_back(t[i]);
-    }
-    knots.push_back(t.back());
-    
-    // create corresponding spline curve:
-    SplineCurve3D SplC(degree, knots, f);
-
-    // check if spline is evaluates to control points at original data points:
-    for(unsigned int i = 0; i < t.size(); i++)
-    {
-        gmx::RVec value = SplC.evaluate(t[i], derivOrder, eSplineEvalNaive);
-        ASSERT_NEAR(f[i][0], value[0], eps);
-        ASSERT_NEAR(f[i][1], value[1], eps);
-        ASSERT_NEAR(f[i][2], value[2], eps);
-    }
-
-    // check if spline interpolates linearly at interval midpoints:
-    for(unsigned int i = 0; i < t.size() - 1; i++)
-    {
-        real midpoint = (t[i] + t[i+1])/2.0; 
-        gmx::RVec value = SplC.evaluate(midpoint, derivOrder, eSplineEvalNaive);
+        gmx::RVec value = SplC.evaluate(midpoint, derivOrder);
         ASSERT_NEAR((f[i][0] + f[i+1][0])/2.0, value[0], eps);
         ASSERT_NEAR((f[i][1] + f[i+1][1])/2.0, value[1], eps);
         ASSERT_NEAR((f[i][2] + f[i+1][2])/2.0, value[2], eps);
@@ -173,7 +112,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     // check if spline is evaluates to control points at original data points:
     for(unsigned int i = 0; i < t.size(); i++)
     {
-        gmx::RVec value = SplC.evaluate(t[i], derivOrder, eSplineEvalNaive);
+        gmx::RVec value = SplC.evaluate(t[i], derivOrder);
         ASSERT_NEAR( 1.0, value[0], eps);
         ASSERT_NEAR(-1.0, value[1], eps);
         ASSERT_NEAR( 0.5, value[2], eps);
@@ -183,7 +122,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     for(unsigned int i = 0; i < t.size() - 1; i++)
     {
         real midpoint = (t[i] + t[i+1])/2.0; 
-        gmx::RVec value = SplC.evaluate(midpoint, derivOrder, eSplineEvalNaive);
+        gmx::RVec value = SplC.evaluate(midpoint, derivOrder);
         ASSERT_NEAR( 1.0, value[0], eps);
         ASSERT_NEAR(-1.0, value[1], eps);
         ASSERT_NEAR( 0.5, value[2], eps);
@@ -195,7 +134,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     // check if spline is evaluates to control points at original data points:
     for(unsigned int i = 0; i < t.size(); i++)
     {
-        gmx::RVec value = SplC.evaluate(t[i], derivOrder, eSplineEvalNaive);
+        gmx::RVec value = SplC.evaluate(t[i], derivOrder);
         ASSERT_NEAR(0.0, value[0], eps);
         ASSERT_NEAR(0.0, value[1], eps);
         ASSERT_NEAR(0.0, value[2], eps);
@@ -205,7 +144,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     for(unsigned int i = 0; i < t.size() - 1; i++)
     {
         real midpoint = (t[i] + t[i+1])/2.0; 
-        gmx::RVec value = SplC.evaluate(midpoint, derivOrder, eSplineEvalNaive);
+        gmx::RVec value = SplC.evaluate(midpoint, derivOrder);
         ASSERT_NEAR(0.0, value[0], eps);
         ASSERT_NEAR(0.0, value[1], eps);
         ASSERT_NEAR(0.0, value[2], eps);
@@ -248,34 +187,34 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
 
     // check evaluation below data range:
     real evalPoint = -4.0;
-    gmx::RVec value = SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor);
+    gmx::RVec value = SplC.evaluate(evalPoint, 0);
     ASSERT_NEAR(-4.0, value[0], eps);
     ASSERT_NEAR( 4.0, value[1], eps);
     ASSERT_NEAR( 1.0, value[2], eps);
 
-    gmx::RVec frstDeriv = SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor);
+    gmx::RVec frstDeriv = SplC.evaluate(evalPoint, 1);
     ASSERT_NEAR( 1.0, frstDeriv[0], eps);
     ASSERT_NEAR(-1.0, frstDeriv[1], eps);
     ASSERT_NEAR( 0.5, frstDeriv[2], eps);
 
-    gmx::RVec scndDeriv = SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor);
+    gmx::RVec scndDeriv = SplC.evaluate(evalPoint, 2);
     ASSERT_NEAR(0.0, scndDeriv[0], eps);
     ASSERT_NEAR(0.0, scndDeriv[1], eps);
     ASSERT_NEAR(0.0, scndDeriv[2], eps);
 
     // check evaluation above data range:
     evalPoint = 4.0;
-    value = SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor);
+    value = SplC.evaluate(evalPoint, 0);
     ASSERT_NEAR( 4.0, value[0], eps);
     ASSERT_NEAR(-4.0, value[1], eps);
     ASSERT_NEAR( 5.0, value[2], eps);
 
-    frstDeriv = SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor);
+    frstDeriv = SplC.evaluate(evalPoint, 1);
     ASSERT_NEAR( 1.0, frstDeriv[0], eps);
     ASSERT_NEAR(-1.0, frstDeriv[1], eps);
     ASSERT_NEAR( 0.5, frstDeriv[2], eps);
 
-    scndDeriv = SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor);
+    scndDeriv = SplC.evaluate(evalPoint, 2);
     ASSERT_NEAR(0.0, scndDeriv[0], eps);
     ASSERT_NEAR(0.0, scndDeriv[1], eps);
     ASSERT_NEAR(0.0, scndDeriv[2], eps); 
@@ -327,7 +266,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
         real evalPoint = i*(tEnd - tStart)/(nEval - 1);
 
         // evaluate spline and analytical expression at this point:
-        gmx::RVec splVal = SplC(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec splVal = SplC.evaluate(evalPoint, 0);
         gmx::RVec anaVal(a*std::cos(evalPoint), 
                          a*std::sin(evalPoint), 
                          b*evalPoint);
@@ -388,7 +327,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
         real evalPoint = i*(tEnd - tStart)/(nEval - 1);
 
         // evaluate spline and analytical expression at this point:
-        gmx::RVec splVal = SplC(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec splVal = SplC.evaluate(evalPoint, 0);
         gmx::RVec anaVal(a*std::cos(evalPoint), 
                          a*std::sin(evalPoint), 
                          b*evalPoint);
@@ -456,6 +395,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
     CubicSplineInterp3D Interp;
     SplineCurve3D SplC = Interp(params, points, eSplineInterpBoundaryHermite);
 
+
     // switch to an arc length parameterised curve:
     SplC.arcLengthParam();
 
@@ -472,7 +412,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 
         // these should be the same:
         ASSERT_NEAR(anaVal, splVal, eps);
-    }     
+    }
 }
 
 
@@ -521,8 +461,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
                                                      -2.1,
-                                                     2.1,
-                                                     eps);
+                                                     2.1);
 
         // check identity with analytical solution:
         ASSERT_NEAR(t[i], curvi[0], eps);
@@ -555,8 +494,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      -10,
-                                                     10,
-                                                     eps);
+                                                     10);
 
         // check identity with analytical solution:
         ASSERT_NEAR(sTrue[i], curvi[0], eps);
@@ -599,8 +537,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
                                                      tStart,
-                                                     tEnd,
-                                                     eps);
+                                                     tEnd);
 
 //        std::cerr<<"i = "<<i<<"  params[i] = "<<params[i]<<"  curvi[0] = "<<curvi[0]<<std::endl;
 
@@ -636,8 +573,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      0.5*par,
-                                                     2.5*par,
-                                                     1e-7);
+                                                     2.5*par);
 
         // check identity with analytical solution:
         // FIXME: this test still fails

@@ -7,18 +7,38 @@
 #include "geometry/spline_curve_1D.hpp"
 
 
-/*
- * Test fixture for the one dimensional spline curve.
+/*!
+ * \brief Test fixture for the one dimensional spline curve.
  */
 class SplineCurve1DTest : public ::testing::Test
 {
     public:
-  
+ 
+        std::vector<real> prepareKnotVector(
+                const std::vector<real> &uniqueKnots, 
+                unsigned int degree)
+        {
+            std::vector<real> knots;
+            for(unsigned int i = 0; i < degree; i++)
+            {
+                knots.push_back(uniqueKnots.front());
+            }
+            for(unsigned int i = 0; i < uniqueKnots.size(); i++)
+            {
+                knots.push_back(uniqueKnots[i]);
+            }
+            for(unsigned int i = 0; i < degree; i++)
+            {
+                knots.push_back(uniqueKnots.back());
+            }
+
+            return knots;
+        }
+ 
 };
 
 
-
-/*
+/*!
  * Simple test case for the interval finding method.
  */
 TEST_F(SplineCurve1DTest, SplineCurve1DFindIntervalTest)
@@ -49,12 +69,12 @@ TEST_F(SplineCurve1DTest, SplineCurve1DFindIntervalTest)
 }
 
 
-/*
- * Uses a simple linear interpolating spline to test whether naive evaluation 
+/*!
+ * Uses a simple linear interpolating spline to test whether spline evaluation 
  * works correctly. Evaluation points are chosen to be the control points and
  * the interval midpoints.
  */
-TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
+TEST_F(SplineCurve1DTest, SplineCurve1DLinearTest)
 {
     // floating point comparison threshold:
     real eps = std::numeric_limits<real>::epsilon();
@@ -85,7 +105,7 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
     for(unsigned int i = 0; i < x.size(); i++)
     {
         ASSERT_NEAR(y[i],
-                    SplC.evaluate(x[i], derivOrder, eSplineEvalNaive), 
+                    SplC.evaluate(x[i], derivOrder), 
                     eps);
     }
 
@@ -94,64 +114,13 @@ TEST_F(SplineCurve1DTest, SplineCurve1DLinearNaiveTest)
     {
         real midpoint = (x[i] + x[i+1])/2.0; 
         ASSERT_NEAR((y[i] + y[i+1])/2.0, 
-                    SplC.evaluate(midpoint, derivOrder, eSplineEvalNaive), 
+                    SplC.evaluate(midpoint, derivOrder), 
                     eps);
     }
 }
 
 
-/*
- * Uses a simple linear interpolating spline to test whether de Boor evaluation
- * works correctly. Evaluation points are chosen to be the control points and
- * the interval midpoints.
- */
-TEST_F(SplineCurve1DTest, SplineCurve1DLinearDeBoorTest)
-{
-    // floating point comparison threshold:
-    real eps = std::numeric_limits<real>::epsilon();
-
-    // linear spline:
-    int degree = 1;
-
-    // evaluate spline curve itself:
-    unsigned int derivOrder = 0;
-
-    // define data points for linear relation:
-    std::vector<real> x = {-2.0, -1.0, 0.0, 1.0, 2.0};
-    std::vector<real> y = {-2.0, -1.0, 0.0, 1.0, 2.0};
-
-    // create appropriate knot vector for linear interpolation:
-    std::vector<real> knots;
-    knots.push_back(x.front());
-    for(unsigned int i = 0; i < x.size(); i++)
-    {
-        knots.push_back(x[i]);
-    }
-    knots.push_back(x.back());
-
-    // create corresponding spline curve:
-    SplineCurve1D SplC(degree, knots, y);
-
-    // check if spline is evaluates to control points at original data points:
-    for(unsigned int i = 0; i < x.size(); i++)
-    {
-        ASSERT_NEAR(y[i],
-                    SplC.evaluate(x[i], derivOrder, eSplineEvalDeBoor), 
-                    eps);
-    }
-
-    // check if spline interpolates linearly at interval midpoints:
-    for(unsigned int i = 0; i < x.size() - 1; i++)
-    {
-        real midpoint = (x[i] + x[i+1])/2.0; 
-        ASSERT_NEAR((y[i] + y[i+1])/2.0, 
-                    SplC.evaluate(midpoint, derivOrder, eSplineEvalDeBoor), 
-                    eps);
-    }
-}
-
-
-/*
+/*!
  * Simple test for whether the first and second derivative of the spline curve
  * are evaluated correctly on a linear spline curve.
  */
@@ -182,8 +151,8 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
     // check if spline is evaluates to control points at original data points:
     for(unsigned int i = 1; i < x.size() - 1; i++)
     {
-        real frstDeriv = SplC.evaluate(x[i], 1, eSplineEvalDeBoor);
-        real scndDeriv = SplC.evaluate(x[i], 2, eSplineEvalDeBoor);
+        real frstDeriv = SplC.evaluate(x[i], 1);
+        real scndDeriv = SplC.evaluate(x[i], 2);
         ASSERT_NEAR(-2.0, frstDeriv, eps);
         ASSERT_NEAR(0.0, scndDeriv, eps);
     }
@@ -192,15 +161,15 @@ TEST_F(SplineCurve1DTest, SplineCurve1DDerivativeTest)
     for(unsigned int i = 0; i < x.size() - 1; i++)
     {
         real midpoint = (x[i] + x[i+1])/2.0; 
-        real frstDeriv = SplC.evaluate(midpoint, 1, eSplineEvalDeBoor);
-        real scndDeriv = SplC.evaluate(midpoint, 2, eSplineEvalDeBoor);
+        real frstDeriv = SplC.evaluate(midpoint, 1);
+        real scndDeriv = SplC.evaluate(midpoint, 2);
         ASSERT_NEAR(-2.0, frstDeriv, eps);
         ASSERT_NEAR(0.0, scndDeriv, eps);
     }
 }
 
 
-/*
+/*!
  * Test for evaluation of spline outside the knot vector range. In this case, 
  * linear extrapolation is used and this is checked for the curve value as well
  * as its first and second derivative.
@@ -232,25 +201,25 @@ TEST_F(SplineCurve1DTest, SplineCurve1DExtrapolationTest)
     // check evaluation below data range:
     real evalPoint = -4.0;
     ASSERT_NEAR(4.0,
-                SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor),
+                SplC.evaluate(evalPoint, 0),
                 eps);
     ASSERT_NEAR(0.0,
-                SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor),
+                SplC.evaluate(evalPoint, 1),
                 eps);
     ASSERT_NEAR(0.0,
-                SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor),
+                SplC.evaluate(evalPoint, 2),
                 eps);
 
     // check evaluation above data range:
     evalPoint = 4.0;
     ASSERT_NEAR(-4.0,
-                SplC.evaluate(evalPoint, 0, eSplineEvalDeBoor),
+                SplC.evaluate(evalPoint, 0),
                 eps);
     ASSERT_NEAR(0.0,
-                SplC.evaluate(evalPoint, 1, eSplineEvalDeBoor),
+                SplC.evaluate(evalPoint, 1),
                 eps);
     ASSERT_NEAR(0.0,
-                SplC.evaluate(evalPoint, 2, eSplineEvalDeBoor),
+                SplC.evaluate(evalPoint, 2),
                 eps); 
 }
 

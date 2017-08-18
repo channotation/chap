@@ -204,8 +204,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
             // evaluate density:
             real density = densitySpline.evaluate(
                     eval,
-                    0,
-                    eSplineEvalDeBoor);
+                    0);
 
             // this should always be zero:
             ASSERT_NEAR(0.0, density, std::sqrt(eps));
@@ -220,8 +219,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
             // evaluate density:
             real density = densitySpline.evaluate(
                     eval,
-                    0,
-                    eSplineEvalDeBoor);
+                    0);
 
             // this should always be zero:
             ASSERT_NEAR(0.0, density, std::sqrt(eps));
@@ -241,8 +239,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
             // evaluate density at this point:
             real density = densitySpline.evaluate(
                     eval,
-                    0,
-                    eSplineEvalDeBoor);
+                    0);
             evalDensities.push_back(density);
         }
 

@@ -36,7 +36,7 @@ TEST_F(CubicSplineInterp1DTest, CubicSplineInterpHermiteLinearTest)
     // check that spline curve goes through support points:
     for(unsigned int i = 0; i < x.size(); i++)
     {
-        real val = Spl.evaluate(x.at(i), derivOrder, eSplineEvalDeBoor);
+        real val = Spl.evaluate(x.at(i), derivOrder);
         ASSERT_NEAR(f.at(i), val, std::numeric_limits<real>::epsilon());
     }
 
@@ -44,7 +44,7 @@ TEST_F(CubicSplineInterp1DTest, CubicSplineInterpHermiteLinearTest)
     for(unsigned int i = 0; i < x.size() - 1; i++)
     {
         real evalPoint = (x.at(i) + x.at(i+1))/2.0;  
-        real val = Spl.evaluate(evalPoint, derivOrder, eSplineEvalDeBoor);
+        real val = Spl.evaluate(evalPoint, derivOrder);
         ASSERT_NEAR((f.at(i) + f.at(i+1))/2.0, val, std::numeric_limits<real>::epsilon());
     }
 }

@@ -10,8 +10,11 @@
 #include "geometry/abstract_spline_curve.hpp"
 
 
-/*
+/*!
+ * \brief Spline curve in one dimension.
  *
+ * This class represents a spline curve in one spatial dimension, i.e. a spline
+ * function. In three dimensions, the class SplineCurve3D can be used.
  */
 class SplineCurve1D : public AbstractSplineCurve
 {
@@ -19,35 +22,31 @@ class SplineCurve1D : public AbstractSplineCurve
     FRIEND_TEST(SplineCurve1DTest, SplineCurve1DFindIntervalTest);
 
     public:
-
+    
         // constructor and destructor:
         SplineCurve1D(
                 int degree, 
                 std::vector<real> knotVector,
-                std::vector<real> ctrlPoints);
-                
+                std::vector<real> ctrlPoints); 
         SplineCurve1D();
-        ~SplineCurve1D();
 
-        // public interfact for spline evaluation:
-        real evaluate(
-                real &evalPoint, 
-                unsigned int derivOrder, 
-                eSplineEvalMethod method);
-        real operator()(
-                real &evalPoint, 
-                unsigned int derivOrder,
-                eSplineEvalMethod method);
+        // public interface for curve evalaution:
+        real evaluate(const real &eval, unsigned int deriv);
 
         // getter function for control points:
         std::vector<real> ctrlPoints() const;
+
 
     private:
 
         // internal variables:
         std::vector<real> ctrlPoints_;
-};
 
+        // auxiliary functions for evaluation:
+        inline real evaluateInternal(const real &eval, unsigned int deriv);
+        inline real evaluateExternal(const real &eval, unsigned int deriv);
+        inline real computeLinearCombination(const SparseBasis &basis);
+};
 
 #endif
 
