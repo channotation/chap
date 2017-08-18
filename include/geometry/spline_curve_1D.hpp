@@ -47,9 +47,9 @@ class SplineCurve1D : public AbstractSplineCurve
         std::vector<real> ctrlPoints_;
 
         // auxiliary functions for evaluation:
-        real evaluateInternal(const real &eval, unsigned int deriv);
-        real evaluateExternal(const real &eval, unsigned int deriv);
-        real computeLinearCombination(const SparseBasis &basis);
+        inline real evaluateInternal(const real &eval, unsigned int deriv);
+        inline real evaluateExternal(const real &eval, unsigned int deriv);
+        inline real computeLinearCombination(const SparseBasis &basis);
 };
 
 #endif
