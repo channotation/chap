@@ -10,8 +10,6 @@
 
 #include "geometry/abstract_spline_curve.hpp"
 
-#include "geometry/bspline_basis_set.hpp" // TODO this needs to goto mother class
-
 
 /*!
  * \brief Spline curve in three dimensions.
@@ -35,9 +33,6 @@ class SplineCurve3D : public AbstractSplineCurve
 {
     public:
       
-        // TODO: move to base class!
-        BSplineBasisSet B_;
-
         // constructor and destructor:
         SplineCurve3D(int degree,
                       std::vector<real> knotVector,

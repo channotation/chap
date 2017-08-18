@@ -9,8 +9,6 @@
 
 #include "geometry/abstract_spline_curve.hpp"
 
-#include "geometry/bspline_basis_set.hpp" // TODO to mother class
-
 
 /*!
  * \brief Spline curve in one dimension.
@@ -25,8 +23,6 @@ class SplineCurve1D : public AbstractSplineCurve
 
     public:
     
-        BSplineBasisSet B_; // TODO: move to mother class
-
         // constructor and destructor:
         SplineCurve1D(
                 int degree, 
