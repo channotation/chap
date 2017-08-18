@@ -10,6 +10,8 @@
 
 #include "geometry/abstract_spline_curve.hpp"
 
+#include "geometry/bspline_basis_set.hpp"
+
 
 /*
  *
@@ -17,7 +19,9 @@
 class SplineCurve3D : public AbstractSplineCurve
 {
     public:
-        
+       
+        BSplineBasisSet B_;
+
         // constructor and destructor:
         SplineCurve3D(int degree,
                       std::vector<real> knotVector,
@@ -33,6 +37,12 @@ class SplineCurve3D : public AbstractSplineCurve
         gmx::RVec operator()(real &evalPoint,
                              unsigned int derivOrder,
                              eSplineEvalMethod method);
+
+        //
+        gmx::RVec evaluate(const real &eval, unsigned int deriv);
+        gmx::RVec evaluateInternal(const real &eval, unsigned int deriv);
+        gmx::RVec evaluateExternal(const real &eval, unsigned int deriv);
+        gmx::RVec computeLinearCombination(const SparseBasis &basis);
 
         // reparameterisation methods:
         void arcLengthParam();

@@ -49,6 +49,7 @@ SplineCurve3D::SplineCurve3D(int degree,
 
     // assign knot vector and control points:
     knotVector_ = knotVector;
+    knots_ = knotVector;
     ctrlPoints_ = ctrlPoints;
 }
 
@@ -132,6 +133,120 @@ SplineCurve3D::operator()(real &evalPoint,
 {
     return evaluate(evalPoint, derivOrder, method);
 }
+
+
+
+/*
+ *
+ */
+gmx::RVec
+SplineCurve3D::evaluate(
+        const real &eval,
+        unsigned int deriv)
+{
+    // extrapolation or interpolation?
+    if( eval < knots_.front() || eval > knots_.back() )
+    {
+        return evaluateExternal(eval, deriv);
+    }
+    else
+    {
+        return evaluateInternal(eval, deriv);
+    }
+}
+
+
+/*
+ *
+ */
+gmx::RVec 
+SplineCurve3D::evaluateInternal(const real &eval, unsigned int deriv)
+{
+    // container for basis functions or derivatives:
+    SparseBasis basis;
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // evaluate B-spline basis:
+        basis = B_(eval, knots_, degree_);
+    }
+    else
+    {
+        // evaluate B-spline basis derivatives:
+        basis = B_(eval, knots_, degree_, deriv); 
+    }
+    
+    // return value of spline curve (derivative) at given evalaution point:
+    return computeLinearCombination(basis);
+}
+
+
+/*
+ *
+ */
+gmx::RVec 
+SplineCurve3D::evaluateExternal(const real &eval, unsigned int deriv)
+{   
+    // which boundary is extrapolation based on?
+    real boundary;
+    if( eval < knots_.front() )
+    {
+        boundary = knots_.front();
+    }
+    else
+    {
+        boundary = knots_.back();
+    }
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // compute slope and offset:
+        // TODO: this can be made mor efficient by evaluating basis and derivs
+        // in one go!
+        SparseBasis basis = B_(boundary, knots_, degree_);
+        gmx::RVec offset = computeLinearCombination(basis);
+        basis = B_(boundary, knots_, degree_, 1);
+        gmx::RVec slope = computeLinearCombination(basis);
+
+        // return extrapolation point:
+        svmul(eval - boundary, slope, slope);
+        rvec_add(slope, offset, slope);
+        return slope;
+
+    }
+    else if( deriv == 1 )
+    {
+        // simply return the slope at the endpoint:
+        SparseBasis basis = B_(boundary, knots_, degree_, 1);
+        return computeLinearCombination(basis);
+    }
+    else
+    {
+        // for linear extrapolation, second and higher order deriv are zero:
+        return gmx::RVec(0.0, 0.0, 0.0);
+    }
+}
+
+
+/*
+ *
+ */
+gmx::RVec
+SplineCurve3D::computeLinearCombination(const SparseBasis &basis)
+{
+    gmx::RVec value(gmx::RVec(0.0, 0.0, 0.0)); 
+    for(auto b : basis)
+    {
+        gmx::RVec tmp;
+        svmul(b.second, ctrlPoints_[b.first], tmp);
+        rvec_add(value, tmp, value);
+    }
+
+    return value;
+}
+
 
 
 /*
