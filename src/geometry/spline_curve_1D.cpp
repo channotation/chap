@@ -3,8 +3,9 @@
 #include "geometry/spline_curve_1D.hpp"
 
 
-/*
- * Constructor.
+/*!
+ * Constructor for creating a spline curve of given degree from a set of knots
+ * and control points.
  */
 SplineCurve1D::SplineCurve1D(int degree,
                              std::vector<real> knotVector,
@@ -42,9 +43,8 @@ SplineCurve1D::SplineCurve1D(int degree,
 }
 
 
-
-/*
- *
+/*!
+ * Default constror for initialiser lists.
  */
 SplineCurve1D::SplineCurve1D()
 {
@@ -52,84 +52,11 @@ SplineCurve1D::SplineCurve1D()
 }
 
 
-/*
- * Destructor.
- */
-SplineCurve1D::~SplineCurve1D()
-{
-
-}
-
-
-/*
- * Public interface for spline evaluation. This function takes an evaluation 
- * point as an argument and returns the spline's value at this point. The 
- * actual evaluation is handled by different functions and the method argument
- * specifies which of these (a naive sum over all basis splines or de Boor's
- * recursive algorithm) should be used.
- *
- * The function can also evaluate the spline curve's derivative at a point and
- * the derivOrder argument is used to specify which order of the derivative 
- * should be evaluated. If deriOrder != 0 (the zeroth derivative is the 
- * function itself), then the method argument is ignored.
- */
-
-real
-SplineCurve1D::evaluate(real &evalPoint, 
-                        unsigned int derivOrder, 
-                        eSplineEvalMethod method)
-{
-    // use constant extrapolation here:
-    if( evalPoint <= knotVector_.front() )
-    {
-        if( derivOrder > 0 )
-        {
-            return 0.0;
-        }
-        else
-        {
-            return ctrlPoints_.front();
-        }
-    }
-    if(  evalPoint >= knotVector_.back() )
-    {
-        if( derivOrder > 0 )
-        {
-            return 0.0;
-        }
-        else
-        {
-            return ctrlPoints_.back();
-        }
-    }
-
-    // one-dimensional case is just evaluation of spline function:
-    return evaluateSplineFun(evalPoint, ctrlPoints_, derivOrder, method);
-}
-
-
-
-/*
- * Evaluation interface conveniently defined as operator.
- */
-
-real
-SplineCurve1D::operator()(real &evalPoint, 
-                          unsigned int derivOrder, 
-                          eSplineEvalMethod method)
-{
-    // actual compuatation is handled by evaluate method:
-    return evaluate(evalPoint, derivOrder, method);
-}
-
-
-
-
-
-
-
-/*
- *
+/*!
+ * Public interface for evaluating the spline curve. In contrast to the method
+ * of the same name in SplineCurve3D, this will use constant rather than linear
+ * extrapolation when the evaluation point lies outside the range covered by
+ * the knot vector.
  */
 real
 SplineCurve1D::evaluate(const real &eval, unsigned int deriv)
@@ -146,8 +73,9 @@ SplineCurve1D::evaluate(const real &eval, unsigned int deriv)
 }
 
 
-/*
- *
+/*!
+ * Helper function for evaluating the spline curve at points inside the range 
+ * covered by the knot vector.
  */
 real
 SplineCurve1D::evaluateInternal(const real &eval, unsigned int deriv)
@@ -173,8 +101,9 @@ SplineCurve1D::evaluateInternal(const real &eval, unsigned int deriv)
 }
 
 
-/*
- *
+/*!
+ * Helper function for evaluating the spline curve at points outside the range
+ * covered by the knot vector. Constant extrapolation is used here!
  */
 real
 SplineCurve1D::evaluateExternal(const real &eval, unsigned int deriv)
@@ -205,8 +134,9 @@ SplineCurve1D::evaluateExternal(const real &eval, unsigned int deriv)
 }
 
 
-/*
- *
+/*!
+ * Auxiliary function for computing the linear combination of basis functions
+ * weighted by control points.
  */
 real
 SplineCurve1D::computeLinearCombination(const SparseBasis &basis)

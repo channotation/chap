@@ -508,7 +508,7 @@ MolecularPath::length()
 real
 MolecularPath::radius(real s)
 {
-    return poreRadius_(s, 0, eSplineEvalDeBoor);
+    return poreRadius_.evaluate(s, 0);
 }
 
 
@@ -636,7 +636,7 @@ MolecularPath::minRadius()
     int nSamples = std::ceil(length_/maxSampleDist);
     std::vector<real> s = sampleArcLength(nSamples, 0.0);
     std::vector<real> r = sampleRadii(s);
-    
+   
     // find smallest sample radius:
     auto itMin = std::min_element(r.begin(), r.end());
     int idxMin = std::distance(r.begin(), itMin);
@@ -957,7 +957,7 @@ MolecularPath::sampleRadii(std::vector<real> arcLengthSample)
     for(size_t i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
-        radii.push_back( poreRadius_(arcLengthSample[i], 0, eSplineEvalDeBoor) );
+        radii.push_back( poreRadius_.evaluate(arcLengthSample[i], 0) );
     }
 
     // return vector of points:
