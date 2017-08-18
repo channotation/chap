@@ -40,7 +40,7 @@ AbstractSplineCurve::nKnots() const
 std::vector<real>
 AbstractSplineCurve::knotVector() const
 {
-    return knotVector_;
+    return knots_;
 }
 
 
@@ -53,8 +53,8 @@ AbstractSplineCurve::uniqueKnots() const
 {
     // extract unique knots from knot vector:
     std::vector<real> uniqueKnots(
-            knotVector_.begin() + degree_,
-            knotVector_.end() - degree_);
+            knots_.begin() + degree_,
+            knots_.end() - degree_);
 
     // return unique knots:
     return uniqueKnots;
@@ -71,7 +71,7 @@ AbstractSplineCurve::uniqueKnots() const
 void
 AbstractSplineCurve::shift(const gmx::RVec &shift)
 {
-    for(auto it = knotVector_.begin(); it != knotVector_.end(); it++)
+    for(auto it = knots_.begin(); it != knots_.end(); it++)
     {
         *it -= shift[SS];
     }
@@ -93,24 +93,24 @@ AbstractSplineCurve::findInterval(const real &evalPoint)
     int idx = -1;
 
     // check if eval point is identical to last knot:
-    if( evalPoint == knotVector_.back() )
+    if( evalPoint == knots_.back() )
     {
         // find iterator to interval bound:
-        std::vector<real>::iterator it_lo = std::lower_bound(knotVector_.begin(), 
-                                                             knotVector_.end(), 
+        std::vector<real>::iterator it_lo = std::lower_bound(knots_.begin(), 
+                                                             knots_.end(), 
                                                              evalPoint);
         // calculate interval index:
-        idx = it_lo - knotVector_.begin() - 1;
+        idx = it_lo - knots_.begin() - 1;
     }
     else
     {
         // find iterator to interval point:
-        std::vector<real>::iterator it_hi = std::upper_bound(knotVector_.begin(), 
-                                                             knotVector_.end(), 
+        std::vector<real>::iterator it_hi = std::upper_bound(knots_.begin(), 
+                                                             knots_.end(), 
                                                              evalPoint);
 
         // calculate interval index:
-        idx = it_hi - knotVector_.begin() - 1;
+        idx = it_hi - knots_.begin() - 1;
     }
 
     // return interval index:

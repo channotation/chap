@@ -37,7 +37,6 @@ SplineCurve1D::SplineCurve1D(int degree,
     }
 
     // assign knot vector and control points:
-    knotVector_ = knotVector;
     knots_ = knotVector;
     ctrlPoints_ = ctrlPoints;
 }

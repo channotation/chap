@@ -51,7 +51,6 @@ class AbstractSplineCurve
         int degree_;
         int nCtrlPoints_;
         int nKnots_;
-        std::vector<real> knotVector_;
         std::vector<real> knots_;
 
         // basis spline (derivative) functor:

@@ -49,7 +49,6 @@ SplineCurve3D::SplineCurve3D(
     }
 
     // assign knot vector and control points:
-    knotVector_ = knotVector;
     knots_ = knotVector;
     ctrlPoints_ = ctrlPoints;
 }
@@ -231,8 +230,7 @@ SplineCurve3D::arcLengthParam()
                                   eSplineInterpBoundaryHermite);
 
     // update own parameters:
-    this -> knotVector_ = newSpl.knotVector_;
-    this -> knots_ = newSpl.knotVector_;
+    this -> knots_ = newSpl.knots_;
     this -> ctrlPoints_ = newSpl.ctrlPoints_;
     this -> nKnots_ = newSpl.nKnots_;
     this -> nCtrlPoints_ = newSpl.nCtrlPoints_;
@@ -267,8 +265,8 @@ SplineCurve3D::length(const real &lo, const real &hi)
     }
     else
     {
-        length += arcLengthBoole(lo, knotVector_[idxLo + 1]);
-        length += arcLengthBoole(knotVector_[idxHi], hi);
+        length += arcLengthBoole(lo, knots_[idxLo + 1]);
+        length += arcLengthBoole(knots_[idxHi], hi);
     }
 
     // if necessary, loop over intermediate spline segments and sum up lengths:
@@ -292,7 +290,7 @@ SplineCurve3D::length(const real &lo, const real &hi)
 real 
 SplineCurve3D::length()
 {
-    return length(knotVector_.front(), knotVector_.back());
+    return length(knots_.front(), knots_.back());
 }
 
 
@@ -420,12 +418,12 @@ SplineCurve3D::arcLengthBoole(const real &lo, const real &hi)
 void
 SplineCurve3D::prepareArcLengthTable()
 {
-    arcLengthTable_.resize(knotVector_.size());
+    arcLengthTable_.resize(knots_.size());
     real segmentLength;
-    for(unsigned int i = 0; i < knotVector_.size() - 1; i++)
+    for(unsigned int i = 0; i < knots_.size() - 1; i++)
     {
         // calculate length of current segment:
-        segmentLength = arcLengthBoole(knotVector_[i], knotVector_[i+1]);
+        segmentLength = arcLengthBoole(knots_[i], knots_[i+1]);
 
         // add to arc length table:
         arcLengthTable_[i + 1] = arcLengthTable_[i] + segmentLength;
@@ -509,7 +507,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     // handle upper endpoint:
     if( arcLength == arcLengthTable_.back() )
     {
-        return knotVector_.back();
+        return knots_.back();
     }
 
     // find apropriate interval:
@@ -523,7 +521,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     // TODO: add case for query below lower bound and test!
     if( bounds.second == arcLengthTable_.end() )
     {
-        return knotVector_.back() + arcLength - arcLengthTable_.back();
+        return knots_.back() + arcLength - arcLengthTable_.back();
     }
     if( bounds.second == arcLengthTable_.begin() )
     {
@@ -532,8 +530,8 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     }
 
     // initialise bisection interval and lower limit:
-    real tLo = knotVector_[idxLo];
-    real tHi = knotVector_[idxHi];
+    real tLo = knots_[idxLo];
+    real tHi = knots_[idxHi];
     real tLi = tLo;
    
     // target arc length within this interval:
