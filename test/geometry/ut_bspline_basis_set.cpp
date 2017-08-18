@@ -70,7 +70,6 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetKnotSpanTest)
 }
 
 
-
 /*!
  * Checks that the sum over the entire basis is equal to one for constant 
  * degree. This is done for spline of up to fifths degree.
@@ -358,102 +357,4 @@ TEST_F(BSplineBasisSetTest, BSplineBasisSetSecondDerivativeTest)
         }
     }
 }
-
-
-
-
-
-
-/*
- * TODO remove temporary test
- */
-TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_PIEGL)
-{
-    unsigned int degree = 3;
-
-    // create unique knot set:
-    int nKnots = 1e3;
-    real knotsLo = -50.0;
-    real knotsHi = 50.0;
-    std::vector<real> uniqueKnots;
-    for(int i = 0; i < nKnots; i++)
-    {
-        uniqueKnots.push_back( (knotsHi - knotsLo)/nKnots*i + knotsLo );
-    }
-
-    // create proper knot vector:
-    std::vector<real> knots = prepareKnotVector(uniqueKnots, degree);
-
-    // size of basis:
-    int nBasis = knots.size() - degree - 1;
-    std::cout<<"nBasis = "<<nBasis<<std::endl;
-
-    // create basis set functor:
-    BSplineBasisSet B;
-
-    // define evaluation point:
-    real eval = 0.0;
-
-    // repeatedly evaluate basis:
-    int nReps = 1e4;
-    for(int i = 0; i < nReps; i++)
-    {
-        SparseBasis basisSet = B(eval, knots, degree);
-    }
-    
-
-}
-
-
-/*
- * TODO remove temporary test
- */
-TEST_F(BSplineBasisSetTest, PERFORMANCE_TEST_DEBOOR)
-{
-    unsigned int degree = 3;
-
-    // create unique knot set:
-    int nKnots = 1e3;
-    real knotsLo = -50.0;
-    real knotsHi = 50.0;
-    std::vector<real> uniqueKnots;
-    for(int i = 0; i < nKnots; i++)
-    {
-        uniqueKnots.push_back( (knotsHi - knotsLo)/nKnots*i + knotsLo );
-    }
-
-    // create proper knot vector:
-    std::vector<real> knots = prepareKnotVector(uniqueKnots, degree);
-
-    // size of basis:
-    int nBasis = knots.size() - degree - 1;
-    std::cout<<"nBasis = "<<nBasis<<std::endl;
-
-    // create basis set functor:
-    BasisSpline B;
-
-    // define evaluation point:
-    real eval = 0.0;
-
-    // repeatedly evaluate basis:
-    int nReps = 1e3;
-    for(int i = 0; i < nReps; i++)
-    {
-        std::vector<real> basisSet;
-        basisSet.reserve(nBasis);
-
-        for(int j = 0; j < nBasis; j++)
-        {
-            basisSet[j] = B(knots, degree, i, eval);
-        }
-    }
-    
-
-}
-
-
-
-
-
-
 

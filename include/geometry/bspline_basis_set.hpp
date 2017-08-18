@@ -10,10 +10,12 @@
 #include <gromacs/utility/real.h> 
 
 
-/*
- *
+/*!
+ * Shorthand notation for a sparse basis vector given as map of indeces to 
+ * values.
  */
 typedef std::unordered_map<unsigned int, real> SparseBasis;
+
 
 
 /*!
@@ -40,7 +42,7 @@ class BSplineBasisSet
 
         // public interface for evaluation:
         SparseBasis operator()(
-                real eval, 
+                const real &eval, 
                 const std::vector<real> &knots, 
                 unsigned int degree);
    
@@ -60,14 +62,14 @@ class BSplineBasisSet
                 unsigned int degree);
 
         // method for evaluating the nonzero elements of basis:
-        std::vector<real> evaluateNonzeroBasisElements(
-                real eval,
+        inline std::vector<real> evaluateNonzeroBasisElements(
+                const real &eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
                 unsigned int knotSpanIdx);
 
         // method for evaluating nonzero elements of basis (derivatives):
-        std::vector<std::vector<real>> evaluateNonzeroBasisElements(
+        inline std::vector<std::vector<real>> evaluateNonzeroBasisElements(
                 real eval,
                 const std::vector<real> &knots,
                 unsigned int degree,
