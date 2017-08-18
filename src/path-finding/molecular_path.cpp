@@ -265,8 +265,7 @@ MolecularPath::mapPosition(const gmx::RVec &cartCoord,
     gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(
             cartCoord,
             arcLenSample[idxMinDist - 1],
-            arcLenSample[idxMinDist + 1],
-            mapTol);
+            arcLenSample[idxMinDist + 1]);
 
     // check that all points have been mapped to the interior of the spline sample:
     if( idxMinDist == 0 || idxMinDist == (pathPointSample.size() - 1) )
@@ -431,7 +430,7 @@ MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
     for(auto it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
         real evalPoint = it -> second[0];
-        isInside[it -> first] = (it -> second[1] < (poreRadius_(evalPoint, 0, eSplineEvalDeBoor)) + margin);
+        isInside[it -> first] = (it -> second[1] < (poreRadius_.evaluate(evalPoint, 0)) + margin);
     }
 
     // return assessment:
@@ -796,7 +795,7 @@ MolecularPath::samplePoints(std::vector<real> arcLengthSample)
     for(size_t i = 0; i < arcLengthSample.size(); i++)
     {
         // evaluate spline at this point:
-        points.push_back( centreLine_(arcLengthSample[i], 0, eSplineEvalDeBoor) );
+        points.push_back( centreLine_.evaluate(arcLengthSample[i], 0) );
     }
 
     // return vector of points:
@@ -939,7 +938,7 @@ MolecularPath::sampleRadii(size_t nPoints,
         real evalPoint = openingLo_ - extrapDist + i*arcLenStep;  
 
         // evaluate spline at this point:
-        radii.push_back( poreRadius_(evalPoint, 0, eSplineEvalDeBoor) );
+        radii.push_back( poreRadius_.evaluate(evalPoint, 0) );
     }
 
     // return vector of points:

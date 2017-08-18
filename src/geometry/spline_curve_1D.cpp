@@ -37,6 +37,7 @@ SplineCurve1D::SplineCurve1D(int degree,
 
     // assign knot vector and control points:
     knotVector_ = knotVector;
+    knots_ = knotVector;
     ctrlPoints_ = ctrlPoints;
 }
 
@@ -72,6 +73,7 @@ SplineCurve1D::~SplineCurve1D()
  * should be evaluated. If deriOrder != 0 (the zeroth derivative is the 
  * function itself), then the method argument is ignored.
  */
+
 real
 SplineCurve1D::evaluate(real &evalPoint, 
                         unsigned int derivOrder, 
@@ -106,9 +108,11 @@ SplineCurve1D::evaluate(real &evalPoint,
 }
 
 
+
 /*
  * Evaluation interface conveniently defined as operator.
  */
+
 real
 SplineCurve1D::operator()(real &evalPoint, 
                           unsigned int derivOrder, 
@@ -116,6 +120,104 @@ SplineCurve1D::operator()(real &evalPoint,
 {
     // actual compuatation is handled by evaluate method:
     return evaluate(evalPoint, derivOrder, method);
+}
+
+
+
+
+
+
+
+/*
+ *
+ */
+real
+SplineCurve1D::evaluate(const real &eval, unsigned int deriv)
+{
+    // interpolation or extrapolation:
+    if( eval < knots_.front() || eval > knots_.back() )
+    {
+        return evaluateExternal(eval, deriv);
+    }
+    else
+    {
+        return evaluateInternal(eval, deriv);
+    }
+}
+
+
+/*
+ *
+ */
+real
+SplineCurve1D::evaluateInternal(const real &eval, unsigned int deriv)
+{
+    // container for basis functions or derivatives:
+    SparseBasis basis;
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // evaluate B-spline basis:
+        basis = B_(eval, knots_, degree_);
+    }
+    else
+    {
+        // evaluate B-spline basis derivatives:
+        basis = B_(eval, knots_, degree_, deriv); 
+    }
+    
+    // return value of spline curve (derivative) at given evalaution point:
+    return computeLinearCombination(basis);
+ 
+}
+
+
+/*
+ *
+ */
+real
+SplineCurve1D::evaluateExternal(const real &eval, unsigned int deriv)
+{
+    // which boundary is extrapolation based on?
+    real boundary;
+    if( eval < knots_.front() )
+    {
+        boundary = knots_.front();
+    }
+    else
+    {
+        boundary = knots_.back();
+    }
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // return value of curve at boundary:
+        SparseBasis basis = B_(boundary, knots_, degree_);
+        return computeLinearCombination(basis);
+    }
+    else
+    {
+        // for linear extrapolation, second and higher order deriv are zero:
+        return 0.0;
+    }
+}
+
+
+/*
+ *
+ */
+real
+SplineCurve1D::computeLinearCombination(const SparseBasis &basis)
+{
+    real value = 0.0; 
+    for(auto b : basis)
+    {
+        value += b.second * ctrlPoints_[b.first];
+    }
+
+    return value;
 }
 
 

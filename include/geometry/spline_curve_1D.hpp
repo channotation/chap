@@ -9,6 +9,8 @@
 
 #include "geometry/abstract_spline_curve.hpp"
 
+#include "geometry/bspline_basis_set.hpp"
+
 
 /*
  *
@@ -19,6 +21,8 @@ class SplineCurve1D : public AbstractSplineCurve
     FRIEND_TEST(SplineCurve1DTest, SplineCurve1DFindIntervalTest);
 
     public:
+    
+        BSplineBasisSet B_;
 
         // constructor and destructor:
         SplineCurve1D(
@@ -30,6 +34,7 @@ class SplineCurve1D : public AbstractSplineCurve
         ~SplineCurve1D();
 
         // public interfact for spline evaluation:
+
         real evaluate(
                 real &evalPoint, 
                 unsigned int derivOrder, 
@@ -38,6 +43,12 @@ class SplineCurve1D : public AbstractSplineCurve
                 real &evalPoint, 
                 unsigned int derivOrder,
                 eSplineEvalMethod method);
+                
+
+        real evaluate(const real &eval, unsigned int deriv);
+        real evaluateInternal(const real &eval, unsigned int deriv);
+        real evaluateExternal(const real &eval, unsigned int deriv);
+        real computeLinearCombination(const SparseBasis &basis);
 
         // getter function for control points:
         std::vector<real> ctrlPoints() const;
