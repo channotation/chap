@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 
 #include <gromacs/math/vec.h>
 
@@ -16,11 +17,12 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
         std::map<std::string, real> params,
         gmx::RVec initProbePos,
         gmx::RVec chanDirVec,
-//        gmx::AnalysisNeighborhoodSearch *nbSearch,
         t_pbc pbc,
         gmx::AnalysisNeighborhoodPositions porePos,
         std::vector<real> vdwRadii)
-    : AbstractProbePathFinder(params, initProbePos, pbc, porePos, vdwRadii)
+    : AbstractProbePathFinder(params, initProbePos, vdwRadii)
+    , porePos_(porePos)
+    , pbc_(pbc)
     , chanDirVec_(chanDirVec)
     , orthVecU_(0.0, 0.0, 0.0)
     , orthVecW_(0.0, 0.0, 0.0)
@@ -79,7 +81,36 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
     {
         std::cout<<"ERROR: basis vectors not orthogonal!"<<std::endl;
     }
- 
+}
+
+
+/*
+ *
+ */
+void
+InplaneOptimisedProbePathFinder::setParameters(
+        const PathFindingParameters &params)
+{
+    // set parameters:
+    probeStepLength_ = params.probeStepLength();
+    maxProbeRadius_ = params.maxProbeRadius();
+    maxProbeSteps_ = params.maxProbeSteps();
+
+    // has cutoff been set by user:
+    if( params.nbhCutoffIsSet() )
+    {
+        // user given cutoff:
+        nbhCutoff_ = params.nbhCutoff();
+    }
+    else
+    {
+        // calculate cutoff automatically:
+        real safetyMargin = std::sqrt(std::numeric_limits<real>::epsilon());
+        nbhCutoff_ = params.maxProbeRadius() + maxVdwRadius_ + safetyMargin;
+    }
+
+    // set flag to true:
+    parametersSet_ = true;
 }
 
 
@@ -89,6 +120,18 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
 void
 InplaneOptimisedProbePathFinder::findPath()
 {
+    // sanity check:
+    if( !parametersSet_ )
+    {
+        throw std::logic_error("Path finding parameters have not been set.");
+    }
+
+    // prepare neighborhood search:
+    prepareNeighborhoodSearch(
+            pbc_,
+            porePos_,
+            nbhCutoff_);
+
     // optimise initial position:
     optimiseInitialPos();
     
@@ -240,11 +283,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
  
         // current position becomes best position in plane: 
         crntProbePos_ = optimToConfig(nmm.getOptimPoint().first);
-       
-        // add result to path container: 
-        path_.push_back(crntProbePos_);
-        radii_.push_back(nmm.getOptimPoint().second);     
-        
+               
         // increment probe step counter:
         numProbeSteps++;
 //        std::cout<<"probe step = "<<numProbeSteps<<std::endl;
@@ -263,6 +302,10 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         {
             break;
         }
+
+        // add result to path container: 
+        path_.push_back(crntProbePos_);
+        radii_.push_back(nmm.getOptimPoint().second);     
     }
 }
 

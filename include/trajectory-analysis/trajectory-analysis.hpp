@@ -11,6 +11,7 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
+#include "path-finding/abstract_path_finder.hpp"
 #include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
 
@@ -62,6 +63,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 	class ModuleData;
 	double                           cutoff_;		// cutoff for grid search
+    bool                             cutoffIsSet_;
 	Selection                        refsel_;   	// selection of the reference group
 	Selection                        ippsel_;   	// selection of the initial probe position group
 
@@ -115,13 +117,14 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     std::string pfMethod_;
     real pfProbeStepLength_;
     real pfProbeRadius_;
-    real pfMaxFreeDist_;
+    real pfMaxProbeRadius_;
     int pfMaxProbeSteps_;
     std::vector<real> pfInitProbePos_;
     bool pfInitProbePosIsSet_;
     std::vector<real> pfChanDirVec_;
     bool pfChanDirVecIsSet_;
     ePathAlignmentMethod pfPathAlignmentMethod_;
+    PathFindingParameters pfParams_;
 
 
     // simulated annealing parameters:
@@ -153,7 +156,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     bool debug_output_;
 
     // map for path finding parameters:
-    std::map<std::string, real> pfParams_;
+    std::map<std::string, real> pfPar_;
 
 	// calculate the radius of a spherical void with given centre: 
 	real calculateVoidRadius(RVec centre,
