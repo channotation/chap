@@ -78,7 +78,7 @@ class AbstractPathFinder
         virtual MolecularPath getMolecularPath();
 
         // public interface for setting parameters:
-        virtual void setParameters(const PathFindingParameters &params);
+        virtual void setParameters(const PathFindingParameters& /* &params*/);
 
         // convenience functions for retrieving path points and radii directly:
         std::vector<gmx::RVec> pathPoints(){return path_;};

@@ -40,7 +40,7 @@ TEST_F(CubicSplineInterp3DTest, CubicSplineInterpHermiteLinearTest)
     for(unsigned int i = 0; i < points.size(); i++)
     {
         real evalPoint = 1.0*i;
-        gmx::RVec val = Spl.evaluate(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec val = Spl.evaluate(evalPoint, 0);
 
         ASSERT_NEAR(points[i][0], val[0], eps);
         ASSERT_NEAR(points[i][1], val[1], eps);
@@ -51,7 +51,7 @@ TEST_F(CubicSplineInterp3DTest, CubicSplineInterpHermiteLinearTest)
     for(unsigned int i = 0; i < points.size() - 1; i++)
     {
         real evalPoint = 1.0*i + 0.5;
-        gmx::RVec val = Spl.evaluate(evalPoint, 0, eSplineEvalDeBoor);
+        gmx::RVec val = Spl.evaluate(evalPoint, 0);
 
         ASSERT_NEAR((points[i][0] + points[i+1][0])/2.0, val[0], eps);
         ASSERT_NEAR((points[i][1] + points[i+1][1])/2.0, val[1], eps);

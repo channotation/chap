@@ -220,24 +220,24 @@ TEST_F(
             // assert non-negativity of interpolated density:
             for(auto eval : evalPoints)
             {
-                ASSERT_LE(0.0, densitySpline.evaluate(eval, 0, eSplineEvalDeBoor));
+                ASSERT_LE(0.0, densitySpline.evaluate(eval, 0));
             }
            
             // assert that density outside data range is zero:
             ASSERT_NEAR(
                     0.0, 
-                    densitySpline(rangeLo, 0, eSplineEvalDeBoor),
+                    densitySpline.evaluate(rangeLo, 0),
                     std::numeric_limits<real>::epsilon());
             ASSERT_NEAR(
                     0.0, 
-                    densitySpline(rangeHi, 0, eSplineEvalDeBoor),
+                    densitySpline.evaluate(rangeHi, 0),
                     std::numeric_limits<real>::epsilon());
 
             // assert that density integrates to one:
             real integral = 0.0;
             for(auto eval : evalPoints)
             {
-                integral += densitySpline(eval, 0, eSplineEvalDeBoor);
+                integral += densitySpline.evaluate(eval, 0);
             }
             integral *= evalStep;
             ASSERT_NEAR(

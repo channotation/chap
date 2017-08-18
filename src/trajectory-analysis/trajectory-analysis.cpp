@@ -1613,8 +1613,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         {
             solventDensitySample.push_back(solventDensitySpline.evaluate(
                     eval,
-                    0,
-                    eSplineEvalDeBoor));
+                    0));
         }
 
 

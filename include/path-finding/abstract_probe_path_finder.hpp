@@ -23,6 +23,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
                                 gmx::RVec initProbePos,
                                 std::vector<real> vdwRadii);
 
+
     protected:
 
         // auxiliary functions for setting neighborhood search parameters:

@@ -1,9 +1,5 @@
 #include <algorithm>
-#include <iostream>
-#include <iomanip>
 #include <limits>
-
-#include <ctime> // TODO: temove this
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -14,13 +10,18 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 
-/*
- * Constructor.
+/*!
+ * Constructor for creating a spline curve of given degree from a knot vector
+ * and associated control points.
  */
-SplineCurve3D::SplineCurve3D(int degree,
-                             std::vector<real> knotVector,
-                             std::vector<gmx::RVec> ctrlPoints)
+SplineCurve3D::SplineCurve3D(
+        int degree,
+        std::vector<real> knotVector,
+        std::vector<gmx::RVec> ctrlPoints)
 {
+    // TODO: probably better to put some of these things into the initialiser
+    // list
+
     nCtrlPoints_ = ctrlPoints.size();
     nKnots_ = knotVector.size();
     degree_ = degree;
@@ -48,13 +49,13 @@ SplineCurve3D::SplineCurve3D(int degree,
     }
 
     // assign knot vector and control points:
-    knotVector_ = knotVector;
+    knots_ = knotVector;
     ctrlPoints_ = ctrlPoints;
 }
 
 
-/*
- * Default constructor for initialiser lists.
+/*!
+ * Default constructor for initialiser lists. Does not set any members!
  */
 SplineCurve3D::SplineCurve3D()
 {
@@ -62,79 +63,132 @@ SplineCurve3D::SplineCurve3D()
 }
 
 
-/*
- *
- */
-SplineCurve3D::SplineCurve3D(const SplineCurve3D &other)
-{
-    nCtrlPoints_ = other.nCtrlPoints_;
-    nKnots_ = other.nKnots_;
-    degree_ = other.degree_;
-
-    ctrlPoints_ = other.ctrlPoints_;
-
-    arcLengthTableAvailable_ = other.arcLengthTableAvailable_;
-    arcLengthTable_ = other.arcLengthTable_;
-}
-
-
-/*
- * Destructor.
- */
-SplineCurve3D::~SplineCurve3D()
-{
-
-}
-
-
-/*
- * Public interface for spline curve evaluation. This function Will return the 
- * (vector-valued) value of the spline curve (or its derivative) at a given
- * evaluation point.
+/*!
+ * Public interface for evaluation of spline curve. Returns the value of the 
+ * spline curve or its derivative at the given evaluation point. If the 
+ * evaluation point lies outside the knot range, linear extrapolation is used.
  */
 gmx::RVec
-SplineCurve3D::evaluate(real &evalPoint,
-                        unsigned int derivOrder,
-                        eSplineEvalMethod method)
+SplineCurve3D::evaluate(
+        const real &eval,
+        unsigned int deriv)
 {
-    // initialise return value:
-    gmx::RVec value(0.0, 0.0, 0.0);
-
-    // create individual vectors for each dimension:
-    // TODO: is it more efficient to do this in constructor?
-    std::vector<real> ctrlCoefsX;
-    std::vector<real> ctrlCoefsY;
-    std::vector<real> ctrlCoefsZ;
-    for(int i = 0; i < nCtrlPoints_; i++)
+    // extrapolation or interpolation?
+    if( eval < knots_.front() || eval > knots_.back() )
     {
-        ctrlCoefsX.push_back(ctrlPoints_.at(i)[0]);
-        ctrlCoefsY.push_back(ctrlPoints_.at(i)[1]);
-        ctrlCoefsZ.push_back(ctrlPoints_.at(i)[2]);
-    } 
-
-    // evaluate spline function in each dimension:
-    real valueX = evaluateSplineFun(evalPoint, ctrlCoefsX, derivOrder, method);
-    real valueY = evaluateSplineFun(evalPoint, ctrlCoefsY, derivOrder, method);
-    real valueZ = evaluateSplineFun(evalPoint, ctrlCoefsZ, derivOrder, method);
-
-    // return result in vectorial form:
-    return gmx::RVec(valueX, valueY, valueZ);
+        return evaluateExternal(eval, deriv);
+    }
+    else
+    {
+        return evaluateInternal(eval, deriv);
+    }
 }
 
 
-/*
- * Public evalaution interface conveniently defined as an operator.
+/*!
+ * Auxiliary function for evaluating the spline curve at points inside the 
+ * range covered by knots.
+ */
+gmx::RVec 
+SplineCurve3D::evaluateInternal(const real &eval, unsigned int deriv)
+{
+    // container for basis functions or derivatives:
+    SparseBasis basis;
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // evaluate B-spline basis:
+        basis = B_(eval, knots_, degree_);
+    }
+    else
+    {
+        // evaluate B-spline basis derivatives:
+        basis = B_(eval, knots_, degree_, deriv); 
+    }
+    
+    // return value of spline curve (derivative) at given evalaution point:
+    return computeLinearCombination(basis);
+}
+
+
+/*!
+ * Auxiliary function for evaluating the spline curve at points outside the 
+ * range covered by knots. Linear extrapolation is used in this case.
+ */
+gmx::RVec 
+SplineCurve3D::evaluateExternal(const real &eval, unsigned int deriv)
+{   
+    // which boundary is extrapolation based on?
+    real boundary;
+    if( eval < knots_.front() )
+    {
+        boundary = knots_.front();
+    }
+    else
+    {
+        boundary = knots_.back();
+    }
+
+    // derivative required?
+    if( deriv == 0 )
+    {
+        // compute slope and offset:
+        // TODO: this can be made mor efficient by evaluating basis and derivs
+        // in one go!
+        SparseBasis basis = B_(boundary, knots_, degree_);
+        gmx::RVec offset = computeLinearCombination(basis);
+        basis = B_(boundary, knots_, degree_, 1);
+        gmx::RVec slope = computeLinearCombination(basis);
+
+        // return extrapolation point:
+        svmul(eval - boundary, slope, slope);
+        rvec_add(slope, offset, slope);
+        return slope;
+
+    }
+    else if( deriv == 1 )
+    {
+        // simply return the slope at the endpoint:
+        SparseBasis basis = B_(boundary, knots_, degree_, 1);
+        return computeLinearCombination(basis);
+    }
+    else
+    {
+        // for linear extrapolation, second and higher order deriv are zero:
+        return gmx::RVec(0.0, 0.0, 0.0);
+    }
+}
+
+
+/*!
+ * Evaluates the linear combination of basis functions weighted by control
+ * points, i.e. computes
+ *
+ * \f[
+ *      \sum_i \mathbf{c}_i B_{i,p}(x)
+ * \f]
+ *
+ * where the sum only goes over the nonzero elements of the basis for 
+ * efficiency.
  */
 gmx::RVec
-SplineCurve3D::operator()(real &evalPoint,
-                          unsigned int derivOrder,
-                          eSplineEvalMethod method)
+SplineCurve3D::computeLinearCombination(const SparseBasis &basis)
 {
-    return evaluate(evalPoint, derivOrder, method);
+    gmx::RVec value(gmx::RVec(0.0, 0.0, 0.0)); 
+    for(auto b : basis)
+    {
+        gmx::RVec tmp;
+        svmul(b.second, ctrlPoints_[b.first], tmp);
+        rvec_add(value, tmp, value);
+    }
+
+    return value;
 }
 
 
-/*
+
+/*!
  * Change the internal representation of the curve such that it is 
  * parameterised in terms of arc length.
  */
@@ -166,7 +220,7 @@ SplineCurve3D::arcLengthParam()
         real oldParam = arcLengthToParam(newParam); 
 
         //  evaluate spline to get new point:
-        newPoints.push_back(this -> evaluate(oldParam, 0, eSplineEvalDeBoor));
+        newPoints.push_back(this -> evaluate(oldParam, 0));
     }
 
     // interpolate new points to get arc length parameterised curve:
@@ -176,7 +230,7 @@ SplineCurve3D::arcLengthParam()
                                   eSplineInterpBoundaryHermite);
 
     // update own parameters:
-    this -> knotVector_ = newSpl.knotVector_;
+    this -> knots_ = newSpl.knots_;
     this -> ctrlPoints_ = newSpl.ctrlPoints_;
     this -> nKnots_ = newSpl.nKnots_;
     this -> nCtrlPoints_ = newSpl.nCtrlPoints_;
@@ -184,17 +238,17 @@ SplineCurve3D::arcLengthParam()
 }
 
 
-/*
+/*!
  * Calculates the length along the arc of the curve between the two parameter
  * values a and b.
  */
 real
-SplineCurve3D::length(real &lo, real &hi)
+SplineCurve3D::length(const real &lo, const real &hi)
 { 
     // do we need to form a lookup table:
     if( arcLengthTableAvailable_ == false || arcLengthTable_.size() == 0 )
     {
-       prepareArcLengthTable(); 
+        prepareArcLengthTable(); 
     }
 
     // initialise length as zero::
@@ -211,8 +265,8 @@ SplineCurve3D::length(real &lo, real &hi)
     }
     else
     {
-        length += arcLengthBoole(lo, knotVector_[idxLo + 1]);
-        length += arcLengthBoole(knotVector_[idxHi], hi);
+        length += arcLengthBoole(lo, knots_[idxLo + 1]);
+        length += arcLengthBoole(knots_[idxHi], hi);
     }
 
     // if necessary, loop over intermediate spline segments and sum up lengths:
@@ -229,92 +283,51 @@ SplineCurve3D::length(real &lo, real &hi)
 }
 
 
-/*
+/*!
  * Convenience function to calculate arc length of curve between first and last
  * support point.
  */
 real 
 SplineCurve3D::length()
 {
-    return length(knotVector_.front(), knotVector_.back());
+    return length(knots_.front(), knots_.back());
 }
 
 
-/*
+/*!
  * Returns the tangent vector at the given evaluation point. Simply a wrapper
  * around the general evaluation function requesting the first derivative at 
  * the given point.
  */
 gmx::RVec
-SplineCurve3D::tangentVec(real &evalPoint)
+SplineCurve3D::tangentVec(const real &eval)
 {
-    return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
+    return evaluate(eval, 1); 
 }
 
 /*
- * TODO: implement this!
+ * \todo This is not yet implemented!
  */
-/*
 gmx::RVec
-SplineCurve3D::normalVec(real &evalPoint)
+SplineCurve3D::normalVec(const real /*&evalPoint*/)
 {
-    return evaluate(evalPoint, 1, eSplineEvalDeBoor); 
+    return gmx::RVec(0.0, 0.0, 0.0);
 }
-*/
 
 
-/*
+/*!
  * Returns the speed of the curve at the given evaluation point, where speed
  * refers to the magnitude of the tangent vector.
  */
 real
-SplineCurve3D::speed(real &evalPoint)
+SplineCurve3D::speed(const real &eval)
 {
-    // calculate tangent vector:
-    gmx::RVec tangentVec = this -> tangentVec(evalPoint);
-
     // return magnitude of tangent vector:
-    return std::sqrt(tangentVec[0]*tangentVec[0] + 
-                     tangentVec[1]*tangentVec[1] +
-                     tangentVec[2]*tangentVec[2]);
+    return norm( this -> tangentVec(eval) );
 }
 
 
-/*
- *
- */
-int
-SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
-{
-    // index of closest ctrlPoint:
-    int idx = -1;   // initialised as negative to provoke errors
-
-    // initialise shortest distance:
-    real shortestDist = std::numeric_limits<real>::infinity();
-
-    // loop over all control points:
-    for(size_t i = 0; i < ctrlPoints_.size(); i++)
-    {
-        // calculate distance to this point:
-        real sqDist = (ctrlPoints_[i][0] - point[0])*(ctrlPoints_[i][0] - point[0]) +
-                      (ctrlPoints_[i][1] - point[1])*(ctrlPoints_[i][1] - point[1]) +
-                      (ctrlPoints_[i][2] - point[2])*(ctrlPoints_[i][2] - point[2]);
-
-        
-        // smaller distance found?
-        if( sqDist < shortestDist )
-        {
-            idx = i;
-            shortestDist = sqDist;
-        }
-    }
-
-    // return index to closest point:
-    return idx;
-}
-
-
-/*
+/*!
  * Takes point in cartesian coordinates and returns that points coordinates in
  * the curvilinear system defined by the spline curve. Return value is an RVec,
  * which contains the following information:
@@ -326,14 +339,12 @@ SplineCurve3D::closestCtrlPoint(gmx::RVec &point)
  * Note that this function assumes that the curve is parameterised by arc 
  * length!
  *
- * TODO: implement angular coordinate!
- * TODO: remove tolerance argument, this is superseded by Boosts bit argument
+ * \todo implement angular coordinate!
  */
 gmx::RVec 
 SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                       real lo,
-                                      real hi, 
-                                      real /*tol*/)
+                                      real hi)
 {
     // internal parameters:
     boost::uintmax_t maxIter = 100;
@@ -374,13 +385,13 @@ SplineCurve3D::ctrlPoints() const
 }
 
 
-/*
+/*!
  * Uses Newton-Cotes quadrature of curve speed to determine the length of the 
  * arc between two given parameter values. The specific quadrature rule applied
  * is Boole's rule.
  */
 real
-SplineCurve3D::arcLengthBoole(real lo, real hi)
+SplineCurve3D::arcLengthBoole(const real &lo, const real &hi)
 {
     // determine intermediate evaluation points:
     real h = (hi - lo)/4.0;
@@ -400,19 +411,19 @@ SplineCurve3D::arcLengthBoole(real lo, real hi)
 }
 
 
-/*
+/*!
  * Prepares a lookup table that associates an arc length with each knot, where
  * the first knot is assigned an arc length of zero.
  */
 void
 SplineCurve3D::prepareArcLengthTable()
 {
-    arcLengthTable_.resize(knotVector_.size());
+    arcLengthTable_.resize(knots_.size());
     real segmentLength;
-    for(unsigned int i = 0; i < knotVector_.size() - 1; i++)
+    for(unsigned int i = 0; i < knots_.size() - 1; i++)
     {
         // calculate length of current segment:
-        segmentLength = arcLengthBoole(knotVector_[i], knotVector_[i+1]);
+        segmentLength = arcLengthBoole(knots_[i], knots_[i+1]);
 
         // add to arc length table:
         arcLengthTable_[i + 1] = arcLengthTable_[i] + segmentLength;
@@ -423,7 +434,7 @@ SplineCurve3D::prepareArcLengthTable()
 }
 
 
-/*
+/*!
  * Returns arc length value at the control points by simply removing the 
  * repeated knot values from the arc length lookup lookup table.
  */
@@ -444,7 +455,7 @@ SplineCurve3D::ctrlPointArcLength()
 }
 
 
-/*
+/*!
  * Returns arc length value at first control point.
  */
 real
@@ -460,7 +471,7 @@ SplineCurve3D::frstPointArcLength()
 }
 
 
-/*
+/*!
  * Returns arc length value at last control point.
  */
 real
@@ -476,7 +487,7 @@ SplineCurve3D::lastPointArcLength()
 }
 
 
-/*
+/*!
  * Returns the parameter value (in the current parameterisation, typically 
  * chord length) that corresponds to a given value of arc length. This is done
  * via bisection.
@@ -496,7 +507,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     // handle upper endpoint:
     if( arcLength == arcLengthTable_.back() )
     {
-        return knotVector_.back();
+        return knots_.back();
     }
 
     // find apropriate interval:
@@ -510,7 +521,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     // TODO: add case for query below lower bound and test!
     if( bounds.second == arcLengthTable_.end() )
     {
-        return knotVector_.back() + arcLength - arcLengthTable_.back();
+        return knots_.back() + arcLength - arcLengthTable_.back();
     }
     if( bounds.second == arcLengthTable_.begin() )
     {
@@ -519,8 +530,8 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
     }
 
     // initialise bisection interval and lower limit:
-    real tLo = knotVector_[idxLo];
-    real tHi = knotVector_[idxHi];
+    real tLo = knots_[idxLo];
+    real tHi = knots_[idxHi];
     real tLi = tLo;
    
     // target arc length within this interval:
@@ -556,8 +567,8 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
 }
 
 
-/*
- *
+/*!
+ * Termination condition for reparameterisation optimisation. 
  */
 bool
 SplineCurve3D::arcLengthToParamTerm(real lo, real hi, real tol)
@@ -566,8 +577,8 @@ SplineCurve3D::arcLengthToParamTerm(real lo, real hi, real tol)
 }
 
 
-/*
- *
+/*!
+ * Objective function for reparameterisation optimisation.
  */
 real
 SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
@@ -576,7 +587,7 @@ SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
 }
 
 
-/*
+/*!
  * Computes the squared Euclidean distance between some point and the point 
  * on the spline curve with the given parameter value. For efficiency, the
  * square root is not drawn, hence the squared distance is returned.
@@ -585,7 +596,7 @@ real
 SplineCurve3D::pointSqDist(gmx::RVec point, real eval)
 {
     // evaluate spline:
-    gmx::RVec splPoint = evaluate(eval, 0, eSplineEvalDeBoor);
+    gmx::RVec splPoint = evaluate(eval, 0);
 
     // return squared distance:
     return (splPoint[0] - point[0])*(splPoint[0] - point[0]) +

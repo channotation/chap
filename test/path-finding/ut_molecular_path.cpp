@@ -308,13 +308,13 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
             numPoints);
 
     // assert correct minimum radius (arg min is undefined for constant radius):
-    ASSERT_NEAR(radius, mpCylindrical.minRadius().second, eps);
+    ASSERT_NEAR(radius, mpCylindrical.minRadius().second, std::sqrt(eps));
 
 
     // create an hourglass-shaped path:
     dir = gmx::RVec(-0.6, 0.5, 1.0);
     centre = gmx::RVec(0.4, -2.5, -0.1);
-    length = 1.1;
+    length = 2.1;
     radius = 0.5;
     numPoints = 25;
     MolecularPath mpHourglass = makeHourglassPath(
@@ -325,7 +325,7 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
             numPoints);
 
     // assert correct minimal radius and location of minimum:
-    ASSERT_NEAR(length/2.0, mpHourglass.minRadius().first, std::sqrt(eps));
+    ASSERT_NEAR(length/2.0, mpHourglass.minRadius().first, 2*std::sqrt(eps));
     ASSERT_NEAR(radius, mpHourglass.minRadius().second, eps);
 
 
