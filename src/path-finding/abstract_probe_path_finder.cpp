@@ -10,11 +10,9 @@
  *
  */
 AbstractProbePathFinder::AbstractProbePathFinder(
-        std::map<std::string, real> params,
-        gmx::RVec initProbePos,
-        t_pbc pbc,
-        gmx::AnalysisNeighborhoodPositions porePos,
-        std::vector<real> vdwRadii)
+        std::map<std::string, real> &params,
+        const gmx::RVec &initProbePos,
+        const std::vector<real> &vdwRadii)
     : AbstractPathFinder(params)
     , vdwRadii_(vdwRadii)
     , initProbePos_(initProbePos)
