@@ -250,7 +250,7 @@ gmx::RVec
 MolecularPath::mapPosition(const gmx::RVec &cartCoord,
                            const std::vector<real> &arcLenSample,
                            const std::vector<gmx::RVec> &pathPointSample,
-                           const real mapTol)
+                           const real /*mapTol*/)
 {
     // find closest sample point:
     std::vector<real> distances;
