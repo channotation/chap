@@ -45,7 +45,7 @@ class SplineCurve3D : public AbstractSplineCurve
         // reparameterisation methods:
         void arcLengthParam();
         // map points onto curve:
-        real pointSqDist(gmx::RVec point, real eval);
+        double pointSqDist(gmx::RVec point, double eval);
         gmx::RVec cartesianToCurvilinear(
                 gmx::RVec cartPoint,
                 real lo,
@@ -88,6 +88,14 @@ class SplineCurve3D : public AbstractSplineCurve
         inline real arcLengthToParam(real &arcLength);
         inline bool arcLengthToParamTerm(real lo, real hi, real tol);
         inline real arcLengthToParamObj(real lo, real hi, real target);
+
+        //
+        unsigned int closestSplinePoint(const gmx::RVec &point);
+        gmx::RVec projectionInInterval(
+                const gmx::RVec &point,
+                const real &lo,
+                const real &hi);
+        gmx::RVec projectionInExtrapRange();
 };
 
 #endif

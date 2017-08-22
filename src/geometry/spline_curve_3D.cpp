@@ -346,25 +346,158 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                       real lo,
                                       real hi)
 {
+    // find index of interval containing closest point on spline curve:
+    unsigned int idx = closestSplinePoint(cartPoint);
+    real knotLo = knots_[idx + degree_];
+    real knotHi = knots_[idx + degree_ + 1];
+
+    // find closest point on this interval:
+    gmx::RVec proj = projectionInInterval(
+            cartPoint, 
+            knotLo, 
+            knotHi);
+
+    std::cout<<"x = "<<cartPoint[XX]<<"  "
+             <<"y = "<<cartPoint[YY]<<"  "
+             <<"z = "<<cartPoint[ZZ]<<"  "
+             <<"tLo = "<<knotLo<<"  "
+             <<"tHi = "<<knotHi<<"  "
+             <<"idx = "<<idx<<"  "
+             <<std::endl;
+
+    // is point close to interval boundaries?
+    real tol = 100.0*std::sqrt(std::numeric_limits<real>::epsilon());
+    std::cout<<"tol = "<<tol<<"  "
+             <<"proj[SS] = "<<proj[SS]<<"  "
+             <<"test = "<<std::abs(proj[SS] - knotLo)<<"  "
+             <<std::endl;
+    if( std::abs( proj[SS] - knotLo ) < tol )
+    {
+        // extrapolation case?
+        gmx::RVec altProj;
+        if( idx == 0 )
+        {
+            std::cout<<"extrap!"<<std::endl;
+        }
+        else
+        {
+            altProj = projectionInInterval(
+                    cartPoint, 
+                    knots_[idx + degree_ - 1],
+                    knots_[idx + degree_]);
+        }
+
+        std::cout<<"  "
+                 <<"r = "<<proj[RR]<<"  "
+                 <<"r.alt = "<<altProj[RR]<<"  "
+                 <<std::endl;
+
+        // does alternative projection give closer point:
+        if( altProj[RR] < proj[RR] )
+        {
+            proj = altProj;
+        }
+    }
+    else if( std::abs( knotHi - proj[SS] ) < tol )
+    {
+        // extrapolation case?
+        gmx::RVec altProj;
+        if( idx == ctrlPoints_.size() - 2 )
+        {
+            std::cout<<"extrap!"<<std::endl;            
+        }
+        else
+        {
+            altProj = projectionInInterval(
+                    cartPoint, 
+                    knots_[idx + degree_ - 1],
+                    knots_[idx + degree_]);
+        }
+        std::cout<<"  "
+                 <<"r = "<<proj[RR]<<"  "
+                 <<"r.alt = "<<altProj[RR]<<"  "
+                 <<std::endl;
+
+        // does alternative projection give closer point:
+        if( altProj[RR] < proj[RR] )
+        {
+            proj = altProj;
+        }
+    }
+
+    // return point in curvilinear coordinates:
+    return proj;
+}
+
+
+/*
+ *
+ */
+unsigned int
+SplineCurve3D::closestSplinePoint(const gmx::RVec &point)
+{
+    unsigned int idxMinDist = 0;
+    real minDist = std::numeric_limits<real>::infinity();
+    for(unsigned int i = 0; i < ctrlPoints_.size(); i++)
+    {
+        // find dist to control point:
+        real dist = distance2(point, ctrlPoints_[i]);
+/*
+        std::cout<<"   "
+                 <<"i = "<<i<<"  "
+                 <<"dist = "<<dist<<"  "
+                 <<"minDist = "<<minDist<<"  "
+                 <<std::endl;*/
+
+        // closer than privious closest point:
+        if( dist < minDist )
+        {
+            minDist = dist;
+            idxMinDist = i;
+        }
+    }
+
+    // special case of last control point:
+    if( idxMinDist == ctrlPoints_.size() - 1 )
+    {
+        // simply map this to last interval:
+        idxMinDist--;
+    }
+
+    return idxMinDist;
+}
+
+
+/*
+ *
+ */
+gmx::RVec
+SplineCurve3D::projectionInInterval(
+        const gmx::RVec &point,
+        const real &lo,
+        const real &hi)
+{
     // internal parameters:
     const boost::uintmax_t maxIter = 100;
     boost::uintmax_t iter = maxIter;
 
     // objective functionbinding:
     boost::function<real(real)> objFun;
-    objFun = boost::bind(&SplineCurve3D::pointSqDist, 
-                         this, 
-                         cartPoint, 
-                         _1);
+    objFun = boost::bind(
+            &SplineCurve3D::pointSqDist, 
+            this, 
+            point, 
+            _1);
  
     // find minimum via Brent's method:
-    int bits = std::numeric_limits<real>::digits;
-    std::pair<real, real> result;
-    result = boost::math::tools::brent_find_minima(objFun,
-                                                   lo, 
-                                                   hi,
-                                                   bits,
-                                                   iter);
+    int bits = std::numeric_limits<double>::digits;
+    std::pair<double, double> result;
+    result = boost::math::tools::brent_find_minima(
+            objFun,
+            lo, 
+            hi,
+            bits,
+            iter);
 
     // make sure convergence has been reached:
     if( iter >= maxIter )
@@ -375,12 +508,82 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
 
     // return curvilinear coordinates of point:
     // TODO: implement angular coordinate
-    // TODO: is there a square root mssing here?
     gmx::RVec curvPoint;
     curvPoint[SS] = result.first;
     curvPoint[RR] = result.second;
     curvPoint[PP] = std::nan("");
-    return curvPoint;
+    return curvPoint;    
+}
+
+
+/*
+ *
+ */
+gmx::RVec
+projectionInExtrapRange(
+        const gmx::RVec &point,
+        const real &ds)
+{
+    gmx::RVec proj;
+
+    // lower or upper extrapolation range?
+    gmx::RVec extrapPointA;
+    gmx::RVec extrapPointB;
+    real arcLenOffset;
+    real arcLenSign;
+    if( dt < 0.0 )
+    {
+        // lower range:
+        extrapPointA = ctrlPoints_.front();
+        arcLenOffset = knots_.front();
+        arcLenSign = -1.0;
+        extrapPointB = this -> evaluate(arcLenOffset + ds);
+    }
+    else if( dt > 0.0 )
+    {
+        // upper range:
+        extrapPointA = ctrlPoints_.back();
+        arcLenOffset = knots_.back();
+        arcLenSign = 1.0;
+        extrapPointB = this -> evaluate(arcLenOffset + ds);
+    }
+    else
+    {
+        throw std::logic_error("Parameter dt may not be zero!");
+    }
+
+    // (non-normalised) direction vector for the extrapolating line:
+    gmx::RVec lineDirVector;
+    rvec_sub(extrapPointB, extrapPointA, lineDirVector);
+
+    // vector between the test point and the ray's endpoint:
+    gmx::RVec endpointVector;
+    rvec_sub(point, extrapPointA, enpointVector);
+
+    // is ray endpoint the closest point?
+    // NOTE: in this case the angle between line direction vector and endpoint 
+    // vector will be >= 90 degrees and the scalar product <= 0.0!
+    real c1 = iprod(endpointVector, lineDirVector);
+    if( c1 <= 0.0 )
+    {
+        proj[SS] = arcLenOffset;
+        proj[RR] = distance2(point, extrapPointA);
+        proj[PP] = std::nan("");
+    }
+
+    // projection of test point position onto ray and base point:
+    real b = iprod(lineDirVector, lineDirVector);
+    gmx::RVec basePoint;
+    svmul(b, lineDirVec, basePoint);
+    rvec_add(basePoint, extrapPointA, basePoint);
+
+    // curvilinear coordinates around this line:
+    proj[SS] = arcLenOffset + arcLenSign*b;
+    proj[RR] = distance2(point, basePoint);
+    proj[PP] = std::nan("");
+
+    // return points in curvilinear coordinates:
+    return proj;
 }
 
 
@@ -601,8 +804,8 @@ SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
  * on the spline curve with the given parameter value. For efficiency, the
  * square root is not drawn, hence the squared distance is returned.
  */
-real
-SplineCurve3D::pointSqDist(gmx::RVec point, real eval)
+double
+SplineCurve3D::pointSqDist(gmx::RVec point, double eval)
 {
     // evaluate spline:
     gmx::RVec splPoint = evaluate(eval, 0);
