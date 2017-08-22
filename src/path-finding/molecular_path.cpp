@@ -285,16 +285,6 @@ std::map<int, gmx::RVec>
 MolecularPath::mapSelection(const gmx::Selection &mapSel,
                             const PathMappingParameters &params)
 {
-    // create a set of reference positions on the pore centre line:
-    // TODO: this codeblock can in principle be removed, but somehow damages
-    // JSON writeing???
-    int nPathSamples = numSamplePoints(params);
-    std::vector<real> arcLenSample = sampleArcLength(
-            nPathSamples, 
-            params.extrapDist_);
-    const std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
-    
-
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
     for(int i = 0; i < mapSel.posCount(); i++)
@@ -414,7 +404,7 @@ MolecularPath::pathRadii()
  * between the first and last control point
  */
 real
-MolecularPath::length()
+MolecularPath::length() const
 {
     return length_;
 }
@@ -663,7 +653,7 @@ MolecularPath::volume()
  */
 std::vector<real>
 MolecularPath::sampleArcLength(size_t nPoints,
-                               real extrapDist)
+                               real extrapDist) const
 {
     // get spacing of points in arc length:
     real arcLenStep = sampleArcLenStep(nPoints, extrapDist);
@@ -914,7 +904,7 @@ MolecularPath::shift(const gmx::RVec &shift)
  * control points.
  */
 real
-MolecularPath::sampleArcLenStep(size_t nPoints, real extrapDist)
+MolecularPath::sampleArcLenStep(size_t nPoints, real extrapDist) const
 {
     // get spacing of points in arc length:
     return (this -> length() + 2.0*extrapDist)/(nPoints - 1);
