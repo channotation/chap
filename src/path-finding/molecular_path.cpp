@@ -260,19 +260,12 @@ std::vector<gmx::RVec>
 MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
                             const PathMappingParameters &params)
 {
-    // prepare sample points on centre line with maximum arc length distance:
-    int nPathSamples = numSamplePoints(params);
-    std::vector<real> arcLenSample = sampleArcLength(
-            nPathSamples, 
-            params.extrapDist_);
-    std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
-
     // map all input positions onto centre line:
     std::vector<gmx::RVec> mappedPositions;
     mappedPositions.reserve(positions.size());
-    for(auto it = positions.begin(); it != positions.end(); it++)
+    for(auto pos : positions)
     {
-        mappedPositions.push_back(centreLine_.cartesianToCurvilinear(*it));                  
+        mappedPositions.push_back(centreLine_.cartesianToCurvilinear(pos));
     }
  
     // return mapped positions:
@@ -293,11 +286,14 @@ MolecularPath::mapSelection(const gmx::Selection &mapSel,
                             const PathMappingParameters &params)
 {
     // create a set of reference positions on the pore centre line:
+    // TODO: this codeblock can in principle be removed, but somehow damages
+    // JSON writeing???
     int nPathSamples = numSamplePoints(params);
     std::vector<real> arcLenSample = sampleArcLength(
             nPathSamples, 
             params.extrapDist_);
     const std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
+    
 
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
