@@ -46,10 +46,7 @@ class SplineCurve3D : public AbstractSplineCurve
         void arcLengthParam();
         // map points onto curve:
         double pointSqDist(gmx::RVec point, double eval);
-        gmx::RVec cartesianToCurvilinear(
-                gmx::RVec cartPoint,
-                real lo,
-                real hi);
+        gmx::RVec cartesianToCurvilinear(const gmx::RVec &cartPoint);
 
         // calculate differential properties of curve:
         real length(const real &lo, const real &hi);

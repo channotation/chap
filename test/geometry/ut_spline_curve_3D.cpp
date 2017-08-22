@@ -461,9 +461,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < f.size(); i++)
     {
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
-                                                     -2.1,
-                                                     2.1);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i));
 
         // check identity with analytical solution:
         ASSERT_NEAR(t[i], curvi[SS], eps);
@@ -494,9 +492,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < pts.size(); i++)
     {   
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
-                                                     -10,
-                                                      10);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i));
 
         // check identity with analytical solution:
         ASSERT_NEAR(sTrue[i], curvi[SS], eps);
@@ -537,9 +533,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < points.size(); i++)
     {
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
-                                                     tStart,
-                                                     tEnd);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i));
 
         // check identity with analytical solution:
         ASSERT_NEAR(params[i], curvi[SS], eps);
@@ -573,9 +567,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < pts.size(); i++)
     {
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
-                                                     0.5*par,
-                                                     2.5*par);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i));
 
         // check identity with analytical solution:
         ASSERT_NEAR(sTrue[i], curvi[SS], eps);

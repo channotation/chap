@@ -345,9 +345,7 @@ SplineCurve3D::speed(const real &eval)
  * \todo implement angular coordinate!
  */
 gmx::RVec 
-SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
-                                      real lo,
-                                      real hi)
+SplineCurve3D::cartesianToCurvilinear(const gmx::RVec &cartPoint)
 {
     // find index of interval containing closest point on spline curve:
     unsigned int idx = closestSplinePoint(cartPoint);
@@ -398,7 +396,10 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
     {
         proj = altProj;
     }
-    
+   
+    // TODO: calculate angular coordinate!
+    proj[PP] = 0.0;
+
     // return point in curvilinear coordinates:
     return proj;
 }
@@ -492,7 +493,6 @@ SplineCurve3D::projectionInInterval(
     gmx::RVec curvPoint;
     curvPoint[SS] = result.first;
     curvPoint[RR] = result.second;
-    curvPoint[PP] = std::nan("");
     return curvPoint;    
 }
 
@@ -550,7 +550,6 @@ SplineCurve3D::projectionInExtrapRange(
     {
         proj[SS] = arcLenOffset;
         proj[RR] = distance2(point, extrapPointA);
-        proj[PP] = std::nan("");
 
         return proj;
     }
@@ -564,7 +563,6 @@ SplineCurve3D::projectionInExtrapRange(
     // curvilinear coordinates around this line:
     proj[SS] = arcLenOffset + arcLenSign*b;
     proj[RR] = distance2(point, basePoint);
-    proj[PP] = std::nan("");
 
     // return points in curvilinear coordinates:
     return proj;
