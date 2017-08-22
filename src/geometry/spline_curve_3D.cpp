@@ -347,7 +347,8 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                       real hi)
 {
     // internal parameters:
-    boost::uintmax_t maxIter = 100;
+    const boost::uintmax_t maxIter = 100;
+    boost::uintmax_t iter = maxIter;
 
     // objective functionbinding:
     boost::function<real(real)> objFun;
@@ -363,14 +364,22 @@ SplineCurve3D::cartesianToCurvilinear(gmx::RVec cartPoint,
                                                    lo, 
                                                    hi,
                                                    bits,
-                                                   maxIter);
+                                                   iter);
+
+    // make sure convergence has been reached:
+    if( iter >= maxIter )
+    {
+        throw std::logic_error("Could not converge Brent iteration in "
+                               "Cartesian to curvilinear mapping!");
+    }
 
     // return curvilinear coordinates of point:
     // TODO: implement angular coordinate
+    // TODO: is there a square root mssing here?
     gmx::RVec curvPoint;
-    curvPoint[0] = result.first;
-    curvPoint[1] = result.second;
-    curvPoint[2] = std::nan("");
+    curvPoint[SS] = result.first;
+    curvPoint[RR] = result.second;
+    curvPoint[PP] = std::nan("");
     return curvPoint;
 }
 

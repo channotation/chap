@@ -9,8 +9,8 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 
-/*
- * Test fixture for the one dimensional spline curve.
+/*!
+ * \brief Test fixture for the three dimensional spline curve.
  */
 class SplineCurve3DTest : public ::testing::Test
 {
@@ -74,7 +74,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLinearTest)
 }
 
 
-/*
+/*!
  * Simple test for whether the first and second derivative of the spline curve
  * are evaluated correctly on a linear spline curve.
  */
@@ -152,7 +152,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
 }
 
 
-/*
+/*!
  * Test for evaluation of spline outside the knot vector range. In this case, 
  * linear extrapolation is used and this is checked for the curve value as well
  * as its first and second derivative.
@@ -221,7 +221,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
 }
 
 
-/*
+/*!
  * Tests that curve length is determined correctly by creating an interpolating
  * spline on a point set sampled from a helix and comparing the length to the
  * value of the analytical expression.
@@ -355,7 +355,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 }
 
 
-/*
+/*!
  * Tests whether the reparameterisation yields a curve with unit speed. To this
  * end a spline curve is constructed by interpolating a point set sampled from
  * a logarithmic spiral with constant z-velocity, reparameterisation is 
@@ -365,7 +365,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 {
     // floating point comparison threshold:
-    real eps = 1e-3;
+    real eps = 2.0*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // define helix parameters:
     const real PI = std::acos(-1.0);
@@ -416,20 +416,22 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 }
 
 
-/*
+/*!
  * Test for the projection of points in cartesian coordinatas onto a spline 
  * curve. Two cases are considered: a linear spline curve and a spline curve 
  * interpolating points sampled from a planar circle. For the linear spline,
  * an extrapolation case is considered as well. Agreement between numerical 
  * procedure and theoretical expectation is accepted if bot the position along
- * the curve and the distance from the curve agree to within the square root
- * of the machine precision.
+ * the curve and the distance from the curve agree to within two times the 
+ * square root of the machine precision.
  */
 TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
 {
 
     // floating point comparison threshold:
-    real eps = std::sqrt(std::numeric_limits<real>::epsilon());
+    // NOTE that sqrt(machine epsilon) is the theoretical best precision that
+    // can be achieved!
+    real eps = 2.0*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // linear spline:
     int degree = 1;
@@ -504,14 +506,14 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     // cubic spline:
     degree = 3;
 
-    // define helix parameters:
+    // define curve parameters:
     const real PI = std::acos(-1.0);
     real tStart = 0.0;
     real tEnd = 1.0*PI;
     real a = 1.0;
 
     // create a point set describing a circle:
-    size_t nParams = 25;
+    size_t nParams = 100;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -539,12 +541,16 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
                                                      tStart,
                                                      tEnd);
 
-//        std::cerr<<"i = "<<i<<"  params[i] = "<<params[i]<<"  curvi[0] = "<<curvi[0]<<std::endl;
+        std::cerr<<"i = "<<i<<"  "
+                 <<"params[i] = "<<params[i]<<"  "
+                 <<"curvi[0] = "<<curvi[0]<<"  "
+                 <<"eps = "<<params[i] - curvi[0]<<"  "
+                 <<"delta = "<<curvi[1]<<"  "
+                 <<std::endl;
 
         // check identity with analytical solution:
-        // FIXME: this test still fails:
-//      ASSERT_NEAR(params[i], curvi[0], eps);
-//      ASSERT_NEAR(0.0, curvi[1], eps);    
+      ASSERT_NEAR(params[i], curvi[0], eps);
+      ASSERT_NEAR(0.0, curvi[1], eps);    
     }
 
     // define a new set of test points:
@@ -577,8 +583,8 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
 
         // check identity with analytical solution:
         // FIXME: this test still fails
-//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//        ASSERT_NEAR(dTrue[i], curvi[1], eps);
+        ASSERT_NEAR(sTrue[i], curvi[0], eps);
+        ASSERT_NEAR(dTrue[i], curvi[1], eps);
     }   
 }
 
