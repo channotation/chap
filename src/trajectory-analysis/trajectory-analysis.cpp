@@ -1204,9 +1204,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         
         // add points to dataset:
         dhResMapping.setPoint(0, pos.mappedId());                    // refId
-        dhResMapping.setPoint(1, it -> second[0]); // s
-        dhResMapping.setPoint(2, it -> second[1]); // rho
-        dhResMapping.setPoint(3, it -> second[2]);// phi
+        dhResMapping.setPoint(1, it -> second[SS]); // s
+        dhResMapping.setPoint(2, it -> second[RR]); // rho
+        dhResMapping.setPoint(3, it -> second[PP]);// phi
         dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
         dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing TODO
         dhResMapping.finishPointSet();
@@ -1216,16 +1216,16 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // FIXME JSON error caused here? --> only with cylindrical path finder!
     // --> nope, also with the other one if all legacy code if properly removed!
     // --> commenting this out certainly helps
-    /*
+    
     dhFrameStream.selectDataSet(4);
     
     // add mapped residues to data container:
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
-        dhFrameStream.setPoint(1, it -> second[0]);     // s
-        dhFrameStream.setPoint(2, it -> second[1]);     // rho
-        dhFrameStream.setPoint(3, it -> second[3]);     // phi
+        dhFrameStream.setPoint(1, it -> second[SS]);     // s
+        dhFrameStream.setPoint(2, it -> second[RR]);     // rho
+        dhFrameStream.setPoint(3, it -> second[PP]);     // phi
         dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
         dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
         dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
@@ -1233,7 +1233,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
         dhFrameStream.finishPointSet();
     }
-    */
+    
 
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
