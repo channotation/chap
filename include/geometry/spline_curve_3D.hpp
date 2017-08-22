@@ -95,7 +95,9 @@ class SplineCurve3D : public AbstractSplineCurve
                 const gmx::RVec &point,
                 const real &lo,
                 const real &hi);
-        gmx::RVec projectionInExtrapRange();
+        gmx::RVec projectionInExtrapRange(
+                const gmx::RVec &point,
+                const real &ds);
 };
 
 #endif

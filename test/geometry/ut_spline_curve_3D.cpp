@@ -431,7 +431,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     // floating point comparison threshold:
     // NOTE that sqrt(machine epsilon) is the theoretical best precision that
     // can be achieved!
-    real eps = 2.0*std::sqrt(std::numeric_limits<real>::epsilon());
+    real eps = 1.0*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // linear spline:
     int degree = 1;
@@ -464,17 +464,18 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
                                                      -2.1,
                                                      2.1);
-
+/*
         std::cerr<<"i = "<<i<<"  "
                  <<"params[i] = "<<t[i]<<"  "
                  <<"curvi[0] = "<<curvi[0]<<"  "
                  <<"eps = "<<t[i] - curvi[0]<<"  "
                  <<"delta = "<<curvi[1]<<"  "
-                 <<std::endl;
+                 <<std::endl;*/
+
 
         // check identity with analytical solution:
-        ASSERT_NEAR(t[i], curvi[0], eps);
-        ASSERT_NEAR(0.0, curvi[1], eps);    
+        ASSERT_NEAR(t[i], curvi[SS], eps);
+        ASSERT_NEAR(0.0, curvi[RR], eps);    
     }
 
     // prepare a set of test points:
@@ -503,17 +504,18 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         // evaluate curvilinear coordinates of given point:
         gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
                                                      -10,
-                                                     10);
+                                                      10);
+ /*
         std::cerr<<"i = "<<i<<"  "
                  <<"params[i] = "<<sTrue[i]<<"  "
                  <<"curvi[0] = "<<curvi[0]<<"  "
                  <<"eps = "<<sTrue[i] - curvi[0]<<"  "
                  <<"delta = "<<curvi[1] - dTrue[i]<<"  "
-                 <<std::endl;
+                 <<std::endl;*/
 
         // check identity with analytical solution:
-        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//        ASSERT_NEAR(dTrue[i], curvi[1], eps);   
+        ASSERT_NEAR(sTrue[i], curvi[SS], eps);
+        ASSERT_NEAR(dTrue[i], curvi[RR], eps);   
     }
 
     // cubic spline:
@@ -553,17 +555,20 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
         gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
                                                      tStart,
                                                      tEnd);
-
-        std::cerr<<"i = "<<i<<"  "
+/*        std::cerr<<"i = "<<i<<"  "
                  <<"params[i] = "<<params[i]<<"  "
                  <<"curvi[0] = "<<curvi[0]<<"  "
                  <<"eps = "<<params[i] - curvi[0]<<"  "
                  <<"delta = "<<curvi[1]<<"  "
-                 <<std::endl;
+                 <<std::endl;*/
+
 
         // check identity with analytical solution:
-//      ASSERT_NEAR(params[i], curvi[0], eps);
-//      ASSERT_NEAR(0.0, curvi[1], eps);    
+        ASSERT_NEAR(params[i], curvi[SS], eps);
+        ASSERT_NEAR(0.0, curvi[RR], eps);    
+
+//        std::cout<<std::endl<<std::endl;
+
     }
 
     // define a new set of test points:
@@ -595,9 +600,8 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
                                                      2.5*par);
 
         // check identity with analytical solution:
-        // FIXME: this test still fails
-//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//        ASSERT_NEAR(dTrue[i], curvi[1], eps);
+        ASSERT_NEAR(sTrue[i], curvi[SS], eps);
+        ASSERT_NEAR(dTrue[i], curvi[RR], eps);
     }   
 }
 
