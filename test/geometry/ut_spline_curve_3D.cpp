@@ -9,8 +9,8 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 
-/*
- * Test fixture for the one dimensional spline curve.
+/*!
+ * \brief Test fixture for the three dimensional spline curve.
  */
 class SplineCurve3DTest : public ::testing::Test
 {
@@ -74,7 +74,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLinearTest)
 }
 
 
-/*
+/*!
  * Simple test for whether the first and second derivative of the spline curve
  * are evaluated correctly on a linear spline curve.
  */
@@ -152,7 +152,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
 }
 
 
-/*
+/*!
  * Test for evaluation of spline outside the knot vector range. In this case, 
  * linear extrapolation is used and this is checked for the curve value as well
  * as its first and second derivative.
@@ -221,7 +221,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
 }
 
 
-/*
+/*!
  * Tests that curve length is determined correctly by creating an interpolating
  * spline on a point set sampled from a helix and comparing the length to the
  * value of the analytical expression.
@@ -355,7 +355,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 }
 
 
-/*
+/*!
  * Tests whether the reparameterisation yields a curve with unit speed. To this
  * end a spline curve is constructed by interpolating a point set sampled from
  * a logarithmic spiral with constant z-velocity, reparameterisation is 
@@ -365,7 +365,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 {
     // floating point comparison threshold:
-    real eps = 1e-3;
+    real eps = 2.0*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // define helix parameters:
     const real PI = std::acos(-1.0);
@@ -416,20 +416,22 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 }
 
 
-/*
+/*!
  * Test for the projection of points in cartesian coordinatas onto a spline 
  * curve. Two cases are considered: a linear spline curve and a spline curve 
  * interpolating points sampled from a planar circle. For the linear spline,
  * an extrapolation case is considered as well. Agreement between numerical 
  * procedure and theoretical expectation is accepted if bot the position along
- * the curve and the distance from the curve agree to within the square root
- * of the machine precision.
+ * the curve and the distance from the curve agree to within two times the 
+ * square root of the machine precision.
  */
-TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
+TEST_F(SplineCurve3DTest, CartesianToCurvilinearInternalTest)
 {
 
     // floating point comparison threshold:
-    real eps = std::sqrt(std::numeric_limits<real>::epsilon());
+    // NOTE that sqrt(machine epsilon) is the theoretical best precision that
+    // can be achieved!
+    real eps = 1.1*std::sqrt(std::numeric_limits<real>::epsilon());
 
     // linear spline:
     int degree = 1;
@@ -459,13 +461,11 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < f.size(); i++)
     {
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i),
-                                                     -2.1,
-                                                     2.1);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(f.at(i));
 
         // check identity with analytical solution:
-        ASSERT_NEAR(t[i], curvi[0], eps);
-        ASSERT_NEAR(0.0, curvi[1], eps);    
+        ASSERT_NEAR(t[i], curvi[SS], eps);
+        ASSERT_NEAR(0.0, curvi[RR], eps);    
     }
 
     // prepare a set of test points:
@@ -492,26 +492,24 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < pts.size(); i++)
     {   
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
-                                                     -10,
-                                                     10);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i));
 
         // check identity with analytical solution:
-        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-        ASSERT_NEAR(dTrue[i], curvi[1], eps);   
+        ASSERT_NEAR(sTrue[i], curvi[SS], eps);
+        ASSERT_NEAR(dTrue[i], curvi[RR], eps);   
     }
 
     // cubic spline:
     degree = 3;
 
-    // define helix parameters:
+    // define curve parameters:
     const real PI = std::acos(-1.0);
     real tStart = 0.0;
     real tEnd = 1.0*PI;
     real a = 1.0;
 
     // create a point set describing a circle:
-    size_t nParams = 25;
+    size_t nParams = 1000;
     real paramStep = (tEnd - tStart) / (nParams - 1);
     std::vector<real> params;
     std::vector<gmx::RVec> points;
@@ -535,16 +533,11 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
     for(unsigned int i = 0; i < points.size(); i++)
     {
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i),
-                                                     tStart,
-                                                     tEnd);
-
-//        std::cerr<<"i = "<<i<<"  params[i] = "<<params[i]<<"  curvi[0] = "<<curvi[0]<<std::endl;
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(points.at(i));
 
         // check identity with analytical solution:
-        // FIXME: this test still fails:
-//      ASSERT_NEAR(params[i], curvi[0], eps);
-//      ASSERT_NEAR(0.0, curvi[1], eps);    
+        ASSERT_NEAR(params[i], curvi[SS], eps);
+        ASSERT_NEAR(0.0, curvi[RR], eps);    
     }
 
     // define a new set of test points:
@@ -553,32 +546,152 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearTest)
            gmx::RVec(a*std::cos(par), a*std::sin(par), -2.5),
            gmx::RVec(2.0*a*std::cos(par), 2.0*a*std::sin(par), 0.0),
            gmx::RVec(0.5*a*std::cos(par), 0.5*a*std::sin(par), 0.0),
-           gmx::RVec(a*std::cos(2.0*par), a*std::sin(2.0*par), 0.0)};
+           gmx::RVec(a*std::cos(2.0*par), a*std::sin(2.0*par), 0.0)
+           };
 
     // corresponding spline coordinates:
     sTrue = {par, 
              par, 
              par, 
              par, 
-             2.0f*par};
+             2.0f*par
+             };
     dTrue = {0.0f, 
              2.5f*2.5f, 
              a*a, 
              (0.5f*a)*(0.5f*a), 
-             0.0f};
+             0.0f
+             };
 
     // check that test points are evaluated correctly:
     for(unsigned int i = 0; i < pts.size(); i++)
     {
         // evaluate curvilinear coordinates of given point:
-        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i),
-                                                     0.5*par,
-                                                     2.5*par);
+        gmx::RVec curvi = Spl.cartesianToCurvilinear(pts.at(i));
 
         // check identity with analytical solution:
-        // FIXME: this test still fails
-//        ASSERT_NEAR(sTrue[i], curvi[0], eps);
-//        ASSERT_NEAR(dTrue[i], curvi[1], eps);
+        ASSERT_NEAR(sTrue[i], curvi[SS], eps);
+        ASSERT_NEAR(dTrue[i], curvi[RR], eps);
+    }   
+}
+
+
+/*!
+ * Tests the mapping of points in Cartesian coordinates onto a spline curve
+ * for cases where the test points are located beyond the upper and lower
+ * endpoint of the spline curve.
+ */
+TEST_F(SplineCurve3DTest, CartesianToCurvilinearExternalTest)
+{
+
+    // floating point comparison threshold:
+    // NOTE that sqrt(machine epsilon) is the theoretical best precision that
+    // can be achieved!
+    real eps = 1.1*std::sqrt(std::numeric_limits<real>::epsilon());
+
+    // define curve parameters:
+    const real PI = std::acos(-1.0);
+    real tStart = 0.0;
+    real tEnd = 0.5*PI;
+    real a = 1.0;
+
+    // create a point set describing a circle:
+    size_t nParams = 500; // large number of points for low interpolation error
+    real paramStep = (tEnd - tStart) / (nParams - 1);
+    std::vector<real> params;
+    std::vector<gmx::RVec> points;
+    for(unsigned int i = 0; i < nParams; i++)
+    {
+        // setup parameter vector:
+        params.push_back(i*paramStep + tStart);
+
+        // set up curve:
+        points.push_back(gmx::RVec(a*std::cos(params.back()),
+                                   a*std::sin(params.back()),
+                                   0.0)); 
+    }
+
+    // create spline by interpolation:
+    // (this will already be arc length parameterised)
+    CubicSplineInterp3D Interp;
+    SplineCurve3D spl = Interp(params, points, eSplineInterpBoundaryHermite);
+
+    // calculate segment length:
+    real len = spl.length();
+
+    // check that all original points are found to lie on the curve:
+    for(unsigned int i = 0; i < points.size(); i++)
+    {
+        // evaluate curvilinear coordinates of given point:
+        gmx::RVec curvi = spl.cartesianToCurvilinear(points.at(i));
+
+        // check identity with analytical solution:
+        ASSERT_NEAR(params[i], curvi[SS], eps);
+        ASSERT_NEAR(0.0, curvi[RR], eps);    
+    }
+
+    // define a new set of test points:
+    // NOTE: the spline curve is a quarter circle in the top right quadrant
+    std::vector<gmx::RVec> pts = {
+            gmx::RVec(a*std::cos(0.0), a*std::sin(0.0), 0.0),   // lower endpoint
+            gmx::RVec(a*std::cos(1.0), a*std::sin(1.0), 0.0),   // upper endpoint
+            gmx::RVec(a, -1.0, 0.0),                            // beyond lower endpoint
+            gmx::RVec(a, -2.0, 0.0),                            // beyond lower endpoint
+            gmx::RVec(a, -3.0, 0.0),                            // beyond lower endpoint
+            gmx::RVec(a, -1.0, 1.0),                            // beyond lower endpoint with offset
+            gmx::RVec(a, -2.0, 0.5),                            // beyond lower endpoint with offset
+            gmx::RVec(a, -3.0, 1.5),                            // beyond lower endpoint with offset
+            gmx::RVec(-1.0, a, 0.0),                            // beyond upper endpoint
+            gmx::RVec(-2.0, a, 0.0),                            // beyond upper endpoint
+            gmx::RVec(-3.0, a, 0.0),                            // beyond upper endpoint
+            gmx::RVec(-1.0, a, 1.0),                            // beyond upper endpoint with offset
+            gmx::RVec(-2.0, a, 0.5),                            // beyond upper endpoint with offset
+            gmx::RVec(-3.0, a, 1.5),                            // beyond upper endpoint with offset
+            };
+
+    // corresponding spline coordinates:
+    std::vector<real> sTrue = {
+            0.0, 
+            1.0, 
+            -1.0, 
+            -2.0, 
+            -3.0, 
+            -1.0, 
+            -2.0, 
+            -3.0, 
+            1.0f + len, 
+            2.0f + len, 
+            3.0f + len, 
+            1.0f + len, 
+            2.0f + len, 
+            3.0f + len, 
+            };
+    std::vector<real> dTrue = {
+            0.0, 
+            0.0, 
+            0.0, 
+            0.0, 
+            0.0, 
+            1.0*1.0, 
+            0.5*0.5, 
+            1.5*1.5, 
+            0.0, 
+            0.0, 
+            0.0, 
+            1.0*1.0, 
+            0.5*0.5, 
+            1.5*1.5, 
+            };
+
+    // check that test points are evaluated correctly:
+    for(unsigned int i = 0; i < pts.size(); i++)
+    {
+        // evaluate curvilinear coordinates of given point:
+        gmx::RVec curvi = spl.cartesianToCurvilinear(pts.at(i));
+
+        // check identity with analytical solution:
+        ASSERT_NEAR(sTrue[i], curvi[SS], eps);
+        ASSERT_NEAR(dTrue[i], curvi[RR], eps);
     }   
 }
 

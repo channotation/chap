@@ -98,7 +98,7 @@ class MolecularPath
         std::vector<real> pathRadii();
 
         // access aggregate properties of path:
-        real length();
+        real length() const;
         std::pair<real, real> minRadius();
         real volume();
         real radius(real);
@@ -114,7 +114,7 @@ class MolecularPath
         std::vector<gmx::RVec> centreLineCtrlPoints() const;
 
         // sample points from centreline:
-        std::vector<real> sampleArcLength(size_t nPoints, real extrapDist);
+        std::vector<real> sampleArcLength(size_t nPoints, real extrapDist) const;
         std::vector<gmx::RVec> samplePoints(size_t nPoints, real extrapDist);
         std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);
         std::vector<gmx::RVec> sampleTangents(size_t nPoints, real extrapDist);
@@ -136,7 +136,7 @@ class MolecularPath
         const real PI_ = std::acos(-1.0);
 
         // utilities for sampling functions:
-        inline real sampleArcLenStep(size_t nPoints, real extrapDist); 
+        inline real sampleArcLenStep(size_t nPoints, real extrapDist) const; 
 
         // utilities for path mapping:
         inline gmx::RVec mapPosition(

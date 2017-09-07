@@ -229,56 +229,6 @@ MolecularPath::~MolecularPath()
 
 
 /*!
- * Function for mapping one point in Cartesian coordinates to spline 
- * coordinates used internally by both mapPosition() and mapSelection().
- *
- * The mapping procedes in two steps: First, the closest of a set of sampling
- * points is found by direct searching in order to find an initial point for
- * a minimisation procedure that iteratively minimises the distance between 
- * the Cartesian point and the spline curve using cartesianToCurvilinear().
- *
- * The set of sample points is provided externally as it can be the same for 
- * mutliple mapped points and resampling in each step would be unneccessarily
- * costly. An exception is thrown if the closest point in the initial step is 
- * one of the endpoints of the sample.
- *
- * \todo The first step is relatively slow if more than ca. 1000 sample points 
- * have to be checked. May be worth to implement a tree-based search here.
- */
-inline
-gmx::RVec
-MolecularPath::mapPosition(const gmx::RVec &cartCoord,
-                           const std::vector<real> &arcLenSample,
-                           const std::vector<gmx::RVec> &pathPointSample,
-                           const real /*mapTol*/)
-{
-    // find closest sample point:
-    std::vector<real> distances;
-    distances.reserve(pathPointSample.size());
-    for(size_t j = 0; j < pathPointSample.size(); j++)
-    {
-        distances.push_back( distance2(cartCoord, pathPointSample[j]) );
-    }
-    size_t idxMinDist = std::min_element(distances.begin(), distances.end()) - distances.begin();
-
-    // refine mapping by distance minimisation:
-    gmx::RVec mappedCoord = centreLine_.cartesianToCurvilinear(
-            cartCoord,
-            arcLenSample[idxMinDist - 1],
-            arcLenSample[idxMinDist + 1]);
-
-    // check that all points have been mapped to the interior of the spline sample:
-    if( idxMinDist == 0 || idxMinDist == (pathPointSample.size() - 1) )
-    {
-        throw std::runtime_error("Particle mapped onto endpoint samples.");
-    }
-   
-    // return mapped coordinate:
-    return mappedCoord;
-}
-
-
-/*!
  * Auxiliary function for calculating the number of sample points used in the
  * initial step of particle to path mapping. The number of sample points is 
  * determined according to
@@ -310,33 +260,12 @@ std::vector<gmx::RVec>
 MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
                             const PathMappingParameters &params)
 {
-    // prepare sample points on centre line with maximum arc length distance:
-    int nPathSamples = numSamplePoints(params);
-    std::vector<real> arcLenSample = sampleArcLength(
-            nPathSamples, 
-            params.extrapDist_);
-    std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
-
     // map all input positions onto centre line:
     std::vector<gmx::RVec> mappedPositions;
     mappedPositions.reserve(positions.size());
-    for(auto it = positions.begin(); it != positions.end(); it++)
+    for(auto pos : positions)
     {
-        try
-        {
-            mappedPositions.push_back(mapPosition(*it,
-                                                  arcLenSample,
-                                                  pathPointSample,
-                                                  params.mapTol_) );
-        }
-        catch( const std::runtime_error& e )
-        {
-            // TODO: adaptively increase extrapolation distance to handle 
-            // failure where position is mapped onto sample endpoints, for now
-            // fatal failure will have to do
-            std::cerr<<"ERROR: "<<e.what()<<std::endl;
-            std::abort();
-        }        
+        mappedPositions.push_back(centreLine_.cartesianToCurvilinear(pos));
     }
  
     // return mapped positions:
@@ -356,33 +285,13 @@ std::map<int, gmx::RVec>
 MolecularPath::mapSelection(const gmx::Selection &mapSel,
                             const PathMappingParameters &params)
 {
-    // create a set of reference positions on the pore centre line:
-    int nPathSamples = numSamplePoints(params);
-    std::vector<real> arcLenSample = sampleArcLength(
-            nPathSamples, 
-            params.extrapDist_);
-    const std::vector<gmx::RVec> pathPointSample = samplePoints(arcLenSample);
-
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;
     for(int i = 0; i < mapSel.posCount(); i++)
     {
-        try
-        {
-            mappedCoords[mapSel.position(i).refId()] = mapPosition(
-                    mapSel.position(i).x(),
-                    arcLenSample,
-                    pathPointSample,
-                    params.mapTol_);
-        }
-        catch( const std::runtime_error &e )
-        {
-            // TODO: adaptively increase extrapolation distance to handle cases
-            // where some particles are mapped onto sample endpoints; for now 
-            // a hard failure will have to suffice
-            std::cerr<<"ERROR: "<<e.what()<<std::endl;
-            std::abort();
-        }
+        unsigned int idx = mapSel.position(i).refId();
+        mappedCoords[idx] = centreLine_.cartesianToCurvilinear(
+                mapSel.position(i).x());
     }
 
     // return mapped coordinates:
@@ -495,7 +404,7 @@ MolecularPath::pathRadii()
  * between the first and last control point
  */
 real
-MolecularPath::length()
+MolecularPath::length() const
 {
     return length_;
 }
@@ -744,7 +653,7 @@ MolecularPath::volume()
  */
 std::vector<real>
 MolecularPath::sampleArcLength(size_t nPoints,
-                               real extrapDist)
+                               real extrapDist) const
 {
     // get spacing of points in arc length:
     real arcLenStep = sampleArcLenStep(nPoints, extrapDist);
@@ -995,7 +904,7 @@ MolecularPath::shift(const gmx::RVec &shift)
  * control points.
  */
 real
-MolecularPath::sampleArcLenStep(size_t nPoints, real extrapDist)
+MolecularPath::sampleArcLenStep(size_t nPoints, real extrapDist) const
 {
     // get spacing of points in arc length:
     return (this -> length() + 2.0*extrapDist)/(nPoints - 1);
