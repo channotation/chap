@@ -1512,8 +1512,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // TODO number of support points should be use settable
     std::vector<real> supportPoints;
     size_t numSupportPoints = 1000;
-    real supportPointsLo = solventRangeLoSummary.min() + 0.5;
-    real supportPointsHi = solventRangeHiSummary.max() - 0.5;
+//    real supportPointsLo = solventRangeLoSummary.min() + 0.5;
+//    real supportPointsHi = solventRangeHiSummary.max() - 0.5;
+    real supportPointsLo = -5.0;
+    real supportPointsHi = 5.0;
     real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);
     for(size_t i = 0; i < numSupportPoints; i++)
     {

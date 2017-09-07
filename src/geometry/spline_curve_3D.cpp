@@ -379,7 +379,7 @@ SplineCurve3D::cartesianToCurvilinear(const gmx::RVec &cartPoint)
     }
     
     // next higher knot interval:
-    if( idx == ctrlPoints_.size() - 2 )
+    if( idx == refPoints_.size() - 2 )
     {
         altProj = projectionInExtrapRange(cartPoint, 1.0); 
     }
@@ -430,7 +430,7 @@ SplineCurve3D::closestSplinePoint(const gmx::RVec &point)
         // find dist to control point:
         real dist = distance2(point, refPoints_[i]);
 
-        // closer than privious closest point:
+        // closer than previous closest point:
         if( dist < minDist )
         {
             minDist = dist;
@@ -505,7 +505,7 @@ SplineCurve3D::projectionInExtrapRange(
         const gmx::RVec &point,
         const real &ds)
 {
-    // allocate return variable:
+    // return variable:
     gmx::RVec proj;
 
     // lower or upper extrapolation range?
