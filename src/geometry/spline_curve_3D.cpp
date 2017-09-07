@@ -405,14 +405,26 @@ SplineCurve3D::cartesianToCurvilinear(const gmx::RVec &cartPoint)
 }
 
 
-/*
+/*!
+ * Auxiliary function for finding th closest point on a spline curve that 
+ * returns the corresponding spline interval index. First, a set of reference
+ * points is sampled from the spline curve at the location of the unique knots
+ * (this step is skipped if the reference points have already been computed in
+ * a previous call to this function). Secondly, a linear search over these 
+ * reference points is carried out to find the point closest to a given test 
+ * point.
  *
+ * The return value is the index of the closest reference point, except for the 
+ * case where the closest reference point is the last point, which is mapped to 
+ * the last interval, i.e. the index of the penultimate reference point is 
+ * returned in this case.
+ *
+ * \todo Linear search may not be the most efficient.
  */
 unsigned int
 SplineCurve3D::closestSplinePoint(const gmx::RVec &point)
 {
     // build lookup table:
-    // TODO: refactor to do this only once
     if( refPoints_.empty() )
     {
         refPoints_.reserve(uniqueKnots().size());
@@ -450,8 +462,14 @@ SplineCurve3D::closestSplinePoint(const gmx::RVec &point)
 }
 
 
-/*
+/*!
+ * Auxiliary function that maps a point in Cartesian coordinates onto an 
+ * internal segment of the spline curve. This is accomplished by iteratively 
+ * minimising the distance between the test point and a base point sampled from 
+ * the spline curve using the (derivative free) method of Brent.
  *
+ * \throws A logic error is thrown if the minimum can not be converged within 
+ * a hardcoded number of 100 Brent iterations.
  */
 gmx::RVec
 SplineCurve3D::projectionInInterval(
@@ -497,8 +515,13 @@ SplineCurve3D::projectionInInterval(
 }
 
 
-/*
- *
+/*!
+ * Auxiliary function that projects a point in Cartesian coordinates onto the
+ * extrapolation range beyond its two endpoints. As the curve is known to be a
+ * line in this range the projection is solved for analytically as a projection 
+ * onto a ray. To achieve this, a ray is constructed by sampling two point 
+ * from the spline curve (its endpoint and a second point \f$ ds \f$  beyond 
+ * this endpoint. 
  */
 gmx::RVec
 SplineCurve3D::projectionInExtrapRange(
