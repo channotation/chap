@@ -1725,6 +1725,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     outDoc.AddMember("pathSummary", pathSummary, alloc);
 
 
+
+    // create JSON object for scalar time series:
+    rapidjson::Value pathTimeSeries;
+
+
+    
+    // add time series data to output document:
+    outDoc.AddMember("pathTimeSeries", pathTimeSeries, alloc);
+
+
     // create JSON object for pore profile:
     rapidjson::Value pathProfile;
     pathProfile.SetObject();
