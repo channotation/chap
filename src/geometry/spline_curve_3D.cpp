@@ -336,7 +336,7 @@ SplineCurve3D::speed(const real &eval)
  * which contains the following information:
  *
  *      [0] - distance along the arc of the curve
- *      [1] - distance from the curve at closest point
+ *      [1] - squared (!) distance from the curve at closest point
  *      [2] - angular coordinate; this is not yet implemented
  *
  * Note that this function assumes that the curve is parameterised by arc 
@@ -396,7 +396,7 @@ SplineCurve3D::cartesianToCurvilinear(const gmx::RVec &cartPoint)
     {
         proj = altProj;
     }
-   
+  
     // TODO: calculate angular coordinate!
     proj[PP] = 0.0;
 

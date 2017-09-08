@@ -5,6 +5,8 @@
 #include "aggregation/number_density_calculator.hpp"
 
 
+#include <iostream>
+
 /*!
  * Public interface for calculating the number density of particles given 
  * probability density and local radius, as well as overall number of particles
