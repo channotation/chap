@@ -1656,10 +1656,33 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // create JSON object for reproducibility information:
     // TODO this should probably get its own class
     rapidjson::Value reproInfo;
+
+    rapidjson::Value version;
+    version.SetObject();
+    version.AddMember(
+            "string",
+            chapVersionString(),
+            alloc);
+    version.AddMember(
+            "major",
+            chapVersionMajor(),
+            alloc);
+    version.AddMember(
+            "minor",
+            chapVersionMinor(),
+            alloc);
+    version.AddMember(
+            "patch",
+            chapVersionPatch(),
+            alloc);
+    version.AddMember(
+            "gitHash",
+            chapVersionGitHash(),
+            alloc);
     reproInfo.SetObject();
     reproInfo.AddMember(
             "version",
-            chapVersionString(),
+            version,
             alloc);
     reproInfo.AddMember(
             "commandLine",
@@ -1700,6 +1723,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // add summary data to output document:
     outDoc.AddMember("pathSummary", pathSummary, alloc);
+
+
+
+    // create JSON object for scalar time series:
+    rapidjson::Value pathTimeSeries;
+
+
+    
+    // add time series data to output document:
+    outDoc.AddMember("pathTimeSeries", pathTimeSeries, alloc);
 
 
     // create JSON object for pore profile:
