@@ -748,7 +748,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
     // obtain radius database location as relative path:
     auto lastSlash = radiusFilePath.find_last_of('/');
-    radiusFilePath.replace(radiusFilePath.begin() + lastSlash - 3, 
+    radiusFilePath.replace(radiusFilePath.begin() + lastSlash - 5, 
                            radiusFilePath.end(), 
                            "share/data/vdwradii/");
         
