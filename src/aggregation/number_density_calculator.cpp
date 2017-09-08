@@ -32,7 +32,7 @@ NumberDensityCalculator::operator()(
     std::vector<real> numberDensity = probabilityDensity;
     for(size_t i = 0; i < numberDensity.size(); i++)
     {
-        numberDensity[i] *= totalNumber / area[i];
+        numberDensity[i] *= totalNumber/ M_PI / radius[i]; // / area[i];
     }
 
     // return number density:
