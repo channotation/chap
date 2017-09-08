@@ -16,7 +16,7 @@ include(GetGitRevisionDescription)
 
 # version definitions:
 set(CHAP_VERSION_MAJOR "0")
-set(CHAP_VERSION_MINOR "2")
+set(CHAP_VERSION_MINOR "3")
 set(CHAP_VERSION_PATCH "0")
 
 # get git hash:
@@ -128,7 +128,7 @@ add_subdirectory(test)
 #------------------------------------------------------------------------------
 
 # TODO: remove this for release
-set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
+#set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
