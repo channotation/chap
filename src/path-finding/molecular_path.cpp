@@ -339,7 +339,9 @@ MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
     for(auto it = mappedCoords.begin(); it != mappedCoords.end(); it++)
     {
         real evalPoint = it -> second[0];
-        isInside[it -> first] = (it -> second[1] < (poreRadius_.evaluate(evalPoint, 0)) + margin);
+        real thres = (poreRadius_.evaluate(evalPoint, 0)) + margin;
+        // threshold needs to be squared here because radial coordinate is!
+        isInside[it -> first] = (it -> second[1] < thres*thres);
     }
 
     // return assessment:

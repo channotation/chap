@@ -5,6 +5,8 @@
 #include "aggregation/number_density_calculator.hpp"
 
 
+#include <iostream>
+
 /*!
  * Public interface for calculating the number density of particles given 
  * probability density and local radius, as well as overall number of particles
@@ -32,7 +34,7 @@ NumberDensityCalculator::operator()(
     std::vector<real> numberDensity = probabilityDensity;
     for(size_t i = 0; i < numberDensity.size(); i++)
     {
-        numberDensity[i] *= totalNumber/ M_PI / radius[i]; // / area[i];
+        numberDensity[i] *= totalNumber / area[i];
     }
 
     // return number density:
