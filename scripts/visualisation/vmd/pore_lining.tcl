@@ -76,7 +76,8 @@ proc import_pore_lining {filename} {
             set linespl [regexp -all -inline {\S+} $line]
 
             # add data to containers:
-            lappend res_id [lindex $linespl 1]
+            # (NOTE: VMD index shifted by one wrt Gromacs)
+            lappend res_id [expr [lindex $linespl 1] + 1]
             lappend pore_lining [lindex $linespl 5]
             lappend pore_facing [lindex $linespl 6]
         }
@@ -133,7 +134,7 @@ foreach rid $res_id pl $pore_lining pf $pore_facing {
             mol modselect $repnum top (resid $rid)
 #            mol modstyle $repnum top VDW 0.5 12
             mol modstyle $repnum top Licorice
-            mol modcolor $repnum top ColorID 27
+            mol modcolor $repnum top ColorID 3
             mol modmaterial $repnum top AOChalky
 
         }
