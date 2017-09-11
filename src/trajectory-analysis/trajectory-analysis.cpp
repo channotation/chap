@@ -680,7 +680,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     radiusFilePath.replace(radiusFilePath.begin() + lastSlash - 5, 
                            radiusFilePath.end(), 
                            "share/data/vdwradii/");
-        
+
+    radiusFilePath = chapInstallBase() + std::string("/share/data/vdwradii/");
+    
+
     // select appropriate database file:
     if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
     {

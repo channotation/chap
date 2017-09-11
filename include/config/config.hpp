@@ -9,7 +9,17 @@ extern const char g_CHAP_INSTALL_BASE[];
 
 
 /*!
- *
+ * \brief Returns base directory of install.
+ */
+extern "C" inline std::string
+chapInstallBase()
+{
+    return std::string(g_CHAP_INSTALL_BASE);
+}
+
+
+/*!
+ * \brief Returns command line used to start a given execution of program.
  */
 extern "C" inline std::string
 chapCommandLine()

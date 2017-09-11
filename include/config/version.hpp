@@ -4,8 +4,6 @@
 #include <string>
 #include <iostream>
 
-const int test = 1;
-
 extern const char g_GIT_SHA1[];
 extern const char g_CHAP_VERSION_MAJOR[];
 extern const char g_CHAP_VERSION_MINOR[];
