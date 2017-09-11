@@ -23,6 +23,7 @@
 #include "aggregation/number_density_calculator.hpp"
 #include "aggregation/boltzmann_energy_calculator.hpp"
 
+#include "config/config.hpp"
 #include "config/version.hpp"
 
 #include "geometry/spline_curve_1D.hpp"
@@ -1609,7 +1610,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             alloc);
     reproInfo.AddMember(
             "commandLine",
-            std::string(gmx::getProgramContext().commandLine()),
+            chapCommandLine(),
             alloc);
 
     // add reproducibility information to output JSON:

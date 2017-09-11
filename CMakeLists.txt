@@ -16,7 +16,7 @@ include(GetGitRevisionDescription)
 
 # version definitions:
 set(CHAP_VERSION_MAJOR "0")
-set(CHAP_VERSION_MINOR "3")
+set(CHAP_VERSION_MINOR "4")
 set(CHAP_VERSION_PATCH "0")
 
 # get git hash:
