@@ -8,7 +8,7 @@ Prior to installing CHAP, make sure that you have the following libraries and to
 
 1. The [CMake](https://cmake.org/) tool in version 2.8.8 or higher. This will 
 typically available through your system's package manager. For example, on 
-Ubuntu you can install CMake by typing `sudp apt-get install cmake`.
+Ubuntu you can install CMake by typing `sudo apt-get install cmake`.
 2. The BLAS and LAPACK linear algebra libraries. This will typically already be
 installed on your system and are otherwise available through your package 
 manager. On Ubuntu, type `sudo apt-get install libblas-dev liblapack-dev` to
@@ -35,7 +35,7 @@ source tree and from there run `cmake`, `make`, `make check`, and
 
 ~~~
 #!bash
-cd chap
+cd /path/to/unpacked/source/
 mkdir build
 cd build
 cmake ..
