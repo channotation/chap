@@ -1,9 +1,8 @@
 #include "io/summary_statistics_json_converter.hpp"
 
 
-/*
- *
- *
+/*!
+ * Converts a given SummaryStatistics object to a JSON object.
  */
 rapidjson::Value
 SummaryStatisticsJsonConverter::convert(

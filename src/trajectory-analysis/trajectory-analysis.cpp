@@ -35,6 +35,7 @@
 #include "io/json_doc_importer.hpp"
 #include "io/analysis_data_json_frame_exporter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
+#include "io/summary_statistics_vector_json_converter.hpp"
 
 #include "statistics/summary_statistics.hpp"
 #include "statistics/histogram_density_estimator.hpp"
@@ -629,7 +630,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
-    // prepare centre of geometry seection collection:
+    // prepare centre of geometry selection collection:
     solvMappingSelCol_.setReferencePosType("res_cog");
     solvMappingSelCol_.setOutputPosType("res_cog");
 
@@ -1155,9 +1156,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.setPoint(3, it -> second[PP]);     // phi
         dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
         dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
-        dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[0]);  // x
-        dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[1]);  // y
-        dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[2]);  // z
+        dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[XX]);
+        dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[YY]);
+        dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[ZZ]);
         dhFrameStream.finishPointSet();
     }
     
@@ -1380,6 +1381,9 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics solventRangeLoSummary;
     SummaryStatistics solventRangeHiSummary;
 
+    // number of residues in pore forming group:
+    size_t numPoreRes = 0;
+
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
     std::string line;
@@ -1414,6 +1418,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["solventRangeLo"][0].GetDouble());
         solventRangeHiSummary.update(
                 lineDoc["pathSummary"]["solventRangeHi"][0].GetDouble());
+
+        // in first line, also read number of residues in pore forming group:
+        if( linesRead == 0 )
+        {
+            numPoreRes = lineDoc["residuePositions"]["resId"].Size();
+        }
+
+
 
         // increment line counter:
         linesRead++;
@@ -1465,6 +1477,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
     std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
     std::vector<SummaryStatistics> energySummary(supportPoints.size());
+
+    // prepare summary statistics for residue properties:
+    std::vector<SummaryStatistics> residueArcSummary(numPoreRes);
+    std::vector<SummaryStatistics> residueRhoSummary(numPoreRes);
+    std::vector<SummaryStatistics> residuePhiSummary(numPoreRes);
+    std::vector<SummaryStatistics> residuePlSummary(numPoreRes);
+    std::vector<SummaryStatistics> residuePfSummary(numPoreRes);
+    std::vector<SummaryStatistics> residueXSummary(numPoreRes);
+    std::vector<SummaryStatistics> residueYSummary(numPoreRes);
+    std::vector<SummaryStatistics> residueZSummary(numPoreRes);
 
     // read file line by line:
     int linesProcessed = 0;
@@ -1551,6 +1573,29 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         {
             energySummary.at(i).update(energySample.at(i));
         }
+
+
+        // loop over all pore forming residues:
+        for(size_t i = 0; i < numPoreRes; i++)
+        {
+            residueArcSummary.at(i).update(
+                    lineDoc["residuePositions"]["s"][i].GetDouble());
+            residueRhoSummary.at(i).update(
+                    lineDoc["residuePositions"]["rho"][i].GetDouble());
+            residuePhiSummary.at(i).update(
+                    lineDoc["residuePositions"]["phi"][i].GetDouble());
+            residuePlSummary.at(i).update(
+                    lineDoc["residuePositions"]["poreLining"][i].GetDouble());
+            residuePfSummary.at(i).update(
+                    lineDoc["residuePositions"]["poreFacing"][i].GetDouble());
+            residueXSummary.at(i).update(
+                    lineDoc["residuePositions"]["x"][i].GetDouble());
+            residueYSummary.at(i).update(
+                    lineDoc["residuePositions"]["y"][i].GetDouble());
+            residueZSummary.at(i).update(
+                    lineDoc["residuePositions"]["z"][i].GetDouble());
+        }
+
 
 
         // increment line counter:
@@ -1652,6 +1697,50 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     outDoc.AddMember("pathSummary", pathSummary, alloc);
 
 
+    //
+    rapidjson::Value residueSummary;
+    residueSummary.SetObject();
+
+    SummaryStatisticsVectorJsonConverter sumStatsVecConv;
+
+    residueSummary.AddMember(
+            "s",
+            sumStatsVecConv.convert(residueArcSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "rho",
+            sumStatsVecConv.convert(residueRhoSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "phi",
+            sumStatsVecConv.convert(residuePhiSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "poreLining",
+            sumStatsVecConv.convert(residuePlSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "poreFacing",
+            sumStatsVecConv.convert(residuePfSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "x",
+            sumStatsVecConv.convert(residueXSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "y",
+            sumStatsVecConv.convert(residueYSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "z",
+            sumStatsVecConv.convert(residueZSummary, alloc),
+            alloc);
+
+    outDoc.AddMember(
+            "residueSummary",
+            residueSummary,
+            alloc);
+
 
     // create JSON object for scalar time series:
     rapidjson::Value pathTimeSeries;
@@ -1729,6 +1818,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     
     // add pore profile to output document:
     outDoc.AddMember("pathProfile", pathProfile, alloc);
+
+
 
 
     // WRITING OUTPUT JSON TO FILE

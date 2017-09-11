@@ -6,8 +6,9 @@
 
 #include "statistics/summary_statistics.hpp"
 
-/*
- *
+
+/*!
+ * \brief Converts SummaryStatistics to JSON object.
  */
 class SummaryStatisticsJsonConverter
 {
