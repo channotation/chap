@@ -258,7 +258,7 @@ MolecularPath::numSamplePoints(const PathMappingParameters &params)
  */
 std::vector<gmx::RVec>
 MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
-                            const PathMappingParameters &params)
+                            const PathMappingParameters /*&params*/)
 {
     // map all input positions onto centre line:
     std::vector<gmx::RVec> mappedPositions;
@@ -283,7 +283,7 @@ MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
  */
 std::map<int, gmx::RVec>
 MolecularPath::mapSelection(const gmx::Selection &mapSel,
-                            const PathMappingParameters &params)
+                            const PathMappingParameters /*&params*/)
 {
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;

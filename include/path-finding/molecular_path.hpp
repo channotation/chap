@@ -22,17 +22,19 @@ enum ePathAlignmentMethod {ePathAlignmentMethodNone,
                            ePathAlignmentMethodIpp};
 
 
-/*
+/*! 
+ * \brief Parameter container for MolecularPath path mapping functionality.
  *
+ * \todo Is currently unused, could be factored out?
  */
 class PathMappingParameters
 {
     public:
 
         // parameters values:
-        real mapTol_;
-        real extrapDist_;
-        real sampleStep_;
+        real mapTol_ = std::numeric_limits<real>::epsilon();
+        real extrapDist_ = 1.0;
+        real sampleStep_ = 0.1;
 };
 
 
@@ -78,10 +80,10 @@ class MolecularPath
         // interface for mapping particles onto pathway:
         std::vector<gmx::RVec> mapPositions(
                 const std::vector<gmx::RVec> &positions,
-                const PathMappingParameters &params);
+                const PathMappingParameters /*&params*/);
         std::map<int, gmx::RVec> mapSelection(
                 const gmx::Selection &mapSel,
-                const PathMappingParameters &params); 
+                const PathMappingParameters /*&params*/); 
         
         // check if points lie inside pore:
         std::map<int, bool> checkIfInside(

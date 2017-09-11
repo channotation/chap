@@ -16,7 +16,7 @@ include(GetGitRevisionDescription)
 
 # version definitions:
 set(CHAP_VERSION_MAJOR "0")
-set(CHAP_VERSION_MINOR "3")
+set(CHAP_VERSION_MINOR "4")
 set(CHAP_VERSION_PATCH "0")
 
 # get git hash:
@@ -105,7 +105,7 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
 #message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
-set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack -std=c++14")
+set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack -std=c++11")
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
@@ -128,7 +128,7 @@ add_subdirectory(test)
 #------------------------------------------------------------------------------
 
 # TODO: remove this for release
-#set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
+set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

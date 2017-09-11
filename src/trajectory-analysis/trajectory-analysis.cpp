@@ -23,6 +23,7 @@
 #include "aggregation/number_density_calculator.hpp"
 #include "aggregation/boltzmann_energy_calculator.hpp"
 
+#include "config/config.hpp"
 #include "config/version.hpp"
 
 #include "geometry/spline_curve_1D.hpp"
@@ -55,9 +56,7 @@ using namespace gmx;
  * Constructor for the trajectoryAnalysis class.
  */
 trajectoryAnalysis::trajectoryAnalysis()
-    : cutoff_(0.0)
-    , pfMethod_("inplane-optim")
-    , pfProbeRadius_(0.0)
+    : pfProbeRadius_(0.0)
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
     , pfChanDirVec_(3)
@@ -122,8 +121,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserRmPBC);
 
 
-
-    // GENERAL OPTIONS
+    // SELECTION OPTIONS
     //-------------------------------------------------------------------------
 
 	options -> addOption(SelectionOption("sel-pathway")
@@ -141,36 +139,13 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // OUTPUT OPTIONS
     // ------------------------------------------------------------------------
 
-    // TODO: remove
-    options -> addOption(StringOption("ppfn")
-                         .store(&poreParticleFileName_)
-                         .defaultValue("pore_particles.dat")
-                         .description("Name of file containing pore particle "
-                                      "positions over time."));
-
-    // TODO remove
-    options -> addOption(StringOption("spfn")
-                         .store(&smallParticleFileName_)
-                         .defaultValue("small_particles.dat")
-                         .description("Name of file containing small particle "
-                                      "positions (i.e. water particle "
-                                      "positions) over time."));
-
-    // TODO: find better solution for this
-    options -> addOption(StringOption("o")
-                         .store(&poreProfileFileName_)
-                         .defaultValue("pore_profile.dat")
-                         .description("Name of file containing pore radius, "
-                                      "small particle density, and small "
-                                      "particle energy as function of the "
-                                      "permeation coordinate."));
-
-    // TODO: is this used?
+    // TODO:not currently used, but potentially useful in future
+    /*
     options -> addOption(IntegerOption("num-out-pts")
                          .store(&nOutPoints_)
                          .defaultValue(1000)
                          .description("Number of sample points of pore centre "
-                                      "line that are written to output."));
+                                      "line that are written to output."));*/
 
     // TODO: more exressive or shorter command line flag?
     options -> addOption(StringOption("json")
@@ -194,12 +169,21 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
 
-    // TODO: make this enum
-    options -> addOption(StringOption("pf-method")
+    const char * const allowedPathFindingMethod[] = {"naive_cylindrical",
+                                                     "inplane_optim"};
+    pfMethod_ = ePathFindingMethodInplaneOptimised;                                         
+    options -> addOption(EnumOption<ePathFindingMethod>("pf-method")
+                         .enumValue(allowedPathFindingMethod)
                          .store(&pfMethod_)
-                         .defaultValue("inplane-optim")
-                         .description("Path finding method. Only "
-                                      "inplane-optim is implemented so far."));
+                         .description("Path finding method. The default "
+                                      "inplane_optim implements the algorithm "
+                                      "used in the HOLE programme, where the "
+                                      "position of a probe sphere is "
+                                      "optimised in subsequent parallel "
+                                      "planes so as to maximise its radius. "
+                                      "The alternative naive_cylindrical "
+                                      "simply uses a cylindrical volume as "
+                                      "permeation pathway."));
 
     const char * const allowedVdwRadiusDatabase[] = {"hole_amberuni",
                                                      "hole_bondi",
@@ -248,12 +232,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue(0.025)
                          .description("Step length for probe movement."));
 
-    // TODO: remove this
-    options -> addOption(RealOption("pf-probe-radius")
-                         .store(&pfPar_["pfProbeRadius"])
-                         .defaultValue(0.0)
-                         .description("BUGGY! Radius of probe."));
-
     options -> addOption(RealOption("pf-max-free-dist")
                          .store(&pfMaxProbeRadius_)
                          .defaultValue(1.0)
@@ -296,12 +274,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "If unset pore is assumed to be "
                                       "oriented in z-direction."));
    
-    // TODO: should be possible to determine this automatically from
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
 	                     .store(&cutoff_)
                          .storeIsSet(&cutoffIsSet_)
-                         .defaultValue(0.0)
                          .description("Cutoff for distance searches in path "
                                       "finding algorithm. A value of zero "
                                       "or less means no cutoff is applied."));
@@ -325,19 +301,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                           .description("Maximum number of cooling iterations "
                                        "in one simulated annealing run."));
                           
-    // TODO remove this
-    options -> addOption(IntegerOption("sa-cost-samples")
-                         .store(&saNumCostSamples_)
-                         .defaultValue(10)
-                         .description("NOT IMPLEMENTED! Number of cost samples"
-                                      " considered for convergence tolerance."));
-
-    // TODO remove this
-    options -> addOption(RealOption("sa-conv-tol")
-                         .store(&pfPar_["saConvTol"])
-                         .defaultValue(1e-3)
-                         .description("Simulated annealing relative tolerance."));
-
     options -> addOption(RealOption("sa-init-temp")
                          .store(&pfPar_["saInitTemp"])
                          .defaultValue(0.1)
@@ -370,30 +333,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     // PATH MAPPING PARAMETERS
     //-------------------------------------------------------------------------
-
-    options -> addOption(RealOption("pm-tol")
-                         .store(&mappingParams_.mapTol_)
-                         .defaultValue(1e-7)
-                         .description("Tolerance threshold for mapping "
-                                      "particles onto molecular pathway."));
-
-    options -> addOption(RealOption("pm-extrap-dist")
-                         .store(&mappingParams_.extrapDist_)
-                         .defaultValue(10)
-                         .description("Extrapolation distance for sampling "
-                                      "path points outside the pore when "
-                                      "mapping particles onto molecular "
-                                      "pathway. Should be large enough to "
-                                      "sample a sufficient portion of the "
-                                      "bulk regime to reliably estimate bulk "
-                                      "solvent density."));
-
-    options -> addOption(RealOption("pm-sample-step")
-                         .store(&mappingParams_.sampleStep_)
-                         .defaultValue(0.01)
-                         .description("Arc length distance of path samples "
-                                      "when mapping particles onto molecular "
-                                      "pathway."));
 
     options -> addOption(RealOption("pm-pl-margin")
 	                     .store(&poreMappingMargin_)
@@ -429,7 +368,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "kernel density estimator, this is the "
                                       "spacing of the evaluation points."));
 
-    // TODO add functionality to determine this automatically
+    // TODO: add functionality to determine this automatically
     options -> addOption(RealOption("de-bandwidth")
                          .store(&deBandWidth_)
                          .defaultValue(0.1)
@@ -446,16 +385,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "Ensures that the density falls off "
                                       "smoothly to zero outside the data "
                                       "range."));
-
-
-    // MISC PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // TODO: remove this
-    options -> addOption(BooleanOption("debug-output")
-                         .store(&debug_output_)
-                         .description("When this flag is set, the program "
-                                      "will write additional information."));
 }
 
 
@@ -751,7 +680,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     radiusFilePath.replace(radiusFilePath.begin() + lastSlash - 5, 
                            radiusFilePath.end(), 
                            "share/data/vdwradii/");
-        
+
+    radiusFilePath = chapInstallBase() + std::string("/share/data/vdwradii/");
+    
+
     // select appropriate database file:
     if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
     {
@@ -998,7 +930,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // create path finding module:
     std::unique_ptr<AbstractPathFinder> pfm;
-    if( pfMethod_ == "inplane-optim" )
+    if( pfMethod_ == ePathFindingMethodInplaneOptimised )
     {
         // create inplane-optimised path finder:
         pfm.reset(new InplaneOptimisedProbePathFinder(pfPar_,
@@ -1008,12 +940,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                                                       refSelection,
                                                       selVdwRadii));        
     }
-    else if( pfMethod_ == "optim-direction" )
-    {
-        std::cerr<<"ERROR: Optimised direction path finding is not implemented!"<<std::endl;
-        std::abort();
-    }   
-    else if( pfMethod_ == "naive-cylindrical" )
+    else if( pfMethod_ == ePathFindingMethodNaiveCylindrical )
     {        
         // create the naive cylindrical path finder:
         pfm.reset(new NaiveCylindricalPathFinder(pfPar_,
@@ -1686,7 +1613,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             alloc);
     reproInfo.AddMember(
             "commandLine",
-            std::string(gmx::getProgramContext().commandLine()),
+            chapCommandLine(),
             alloc);
 
     // add reproducibility information to output JSON:

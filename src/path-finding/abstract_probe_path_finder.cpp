@@ -20,7 +20,11 @@ AbstractProbePathFinder::AbstractProbePathFinder(
     , nbh_()
 {
 
+    // TODO: probe radius not really used, may be factored out?
+    probeRadius_ = 0.0;
+
     // set parameters:
+    /*
     if( params.find("pfProbeRadius") != params.end() )
     {
         probeRadius_ = params["pfProbeRadius"];
@@ -30,6 +34,7 @@ AbstractProbePathFinder::AbstractProbePathFinder(
         std::cerr<<"ERROR: No probe radius given!"<<std::endl;
         std::abort();
     }
+    */
 
     // find maximum vdw radius:
     maxVdwRadius_ = *std::max_element(vdwRadii.begin(), vdwRadii.end());
