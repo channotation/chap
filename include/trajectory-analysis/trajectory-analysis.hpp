@@ -53,9 +53,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     private:
 
-    std::string poreParticleFileName_;  // positions of probe particles
-    std::string smallParticleFileName_; // positions of small particles (e.g. water)
-    std::string poreProfileFileName_;       // time averaged radius, energy etc.
     std::string jsonOutputFileName_;
     std::string objOutputFileName_;
     std::string resMappingOutFileName_;
@@ -114,7 +111,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     eVdwRadiusDatabase pfVdwRadiusDatabase_;
     std::string pfVdwRadiusJson_;
     bool pfVdwRadiusJsonIsSet_;
-    std::string pfMethod_;
+    ePathFindingMethod pfMethod_;
     real pfProbeStepLength_;
     real pfProbeRadius_;
     real pfMaxProbeRadius_;

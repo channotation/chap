@@ -128,7 +128,7 @@ add_subdirectory(test)
 #------------------------------------------------------------------------------
 
 # TODO: remove this for release
-#set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
+set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

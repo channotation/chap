@@ -9,6 +9,13 @@
 
 
 /*!
+ *
+ */
+typedef enum {ePathFindingMethodNaiveCylindrical,
+              ePathFindingMethodInplaneOptimised} ePathFindingMethod;
+
+
+/*!
  * \brief Helper class for specifying parameters in the classes derived from
  * AbstractPathFinder.
  *
