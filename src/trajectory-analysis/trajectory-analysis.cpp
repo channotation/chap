@@ -1108,7 +1108,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         // is residue pore lining and has COG closer to centreline than CA?
-        if( it -> second[1] > poreCalMappedCoords[it->first][1] &&
+        if( it -> second[RR] > poreCalMappedCoords[it->first][RR] &&
             poreLining[it -> first] == true )
         {
             poreFacing[it->first] = true;
@@ -1131,12 +1131,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         SelectionPosition pos = poreMappingSelCog.position(it->first);
         
         // add points to dataset:
-        dhResMapping.setPoint(0, pos.mappedId());                    // refId
-        dhResMapping.setPoint(1, it -> second[SS]); // s
-        dhResMapping.setPoint(2, it -> second[RR]); // rho
-        dhResMapping.setPoint(3, it -> second[PP]);// phi
+        dhResMapping.setPoint(0, pos.mappedId());                      // refId
+        dhResMapping.setPoint(1, it -> second[SS]);                    // s
+        dhResMapping.setPoint(2, std::sqrt(it -> second[RR]));         // rho
+        dhResMapping.setPoint(3, it -> second[PP]);                    // phi
         dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
-        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing TODO
+        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
         dhResMapping.finishPointSet();
     }
     
@@ -1151,9 +1151,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
     {
         dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
-        dhFrameStream.setPoint(1, it -> second[SS]);     // s
-        dhFrameStream.setPoint(2, it -> second[RR]);     // rho
-        dhFrameStream.setPoint(3, it -> second[PP]);     // phi
+        dhFrameStream.setPoint(1, it -> second[SS]);            // s
+        dhFrameStream.setPoint(2, std::sqrt(it -> second[RR])); // rho
+        dhFrameStream.setPoint(3, it -> second[PP]);            // phi
         dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
         dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
         dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[XX]);
@@ -1383,6 +1383,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // number of residues in pore forming group:
     size_t numPoreRes = 0;
+    std::vector<int> poreResIds;
 
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
@@ -1423,9 +1424,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         if( linesRead == 0 )
         {
             numPoreRes = lineDoc["residuePositions"]["resId"].Size();
+
+            for(size_t i = 0; i < numPoreRes; i++)
+            {
+                poreResIds.push_back(
+                        lineDoc["residuePositions"]["resId"][i].GetDouble());
+            }
         }
-
-
 
         // increment line counter:
         linesRead++;
@@ -1701,8 +1706,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     rapidjson::Value residueSummary;
     residueSummary.SetObject();
 
-    SummaryStatisticsVectorJsonConverter sumStatsVecConv;
+    rapidjson::Value poreResidueIds(rapidjson::kArrayType);
+    for(auto id : poreResIds)
+    {
+        poreResidueIds.PushBack(id, alloc);
+    }
+    residueSummary.AddMember("id", poreResidueIds, alloc);
 
+    SummaryStatisticsVectorJsonConverter sumStatsVecConv;
     residueSummary.AddMember(
             "s",
             sumStatsVecConv.convert(residueArcSummary, alloc),
