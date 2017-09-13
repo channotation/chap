@@ -73,7 +73,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 
 # bring header files into build environment:
 include_directories(${CHAP_SOURCE_DIR}/include)
-#include_directories(${CHAP_SOURCE_DIR}/external/gtest/include)
+include_directories(${CHAP_SOURCE_DIR}/external/gtest/include)
 
 # set library directories for the linker:
 link_directories( /usr/local/fftw/lib/ )
