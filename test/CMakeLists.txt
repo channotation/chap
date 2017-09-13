@@ -8,7 +8,7 @@ if( GTEST_FOUND )
     add_custom_target(check ${CMAKE_CTEST_COMMAND} -V)
 
     # include Google test directories:
-    include_directories(${GTEST_INCLUDE_DIRS})
+#    include_directories(${GTEST_INCLUDE_DIRS})
 
     # get list of all source files but ignore main file of chap directory:
     file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
@@ -20,7 +20,8 @@ if( GTEST_FOUND )
     # add executable to run all tests and link libraries:
     add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
     set_target_properties(runAllTests PROPERTIES COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack -std=c++14")
-    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} pthread)
+#    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} ${GTEST_BOTH_LIBRARIES} pthread)
+    target_link_libraries(runAllTests ${GROMACS_LIBRARIES} pthread)
     target_link_libraries(runAllTests ${LAPACKE_LIBRARIES})
     target_link_libraries(runAllTests ${LAPACK_LIBRARIES})
     target_link_libraries(runAllTests ${BLAS_LIBRARIES})
