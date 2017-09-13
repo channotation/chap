@@ -44,8 +44,8 @@ find_package(Boost REQUIRED)
 # Find Google Test Library
 #------------------------------------------------------------------------------
 
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+#find_package(GTest REQUIRED)
+#include_directories(${GTEST_INCLUDE_DIRS})
 
 
 # Find Gromacs Library
@@ -73,6 +73,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 
 # bring header files into build environment:
 include_directories(${CHAP_SOURCE_DIR}/include)
+#include_directories(${CHAP_SOURCE_DIR}/external/gtest/include)
 
 # set library directories for the linker:
 link_directories( /usr/local/fftw/lib/ )
@@ -109,7 +110,7 @@ set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llap
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
-target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
+#target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 
 
