@@ -46,74 +46,33 @@ include_directories(${LAPACKE_INCLUDE_DIRS})
 find_package(Boost REQUIRED)
 
 
-# Find Google Test Library
+# Build Google Test Library as an External Project
 #------------------------------------------------------------------------------
 
+# enable external projects:
 include(ExternalProject)
 
-#set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/external)
-
+# Google test as external project:
 ExternalProject_Add(
     googletest
     URL https://github.com/google/googletest/archive/release-1.7.0.zip
-#    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
     # Disable install step
     INSTALL_COMMAND ""
 )
 
+# get source and binary location of Google test libraries:
 ExternalProject_Get_Property(googletest source_dir binary_dir)
 
+# set include and library path variables:
 set(GTEST_INCLUDE_DIR ${source_dir}/include)
 set(GTEST_LIBRARY_PATH ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
 set(GTEST_LIBRARY gtest)
 
-
+# make library an install target, define properties and dependencies:
 add_library(${GTEST_LIBRARY} UNKNOWN IMPORTED)
-
 set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION
                 ${GTEST_LIBRARY_PATH} )
 add_dependencies(${GTEST_LIBRARY} googletest)
-
-
-
-
-
-
-#add_library(libgtest IMPORTED STATIC GLOBAL)
-#add_dependencies(libgtest gtest)
-
-#set_target_properties(libgtest PROPERTIES
-#    "IMPORTED_LOCATION" "${binary_dir}/googlemock/gtest/libgtest.a"
-#    "IMPORTED_LINK_INTERFACE_LIBRARIES" "${CMAKE_THREAD_LIBS_INIT}"
-#)
-
-#add_library(libgmock IMPORTED STATIC GLOBAL)
-#add_dependencies(libgmock gtest)
-
-# Set libgmock properties
-#set_target_properties(libgmock PROPERTIES
-#    "IMPORTED_LOCATION" "${binary_dir}/googlemock/libgmock.a"
-#    "IMPORTED_LINK_INTERFACE_LIBRARIES" "${CMAKE_THREAD_LIBS_INIT}"
-#)
-
-#include_directories("${source_dir}/googletest/include"
-#                    "${source_dir}/googlemock/include")
-
-
-#message(STATUS "binary_dir = " ${binary_dir})
-#message(STATUS "binary_dir = " ${source_dir})
-#message(STATUS "libgtest = " ${libgtest})
-
-
-#include_directories("${source_dir}/googletest/include")
-#include_directories(${CHAP_SOURCE_DIR}/external/gtest/include)
-
-
-#find_package(GTest REQUIRED)
-#include_directories(${GTEST_INCLUDE_DIRS})
-
-#add_subdirectory(external/gtest)
-
 
 
 # Find Gromacs Library

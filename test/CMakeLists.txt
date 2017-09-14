@@ -1,7 +1,6 @@
 # Setup Google Test
 # -----------------------------------------------------------------------------
 
-# build tests only if GTest is available:
 # create target for running make check:
 add_custom_target(check ${CMAKE_CTEST_COMMAND} -V)
 
