@@ -4,6 +4,11 @@ cmake_minimum_required(VERSION 2.8.8)
 # set project name:
 project(CHAP)
 
+# set build type:
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+  endif()
+
 
 # Prepare Version Header and Config Header
 #------------------------------------------------------------------------------
@@ -41,11 +46,34 @@ include_directories(${LAPACKE_INCLUDE_DIRS})
 find_package(Boost REQUIRED)
 
 
-# Find Google Test Library
+# Build Google Test Library as an External Project
 #------------------------------------------------------------------------------
 
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+# enable external projects:
+include(ExternalProject)
+
+# Google test as external project:
+ExternalProject_Add(
+    googletest
+    URL https://github.com/google/googletest/archive/release-1.7.0.zip
+    # Disable install step
+    INSTALL_COMMAND ""
+)
+
+# get source and binary location of Google test libraries:
+ExternalProject_Get_Property(googletest source_dir binary_dir)
+
+# set include and library path variables:
+set(GTEST_INCLUDE_DIR ${source_dir}/include)
+set(GTEST_LIBRARY_PATH ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
+set(GTEST_LIBRARY gtest)
+include_directories(${GTEST_INCLUDE_DIR})
+
+# make library an install target, define properties and dependencies:
+add_library(${GTEST_LIBRARY} UNKNOWN IMPORTED)
+set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION
+                ${GTEST_LIBRARY_PATH} )
+add_dependencies(${GTEST_LIBRARY} googletest)
 
 
 # Find Gromacs Library
@@ -105,12 +133,15 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
 #message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
-set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -llapack -std=c++11")
+set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -std=c++11")
 #message(STATUS "libs = " ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
-target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
+#target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
+target_link_libraries(chap ${GTEST_LIBRARY})
+#add_dependencies(chap libgmock)
+
 
 
 # Compile Tests
