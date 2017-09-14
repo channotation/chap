@@ -67,6 +67,7 @@ ExternalProject_Get_Property(googletest source_dir binary_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/include)
 set(GTEST_LIBRARY_PATH ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
 set(GTEST_LIBRARY gtest)
+include_directories(${GTEST_INCLUDE_DIR})
 
 # make library an install target, define properties and dependencies:
 add_library(${GTEST_LIBRARY} UNKNOWN IMPORTED)
