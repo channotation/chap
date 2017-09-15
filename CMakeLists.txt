@@ -103,7 +103,7 @@ add_definitions(${GROMACS_DEFINITIONS})
 include_directories(${CHAP_SOURCE_DIR}/include)
 
 # set library directories for the linker:
-link_directories( /usr/local/fftw/lib/ )
+#link_directories( /usr/local/fftw/lib/ )
 #link_directories( /usr/include/ )
 
 
