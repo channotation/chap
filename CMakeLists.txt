@@ -1,8 +1,8 @@
 # minimum version of cmake required for building:
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-# set project name, version and languages used:
-project(CHAP LANGUAGES CXX C)
+# set project name:
+project(CHAP)
 
 # follow GNU guideline on install directories:
 include(GNUInstallDirs)
@@ -18,11 +18,12 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 
-# Find Boost Library
+# Find Boost Library and Include it as Imported Target
 #------------------------------------------------------------------------------
 
 find_package(Boost REQUIRED)
 add_library(boost INTERFACE IMPORTED)
+set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
 
 
 # Find Linear Algebra Libraries
@@ -109,18 +110,11 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 # bring header files into build environment:
 include_directories(${CHAP_SOURCE_DIR}/include)
 
-# set library directories for the linker:
-#link_directories( /usr/local/fftw/lib/ )
-#link_directories( /usr/include/ )
-
-
-# add source files:
-#file(GLOB SOURCES "src/*.cpp")
 
 # set compiler and linker flags:
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
 
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
+#set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 
 
 
