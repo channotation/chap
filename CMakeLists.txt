@@ -37,7 +37,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 
 # find LAPACK:
 find_package(LAPACKE REQUIRED)
-include_directories(${LAPACKE_INCLUDE_DIRS})
+#include_directories(${LAPACKE_INCLUDE_DIRS})
 
 
 # Find Boost Library
