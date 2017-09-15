@@ -1,8 +1,12 @@
 # minimum version of cmake required for building:
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-# set project name:
-project(CHAP VERSION 0.4.0 LANGUAGES CXX C)
+# set project name, version and languages used:
+project(CHAP LANGUAGES CXX C)
+
+# follow GNU guideline on install directories:
+include(GNUInstallDirs)
+
 
 # set build type:
 if(NOT CMAKE_BUILD_TYPE)
@@ -18,6 +22,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 #------------------------------------------------------------------------------
 
 find_package(Boost REQUIRED)
+add_library(boost INTERFACE IMPORTED)
 
 
 # Find Linear Algebra Libraries
