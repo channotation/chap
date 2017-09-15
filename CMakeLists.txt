@@ -7,29 +7,17 @@ project(CHAP)
 # set build type:
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
-  endif()
+endif()
 
-
-# Prepare Version Header and Config Header
-#------------------------------------------------------------------------------
 
 # set path to custom cmake modules:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
-# include cmake scripts for geting git revisions:
-include(GetGitRevisionDescription)
 
-# version definitions:
-set(CHAP_VERSION_MAJOR "0")
-set(CHAP_VERSION_MINOR "4")
-set(CHAP_VERSION_PATCH "0")
+# Find Boost Library
+#------------------------------------------------------------------------------
 
-# get git hash:
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-
-# configure header files:
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
+find_package(Boost REQUIRED)
 
 
 # Find Linear Algebra Libraries
@@ -40,10 +28,24 @@ find_package(LAPACKE REQUIRED)
 #include_directories(${LAPACKE_INCLUDE_DIRS})
 
 
-# Find Boost Library
+# Find Gromacs Library
 #------------------------------------------------------------------------------
 
-find_package(Boost REQUIRED)
+# handle different Gromacs suffixes:
+option(GMX_DOUBLE "Use double precision" OFF)
+set(GMX_SUFFIX "" CACHE STRING "Suffix for the GROMACS installation to use (empty for default)")
+if (GMX_DOUBLE AND NOT GMX_SUFFIX)
+	set(GROMACS_SUFFIX "_d")
+else()
+	set(GROMACS_SUFFIX ${GMX_SUFFIX})
+endif()
+
+# find Gromacs package, add include direcotries and definitions:
+find_package(GROMACS 5.1 REQUIRED)
+gromacs_check_double(GMX_DOUBLE)
+gromacs_check_compiler(CXX)
+include_directories(${GROMACS_INCLUDE_DIRS})
+add_definitions(${GROMACS_DEFINITIONS})
 
 
 # Build Google Test Library as an External Project
@@ -76,24 +78,24 @@ set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION
 add_dependencies(${GTEST_LIBRARY} googletest)
 
 
-# Find Gromacs Library
+# Prepare Version Header and Config Header
 #------------------------------------------------------------------------------
 
-# handle different Gromacs suffixes:
-option(GMX_DOUBLE "Use double precision" OFF)
-set(GMX_SUFFIX "" CACHE STRING "Suffix for the GROMACS installation to use (empty for default)")
-if (GMX_DOUBLE AND NOT GMX_SUFFIX)
-	set(GROMACS_SUFFIX "_d")
-else()
-	set(GROMACS_SUFFIX ${GMX_SUFFIX})
-endif()
+# include cmake scripts for geting git revisions:
+include(GetGitRevisionDescription)
 
-# find Gromacs package, add include direcotries and definitions:
-find_package(GROMACS 5.1 REQUIRED)
-gromacs_check_double(GMX_DOUBLE)
-gromacs_check_compiler(CXX)
-include_directories(${GROMACS_INCLUDE_DIRS})
-add_definitions(${GROMACS_DEFINITIONS})
+# version definitions:
+set(CHAP_VERSION_MAJOR "0")
+set(CHAP_VERSION_MINOR "4")
+set(CHAP_VERSION_PATCH "0")
+
+# get git hash:
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+
+# configure header files:
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
+
 
 # 
 #------------------------------------------------------------------------------
