@@ -108,17 +108,11 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
 
 
-
-
-
-
-
-
 # Compile Instructions
 #------------------------------------------------------------------------------
 
 # bring header files into build environment:
-include_directories(${CHAP_SOURCE_DIR}/include)
+#include_directories(${CHAP_SOURCE_DIR}/include)
 
 # set compiler and linker flags:
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
@@ -133,7 +127,7 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
 set_target_properties(chap PROPERTIES COMPILE_FLAGS ${GROMACS_CXX_FLAGS})
-message(STATUS "GROMACS flags = " ${GROMACS_CXX_FLAGS})
+target_include_directories(chap PUBLIC ${CHAP_SOURCE_DIR}/include)
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
