@@ -13,7 +13,6 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/../config/config.cpp")
 
 # add executable to run all tests and link libraries:
 add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
-#set_target_properties(runAllTests PROPERTIES COMPILE_FLAGS ${GROMACS_CXX_FLAGS})
 target_include_directories(runAllTests PUBLIC ${CHAP_SOURCE_DIR}/include)
 target_link_libraries(runAllTests ${GROMACS_LIBRARIES} pthread)
 target_link_libraries(runAllTests ${LAPACKE_LIBRARIES})
