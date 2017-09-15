@@ -1,7 +1,7 @@
 # minimum version of cmake required for building:
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
-# set project name:
+# set project parameters:
 project(CHAP LANGUAGES CXX C VERSION 0.4.0)
 
 # follow GNU guideline on install directories:
@@ -12,12 +12,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-
-# set build type:
+# build type defaults to release:
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
-
 
 # set path to custom cmake modules:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
@@ -36,7 +34,6 @@ set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE
 
 # find LAPACK:
 find_package(LAPACKE REQUIRED)
-#include_directories(${LAPACKE_INCLUDE_DIRS})
 
 
 # Find Gromacs Library
@@ -112,7 +109,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 #------------------------------------------------------------------------------
 
 # set compiler and linker flags:
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
+#set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
 
 # rapidjson support for std::string:
 add_definitions(-DRAPIDJSON_HAS_STDSTRING)
@@ -123,7 +120,7 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
-set_target_properties(chap PROPERTIES COMPILE_FLAGS ${GROMACS_CXX_FLAGS})
+#set_target_properties(chap PROPERTIES COMPILE_FLAGS ${GROMACS_CXX_FLAGS})
 target_include_directories(chap PUBLIC ${CHAP_SOURCE_DIR}/include)
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
