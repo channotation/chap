@@ -1,8 +1,8 @@
 # minimum version of cmake required for building:
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 # set project name:
-project(CHAP)
+project(CHAP VERSION 0.4.0 LANGUAGES CXX C)
 
 # set build type:
 if(NOT CMAKE_BUILD_TYPE)
