@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 # set project name:
-project(CHAP)
+project(CHAP LANGUAGES CXX C VERSION 0.4.0)
 
 # follow GNU guideline on install directories:
 include(GNUInstallDirs)
@@ -96,9 +96,9 @@ add_dependencies(${GTEST_LIBRARY} googletest)
 include(GetGitRevisionDescription)
 
 # version definitions:
-set(CHAP_VERSION_MAJOR "0")
-set(CHAP_VERSION_MINOR "4")
-set(CHAP_VERSION_PATCH "0")
+set(CHAP_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CHAP_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CHAP_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
 # get git hash:
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
@@ -110,9 +110,6 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 
 # Compile Instructions
 #------------------------------------------------------------------------------
-
-# bring header files into build environment:
-#include_directories(${CHAP_SOURCE_DIR}/include)
 
 # set compiler and linker flags:
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")

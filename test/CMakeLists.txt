@@ -25,4 +25,3 @@ target_link_libraries(runAllTests ${GTEST_LIBRARY})
 # (if the color option is not set some test fail)
 add_test(runAllTests runAllTests --gtest_color=yes)
 
-
