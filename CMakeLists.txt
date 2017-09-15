@@ -1,11 +1,16 @@
 # minimum version of cmake required for building:
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 # set project name:
 project(CHAP)
 
 # follow GNU guideline on install directories:
 include(GNUInstallDirs)
+
+# set C++11 standard and turn of GNU extensions:
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 # set build type:
@@ -103,18 +108,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
 
 
-# 
-#------------------------------------------------------------------------------
 
-
-# bring header files into build environment:
-include_directories(${CHAP_SOURCE_DIR}/include)
-
-
-# set compiler and linker flags:
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
-
-#set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 
 
 
@@ -123,26 +117,27 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
 # Compile Instructions
 #------------------------------------------------------------------------------
 
+# bring header files into build environment:
+include_directories(${CHAP_SOURCE_DIR}/include)
+
+# set compiler and linker flags:
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
+
 # rapidjson support for std::string:
 add_definitions(-DRAPIDJSON_HAS_STDSTRING)
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
-#message("CHAP_SRC = " ${SRC_FILES})
 
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
-#message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
-set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -std=c++11")
-#message(STATUS "libs = " ${GROMACS_LIBRARIES})
+set_target_properties(chap PROPERTIES COMPILE_FLAGS ${GROMACS_CXX_FLAGS})
+message(STATUS "GROMACS flags = " ${GROMACS_CXX_FLAGS})
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
-#target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GTEST_LIBRARY})
-#add_dependencies(chap libgmock)
-
 
 
 # Compile Tests
@@ -158,9 +153,6 @@ add_subdirectory(test)
 
 # Install Destinations
 #------------------------------------------------------------------------------
-
-# TODO: remove this for release
-#set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
