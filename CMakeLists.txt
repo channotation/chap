@@ -71,7 +71,7 @@ include(ExternalProject)
 # Google test as external project:
 ExternalProject_Add(
     googletest
-    URL https://github.com/google/googletest/archive/release-1.7.0.zip
+    URL http://github.com/google/googletest/archive/release-1.7.0.zip
     # Disable install step
     INSTALL_COMMAND ""
 )
