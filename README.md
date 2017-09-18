@@ -6,16 +6,11 @@
 
 Prior to installing CHAP, make sure that you have the following libraries and tools installed:
 
-1. The [CMake](https://cmake.org/) tool in version 2.8.8 or higher. This will 
+1. The [CMake](https://cmake.org/) tool in version 3.2 or higher. This will 
 typically available through your system's package manager. For example, on 
 Ubuntu you can install CMake by typing `sudp apt-get install cmake`.
-2. The BLAS and LAPACK linear algebra libraries. This will typically already be
-installed on your system and are otherwise available through your package 
-manager. On Ubuntu, type `sudo apt-get install libblas-dev liblapack-dev` to
-install both.
-3. The [Google Test](https://github.com/google/googletest) unit testing 
-framework. This needs to be compiled from source using CMake.
-4. The `libgromacs` library of the [Gromacs](http://www.gromacs.org/) molecular 
+2. The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing `sudo apt-get install libblas-dev liblapacke-dev libatlas-base-dev`.
+3. The `libgromacs` library of the [Gromacs](http://www.gromacs.org/) molecular 
 dynamics engine. Very detailed installation instructions for this can be found
 [here](http://manual.gromacs.org/documentation/2016.3/install-guide/index.html).
 Please note that for using Gromacs as a library, the underlying FFTW libray 
@@ -24,7 +19,7 @@ may **not** be installed automatically, i.e. you need to set
 installation.
 
 CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included
-as a header only library, so you don't need to do anything about this.
+as a header only library, and on [Googletest](https://github.com/google/googletest), but this is downloaded and installed automatically by CMake, so you don't need to do anything about this.
 
 
 ### Quick and Dirty Installation ###
