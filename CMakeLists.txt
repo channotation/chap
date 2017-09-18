@@ -1,35 +1,38 @@
 # minimum version of cmake required for building:
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
-# set project name:
-project(CHAP)
+# set project parameters:
+project(CHAP LANGUAGES CXX C VERSION 0.4.0)
 
-# set build type:
+# follow GNU guideline on install directories:
+include(GNUInstallDirs)
+
+# set C++11 standard and turn of GNU extensions:
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# build type defaults to release:
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-  endif()
+  set(CMAKE_BUILD_TYPE RELEASE)
+endif()
 
-
-# Prepare Version Header and Config Header
-#------------------------------------------------------------------------------
+# add custom maintainer mode for compiler and linker flags:
+SET(CMAKE_CXX_FLAGS_MAINTAINER "-Wall -Wextra -Werror -Wfatal-errors -pedantic")
+SET(CMAKE_C_FLAGS_MAINTAINER "-Wall -Wextra -pedantic")
+SET(CMAKE_EXE_LINKER_FLAGS_MAINTAINER "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+SET(CMAKE_SHARED_LINKER_FLAGS_MAINTAINER "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
 
 # set path to custom cmake modules:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
-# include cmake scripts for geting git revisions:
-include(GetGitRevisionDescription)
 
-# version definitions:
-set(CHAP_VERSION_MAJOR "0")
-set(CHAP_VERSION_MINOR "4")
-set(CHAP_VERSION_PATCH "0")
+# Find Boost Library and Include it as Imported Target
+#------------------------------------------------------------------------------
 
-# get git hash:
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-
-# configure header files:
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
+find_package(Boost REQUIRED)
+add_library(boost INTERFACE IMPORTED)
+set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
 
 
 # Find Linear Algebra Libraries
@@ -37,13 +40,26 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_C
 
 # find LAPACK:
 find_package(LAPACKE REQUIRED)
-include_directories(${LAPACKE_INCLUDE_DIRS})
 
 
-# Find Boost Library
+# Find Gromacs Library
 #------------------------------------------------------------------------------
 
-find_package(Boost REQUIRED)
+# handle different Gromacs suffixes:
+option(GMX_DOUBLE "Use double precision" OFF)
+set(GMX_SUFFIX "" CACHE STRING "Suffix for the GROMACS installation to use (empty for default)")
+if (GMX_DOUBLE AND NOT GMX_SUFFIX)
+	set(GROMACS_SUFFIX "_d")
+else()
+	set(GROMACS_SUFFIX ${GMX_SUFFIX})
+endif()
+
+# find Gromacs package, add include direcotries and definitions:
+find_package(GROMACS 5.1 REQUIRED)
+gromacs_check_double(GMX_DOUBLE)
+gromacs_check_compiler(CXX)
+include_directories(${GROMACS_INCLUDE_DIRS})
+add_definitions(${GROMACS_DEFINITIONS})
 
 
 # Build Google Test Library as an External Project
@@ -76,47 +92,23 @@ set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION
 add_dependencies(${GTEST_LIBRARY} googletest)
 
 
-# Find Gromacs Library
+# Prepare Version Header and Config Header
 #------------------------------------------------------------------------------
 
-# handle different Gromacs suffixes:
-option(GMX_DOUBLE "Use double precision" OFF)
-set(GMX_SUFFIX "" CACHE STRING "Suffix for the GROMACS installation to use (empty for default)")
-if (GMX_DOUBLE AND NOT GMX_SUFFIX)
-	set(GROMACS_SUFFIX "_d")
-else()
-	set(GROMACS_SUFFIX ${GMX_SUFFIX})
-endif()
+# include cmake scripts for geting git revisions:
+include(GetGitRevisionDescription)
 
-# find Gromacs package, add include direcotries and definitions:
-find_package(GROMACS 5.1 REQUIRED)
-gromacs_check_double(GMX_DOUBLE)
-gromacs_check_compiler(CXX)
-include_directories(${GROMACS_INCLUDE_DIRS})
-add_definitions(${GROMACS_DEFINITIONS})
+# version definitions:
+set(CHAP_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CHAP_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CHAP_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
-# 
-#------------------------------------------------------------------------------
+# get git hash:
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
-
-# bring header files into build environment:
-include_directories(${CHAP_SOURCE_DIR}/include)
-
-# set library directories for the linker:
-link_directories( /usr/local/fftw/lib/ )
-#link_directories( /usr/include/ )
-
-
-# add source files:
-#file(GLOB SOURCES "src/*.cpp")
-
-# set compiler and linker flags:
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -g")
-
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
-
-
-
+# configure header files:
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
 
 
 # Compile Instructions
@@ -125,23 +117,18 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 # rapidjson support for std::string:
 add_definitions(-DRAPIDJSON_HAS_STDSTRING)
 
+# build list of sources:
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
-#message("CHAP_SRC = " ${SRC_FILES})
 
 # create executable chap from main.cpp:
 add_executable(chap ${SRC_FILES})
-#message("COMPILE_FLAGS = " ${GROMACS_CXX_FLAGS})
-set_target_properties(chap PROPERTIES  COMPILE_FLAGS "${GROMACS_CXX_FLAGS} -std=c++11")
-#message(STATUS "libs = " ${GROMACS_LIBRARIES})
+target_include_directories(chap PUBLIC ${CHAP_SOURCE_DIR}/include)
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
 target_link_libraries(chap ${BOOST_LIBRARIES})
-#target_link_libraries(chap ${GTEST_BOTH_LIBRARIES})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GTEST_LIBRARY})
-#add_dependencies(chap libgmock)
-
 
 
 # Compile Tests
@@ -157,9 +144,6 @@ add_subdirectory(test)
 
 # Install Destinations
 #------------------------------------------------------------------------------
-
-# TODO: remove this for release
-#set(CMAKE_INSTALL_PREFIX "/sansom/s117/scro2967/repos/chap")
 
 # where to install executable on the system:
 install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
