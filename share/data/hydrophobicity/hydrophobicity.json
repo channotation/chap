@@ -1,0 +1,30 @@
+{
+    "remark": "FOR TESTING ONLY.",
+
+    "reference": {
+        "citation": "made up numbers"
+        },
+
+    "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity":  41.0},
+        {"resname": "ARG", "hydrophobicity": -14.0},
+        {"resname": "ASN", "hydrophobicity": -28.0},
+        {"resname": "ASP", "hydrophobicity": -55.0},
+        {"resname": "CYS", "hydrophobicity":  49.0},
+        {"resname": "GLN", "hydrophobicity": -10.0},
+        {"resname": "GLU", "hydrophobicity": -31.0},
+        {"resname": "GLY", "hydrophobicity":   0.0},
+        {"resname": "HIS", "hydrophobicity":   8.0},
+        {"resname": "ILE", "hydrophobicity":  99.0},
+        {"resname": "LEU", "hydrophobicity":  97.0},
+        {"resname": "LYS", "hydrophobicity": -23.0},
+        {"resname": "MET", "hydrophobicity": -28.0},
+        {"resname": "PHE", "hydrophobicity": 100.0},
+        {"resname": "PRO", "hydrophobicity": -46.0},
+        {"resname": "SER", "hydrophobicity":  -5.0},
+        {"resname": "THR", "hydrophobicity":  13.0},
+        {"resname": "TRP", "hydrophobicity":  97.0},
+        {"resname": "TYR", "hydrophobicity":  63.0},
+        {"resname": "VAL", "hydrophobicity":  76.0}
+    ]
+}
