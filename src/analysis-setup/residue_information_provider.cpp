@@ -103,7 +103,7 @@ ResidueInformationProvider::hydrophobicityFromJson(
 
         // prevent duplicate entries:
         std::string resname = (*it)["resname"].GetString();
-        if( hydrophobicity_.find(resname) != hydrophobicity_.end() )
+        if( hydrophobicity_.find(resname) == hydrophobicity_.end() )
         {
             // add to internal lookup table:
             hydrophobicity_[resname] = (*it)["hydrophobicity"].GetDouble(); 
@@ -143,6 +143,6 @@ ResidueInformationProvider::chain(const int id) const
 real
 ResidueInformationProvider::hydrophobicity(const int id) const
 {
-//    return hydrophobicity_.at( name_[id] );
+    return hydrophobicity_.at( name(id) );
 }
 

@@ -834,7 +834,48 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     resInfo_.nameFromTopology(top);
     resInfo_.chainFromTopology(top);
 
+    // TODO: add different database options:
+    std::string hydrophobicityFilePath = chapInstallBase() + std::string("/share/data/hydrophobicity/hydrophobicity.json");
+    
 
+    // select appropriate database file:i
+    /*
+    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_amberuni.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleBondi )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_bondi.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleHardcore )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_hardcore.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_simple.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleXplor )
+    {
+        pfVdwRadiusJson_ = radiusFilePath + "hole_xplor.json";
+    }
+    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
+    {
+        // has user provided a file name?
+        if( !pfVdwRadiusJsonIsSet_ )
+        {
+            std::cerr<<"ERROR: Option pfVdwRadiusDatabase set to 'user', but no custom van-der-Waals radii specified with pfVdwRadiusJson."<<std::endl;
+            std::abort();
+        }
+    }
+    */
+
+    // import hydrophbicity JSON: 
+    rapidjson::Document hydrophobicityDoc = jdi(hydrophobicityFilePath.c_str());
+   
+    // generate hydrophobicity lookup table:
+    resInfo_.hydrophobicityFromJson(hydrophobicityDoc);
 }
 
 
@@ -1798,15 +1839,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 alloc);
         poreResidueChain.PushBack(chain, alloc);
 
-
-//        poreResidueHydrophobicity.PushBack(
-//                poreResidueHydrophobicity_.at(id), 
-//                alloc);
+        // residue hydrophobicity:
+        poreResidueHydrophobicity.PushBack(
+                resInfo_.hydrophobicity(id), 
+                alloc);
     }
     residueSummary.AddMember("id", poreResidueIds, alloc);
     residueSummary.AddMember("name", poreResidueName, alloc);
     residueSummary.AddMember("chain", poreResidueChain, alloc);
-//    residueSummary.AddMember("hydrophobicity", poreResidueHydrophobicity, alloc);
+    residueSummary.AddMember("hydrophobicity", poreResidueHydrophobicity, alloc);
 
     SummaryStatisticsVectorJsonConverter sumStatsVecConv;
     residueSummary.AddMember(
