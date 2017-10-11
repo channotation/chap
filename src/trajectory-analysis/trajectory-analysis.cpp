@@ -20,8 +20,10 @@
 
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
-#include "aggregation/number_density_calculator.hpp"
 #include "aggregation/boltzmann_energy_calculator.hpp"
+#include "aggregation/number_density_calculator.hpp"
+#include "aggregation/multiscalar_time_series.hpp"
+#include "aggregation/scalar_time_series.hpp"
 
 #include "config/config.hpp"
 #include "config/version.hpp"
@@ -31,9 +33,10 @@
 #include "geometry/cubic_spline_interp_1D.hpp"
 #include "geometry/cubic_spline_interp_3D.hpp"
 
-#include "io/molecular_path_obj_exporter.hpp"
-#include "io/json_doc_importer.hpp"
 #include "io/analysis_data_json_frame_exporter.hpp"
+#include "io/json_doc_importer.hpp"
+#include "io/molecular_path_obj_exporter.hpp"
+#include "io/multiscalar_time_series_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
 
@@ -485,8 +488,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 7);
-    frameStreamColumnNames.push_back({"minRadius",
+    frameStreamData_.setColumnCount(0, 9);
+    frameStreamColumnNames.push_back({"timeStamp",
+                                      "argMinRadius",
+                                      "minRadius",
                                       "length",
                                       "volume",
                                       "numPath",
@@ -1315,13 +1320,15 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.selectDataSet(0);
 
     // only one point per frame:
-    dhFrameStream.setPoint(0, molPath.minRadius().second);
-    dhFrameStream.setPoint(1, molPath.length());
-    dhFrameStream.setPoint(2, molPath.volume());
-    dhFrameStream.setPoint(3, numSolvInsidePore); 
-    dhFrameStream.setPoint(4, numSolvInsideSample); 
-    dhFrameStream.setPoint(5, solventRangeLo); 
-    dhFrameStream.setPoint(6, solventRangeHi); 
+    dhFrameStream.setPoint(0, fr.time);
+    dhFrameStream.setPoint(1, molPath.minRadius().first);
+    dhFrameStream.setPoint(2, molPath.minRadius().second);
+    dhFrameStream.setPoint(3, molPath.length());
+    dhFrameStream.setPoint(4, molPath.volume());
+    dhFrameStream.setPoint(5, numSolvInsidePore); 
+    dhFrameStream.setPoint(6, numSolvInsideSample); 
+    dhFrameStream.setPoint(7, solventRangeLo); 
+    dhFrameStream.setPoint(8, solventRangeHi); 
     dhFrameStream.finishPointSet();
 
 
@@ -1381,6 +1388,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics solventRangeLoSummary;
     SummaryStatistics solventRangeHiSummary;
 
+    // prepare scalar time series objects for aggregate properties:
+    ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
+    ScalarTimeSeries minRadiusTimeSeries("minRadius");
+    ScalarTimeSeries lengthTimeSeries("length");
+    ScalarTimeSeries volumeTimeSeries("volume");
+    ScalarTimeSeries numPathTimeSeries("numPath");
+    ScalarTimeSeries numSampleTimeSeries("numSample");
+
+
     // number of residues in pore forming group:
     size_t numPoreRes = 0;
     std::vector<int> poreResIds;
@@ -1403,7 +1419,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             " read from" + inFileName + " is not valid JSON object.";
             throw std::runtime_error(error);
         }
-      
+    
         // calculate summary statistics of aggregate variables:
         minRadiusSummary.update(
                 lineDoc["pathSummary"]["minRadius"][0].GetDouble());
@@ -1419,6 +1435,29 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["solventRangeLo"][0].GetDouble());
         solventRangeHiSummary.update(
                 lineDoc["pathSummary"]["solventRangeHi"][0].GetDouble());
+        
+        // get time stamp of current frame:
+        real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
+
+        // add to time series objects:
+        argMinRadiusTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
+        minRadiusTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["minRadius"][0].GetDouble());
+        lengthTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["length"][0].GetDouble());
+        volumeTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["volume"][0].GetDouble());
+        numPathTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["numPath"][0].GetDouble());
+        numSampleTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["numSample"][0].GetDouble());
 
         // in first line, also read number of residues in pore forming group:
         if( linesRead == 0 )
@@ -1435,6 +1474,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         // increment line counter:
         linesRead++;
     }
+
+    // combine individual time scalar time series into one object:
+    MultiscalarTimeSeries pathSummaryTimeSeries;
+    pathSummaryTimeSeries.addScalarTimeSeries(argMinRadiusTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(minRadiusTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(lengthTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(volumeTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(numPathTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(numSampleTimeSeries);
 
     // close per frame data set:
     inFile.close();
@@ -1698,9 +1746,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             ssjc.convert(numSampleSummary, outDoc.GetAllocator()),
             outDoc.GetAllocator());
 
+    MultiscalarTimeSeriesJsonConverter mtjc;
+    pathSummary.AddMember(
+            "timeSeries",
+            mtjc.convert(pathSummaryTimeSeries, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+
     // add summary data to output document:
     outDoc.AddMember("pathSummary", pathSummary, alloc);
-
 
     //
     rapidjson::Value residueSummary;
