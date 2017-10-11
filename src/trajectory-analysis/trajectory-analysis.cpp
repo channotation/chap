@@ -765,7 +765,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     it = std::unique(residueIndices_.begin(), residueIndices_.end());
     residueIndices_.resize(std::distance(residueIndices_.begin(), it));
 
-    //
+    // loop over residues:
     ConstArrayRef<int> refselAtomIdx = refsel_.atomIndices();
     for(it = residueIndices_.begin(); it != residueIndices_.end(); it++)
     {
@@ -825,6 +825,16 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
     // find maximum van der Waals radius:
     maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
+
+
+    // GET RESIDUE CHEMICAL INFORMATION
+    //-------------------------------------------------------------------------
+
+    // get residue information from topology:
+    resInfo_.nameFromTopology(top);
+    resInfo_.chainFromTopology(top);
+
+
 }
 
 
@@ -1755,16 +1765,48 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // add summary data to output document:
     outDoc.AddMember("pathSummary", pathSummary, alloc);
 
-    //
+
+    // per residue data:
     rapidjson::Value residueSummary;
     residueSummary.SetObject();
 
+    // add all time-constant residue variables:
     rapidjson::Value poreResidueIds(rapidjson::kArrayType);
+    rapidjson::Value poreResidueName(rapidjson::kArrayType);
+    rapidjson::Value poreResidueChain(rapidjson::kArrayType);
+    rapidjson::Value poreResidueHydrophobicity(rapidjson::kArrayType);
     for(auto id : poreResIds)
     {
-        poreResidueIds.PushBack(id, alloc);
+        // residue ID:
+        poreResidueIds.PushBack(
+                id, 
+                alloc);
+
+        // residue name:
+        rapidjson::Value name(rapidjson::kStringType);
+        name.SetString(
+                resInfo_.name(id).c_str(), 
+                strlen(resInfo_.name(id).c_str()), 
+                alloc);
+        poreResidueName.PushBack(name, alloc);
+
+        // residue chain ID:
+        rapidjson::Value chain(rapidjson::kStringType);
+        chain.SetString(
+                resInfo_.chain(id).c_str(), 
+                strlen(resInfo_.chain(id).c_str()), 
+                alloc);
+        poreResidueChain.PushBack(chain, alloc);
+
+
+//        poreResidueHydrophobicity.PushBack(
+//                poreResidueHydrophobicity_.at(id), 
+//                alloc);
     }
     residueSummary.AddMember("id", poreResidueIds, alloc);
+    residueSummary.AddMember("name", poreResidueName, alloc);
+    residueSummary.AddMember("chain", poreResidueChain, alloc);
+//    residueSummary.AddMember("hydrophobicity", poreResidueHydrophobicity, alloc);
 
     SummaryStatisticsVectorJsonConverter sumStatsVecConv;
     residueSummary.AddMember(

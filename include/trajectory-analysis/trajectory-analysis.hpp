@@ -11,6 +11,8 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
+#include "analysis-setup/residue_information_provider.hpp"
+
 #include "path-finding/abstract_path_finder.hpp"
 #include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
@@ -86,6 +88,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
+
+    // pore residue chemical and physical information:
+    ResidueInformationProvider resInfo_;
 
     // pore particle and group indices:
     std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
