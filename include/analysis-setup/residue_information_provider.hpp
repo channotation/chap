@@ -9,7 +9,7 @@
 #include <gromacs/trajectoryanalysis/analysissettings.h>
 #include <gromacs/utility/real.h>
 
-#include "rapidjson/Document"
+#include "rapidjson/document.h"
 
 
 /*!
@@ -35,7 +35,7 @@ class ResidueInformationProvider
         // container for residue properties:
         std::map<int, std::string> name_;
         std::map<int, std::string> chain_;
-        std::map<int, real> hydrophobicity_;
+        std::map<std::string, real> hydrophobicity_;
 };
 
 #endif
