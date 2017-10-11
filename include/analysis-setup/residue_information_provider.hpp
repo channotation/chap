@@ -9,6 +9,8 @@
 #include <gromacs/trajectoryanalysis/analysissettings.h>
 #include <gromacs/utility/real.h>
 
+#include "rapidjson/Document"
+
 
 /*!
  *
@@ -20,6 +22,7 @@ class ResidueInformationProvider
         // setter methods:
         void nameFromTopology(const gmx::TopologyInformation &top);
         void chainFromTopology(const gmx::TopologyInformation &top);
+        void hydrophobicityFromJson(const rapidjson::Document &doc);
         
         // getter methods:
         std::string name(const int id) const;

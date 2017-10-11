@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+
 /*!
  * Extracts the residue name for each residue from the topology and adds it to
  * an internal storage container.
@@ -19,7 +20,6 @@ ResidueInformationProvider::nameFromTopology(
     {
         // add chain ID to map:
         name_[i] = std::string(*atoms.resinfo[i].name);
-        std::cout<<name_[i]<<std::endl;
     }
 }
 
@@ -41,6 +41,17 @@ ResidueInformationProvider::chainFromTopology(
         // add chain ID to map:
         chain_[i] = atoms.resinfo[i].chainid;
     }
+}
+
+
+/*
+ *
+ */
+void
+ResidueInformationProvider::hydrophobicityFromJson(
+        const rapidjson::Document &doc)
+{
+    
 }
 
 
