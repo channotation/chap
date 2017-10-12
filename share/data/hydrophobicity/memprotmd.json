@@ -1,8 +1,8 @@
 {
-    "remark": "FOR TESTING ONLY.",
+    "remark": "Hydrophobicity scale as used on MemProtMD.",
 
     "reference": {
-        "citation": "made up numbers"
+        "citation": "http://memprotmd.bioch.ox.ac.uk"
         },
 
     "hydrophobicity": [
