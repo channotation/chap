@@ -1,7 +1,17 @@
 #include "analysis-setup/residue_information_provider.hpp"
 
-
+#include <cmath>
 #include <iostream>
+
+
+/*!
+ * Constructor sets default hydrophobicity to NaN.
+ */
+ResidueInformationProvider::ResidueInformationProvider()
+    : defaultHydrophobicity_(std::nan(""))
+{
+
+}
 
 
 /*!
@@ -118,6 +128,17 @@ ResidueInformationProvider::hydrophobicityFromJson(
 
 
 /*!
+ * Set default hydrophobicity that will be used for residues for which no 
+ * lookup table entry exists.
+ */
+void
+ResidueInformationProvider::setDefaultHydrophobicity(const real hydrophobicity)
+{
+    defaultHydrophobicity_ = hydrophobicity;
+}
+
+
+/*!
  * Returns name of residue of given ID.
  */
 std::string
@@ -138,7 +159,11 @@ ResidueInformationProvider::chain(const int id) const
 
 
 /*!
- * Returns hydrophobicity of residue of gievn ID.
+ * Returns hydrophobicity of residue of given ID. This first checks if the 
+ * internal lookup table generated with hydrophobicityFromJson() contains an
+ * entry for the specified residue. If corresponding value is found, it checks
+ * if a fallback hydrophobicity has been specified with 
+ * setDefaultHydrophobicity(). If this is not the case, it throws an exception.
  */
 real
 ResidueInformationProvider::hydrophobicity(const int id) const
@@ -146,8 +171,16 @@ ResidueInformationProvider::hydrophobicity(const int id) const
     // check if record is present:
     if( hydrophobicity_.find(name(id)) == hydrophobicity_.end() )
     {
-        throw std::runtime_error("No hydrophobicity scale data found for "
-        "residue " + name(id) + ".");
+        // check if default has been set:
+        if( !std::isnan(defaultHydrophobicity_) )
+        {
+            return defaultHydrophobicity_;
+        }
+        else
+        {
+            throw std::runtime_error("No hydrophobicity scale data found for "
+            "residue " + name(id) + " and no fallback specified.");
+        }
     }
     else
     {

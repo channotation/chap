@@ -405,9 +405,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(RealOption("hydrophob-fallback")
                          .store(&hydrophobicityDefault_)
                          .storeIsSet(&hydrophobicityDefaultIsSet_)
-                         .defaultValue(-1.0)
+                         .defaultValue(std::nan(""))
                          .description("Fallback hydrophobicity for residues "
-                                      "in the pathway defining group."));
+                                      "in the pathway defining group. If "
+                                      "unset (nan), residues missing in the "
+                                      "database will cause an error."));
 
     options -> addOption(StringOption("hydrophob-json")
                          .store(&hydrophobicityJson_)
@@ -888,6 +890,12 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
    
     // generate hydrophobicity lookup table:
     resInfo_.hydrophobicityFromJson(hydrophobicityDoc);
+
+    // set fallback hydrophobicity:
+    if( hydrophobicityDefaultIsSet_ )
+    {
+        resInfo_.setDefaultHydrophobicity(hydrophobicityDefault_);
+    }
 }
 
 

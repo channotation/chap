@@ -13,7 +13,7 @@
 
 
 /*!
- *
+ * Enum for hydrophobicity databases bundled with source code. 
  */
 enum eHydrophobicityDatabase {eHydrophobicityDatabaseMemprotMd,
                               eHydrophobicityDatabaseUser};
@@ -26,10 +26,14 @@ class ResidueInformationProvider
 {
     public:
 
+        // constructor and destructor:
+        ResidueInformationProvider();
+
         // setter methods:
         void nameFromTopology(const gmx::TopologyInformation &top);
         void chainFromTopology(const gmx::TopologyInformation &top);
         void hydrophobicityFromJson(const rapidjson::Document &doc);
+        void setDefaultHydrophobicity(const real hydrophobicity);
         
         // getter methods:
         std::string name(const int id) const;
@@ -43,6 +47,9 @@ class ResidueInformationProvider
         std::map<int, std::string> name_;
         std::map<int, std::string> chain_;
         std::map<std::string, real> hydrophobicity_;
+
+        // default properties:
+        real defaultHydrophobicity_;
 };
 
 #endif
