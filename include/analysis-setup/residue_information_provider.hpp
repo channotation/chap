@@ -20,7 +20,10 @@ enum eHydrophobicityDatabase {eHydrophobicityDatabaseMemprotMd,
 
 
 /*!
+ * \brief Container class for (bio)chemical information about residues.
  *
+ * This class provides information on residues by ID, such as residue name,
+ * chain, or hydrophobicity.
  */
 class ResidueInformationProvider
 {
