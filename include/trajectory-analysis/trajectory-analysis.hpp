@@ -90,6 +90,12 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
     // pore residue chemical and physical information:
+    eHydrophobicityDatabase hydrophobicityDatabase_;
+    bool hydrophobicityDatabaseIsSet_;
+    real hydrophobicityDefault_;
+    bool hydrophobicityDefaultIsSet_;
+    std::string hydrophobicityJson_;
+    bool hydrophobicityJsonIsSet_;
     ResidueInformationProvider resInfo_;
 
     // pore particle and group indices:

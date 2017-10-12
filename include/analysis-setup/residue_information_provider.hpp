@@ -15,6 +15,13 @@
 /*!
  *
  */
+enum eHydrophobicityDatabase {eHydrophobicityDatabaseMemprotMd,
+                              eHydrophobicityDatabaseUser};
+
+
+/*!
+ *
+ */
 class ResidueInformationProvider
 {
     public:

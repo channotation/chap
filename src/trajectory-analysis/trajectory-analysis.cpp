@@ -64,7 +64,6 @@ trajectoryAnalysis::trajectoryAnalysis()
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
     , pfChanDirVec_(3)
-    , saRandomSeed_(15011991)
     , saMaxCoolingIter_(1e3)
     , saNumCostSamples_(50)
     , saConvRelTol_(1e-10)
@@ -340,7 +339,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     options -> addOption(RealOption("pm-pl-margin")
 	                     .store(&poreMappingMargin_)
-                         .defaultValue(0.9)
+                         .defaultValue(0.5)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
                                       "be pathway lining if it is no further "
@@ -389,6 +388,34 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "Ensures that the density falls off "
                                       "smoothly to zero outside the data "
                                       "range."));
+
+
+    // HYDROPHOBICITY PARAMETERS
+    //-------------------------------------------------------------------------
+    
+    const char * const allowedHydrophobicityDatabase[] = {"memprotmd",
+                                                          "user"};
+    hydrophobicityDatabase_ = eHydrophobicityDatabaseMemprotMd;
+    options -> addOption(EnumOption<eHydrophobicityDatabase>("hydrophob-database")
+                         .enumValue(allowedHydrophobicityDatabase)
+                         .store(&hydrophobicityDatabase_)
+                         .description("Database of hydrophobicity scale for "
+                                      "pore forming residues"));
+
+    options -> addOption(RealOption("hydrophob-fallback")
+                         .store(&hydrophobicityDefault_)
+                         .storeIsSet(&hydrophobicityDefaultIsSet_)
+                         .defaultValue(-1.0)
+                         .description("Fallback hydrophobicity for residues "
+                                      "in the pathway defining group."));
+
+    options -> addOption(StringOption("hydrophob-json")
+                         .store(&hydrophobicityJson_)
+                         .storeIsSet(&hydrophobicityJsonIsSet_)
+                         .description("JSON file with user defined "
+                                      "hydrophobicity scale. Will be "
+                                      "ignored unless -hydrophobicity-database"
+                                      " is set to 'user'."));
 }
 
 
@@ -834,45 +861,30 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     resInfo_.nameFromTopology(top);
     resInfo_.chainFromTopology(top);
 
-    // TODO: add different database options:
-    std::string hydrophobicityFilePath = chapInstallBase() + std::string("/share/data/hydrophobicity/hydrophobicity.json");
+    // base path to location of hydrophobicity databases:
+    std::string hydrophobicityFilePath = chapInstallBase() + 
+            std::string("/share/data/hydrophobicity/");
     
-
-    // select appropriate database file:i
-    /*
-    if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
+    // select appropriate database file:
+    if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMemprotMd )
     {
-        pfVdwRadiusJson_ = radiusFilePath + "hole_amberuni.json";
+        hydrophobicityJson_ = hydrophobicityFilePath + "memprotmd.json";
     }
-    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleBondi )
-    {
-        pfVdwRadiusJson_ = radiusFilePath + "hole_bondi.json";
-    }
-    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleHardcore )
-    {
-        pfVdwRadiusJson_ = radiusFilePath + "hole_hardcore.json";
-    }
-    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleSimple )
-    {
-        pfVdwRadiusJson_ = radiusFilePath + "hole_simple.json";
-    }
-    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleXplor )
-    {
-        pfVdwRadiusJson_ = radiusFilePath + "hole_xplor.json";
-    }
-    else if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseUser )
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseUser )
     {
         // has user provided a file name?
-        if( !pfVdwRadiusJsonIsSet_ )
+        if( !hydrophobicityJsonIsSet_ )
         {
-            std::cerr<<"ERROR: Option pfVdwRadiusDatabase set to 'user', but no custom van-der-Waals radii specified with pfVdwRadiusJson."<<std::endl;
+            std::cerr<<"ERROR: Option hydrophob-database set to 'user', but "
+            "no custom hydrophobicity scale was specified with "
+            "hydrophob-json."<<std::endl;
             std::abort();
         }
     }
-    */
 
-    // import hydrophbicity JSON: 
-    rapidjson::Document hydrophobicityDoc = jdi(hydrophobicityFilePath.c_str());
+    // import hydrophbicity JSON:
+    std::cout<<hydrophobicityJson_<<std::endl;
+    rapidjson::Document hydrophobicityDoc = jdi(hydrophobicityJson_.c_str());
    
     // generate hydrophobicity lookup table:
     resInfo_.hydrophobicityFromJson(hydrophobicityDoc);

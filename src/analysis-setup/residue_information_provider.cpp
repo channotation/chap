@@ -143,6 +143,16 @@ ResidueInformationProvider::chain(const int id) const
 real
 ResidueInformationProvider::hydrophobicity(const int id) const
 {
-    return hydrophobicity_.at( name(id) );
+    // check if record is present:
+    if( hydrophobicity_.find(name(id)) == hydrophobicity_.end() )
+    {
+        throw std::runtime_error("No hydrophobicity scale data found for "
+        "residue " + name(id) + ".");
+    }
+    else
+    {
+        // return lookup value if found:
+        return hydrophobicity_.at( name(id) );
+    }
 }
 
