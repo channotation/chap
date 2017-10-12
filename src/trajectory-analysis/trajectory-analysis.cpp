@@ -548,13 +548,15 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "ctrlZ"});
 
     // prepare container for residue mapping results:
-    frameStreamData_.setColumnCount(4, 9);
+    frameStreamData_.setColumnCount(4, 11);
     frameStreamColumnNames.push_back({"resId",
                                       "s",
                                       "rho",
                                       "phi",
                                       "poreLining",
                                       "poreFacing",
+                                      "poreRadius",
+                                      "solventDensity",
                                       "x",
                                       "y",
                                       "z"});
@@ -766,9 +768,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         std::cerr<<e.what()<<std::endl; 
         std::abort();
     }
-
-	// find largest van der Waals radius in system:
-//	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
 
 
     // TRACK C-ALPHAS and RESIDUE INDICES
@@ -1029,39 +1028,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfm -> setParameters(pfParams_);
 
 
-
-
-    std::cout<<std::endl;
-    std::cout<<"initProbePos ="<<" "
-             <<pfInitProbePos_[0]<<" "
-             <<pfInitProbePos_[1]<<" "
-             <<pfInitProbePos_[2]<<" "
-             <<std::endl;
-
-
-
-
-
-
-
     // PATH FINDING
     //-------------------------------------------------------------------------
 
     // run path finding algorithm on current frame:
-    std::cout<<"finding permeation pathway ... ";
     std::cout.flush();
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
-    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
     // retrieve molecular path object:
-    std::cout<<"preparing pathway object ... ";
     std::cout.flush();
     clock_t tMolPath = std::clock();
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
-    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
     
 
     // which method do we use for path alignment?
@@ -1136,28 +1116,21 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
     // map pore residue COG onto pathway:
-    std::cout<<"mapping pore residue COG onto pathway ... ";
     clock_t tMapResCog = std::clock();
     std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
             poreMappingSelCog, 
             mappingParams_);
     tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
-    std::cout<<"mapped "<<poreCogMappedCoords.size()
-             <<" particles in "<<1000*tMapResCog<<" ms"<<std::endl;
 
     // map pore residue C-alpha onto pathway:
-    std::cout<<"mapping pore residue C-alpha onto pathway ... ";
     clock_t tMapResCal = std::clock();
     std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
             poreMappingSelCal, 
             mappingParams_);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
-    std::cout<<"mapped "<<poreCalMappedCoords.size()
-             <<" particles in "<<1000*tMapResCal<<" ms"<<std::endl;
 
     
     // check if particles are pore-lining:
-    std::cout<<"checking which residues are pore-lining ... ";
     clock_t tResPoreLining = std::clock();
     std::map<int, bool> poreLining = molPath.checkIfInside(
             poreCogMappedCoords, 
@@ -1171,13 +1144,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tResPoreLining = (std::clock() - tResPoreLining)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<nPoreLining<<" pore lining residues in "
-             <<1000*tResPoreLining<<" ms"<<std::endl;
 
     // check if residues are pore-facing:
     // TODO: make this conditional on whether C-alphas are available
     
-    std::cout<<"checking which residues are pore-facing ... ";
     clock_t tResPoreFacing = std::clock();
     std::map<int, bool> poreFacing;
     int nPoreFacing = 0;
@@ -1196,8 +1166,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<nPoreFacing<<" pore facing residues in "
-             <<1000*tResPoreFacing<<" ms"<<std::endl;
     
 
     // add points inside to data frame:
@@ -1215,29 +1183,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
         dhResMapping.finishPointSet();
     }
-    
-    // now add mapped residue coordinates to data handle:
-    // FIXME JSON error caused here? --> only with cylindrical path finder!
-    // --> nope, also with the other one if all legacy code if properly removed!
-    // --> commenting this out certainly helps
-    
-    dhFrameStream.selectDataSet(4);
-    
-    // add mapped residues to data container:
-    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
-    {
-        dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
-        dhFrameStream.setPoint(1, it -> second[SS]);            // s
-        dhFrameStream.setPoint(2, std::sqrt(it -> second[RR])); // rho
-        dhFrameStream.setPoint(3, it -> second[PP]);            // phi
-        dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
-        dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
-        dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[XX]);
-        dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[YY]);
-        dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[ZZ]);
-        dhFrameStream.finishPointSet();
-    }
-    
+        
 
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
@@ -1253,22 +1199,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
 
     // map particles onto pathway:
-    std::cout<<"mapping solvent particles onto pathway ... ";
     clock_t tMapSol = std::clock();
     std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
             solvMapSel, 
             mappingParams_);
     tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
-    std::cout<<"mapped "<<solventMappedCoords.size()
-             <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
-
-
-    std::cout<<"solvMapSel.posCount = "<<solvMapSel.posCount()<<std::endl;
-    std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
-
 
     // find particles inside path (i.e. pore plus bulk sampling regime):
-    std::cout<<"finding solvent particles inside pore ... ";
     clock_t tSolInsideSample = std::clock();
     std::map<int, bool> solvInsideSample = molPath.checkIfInside(
             solventMappedCoords, solvMappingMargin_);
@@ -1281,12 +1218,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<numSolvInsideSample<<" solvent particles inside pore in "
-             <<1000*tSolInsideSample<<" ms"<<std::endl;
 
 
     // find particles inside pore:
-    std::cout<<"finding solvent particles inside pore ... ";
     clock_t tSolInsidePore = std::clock();
     std::map<int, bool> solvInsidePore = molPath.checkIfInside(
             solventMappedCoords, 
@@ -1302,8 +1236,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<numSolvInsidePore<<" solvent particles inside pore in "
-             <<1000*tSolInsidePore<<" ms"<<std::endl;
 
     // now add mapped residue coordinates to data handle:
     dhFrameStream.selectDataSet(5);
@@ -1360,11 +1292,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     densityEstimator -> setParameters(deParams_);
 
     // estimate density of solvent particles along arc length coordinate:
-    std::cout<<"estimating solvent density...";
-    std::cout.flush();
     SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
             solventSampleCoordS);
-    std::cout<<" done"<<std::endl;
 
     // add spline curve parameters to data handle:   
     dhFrameStream.selectDataSet(6);
@@ -1403,8 +1332,36 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.finishPointSet();
 
 
-//    std::cout<<"solventRangeLo = "<<solventRangeLo<<"  ";
-  //  std::cout<<"solventRangeHi = "<<solventRangeLo<<std::endl;
+    // ADD RESIDUE DATA TO CONTAINER
+    //-------------------------------------------------------------------------
+
+    // get pore radius and solvent density at each residue's position:
+    std::map<int, real> poreRadiusAtResidue;
+    std::map<int, real> solventDensityAtResidue;
+    for(auto res : poreCogMappedCoords)
+    {
+        poreRadiusAtResidue[res.first] = molPath.radius(res.second[SS]);
+        solventDensityAtResidue[res.first] = 
+                solventDensityCoordS.evaluate(res.second[SS], 0);
+    }
+
+    // add mapped residues to data container:
+    dhFrameStream.selectDataSet(4);
+    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+        dhFrameStream.setPoint( 0, poreMappingSelCog.position(it -> first).mappedId());
+        dhFrameStream.setPoint( 1, it -> second[SS]);            // s
+        dhFrameStream.setPoint( 2, std::sqrt(it -> second[RR])); // rho
+        dhFrameStream.setPoint( 3, it -> second[PP]);            // phi
+        dhFrameStream.setPoint( 4, poreLining[it -> first]);     // pore lining?
+        dhFrameStream.setPoint( 5, poreFacing[it -> first]);     // pore facing?
+        dhFrameStream.setPoint( 6, poreRadiusAtResidue[it -> first]);
+        dhFrameStream.setPoint( 7, solventDensityAtResidue[it -> first]);
+        dhFrameStream.setPoint( 8, poreMappingSelCog.position(it -> first).x()[XX]);
+        dhFrameStream.setPoint( 9, poreMappingSelCog.position(it -> first).x()[YY]);
+        dhFrameStream.setPoint(10, poreMappingSelCog.position(it -> first).x()[ZZ]);
+        dhFrameStream.finishPointSet();
+    }
 
 
     // WRITE PORE TO OBJ FILE
@@ -1419,8 +1376,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // FINISH FRAME
     //-------------------------------------------------------------------------
-
-    std::cout<<std::endl;
 
 	// finish analysis of current frame:
     dhResMapping.finishFrame();
@@ -1608,6 +1563,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> residuePhiSummary(numPoreRes);
     std::vector<SummaryStatistics> residuePlSummary(numPoreRes);
     std::vector<SummaryStatistics> residuePfSummary(numPoreRes);
+    std::vector<SummaryStatistics> residuePoreRadiusSummary(numPoreRes);
+    std::vector<SummaryStatistics> residueSolventDensitySummary(numPoreRes);
     std::vector<SummaryStatistics> residueXSummary(numPoreRes);
     std::vector<SummaryStatistics> residueYSummary(numPoreRes);
     std::vector<SummaryStatistics> residueZSummary(numPoreRes);
@@ -1712,6 +1669,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                     lineDoc["residuePositions"]["poreLining"][i].GetDouble());
             residuePfSummary.at(i).update(
                     lineDoc["residuePositions"]["poreFacing"][i].GetDouble());
+            residuePoreRadiusSummary.at(i).update(
+                    lineDoc["residuePositions"]["poreRadius"][i].GetDouble());
+            residueSolventDensitySummary.at(i).update(
+                    lineDoc["residuePositions"]["solventDensity"][i].GetDouble());
             residueXSummary.at(i).update(
                     lineDoc["residuePositions"]["x"][i].GetDouble());
             residueYSummary.at(i).update(
@@ -1889,6 +1850,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     residueSummary.AddMember(
             "poreFacing",
             sumStatsVecConv.convert(residuePfSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "poreRadius",
+            sumStatsVecConv.convert(residuePoreRadiusSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "solventDensity",
+            sumStatsVecConv.convert(residueSolventDensitySummary, alloc),
             alloc);
     residueSummary.AddMember(
             "x",

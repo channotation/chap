@@ -108,7 +108,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
 
-    int                              nOutPoints_;   // number of points on path sample
+    int nOutPoints_;   // number of points on path sample
 
 
 
