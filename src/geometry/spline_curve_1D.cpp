@@ -1,4 +1,7 @@
 #include <iostream>
+#include <functional>
+
+#include <boost/math/tools/minima.hpp>
 
 #include "geometry/spline_curve_1D.hpp"
 
@@ -151,11 +154,73 @@ SplineCurve1D::computeLinearCombination(const SparseBasis &basis)
 
 
 /*!
- *  Getter function for access to the spline curves control points.
+ * Getter function for access to the spline curves control points.
  */
 std::vector<real>
 SplineCurve1D::ctrlPoints() const
 {
     return ctrlPoints_;
+}
+
+
+/*!
+ * Returns length of curve between first and last (unique) knot.
+ */
+real
+SplineCurve1D::length() const
+{
+    real sLo = uniqueKnots().front();
+    real sHi = uniqueKnots().back();
+    return sHi - sLo;
+}
+
+
+/*!
+ * Returns a pair struct of argmin and min of function value.
+ */
+std::pair<real, real>
+SplineCurve1D::minimum(const std::pair<real, real> &lim)
+{
+    // internal parameters:
+    real maxSampleDist = 0.1;
+    boost::uintmax_t maxIter = 100;
+
+    // draw sample of values and find minimum:
+    real length = lim.second - lim.first;
+    int nSamples = std::ceil(length/maxSampleDist);
+    real sampleDist = length/nSamples;
+    std::vector<real> par;
+    std::vector<real> val;
+    for(int i = 0; i < nSamples; i++)
+    {
+        par.push_back( lim.first + i*sampleDist );
+        val.push_back( evaluate(par.back(), 0) );
+    }
+ 
+    // find smallest sample radius:
+    auto itMin = std::min_element(val.begin(), val.end());
+    int idxMin = std::distance(val.begin(), itMin);
+
+    // determine bracketing interval:
+    real sMin = par[idxMin - 1];
+    real sMax = par[idxMin + 1];
+    if( itMin == val.begin() )
+    {
+        sMin = par[idxMin];
+        sMax = par[idxMin + 1];
+    }
+    else if( itMin == val.end() )
+    {
+        sMin = par[idxMin - 1];
+        sMax = par[idxMin];
+    }
+
+    // find exact location of minimum through Brent's method:
+    return boost::math::tools::brent_find_minima(
+            std::bind(&SplineCurve1D::evaluate, this, std::placeholders::_1, 0),
+            sMin,
+            sMax,
+            std::numeric_limits<real>::digits,
+            maxIter);    
 }
 

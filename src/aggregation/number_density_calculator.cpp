@@ -3,9 +3,11 @@
 #include <stdexcept>
 
 #include "aggregation/number_density_calculator.hpp"
+#include "geometry/cubic_spline_interp_1D.hpp"
 
 
 #include <iostream>
+
 
 /*!
  * Public interface for calculating the number density of particles given 
@@ -39,6 +41,36 @@ NumberDensityCalculator::operator()(
 
     // return number density:
     return numberDensity;
+}
+
+
+/*
+ *
+ */
+SplineCurve1D
+NumberDensityCalculator::operator()(
+        SplineCurve1D &probabilityDensity,
+        SplineCurve1D &radius,
+        int totalNumber)
+{
+    // get evaluation points:
+    std::vector<real> evalPoints = probabilityDensity.uniqueKnots();
+
+    // evaluate both splines at these points:
+    std::vector<real> r;
+    std::vector<real> p;
+    for(auto eval : evalPoints)
+    {
+        r.push_back( radius.evaluate(eval, 0) );
+        p.push_back( probabilityDensity.evaluate(eval, 0));
+    }
+
+    // calculate number density at evaluation points:
+    std::vector<real> n = this -> operator()(p, r, totalNumber);
+
+    // interpolate points to and return spline curve:
+    CubicSplineInterp1D Interp;
+    return Interp(evalPoints, n, eSplineInterpBoundaryHermite);
 }
 
 

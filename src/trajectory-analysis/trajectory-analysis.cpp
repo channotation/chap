@@ -517,7 +517,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 9);
+    frameStreamData_.setColumnCount(0, 11);
     frameStreamColumnNames.push_back({"timeStamp",
                                       "argMinRadius",
                                       "minRadius",
@@ -526,7 +526,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "numPath",
                                       "numSample",
                                       "solventRangeLo",
-                                      "solventRangeHi"});
+                                      "solventRangeHi",
+                                      "argMinSolventDensity",
+                                      "minSolventDensity"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -1310,6 +1312,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
 
 
+
+    // obtain physical number density:
+    SplineCurve1D pathRadius = molPath.pathRadius();
+    NumberDensityCalculator ncc;
+    SplineCurve1D numberDensity = ncc(
+            solventDensityCoordS, 
+            pathRadius, 
+            numSolvInsideSample);
+  
+    // find minimum instantaneous solvent density in this frame:
+    std::pair<real, real> lim(molPath.sLo(), molPath.sHi());
+    std::pair<real, real> minSolventDensity = numberDensity.minimum(lim);
+
+
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------   
 
@@ -1325,7 +1341,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(5, numSolvInsidePore); 
     dhFrameStream.setPoint(6, numSolvInsideSample); 
     dhFrameStream.setPoint(7, solventRangeLo); 
-    dhFrameStream.setPoint(8, solventRangeHi); 
+    dhFrameStream.setPoint(8, solventRangeHi);
+    dhFrameStream.setPoint(9, minSolventDensity.first); 
+    dhFrameStream.setPoint(10, minSolventDensity.second);
     dhFrameStream.finishPointSet();
 
 
@@ -1400,13 +1418,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // READ PER-FRAME DATA AND AGGREGATE ALL NON-PROFILE DATA
     // ------------------------------------------------------------------------
 
-    // TODO: this needs another pass through the infile and should collect
-    // pore summary data like length and volume
-
     // openen per-frame data set for reading:
     inFile.open(inFileName, std::fstream::in);
 
     // prepare summary statistics for aggregate properties:
+    SummaryStatistics argMinRadiusSummary;
     SummaryStatistics minRadiusSummary;
     SummaryStatistics lengthSummary;
     SummaryStatistics volumeSummary;
@@ -1414,6 +1430,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics numSampleSummary;
     SummaryStatistics solventRangeLoSummary;
     SummaryStatistics solventRangeHiSummary;
+    SummaryStatistics argMinSolventDensitySummary;
+    SummaryStatistics minSolventDensitySummary;
 
     // prepare scalar time series objects for aggregate properties:
     ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
@@ -1422,6 +1440,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     ScalarTimeSeries volumeTimeSeries("volume");
     ScalarTimeSeries numPathTimeSeries("numPath");
     ScalarTimeSeries numSampleTimeSeries("numSample");
+    ScalarTimeSeries argMinSolventDensityTimeSeries("argMinSolventDensity");
+    ScalarTimeSeries minSolventDensityTimeSeries("minSolventDensity");
 
 
     // number of residues in pore forming group:
@@ -1448,6 +1468,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         }
     
         // calculate summary statistics of aggregate variables:
+        argMinRadiusSummary.update(
+                lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
         minRadiusSummary.update(
                 lineDoc["pathSummary"]["minRadius"][0].GetDouble());
         lengthSummary.update(
@@ -1462,6 +1484,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["solventRangeLo"][0].GetDouble());
         solventRangeHiSummary.update(
                 lineDoc["pathSummary"]["solventRangeHi"][0].GetDouble());
+        argMinSolventDensitySummary.update(
+                lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensitySummary.update(
+                lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
@@ -1485,6 +1511,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         numSampleTimeSeries.addDataPoint(
                 timeStamp,
                 lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        argMinSolventDensityTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensityTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+
 
         // in first line, also read number of residues in pore forming group:
         if( linesRead == 0 )
@@ -1510,6 +1543,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathSummaryTimeSeries.addScalarTimeSeries(volumeTimeSeries);
     pathSummaryTimeSeries.addScalarTimeSeries(numPathTimeSeries);
     pathSummaryTimeSeries.addScalarTimeSeries(numSampleTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(argMinSolventDensityTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(minSolventDensityTimeSeries);
 
     // close per frame data set:
     inFile.close();
@@ -1759,6 +1794,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     SummaryStatisticsJsonConverter ssjc;
     pathSummary.AddMember(
+            "argMinRadius",
+            ssjc.convert(argMinRadiusSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
             "minRadius",
             ssjc.convert(minRadiusSummary, outDoc.GetAllocator()),
             outDoc.GetAllocator());
@@ -1777,6 +1816,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathSummary.AddMember(
             "numSample",
             ssjc.convert(numSampleSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "argMinSolventDensity",
+            ssjc.convert(argMinSolventDensitySummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "minSolventDensity",
+            ssjc.convert(minSolventDensitySummary, outDoc.GetAllocator()),
             outDoc.GetAllocator());
 
     MultiscalarTimeSeriesJsonConverter mtjc;
@@ -1881,12 +1928,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // create JSON object for scalar time series:
     rapidjson::Value pathTimeSeries;
-
-
-    
-    // add time series data to output document:
-    outDoc.AddMember("pathTimeSeries", pathTimeSeries, alloc);
-
 
     // create JSON object for pore profile:
     rapidjson::Value pathProfile;

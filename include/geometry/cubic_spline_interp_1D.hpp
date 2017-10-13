@@ -26,6 +26,9 @@ class CubicSplineInterp1D : public AbstractCubicSplineInterp
         SplineCurve1D operator()(std::vector<real> &x,
                                  std::vector<real> &f,
                                  eSplineInterpBoundaryCondition bc);
+
+        // curve properties:
+        std::pair<real, real> findMinimum() const;
 };
 
 #endif
