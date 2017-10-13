@@ -44,8 +44,10 @@ NumberDensityCalculator::operator()(
 }
 
 
-/*
- *
+/*!
+ * Calculates number density of particles given probability density and local
+ * radius, as well as overall number of particles on the sample using a spline
+ * curve representation.
  */
 SplineCurve1D
 NumberDensityCalculator::operator()(
