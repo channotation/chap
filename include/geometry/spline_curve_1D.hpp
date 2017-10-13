@@ -1,6 +1,7 @@
 #ifndef SPLINE_CURVE_1D_HPP
 #define SPLINE_CURVE_1D_HPP
 
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest_prod.h>   
@@ -36,6 +37,9 @@ class SplineCurve1D : public AbstractSplineCurve
         // getter function for control points:
         std::vector<real> ctrlPoints() const;
 
+        // compute spline properties:
+        real length() const;
+        std::pair<real, real> minimum(const std::pair<real, real> &lim);
 
     private:
 

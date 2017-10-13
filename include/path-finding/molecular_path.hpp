@@ -99,6 +99,10 @@ class MolecularPath
         std::vector<gmx::RVec> pathPoints();
         std::vector<real> pathRadii();
 
+        // access internal spline curves:
+        SplineCurve1D pathRadius();
+        SplineCurve3D centreLine();
+
         // access aggregate properties of path:
         real length() const;
         std::pair<real, real> minRadius();

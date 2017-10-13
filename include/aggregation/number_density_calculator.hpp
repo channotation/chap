@@ -5,6 +5,8 @@
 
 #include "gromacs/utility/real.h"
 
+#include "geometry/spline_curve_1D.hpp"
+
 
 /*!
  * \brief Functor for calculating physical number density.
@@ -41,6 +43,14 @@ class NumberDensityCalculator
                 const std::vector<real> &probabilityDensity,
                 const std::vector<real> &radius,
                 int totalNumber);
+
+        
+        // spline curve based version of interface:
+        SplineCurve1D operator()(
+                SplineCurve1D &probabilityDensity,
+                SplineCurve1D &radius,
+                int totalNumber);
+
 
     private:
 

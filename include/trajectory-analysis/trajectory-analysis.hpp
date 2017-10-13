@@ -11,6 +11,8 @@
 
 #include <gromacs/trajectoryanalysis.h>
 
+#include "analysis-setup/residue_information_provider.hpp"
+
 #include "path-finding/abstract_path_finder.hpp"
 #include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
@@ -87,6 +89,15 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms
 
 
+    // pore residue chemical and physical information:
+    eHydrophobicityDatabase hydrophobicityDatabase_;
+    bool hydrophobicityDatabaseIsSet_;
+    real hydrophobicityDefault_;
+    bool hydrophobicityDefaultIsSet_;
+    std::string hydrophobicityJson_;
+    bool hydrophobicityJsonIsSet_;
+    ResidueInformationProvider resInfo_;
+
     // pore particle and group indices:
     std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
     std::vector<int> residueIndices_;                       // all resIds
@@ -97,7 +108,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
 
-    int                              nOutPoints_;   // number of points on path sample
+    int nOutPoints_;   // number of points on path sample
 
 
 

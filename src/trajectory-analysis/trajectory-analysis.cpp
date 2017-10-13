@@ -64,7 +64,6 @@ trajectoryAnalysis::trajectoryAnalysis()
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
     , pfChanDirVec_(3)
-    , saRandomSeed_(15011991)
     , saMaxCoolingIter_(1e3)
     , saNumCostSamples_(50)
     , saConvRelTol_(1e-10)
@@ -340,7 +339,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     options -> addOption(RealOption("pm-pl-margin")
 	                     .store(&poreMappingMargin_)
-                         .defaultValue(0.9)
+                         .defaultValue(0.5)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
                                       "be pathway lining if it is no further "
@@ -389,6 +388,36 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "Ensures that the density falls off "
                                       "smoothly to zero outside the data "
                                       "range."));
+
+
+    // HYDROPHOBICITY PARAMETERS
+    //-------------------------------------------------------------------------
+    
+    const char * const allowedHydrophobicityDatabase[] = {"memprotmd",
+                                                          "user"};
+    hydrophobicityDatabase_ = eHydrophobicityDatabaseMemprotMd;
+    options -> addOption(EnumOption<eHydrophobicityDatabase>("hydrophob-database")
+                         .enumValue(allowedHydrophobicityDatabase)
+                         .store(&hydrophobicityDatabase_)
+                         .description("Database of hydrophobicity scale for "
+                                      "pore forming residues"));
+
+    options -> addOption(RealOption("hydrophob-fallback")
+                         .store(&hydrophobicityDefault_)
+                         .storeIsSet(&hydrophobicityDefaultIsSet_)
+                         .defaultValue(std::nan(""))
+                         .description("Fallback hydrophobicity for residues "
+                                      "in the pathway defining group. If "
+                                      "unset (nan), residues missing in the "
+                                      "database will cause an error."));
+
+    options -> addOption(StringOption("hydrophob-json")
+                         .store(&hydrophobicityJson_)
+                         .storeIsSet(&hydrophobicityJsonIsSet_)
+                         .description("JSON file with user defined "
+                                      "hydrophobicity scale. Will be "
+                                      "ignored unless -hydrophobicity-database"
+                                      " is set to 'user'."));
 }
 
 
@@ -488,7 +517,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 9);
+    frameStreamData_.setColumnCount(0, 11);
     frameStreamColumnNames.push_back({"timeStamp",
                                       "argMinRadius",
                                       "minRadius",
@@ -497,7 +526,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "numPath",
                                       "numSample",
                                       "solventRangeLo",
-                                      "solventRangeHi"});
+                                      "solventRangeHi",
+                                      "argMinSolventDensity",
+                                      "minSolventDensity"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -519,13 +550,15 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "ctrlZ"});
 
     // prepare container for residue mapping results:
-    frameStreamData_.setColumnCount(4, 9);
+    frameStreamData_.setColumnCount(4, 11);
     frameStreamColumnNames.push_back({"resId",
                                       "s",
                                       "rho",
                                       "phi",
                                       "poreLining",
                                       "poreFacing",
+                                      "poreRadius",
+                                      "solventDensity",
                                       "x",
                                       "y",
                                       "z"});
@@ -738,9 +771,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         std::abort();
     }
 
-	// find largest van der Waals radius in system:
-//	maxVdwRadius_ = *std::max_element(vdwRadii_.begin(), vdwRadii_.end());
-
 
     // TRACK C-ALPHAS and RESIDUE INDICES
     //-------------------------------------------------------------------------
@@ -765,7 +795,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     it = std::unique(residueIndices_.begin(), residueIndices_.end());
     residueIndices_.resize(std::distance(residueIndices_.begin(), it));
 
-    //
+    // loop over residues:
     ConstArrayRef<int> refselAtomIdx = refsel_.atomIndices();
     for(it = residueIndices_.begin(); it != residueIndices_.end(); it++)
     {
@@ -825,6 +855,48 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
     // find maximum van der Waals radius:
     maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
+
+
+    // GET RESIDUE CHEMICAL INFORMATION
+    //-------------------------------------------------------------------------
+
+    // get residue information from topology:
+    resInfo_.nameFromTopology(top);
+    resInfo_.chainFromTopology(top);
+
+    // base path to location of hydrophobicity databases:
+    std::string hydrophobicityFilePath = chapInstallBase() + 
+            std::string("/share/data/hydrophobicity/");
+    
+    // select appropriate database file:
+    if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMemprotMd )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "memprotmd.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseUser )
+    {
+        // has user provided a file name?
+        if( !hydrophobicityJsonIsSet_ )
+        {
+            std::cerr<<"ERROR: Option hydrophob-database set to 'user', but "
+            "no custom hydrophobicity scale was specified with "
+            "hydrophob-json."<<std::endl;
+            std::abort();
+        }
+    }
+
+    // import hydrophbicity JSON:
+    std::cout<<hydrophobicityJson_<<std::endl;
+    rapidjson::Document hydrophobicityDoc = jdi(hydrophobicityJson_.c_str());
+   
+    // generate hydrophobicity lookup table:
+    resInfo_.hydrophobicityFromJson(hydrophobicityDoc);
+
+    // set fallback hydrophobicity:
+    if( hydrophobicityDefaultIsSet_ )
+    {
+        resInfo_.setDefaultHydrophobicity(hydrophobicityDefault_);
+    }
 }
 
 
@@ -958,39 +1030,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfm -> setParameters(pfParams_);
 
 
-
-
-    std::cout<<std::endl;
-    std::cout<<"initProbePos ="<<" "
-             <<pfInitProbePos_[0]<<" "
-             <<pfInitProbePos_[1]<<" "
-             <<pfInitProbePos_[2]<<" "
-             <<std::endl;
-
-
-
-
-
-
-
     // PATH FINDING
     //-------------------------------------------------------------------------
 
     // run path finding algorithm on current frame:
-    std::cout<<"finding permeation pathway ... ";
     std::cout.flush();
     clock_t tPathFinding = std::clock();
     pfm -> findPath();
     tPathFinding = (std::clock() - tPathFinding)/CLOCKS_PER_SEC;
-    std::cout<<"done in  "<<tPathFinding<<" sec"<<std::endl;
 
     // retrieve molecular path object:
-    std::cout<<"preparing pathway object ... ";
     std::cout.flush();
     clock_t tMolPath = std::clock();
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
-    std::cout<<"done in  "<<tMolPath<<" sec"<<std::endl;
     
 
     // which method do we use for path alignment?
@@ -1053,9 +1106,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
-
-    std::cout<<std::endl;
-
  
     // evaluate pore mapping selection for this frame:
     t_trxframe frame = fr;
@@ -1065,28 +1115,21 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
 
     // map pore residue COG onto pathway:
-    std::cout<<"mapping pore residue COG onto pathway ... ";
     clock_t tMapResCog = std::clock();
     std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
             poreMappingSelCog, 
             mappingParams_);
     tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
-    std::cout<<"mapped "<<poreCogMappedCoords.size()
-             <<" particles in "<<1000*tMapResCog<<" ms"<<std::endl;
 
     // map pore residue C-alpha onto pathway:
-    std::cout<<"mapping pore residue C-alpha onto pathway ... ";
     clock_t tMapResCal = std::clock();
     std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
             poreMappingSelCal, 
             mappingParams_);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
-    std::cout<<"mapped "<<poreCalMappedCoords.size()
-             <<" particles in "<<1000*tMapResCal<<" ms"<<std::endl;
 
     
     // check if particles are pore-lining:
-    std::cout<<"checking which residues are pore-lining ... ";
     clock_t tResPoreLining = std::clock();
     std::map<int, bool> poreLining = molPath.checkIfInside(
             poreCogMappedCoords, 
@@ -1100,13 +1143,10 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tResPoreLining = (std::clock() - tResPoreLining)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<nPoreLining<<" pore lining residues in "
-             <<1000*tResPoreLining<<" ms"<<std::endl;
 
     // check if residues are pore-facing:
     // TODO: make this conditional on whether C-alphas are available
     
-    std::cout<<"checking which residues are pore-facing ... ";
     clock_t tResPoreFacing = std::clock();
     std::map<int, bool> poreFacing;
     int nPoreFacing = 0;
@@ -1125,8 +1165,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<nPoreFacing<<" pore facing residues in "
-             <<1000*tResPoreFacing<<" ms"<<std::endl;
     
 
     // add points inside to data frame:
@@ -1144,29 +1182,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
         dhResMapping.finishPointSet();
     }
-    
-    // now add mapped residue coordinates to data handle:
-    // FIXME JSON error caused here? --> only with cylindrical path finder!
-    // --> nope, also with the other one if all legacy code if properly removed!
-    // --> commenting this out certainly helps
-    
-    dhFrameStream.selectDataSet(4);
-    
-    // add mapped residues to data container:
-    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
-    {
-        dhFrameStream.setPoint(0, poreMappingSelCog.position(it -> first).mappedId());
-        dhFrameStream.setPoint(1, it -> second[SS]);            // s
-        dhFrameStream.setPoint(2, std::sqrt(it -> second[RR])); // rho
-        dhFrameStream.setPoint(3, it -> second[PP]);            // phi
-        dhFrameStream.setPoint(4, poreLining[it -> first]);     // pore lining?
-        dhFrameStream.setPoint(5, poreFacing[it -> first]);     // pore facing?
-        dhFrameStream.setPoint(6, poreMappingSelCog.position(it -> first).x()[XX]);
-        dhFrameStream.setPoint(7, poreMappingSelCog.position(it -> first).x()[YY]);
-        dhFrameStream.setPoint(8, poreMappingSelCog.position(it -> first).x()[ZZ]);
-        dhFrameStream.finishPointSet();
-    }
-    
+        
 
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
@@ -1182,22 +1198,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
 
     // map particles onto pathway:
-    std::cout<<"mapping solvent particles onto pathway ... ";
     clock_t tMapSol = std::clock();
     std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
             solvMapSel, 
             mappingParams_);
     tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
-    std::cout<<"mapped "<<solventMappedCoords.size()
-             <<" particles in "<<1000*tMapSol<<" ms"<<std::endl;
-
-
-    std::cout<<"solvMapSel.posCount = "<<solvMapSel.posCount()<<std::endl;
-    std::cout<<"solventMappedCoords = "<<solventMappedCoords.size()<<std::endl;
-
 
     // find particles inside path (i.e. pore plus bulk sampling regime):
-    std::cout<<"finding solvent particles inside pore ... ";
     clock_t tSolInsideSample = std::clock();
     std::map<int, bool> solvInsideSample = molPath.checkIfInside(
             solventMappedCoords, solvMappingMargin_);
@@ -1210,12 +1217,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<numSolvInsideSample<<" solvent particles inside pore in "
-             <<1000*tSolInsideSample<<" ms"<<std::endl;
 
 
     // find particles inside pore:
-    std::cout<<"finding solvent particles inside pore ... ";
     clock_t tSolInsidePore = std::clock();
     std::map<int, bool> solvInsidePore = molPath.checkIfInside(
             solventMappedCoords, 
@@ -1231,8 +1235,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         }
     }
     tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
-    std::cout<<"found "<<numSolvInsidePore<<" solvent particles inside pore in "
-             <<1000*tSolInsidePore<<" ms"<<std::endl;
 
     // now add mapped residue coordinates to data handle:
     dhFrameStream.selectDataSet(5);
@@ -1289,11 +1291,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     densityEstimator -> setParameters(deParams_);
 
     // estimate density of solvent particles along arc length coordinate:
-    std::cout<<"estimating solvent density...";
-    std::cout.flush();
     SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
             solventSampleCoordS);
-    std::cout<<" done"<<std::endl;
 
     // add spline curve parameters to data handle:   
     dhFrameStream.selectDataSet(6);
@@ -1313,6 +1312,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
 
 
+
+    // obtain physical number density:
+    SplineCurve1D pathRadius = molPath.pathRadius();
+    NumberDensityCalculator ncc;
+    SplineCurve1D numberDensity = ncc(
+            solventDensityCoordS, 
+            pathRadius, 
+            numSolvInsideSample);
+  
+    // find minimum instantaneous solvent density in this frame:
+    std::pair<real, real> lim(molPath.sLo(), molPath.sHi());
+    std::pair<real, real> minSolventDensity = numberDensity.minimum(lim);
+
+
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
     //-------------------------------------------------------------------------   
 
@@ -1328,12 +1341,46 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(5, numSolvInsidePore); 
     dhFrameStream.setPoint(6, numSolvInsideSample); 
     dhFrameStream.setPoint(7, solventRangeLo); 
-    dhFrameStream.setPoint(8, solventRangeHi); 
+    dhFrameStream.setPoint(8, solventRangeHi);
+    dhFrameStream.setPoint(9, minSolventDensity.first); 
+    dhFrameStream.setPoint(10, minSolventDensity.second);
     dhFrameStream.finishPointSet();
 
 
-//    std::cout<<"solventRangeLo = "<<solventRangeLo<<"  ";
-  //  std::cout<<"solventRangeHi = "<<solventRangeLo<<std::endl;
+    // ADD RESIDUE DATA TO CONTAINER
+    //-------------------------------------------------------------------------
+
+    // get pore radius and solvent density at each residue's position:
+    std::map<int, real> poreRadiusAtResidue;
+    std::map<int, real> solventDensityAtResidue;
+    for(auto res : poreCogMappedCoords)
+    {
+        // get residue-local radius and density:
+        real rad = molPath.radius(res.second[SS]);
+        real den = solventDensityCoordS.evaluate(res.second[SS], 0);
+
+        // add radius and density to data handle:
+        poreRadiusAtResidue[res.first] = rad;
+        solventDensityAtResidue[res.first] = den;
+    }
+
+    // add mapped residues to data container:
+    dhFrameStream.selectDataSet(4);
+    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
+    {
+        dhFrameStream.setPoint( 0, poreMappingSelCog.position(it -> first).mappedId());
+        dhFrameStream.setPoint( 1, it -> second[SS]);            // s
+        dhFrameStream.setPoint( 2, std::sqrt(it -> second[RR])); // rho
+        dhFrameStream.setPoint( 3, it -> second[PP]);            // phi
+        dhFrameStream.setPoint( 4, poreLining[it -> first]);     // pore lining?
+        dhFrameStream.setPoint( 5, poreFacing[it -> first]);     // pore facing?
+        dhFrameStream.setPoint( 6, poreRadiusAtResidue[it -> first]);
+        dhFrameStream.setPoint( 7, solventDensityAtResidue[it -> first]);
+        dhFrameStream.setPoint( 8, poreMappingSelCog.position(it -> first).x()[XX]);
+        dhFrameStream.setPoint( 9, poreMappingSelCog.position(it -> first).x()[YY]);
+        dhFrameStream.setPoint(10, poreMappingSelCog.position(it -> first).x()[ZZ]);
+        dhFrameStream.finishPointSet();
+    }
 
 
     // WRITE PORE TO OBJ FILE
@@ -1348,8 +1395,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // FINISH FRAME
     //-------------------------------------------------------------------------
-
-    std::cout<<std::endl;
 
 	// finish analysis of current frame:
     dhResMapping.finishFrame();
@@ -1373,13 +1418,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // READ PER-FRAME DATA AND AGGREGATE ALL NON-PROFILE DATA
     // ------------------------------------------------------------------------
 
-    // TODO: this needs another pass through the infile and should collect
-    // pore summary data like length and volume
-
     // openen per-frame data set for reading:
     inFile.open(inFileName, std::fstream::in);
 
     // prepare summary statistics for aggregate properties:
+    SummaryStatistics argMinRadiusSummary;
     SummaryStatistics minRadiusSummary;
     SummaryStatistics lengthSummary;
     SummaryStatistics volumeSummary;
@@ -1387,6 +1430,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics numSampleSummary;
     SummaryStatistics solventRangeLoSummary;
     SummaryStatistics solventRangeHiSummary;
+    SummaryStatistics argMinSolventDensitySummary;
+    SummaryStatistics minSolventDensitySummary;
 
     // prepare scalar time series objects for aggregate properties:
     ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
@@ -1395,6 +1440,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     ScalarTimeSeries volumeTimeSeries("volume");
     ScalarTimeSeries numPathTimeSeries("numPath");
     ScalarTimeSeries numSampleTimeSeries("numSample");
+    ScalarTimeSeries argMinSolventDensityTimeSeries("argMinSolventDensity");
+    ScalarTimeSeries minSolventDensityTimeSeries("minSolventDensity");
 
 
     // number of residues in pore forming group:
@@ -1421,6 +1468,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         }
     
         // calculate summary statistics of aggregate variables:
+        argMinRadiusSummary.update(
+                lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
         minRadiusSummary.update(
                 lineDoc["pathSummary"]["minRadius"][0].GetDouble());
         lengthSummary.update(
@@ -1435,6 +1484,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["solventRangeLo"][0].GetDouble());
         solventRangeHiSummary.update(
                 lineDoc["pathSummary"]["solventRangeHi"][0].GetDouble());
+        argMinSolventDensitySummary.update(
+                lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensitySummary.update(
+                lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
@@ -1458,6 +1511,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         numSampleTimeSeries.addDataPoint(
                 timeStamp,
                 lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        argMinSolventDensityTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensityTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+
 
         // in first line, also read number of residues in pore forming group:
         if( linesRead == 0 )
@@ -1483,6 +1543,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathSummaryTimeSeries.addScalarTimeSeries(volumeTimeSeries);
     pathSummaryTimeSeries.addScalarTimeSeries(numPathTimeSeries);
     pathSummaryTimeSeries.addScalarTimeSeries(numSampleTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(argMinSolventDensityTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(minSolventDensityTimeSeries);
 
     // close per frame data set:
     inFile.close();
@@ -1537,6 +1599,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> residuePhiSummary(numPoreRes);
     std::vector<SummaryStatistics> residuePlSummary(numPoreRes);
     std::vector<SummaryStatistics> residuePfSummary(numPoreRes);
+    std::vector<SummaryStatistics> residuePoreRadiusSummary(numPoreRes);
+    std::vector<SummaryStatistics> residueSolventDensitySummary(numPoreRes);
     std::vector<SummaryStatistics> residueXSummary(numPoreRes);
     std::vector<SummaryStatistics> residueYSummary(numPoreRes);
     std::vector<SummaryStatistics> residueZSummary(numPoreRes);
@@ -1647,9 +1711,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                     lineDoc["residuePositions"]["y"][i].GetDouble());
             residueZSummary.at(i).update(
                     lineDoc["residuePositions"]["z"][i].GetDouble());
+
+            // residue-local number density requires additional post-processing:
+            real rad = lineDoc["residuePositions"]["poreRadius"][i].GetDouble();
+            real den = lineDoc["residuePositions"]["solventDensity"][i].GetDouble();
+            residuePoreRadiusSummary.at(i).update(rad);
+            residueSolventDensitySummary.at(i).update(den*totalNumber/(M_PI*rad*rad));
         }
-
-
 
         // increment line counter:
         linesProcessed++;
@@ -1726,6 +1794,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     SummaryStatisticsJsonConverter ssjc;
     pathSummary.AddMember(
+            "argMinRadius",
+            ssjc.convert(argMinRadiusSummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
             "minRadius",
             ssjc.convert(minRadiusSummary, outDoc.GetAllocator()),
             outDoc.GetAllocator());
@@ -1745,6 +1817,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             "numSample",
             ssjc.convert(numSampleSummary, outDoc.GetAllocator()),
             outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "argMinSolventDensity",
+            ssjc.convert(argMinSolventDensitySummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "minSolventDensity",
+            ssjc.convert(minSolventDensitySummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
 
     MultiscalarTimeSeriesJsonConverter mtjc;
     pathSummary.AddMember(
@@ -1755,16 +1835,48 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // add summary data to output document:
     outDoc.AddMember("pathSummary", pathSummary, alloc);
 
-    //
+
+    // per residue data:
     rapidjson::Value residueSummary;
     residueSummary.SetObject();
 
+    // add all time-constant residue variables:
     rapidjson::Value poreResidueIds(rapidjson::kArrayType);
+    rapidjson::Value poreResidueName(rapidjson::kArrayType);
+    rapidjson::Value poreResidueChain(rapidjson::kArrayType);
+    rapidjson::Value poreResidueHydrophobicity(rapidjson::kArrayType);
     for(auto id : poreResIds)
     {
-        poreResidueIds.PushBack(id, alloc);
+        // residue ID:
+        poreResidueIds.PushBack(
+                id, 
+                alloc);
+
+        // residue name:
+        rapidjson::Value name(rapidjson::kStringType);
+        name.SetString(
+                resInfo_.name(id).c_str(), 
+                strlen(resInfo_.name(id).c_str()), 
+                alloc);
+        poreResidueName.PushBack(name, alloc);
+
+        // residue chain ID:
+        rapidjson::Value chain(rapidjson::kStringType);
+        chain.SetString(
+                resInfo_.chain(id).c_str(), 
+                strlen(resInfo_.chain(id).c_str()), 
+                alloc);
+        poreResidueChain.PushBack(chain, alloc);
+
+        // residue hydrophobicity:
+        poreResidueHydrophobicity.PushBack(
+                resInfo_.hydrophobicity(id), 
+                alloc);
     }
     residueSummary.AddMember("id", poreResidueIds, alloc);
+    residueSummary.AddMember("name", poreResidueName, alloc);
+    residueSummary.AddMember("chain", poreResidueChain, alloc);
+    residueSummary.AddMember("hydrophobicity", poreResidueHydrophobicity, alloc);
 
     SummaryStatisticsVectorJsonConverter sumStatsVecConv;
     residueSummary.AddMember(
@@ -1788,6 +1900,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             sumStatsVecConv.convert(residuePfSummary, alloc),
             alloc);
     residueSummary.AddMember(
+            "poreRadius",
+            sumStatsVecConv.convert(residuePoreRadiusSummary, alloc),
+            alloc);
+    residueSummary.AddMember(
+            "solventDensity",
+            sumStatsVecConv.convert(residueSolventDensitySummary, alloc),
+            alloc);
+    residueSummary.AddMember(
             "x",
             sumStatsVecConv.convert(residueXSummary, alloc),
             alloc);
@@ -1808,12 +1928,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // create JSON object for scalar time series:
     rapidjson::Value pathTimeSeries;
-
-
-    
-    // add time series data to output document:
-    outDoc.AddMember("pathTimeSeries", pathTimeSeries, alloc);
-
 
     // create JSON object for pore profile:
     rapidjson::Value pathProfile;

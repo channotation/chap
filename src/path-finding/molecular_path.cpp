@@ -401,6 +401,26 @@ MolecularPath::pathRadii()
 }
 
 
+/*!
+ * Returns a copy of the internal pore radius spline.
+ */
+SplineCurve1D
+MolecularPath::pathRadius()
+{
+    return poreRadius_;
+}
+
+
+/*!
+ * Returns a copy of the internal centre line spline.
+ */
+SplineCurve3D
+MolecularPath::centreLine()
+{
+    return centreLine_;
+}
+
+
 /*! 
  * Returns length of the pathway, defined as the the arc length distance 
  * between the first and last control point
