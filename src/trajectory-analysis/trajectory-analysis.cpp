@@ -1104,9 +1104,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
-
-    std::cout<<std::endl;
-
  
     // evaluate pore mapping selection for this frame:
     t_trxframe frame = fr;
@@ -1340,9 +1337,13 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     std::map<int, real> solventDensityAtResidue;
     for(auto res : poreCogMappedCoords)
     {
-        poreRadiusAtResidue[res.first] = molPath.radius(res.second[SS]);
-        solventDensityAtResidue[res.first] = 
-                solventDensityCoordS.evaluate(res.second[SS], 0);
+        // get residue-local radius and density:
+        real rad = molPath.radius(res.second[SS]);
+        real den = solventDensityCoordS.evaluate(res.second[SS], 0);
+
+        // add radius and density to data handle:
+        poreRadiusAtResidue[res.first] = rad;
+        solventDensityAtResidue[res.first] = den;
     }
 
     // add mapped residues to data container:
@@ -1669,19 +1670,19 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                     lineDoc["residuePositions"]["poreLining"][i].GetDouble());
             residuePfSummary.at(i).update(
                     lineDoc["residuePositions"]["poreFacing"][i].GetDouble());
-            residuePoreRadiusSummary.at(i).update(
-                    lineDoc["residuePositions"]["poreRadius"][i].GetDouble());
-            residueSolventDensitySummary.at(i).update(
-                    lineDoc["residuePositions"]["solventDensity"][i].GetDouble());
             residueXSummary.at(i).update(
                     lineDoc["residuePositions"]["x"][i].GetDouble());
             residueYSummary.at(i).update(
                     lineDoc["residuePositions"]["y"][i].GetDouble());
             residueZSummary.at(i).update(
                     lineDoc["residuePositions"]["z"][i].GetDouble());
+
+            // residue-local number density requires additional post-processing:
+            real rad = lineDoc["residuePositions"]["poreRadius"][i].GetDouble();
+            real den = lineDoc["residuePositions"]["solventDensity"][i].GetDouble();
+            residuePoreRadiusSummary.at(i).update(rad);
+            residueSolventDensitySummary.at(i).update(den*totalNumber/(M_PI*rad*rad));
         }
-
-
 
         // increment line counter:
         linesProcessed++;

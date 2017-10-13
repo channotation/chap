@@ -24,7 +24,6 @@ void
 MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
 {
-    std::cout<<"begin molpath"<<std::endl;
 
 //    real d = 0.1;
 //    real r = 1;
