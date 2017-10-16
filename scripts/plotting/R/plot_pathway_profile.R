@@ -39,37 +39,9 @@ plot.height <- unit(plot.height.cm, "cm")
 # Radius Profile
 #-------------------------------------------------------------------------------
 
-plt.radius.profile <- ggplot(data = as.data.frame(dat$residueSummary)[dat$residueSummary$poreFacing$mean >= 0.1 &
-                                                  dat$residueSummary$id < length(dat$residueSummary$id),],) +
-  geom_line(data = as.data.frame(dat$pathProfile), 
-            aes(x = s, 
-                y = radiusMean)) +
-  geom_ribbon(data = as.data.frame(dat$pathProfile), 
-              aes(x = s,
-                  ymin = radiusMin, 
-                  ymax = radiusMax), 
-              alpha = 0.1) +
-  geom_ribbon(data = as.data.frame(dat$pathProfile), 
-              aes(x = s,
-                  ymin = radiusMean - radiusSd, 
-                  ymax = radiusMean + radiusSd), 
-              alpha = 0.2) +
-  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
-  ylab(expression(paste(R~~bgroup("(",nm,")")))) +
-  ggtitle("Time-Averaged Pathway Radius Profile") +
-  theme_chap
-
-ggsave("time_averaged_radius_profile.pdf", 
-       plt.radius.profile,
-       width = plot.width,
-       height = plot.height)
-
-
-# Radius Profile with Residue Positions
-#-------------------------------------------------------------------------------
-
-plt.pf.residues <- ggplot(data = as.data.frame(dat$residueSummary)[dat$residueSummary$poreFacing$mean >= 0.1 &
-                                                  dat$residueSummary$id < length(dat$residueSummary$id),],) +
+data <- as.data.frame(dat$residueSummary)
+plt.radius.profile <- ggplot(data = data[dat$residueSummary$poreFacing$mean >= 0.1 &
+                                         dat$residueSummary$id < length(dat$residueSummary$id),],) +
   geom_line(data = as.data.frame(dat$pathProfile), 
             aes(x = s, 
                 y = radiusMean)) +
@@ -85,15 +57,45 @@ plt.pf.residues <- ggplot(data = as.data.frame(dat$residueSummary)[dat$residueSu
               alpha = 0.2) +
   geom_point(aes(x = s.mean,
                  y = rho.mean,
-                 colour = name),
+                 colour = hydrophobicity),
              size = 2) +
+  scale_colour_distiller(palette = "RdBu",
+                         name = expression(paste("hydrophobicity")),
+                         limits = c(-max(abs(data$hydrophobicity)), 
+                                    max(abs(data$hydrophobicity)))) +
   xlab(expression(paste(s~~bgroup("(",nm,")")))) +
   ylab(expression(paste(R~~bgroup("(",nm,")")))) +
   ggtitle("Time-Averaged Pore-Facing Residue Positions") +
   theme_chap
 
-ggsave("time_averaged_residue_positions.pdf", 
-       plt.pf.residues,
+ggsave("time_averaged_radius_profile.pdf", 
+       plt.radius.profile,
+       width = plot.width,
+       height = plot.height)
+
+
+# Radius Profile with Residue Positions
+#-------------------------------------------------------------------------------
+
+data <- as.data.frame(dat$residueSummary)
+plt.hydrophobicity <- ggplot(as.data.frame(dat$pathProfile),
+                             aes(x = s,
+                                 y = pfHydrophobicityMean)) +
+  geom_line() +
+  geom_point(data = data[data$poreFacing.mean > 0.1,],
+             aes(x = s.mean,
+                 y = hydrophobicity,
+                 colour = name),
+             size = 2) +
+  geom_ribbon(aes(ymin = pfHydrophobicityMin, ymax = pfHydrophobicityMax), alpha = 0.1) +
+  geom_ribbon(aes(ymin = pfHydrophobicityMean - pfHydrophobicitySd, ymax = pfHydrophobicityMean + pfHydrophobicitySd), alpha = 0.2) +
+  ggtitle("Time-Averaged Hydrophobicity due to Pore-Facing Residues") +
+  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
+  ylab(expression(paste("hydrophobicity"))) +
+  theme_chap
+
+ggsave("time_averaged_hydrophobicity.pdf", 
+       plt.hydrophobicity,
        width = plot.width,
        height = plot.height)
 
@@ -154,7 +156,7 @@ ggsave("time_averaged_free_energy_profile.pdf",
 #-------------------------------------------------------------------------------
 
 plt.profile <- grid.arrange(plt.radius.profile, 
-                            plt.pf.residues,
+                            plt.hydrophobicity,
                             plt.solvent.number.density,
                             plt.free.energy,
                             ncol = 2)
