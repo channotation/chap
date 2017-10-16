@@ -61,7 +61,9 @@ SplineCurve1D::SplineCurve1D()
  * the knot vector.
  */
 real
-SplineCurve1D::evaluate(const real &eval, unsigned int deriv)
+SplineCurve1D::evaluate(
+        const real &eval, 
+        unsigned int deriv)
 {
     // interpolation or extrapolation:
     if( eval < knots_.front() || eval > knots_.back() )
@@ -72,6 +74,26 @@ SplineCurve1D::evaluate(const real &eval, unsigned int deriv)
     {
         return evaluateInternal(eval, deriv);
     }
+}
+
+
+/*!
+ * Public interface for evaluating the spline curve at mutliple points. Uses
+ * constant extrapolation.
+ */
+std::vector<real>
+SplineCurve1D::evaluateMultiple(
+        const std::vector<real> &eval, 
+        unsigned int deriv)
+{
+    // evaluate spline at each point:
+    std::vector<real> values;
+    for(auto e : eval)
+    {
+        values.push_back( evaluate(e, deriv) );
+    }
+
+    return values;
 }
 
 

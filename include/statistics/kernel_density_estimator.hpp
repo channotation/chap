@@ -56,7 +56,7 @@ class KernelDensityEstimator : public AbstractDensityEstimator
         virtual void setParameters(
                 const DensityEstimationParameters &params);
 
-    private:
+    protected:
 
         // flag indicating whether parameters have been set:
         bool paramtersSet_;
