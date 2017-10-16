@@ -423,7 +423,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     
     options -> addOption(RealOption("hydrophob-bandwidth")
                          .store(&hpBandWidth_)
-                         .defaultValue(0.25)
+                         .defaultValue(0.35)
                          .description("Bandwidth for hydrophobicity kernel."));
 }
 
