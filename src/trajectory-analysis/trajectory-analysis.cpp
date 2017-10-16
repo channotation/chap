@@ -504,7 +504,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     //-------------------------------------------------------------------------
 
     // prepare per frame data stream:
-    frameStreamData_.setDataSetCount(7);
+    frameStreamData_.setDataSetCount(8);
     std::vector<std::string> frameStreamDataSetNames = {
             "pathSummary",
             "molPathOrigPoints",
@@ -512,7 +512,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
             "molPathCentreLineSpline",
             "residuePositions",
             "solventPositions",
-            "solventDensitySpline"};
+            "solventDensitySpline",
+            "molPathHydrophobicitySpline"};
     std::vector<std::vector<std::string>> frameStreamColumnNames;
 
 
@@ -577,6 +578,11 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
     // prepare container for solvent density:
     frameStreamData_.setColumnCount(6, 2);
+    frameStreamColumnNames.push_back({"knots", 
+                                      "ctrl"});
+
+    // prepare container for hydrophobicity spline:
+    frameStreamData_.setColumnCount(7, 2);
     frameStreamColumnNames.push_back({"knots", 
                                       "ctrl"});
 
@@ -1182,7 +1188,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
         dhResMapping.finishPointSet();
     }
-        
+
 
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
@@ -1254,6 +1260,33 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
          dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
          dhFrameStream.finishPointSet();
+    }
+
+
+    // ESTIMATE HYDROPHOBICITY PROFILE
+    //-------------------------------------------------------------------------
+    
+
+    std::unique_ptr<AbstractDensityEstimator> kernelSmoother;
+    kernelSmoother -> setParameters(deParams_);
+
+
+    // estimate hydrophobicity profile due to pore-facing residues:
+    SplineCurve1D pfHydrophobicity; //= kernelSmoother -> estimate(
+//            sample, 
+//            weights);
+
+    // add spline curve parameters to data handle:   
+    dhFrameStream.selectDataSet(7);
+    for(size_t i = 0; i < pfHydrophobicity.ctrlPoints().size(); i++)
+    {
+        dhFrameStream.setPoint(
+                0, 
+                pfHydrophobicity.uniqueKnots().at(i));
+        dhFrameStream.setPoint(
+                1, 
+                pfHydrophobicity.ctrlPoints().at(i));
+        dhFrameStream.finishPointSet();
     }
 
     
@@ -1592,6 +1625,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
     std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
     std::vector<SummaryStatistics> energySummary(supportPoints.size());
+    std::vector<SummaryStatistics> pfHydrophobicitySummary(supportPoints.size());
 
     // prepare summary statistics for residue properties:
     std::vector<SummaryStatistics> residueArcSummary(numPoreRes);
