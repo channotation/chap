@@ -1255,9 +1255,14 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     pfResidueHydrophobicity.push_back(0.0);
     pfResidueHydrophobicity.push_back(0.0);
 
+    plResidueCoordS.push_back(minPoreResS - hpBandWidth_/2.0);
+    plResidueCoordS.push_back(maxPoreResS + hpBandWidth_/2.0);
+    plResidueHydrophobicity.push_back(0.0);
+    plResidueHydrophobicity.push_back(0.0);
+
     // set up kernel smoother:
     WeightedKernelDensityEstimator kernelSmoother;
-    kernelSmoother.setParameters(hydrophobKernelParams_); // TODO: own parameters!
+    kernelSmoother.setParameters(hydrophobKernelParams_);
 
     // estimate hydrophobicity profiles due to pore-lining residues:
     SplineCurve1D plHydrophobicity = kernelSmoother.estimate(
@@ -1706,6 +1711,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
     std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
     std::vector<SummaryStatistics> energySummary(supportPoints.size());
+    std::vector<SummaryStatistics> plHydrophobicitySummary(supportPoints.size());
     std::vector<SummaryStatistics> pfHydrophobicitySummary(supportPoints.size());
 
     // prepare summary statistics for residue properties:
@@ -1761,13 +1767,20 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 pfHydrophobicitySummary,
                 pfHydrophobicitySample);
 
+        SplineCurve1D plHydrophobicitySpline = SplineCurve1DJsonConverter::fromJson(
+                lineDoc["plHydrophobicitySpline"], 1);
+        std::vector<real> plHydrophobicitySample = 
+                plHydrophobicitySpline.evaluateMultiple(supportPoints, 0);
+        SummaryStatistics::updateMultiple(
+                plHydrophobicitySummary,
+                plHydrophobicitySample);
+
 
         // sample points from solvent density spline:
         SplineCurve1D solventDensitySpline = SplineCurve1DJsonConverter::fromJson(
                 lineDoc["solventDensitySpline"], 1);
         std::vector<real> solventDensitySample = 
                 solventDensitySpline.evaluateMultiple(supportPoints, 0);
-
 
         // get total number of particles in sample for this time step:
         int totalNumber = lineDoc["pathSummary"]["numSample"][0].GetDouble();
@@ -2038,10 +2051,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // create JSON arrays to hold pore profile values:
     rapidjson::Value supportPts(rapidjson::kArrayType);
 
+    // TODO: this should all get some unifying function to avoid redundancy!
     rapidjson::Value radiusMin(rapidjson::kArrayType);
     rapidjson::Value radiusMax(rapidjson::kArrayType);
     rapidjson::Value radiusMean(rapidjson::kArrayType);
     rapidjson::Value radiusSd(rapidjson::kArrayType);    
+
+    rapidjson::Value plHydrophobicityMin(rapidjson::kArrayType);
+    rapidjson::Value plHydrophobicityMax(rapidjson::kArrayType);
+    rapidjson::Value plHydrophobicityMean(rapidjson::kArrayType);
+    rapidjson::Value plHydrophobicitySd(rapidjson::kArrayType);    
 
     rapidjson::Value pfHydrophobicityMin(rapidjson::kArrayType);
     rapidjson::Value pfHydrophobicityMax(rapidjson::kArrayType);
@@ -2070,7 +2089,12 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         radiusMean.PushBack(radiusSummary.at(i).mean(), alloc);
         radiusSd.PushBack(radiusSummary.at(i).sd(), alloc);
 
-        // radius:
+        // hydrophobicity:
+        plHydrophobicityMin.PushBack(plHydrophobicitySummary.at(i).min(), alloc);
+        plHydrophobicityMax.PushBack(plHydrophobicitySummary.at(i).max(), alloc);
+        plHydrophobicityMean.PushBack(plHydrophobicitySummary.at(i).mean(), alloc);
+        plHydrophobicitySd.PushBack(plHydrophobicitySummary.at(i).sd(), alloc);
+
         pfHydrophobicityMin.PushBack(pfHydrophobicitySummary.at(i).min(), alloc);
         pfHydrophobicityMax.PushBack(pfHydrophobicitySummary.at(i).max(), alloc);
         pfHydrophobicityMean.PushBack(pfHydrophobicitySummary.at(i).mean(), alloc);
@@ -2096,6 +2120,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathProfile.AddMember("radiusMax", radiusMax, alloc);
     pathProfile.AddMember("radiusMean", radiusMean, alloc);
     pathProfile.AddMember("radiusSd", radiusSd, alloc);
+
+    pathProfile.AddMember("plHydrophobicityMin", plHydrophobicityMin, alloc);
+    pathProfile.AddMember("plHydrophobicityMax", plHydrophobicityMax, alloc);
+    pathProfile.AddMember("plHydrophobicityMean", plHydrophobicityMean, alloc);
+    pathProfile.AddMember("plHydrophobicitySd", plHydrophobicitySd, alloc);
 
     pathProfile.AddMember("pfHydrophobicityMin", pfHydrophobicityMin, alloc);
     pathProfile.AddMember("pfHydrophobicityMax", pfHydrophobicityMax, alloc);

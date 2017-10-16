@@ -27,12 +27,6 @@ WeightedKernelDensityEstimator::estimate(
             weights,
             evalPoints);
 
-    // set weighted endpoint density to zero:
-     /*
-    endpointDensityToZero(
-            weightedDensity,
-            evalPoints);*/
-
     // return weighted density as a spline curve:
     LinearSplineInterp1D Interp;
     return Interp(evalPoints, weightedDensity);
