@@ -37,6 +37,7 @@
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/multiscalar_time_series_json_converter.hpp"
+#include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
 
@@ -1670,28 +1671,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
 
         // TODO: this should get its own class:
-
-        // get spline parameters from JSON:
-        std::vector<real> solventDensityKnots;
-        std::vector<real> solventDensityCtrlPoints;
-        for(size_t i = 0; i < lineDoc["solventDensitySpline"]["knots"].Size(); i++)
-        {
-            solventDensityKnots.push_back(
-                    lineDoc["solventDensitySpline"]["knots"][i].GetDouble());
-            solventDensityCtrlPoints.push_back(
-                    lineDoc["solventDensitySpline"]["ctrl"][i].GetDouble());
-        }
-        solventDensityKnots.push_back(
-                solventDensityKnots.back());
-        solventDensityKnots.insert(
-                solventDensityKnots.begin(),
-                solventDensityKnots.front());
-
-        // construct Spline curve;
-        SplineCurve1D solventDensitySpline(
-                1,
-                solventDensityKnots,
-                solventDensityCtrlPoints);
+        SplineCurve1D solventDensitySpline = SplineCurve1DJsonConverter::fromJson(
+                lineDoc["solventDensitySpline"], 1);
 
         // sample from spline curve:
         std::vector<real> solventDensitySample;

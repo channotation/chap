@@ -13,9 +13,9 @@ class SplineCurve1DJsonConverter
 {
     public:
         
-        SplineCurve1D fromJson(
-                rapidjson::Document &doc,
-                unsigned int degree) const;
+        static SplineCurve1D fromJson(
+                rapidjson::Value &val,
+                unsigned int degree);
 
     private:
 

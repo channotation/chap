@@ -6,36 +6,36 @@
  */
 SplineCurve1D
 SplineCurve1DJsonConverter::fromJson(
-        rapidjson::Document &doc,
-        unsigned int degree) const
+        rapidjson::Value &val,
+        unsigned int degree)
 {
 
     // sanity checks:
-    if( !doc.HasMember("knots") || 
-        !doc["knots"].IsArray() )
+    if( !val.HasMember("knots") || 
+        !val["knots"].IsArray() )
     {
         throw std::logic_error("Can not construct 1D spline curve from JSON! " 
                                "No attribute 'knots' of type array found.");
     }
-    if( !doc.HasMember("ctrl") || 
-        !doc["ctrl"].IsArray() )
+    if( !val.HasMember("ctrl") || 
+        !val["ctrl"].IsArray() )
     {
         throw std::logic_error("Can not construct 1D spline curve from JSON! " 
                                "No attribute 'ctrl' of type array found.");
     }
-    if( doc["knots"].Size() != doc["ctrl"].Size() )
+    if( val["knots"].Size() != val["ctrl"].Size() )
     {
         throw std::logic_error("Can not construct 1D spline curve from Json! "
                                "Unqueal number of knots and ctrl points.");
     }
 
-    // get knots and control points from JSON document:
+    // get knots and control points from JSON valument:
     std::vector<real> knots;
     std::vector<real> ctrlPoints;
-    for(size_t i = 0; i < doc["knots"].Size(); i++)
+    for(size_t i = 0; i < val["knots"].Size(); i++)
     {
-        knots.push_back(doc["knots"][i].GetDouble());
-        ctrlPoints.push_back(doc["ctrl"][i].GetDouble());
+        knots.push_back(val["knots"][i].GetDouble());
+        ctrlPoints.push_back(val["ctrl"][i].GetDouble());
     }
 
     // add duplicate andpoint knots:
