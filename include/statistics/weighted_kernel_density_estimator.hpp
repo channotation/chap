@@ -7,8 +7,14 @@
 #include "statistics/kernel_density_estimator.hpp"
 
 
-/*
+/*!
+ * \brief Nadaraya-Watson kernel smoother.
  *
+ * Performs essentially the same job as KernelDensityEstimator, but instead
+ * of merely returning an estimate for the density of a point set that is 
+ * normalised such that it integrates to one, it returns a continues function
+ * that aims at smoothly interpolating between the given function values 
+ * (interpreted as weights at the sample values).
  */
 class WeightedKernelDensityEstimator : public KernelDensityEstimator
 {

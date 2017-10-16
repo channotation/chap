@@ -2,9 +2,9 @@
 #include "statistics/weighted_kernel_density_estimator.hpp"
 
 
-
-/*
- *
+/*!
+ * Public interface for computing a continuous smooth spline curve that 
+ * approximates given discrete function values.
  */
 SplineCurve1D
 WeightedKernelDensityEstimator::estimate(
@@ -28,9 +28,10 @@ WeightedKernelDensityEstimator::estimate(
             evalPoints);
 
     // set weighted endpoint density to zero:
+     /*
     endpointDensityToZero(
             weightedDensity,
-            evalPoints);
+            evalPoints);*/
 
     // return weighted density as a spline curve:
     LinearSplineInterp1D Interp;
@@ -38,8 +39,9 @@ WeightedKernelDensityEstimator::estimate(
 }
 
 
-/*
- *
+/*!
+ * Internal evaluation function that computes the Nadaraya-Watson estimate
+ * of the smoothing function to the given datapoints.
  */
 std::vector<real>
 WeightedKernelDensityEstimator::calculateWeightedDensity(
@@ -55,7 +57,6 @@ WeightedKernelDensityEstimator::calculateWeightedDensity(
     std::vector<real> density(evalPoints.size(), 0.0);
     std::vector<real> weightedDensity(evalPoints.size(), 0.0);
 
-
     // loop over evaluation points:
     for(size_t i = 0; i < evalPoints.size(); i++)
     {
@@ -64,7 +65,7 @@ WeightedKernelDensityEstimator::calculateWeightedDensity(
         {
             // evaluate kernel function:
             real kern =  kernel -> operator()( 
-                    evalPoints[i] - samples[j]/bandWidth_ );
+                    (evalPoints[i] - samples[j])/bandWidth_ );
 
             // for weighted and unweighted sums:
             density[i] += kern;

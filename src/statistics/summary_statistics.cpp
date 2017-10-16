@@ -1,5 +1,6 @@
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 #include "statistics/summary_statistics.hpp"
 
@@ -53,6 +54,30 @@ SummaryStatistics::update(const real newValue)
 
     // update squared difference from mean:
     sumSquaredMeanDiff_ += delta*(newValue - mean_);
+}
+
+
+/*!
+ * Convenience function to update a vector of SummaryStatistics with a vector
+ * of new values.
+ */
+void
+SummaryStatistics::updateMultiple(
+        std::vector<SummaryStatistics> &stat,
+        const std::vector<real> &newValues)
+{
+    // sanity check:
+    if( stat.size() != newValues.size() )
+    {
+        throw std::logic_error("Can not update summary statistics vector with "
+                               "data vector of different size.");
+    }
+
+    // update each value individually:
+    for(size_t i = 0; i < stat.size(); i++)
+    {
+        stat[i].update(newValues[i]);
+    }
 }
 
 

@@ -1,6 +1,8 @@
 #ifndef SUMMARY_STATISTICS_HPP
 #define SUMMARY_STATISTICS_HPP
 
+#include <vector>
+
 #include "gromacs/utility/real.h"
 
 
@@ -44,8 +46,11 @@ class SummaryStatistics
         int num() const;
 
         // updating method:
-        void update(const real newValue);
-
+        void update(
+                const real newValue);
+        static void updateMultiple(
+                std::vector<SummaryStatistics> &stat,
+                const std::vector<real> &newValues);
 
     private:
 
@@ -60,6 +65,7 @@ class SummaryStatistics
         inline real varFromSumSquaredMeanDiff() const;
         inline real mendInfinity(real value) const;
 };
+
 
 #endif
 

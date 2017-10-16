@@ -97,6 +97,13 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     std::string hydrophobicityJson_;
     bool hydrophobicityJsonIsSet_;
     ResidueInformationProvider resInfo_;
+    
+    // hydrophobicity profile parameters:
+    real hpBandWidth_;
+    real hpEvalRangeCutoff_;
+    real hpResolution_;
+    DensityEstimationParameters hydrophobKernelParams_;
+
 
     // pore particle and group indices:
     std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
