@@ -6,8 +6,10 @@
 #include "geometry/spline_curve_1D.hpp"
 
 
-/*
+/*!
+ * \brief Conversion between a SplineCurve1D object and its JSON serialisation.
  *
+ * \todo Currently onlz conversion from JSON to object implemented.
  */
 class SplineCurve1DJsonConverter
 {

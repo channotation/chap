@@ -1,8 +1,11 @@
 #include "io/spline_curve_1D_json_converter.hpp"
 
 
-/*
+/*!
+ * Converts a JSON value with (unique) knots and control point arrays to a 
+ * SplineCurve1D.
  *
+ * \todo Degree of spline curve must currently be given explicitly.
  */
 SplineCurve1D
 SplineCurve1DJsonConverter::fromJson(
