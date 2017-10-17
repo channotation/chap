@@ -294,6 +294,11 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
 //                                    <<crntProbePos_[ZZ]<<"  "<<std::endl;
 
        
+
+        // add result to path container: 
+        path_.push_back(crntProbePos_);
+        radii_.push_back(nmm.getOptimPoint().second);     
+
         if( numProbeSteps >= maxProbeSteps_ )
         {
             break;
@@ -302,11 +307,10 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         {
             break;
         }
-
-        // add result to path container: 
-        path_.push_back(crntProbePos_);
-        radii_.push_back(nmm.getOptimPoint().second);     
     }
+
+    // change radius of ultimate point to match the disred cutoff exactly:
+    radii_.back() = maxProbeRadius_;
 }
 
 
