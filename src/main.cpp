@@ -7,8 +7,10 @@
 #include <gromacs/commandline/cmdlineprogramcontext.h>
 #include <gromacs/commandline.h>
 
-#include "config/version.hpp"
 #include "config/config.hpp"
+#include "config/back_matter.hpp"
+#include "config/front_matter.hpp"
+#include "config/version.hpp"
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
 using namespace gmx;
@@ -16,6 +18,9 @@ using namespace gmx;
 
 int main(int argc, char **argv)
 {
+    // print front matter:
+    FrontMatter::print();
+
     // hack to suppress Gromacs output:
     std::vector<char*> modArgv(argv, argv + argc);
     char quiet[7] = "-quiet";
@@ -26,6 +31,9 @@ int main(int argc, char **argv)
 
     // run trajectory analysis:
 	int status =  gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
+
+    // print back matter:
+    BackMatter::print();
 
     // return status:
     return status;

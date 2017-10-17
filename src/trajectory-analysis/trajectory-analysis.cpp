@@ -915,7 +915,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     }
 
     // import hydrophbicity JSON:
-    std::cout<<hydrophobicityJson_<<std::endl;
     rapidjson::Document hydrophobicityDoc = jdi(hydrophobicityJson_.c_str());
    
     // generate hydrophobicity lookup table:
@@ -926,6 +925,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     {
         resInfo_.setDefaultHydrophobicity(hydrophobicityDefault_);
     }
+
+    // free line for nice output:
+    std::cout<<std::endl;
 }
 
 
@@ -1528,6 +1530,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 void
 trajectoryAnalysis::finishAnalysis(int numFrames)
 {
+    // free line for neater output:
+    std::cout<<std::endl;
+
     // transfer file names from user input:
     std::string inFileName = std::string("stream_") + jsonOutputFileName_;
     std::string outFileName = jsonOutputFileName_;
@@ -1730,7 +1735,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     int linesProcessed = 0;
     while( std::getline(inFile, line) )
     {
-        std::cout<<"linesProcessed = "<<linesProcessed<<std::endl;
+        std::cout.precision(3);
+        std::cout<<"\rForming time averages, "
+                 <<(double)linesProcessed/numFrames*100
+                 <<"\% complete"
+                 <<std::flush;
 
         // read line into JSON document:
         rapidjson::StringStream lineStream(line.c_str());
@@ -1837,6 +1846,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         // increment line counter:
         linesProcessed++;
     }
+    
+    // inform user about progress:
+    std::cout.precision(3);
+    std::cout<<"\rForming time averages, "
+             <<(double)linesProcessed/numFrames*100
+             <<"\% complete"
+             <<std::endl;
 
     // sanity check:
     if( linesProcessed != numFrames )
