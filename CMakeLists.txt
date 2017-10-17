@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 # set project parameters:
-project(CHAP LANGUAGES CXX C VERSION 0.4.0)
+project(CHAP LANGUAGES CXX C VERSION 0.6.0)
 
 # follow GNU guideline on install directories:
 include(GNUInstallDirs)
