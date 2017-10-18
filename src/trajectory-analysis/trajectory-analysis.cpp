@@ -1328,8 +1328,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     solvMappingSelCol_.evaluate(&tmpFrame, pbc);
 
     // TODO: make this a parameter:
-    //
-    real solvMappingMargin_ = 0.0;
+    // FIXME FIXME FIXME this is a DIRTY DIRTY DIRTY hack to workaround the empty sample issue.
+    real solvMappingMargin_ = 100.0;
         
     // get thread-local selection data:
     const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
