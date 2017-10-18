@@ -82,7 +82,8 @@ trajectoryAnalysis::trajectoryAnalysis()
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
     frameStreamData_.setMultipoint(true); 
 
-
+    // register internal timing dataset:
+    registerAnalysisDataset(&timingData_, "timingData");
 
     // default initial probe position and chanell direction:
     pfInitProbePos_ = {0.0, 0.0, 0.0};
@@ -618,6 +619,15 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     frameStreamData_.addModule(jsonFrameExporter);
 
 
+    // TIMING DATA
+    //-------------------------------------------------------------------------
+
+    // TODO: perhaps mive to constructor?
+    timingData_.setDataSetCount(1);
+    timingData_.setColumnCount(0, 1);
+    timingData_.setMultipoint(false);
+
+
     // RESIDUE MAPPING DATA
     //-------------------------------------------------------------------------
 
@@ -947,10 +957,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // get data handles for this frame:
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
+    AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
 	// get data for frame number frnr into data handle:
     dhResMapping.startFrame(frnr, fr.time);
     dhFrameStream.startFrame(frnr, fr.time);
+    dhTiming.startFrame(frnr, fr.time);
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -1215,6 +1227,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
 
 
+    std::cout<<"residue mapping complete"<<std::endl;
+
+
     // ESTIMATE HYDROPHOBICITY PROFILE
     //-------------------------------------------------------------------------
    
@@ -1302,6 +1317,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.finishPointSet();
     }
 
+    std::cout<<"hydrophobicity profile complete"<<std::endl;
+
 
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
@@ -1311,6 +1328,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     solvMappingSelCol_.evaluate(&tmpFrame, pbc);
 
     // TODO: make this a parameter:
+    //
     real solvMappingMargin_ = 0.0;
         
     // get thread-local selection data:
@@ -1375,7 +1393,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhFrameStream.finishPointSet();
     }
 
-
+    std::cout<<"solvent mapping complete"<<std::endl;
 
     
     // ESTIMATE SOLVENT DENSITY
@@ -1411,9 +1429,21 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // set parameters for density estimation:
     densityEstimator -> setParameters(deParams_);
 
+
+    std::cout<<"solvent sample coord S.size = "<<solventSampleCoordS.size()<<std::endl;
+    for(auto s : solventSampleCoordS)
+    {
+        std::cout<<"s = "<<s<<std::endl;
+    }
+
+
+    std::cout<<"pre density spline"<<std::endl;
+
     // estimate density of solvent particles along arc length coordinate:
     SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
             solventSampleCoordS);
+
+    std::cout<<"post density spline"<<std::endl;
 
     // add spline curve parameters to data handle:   
     dhFrameStream.selectDataSet(6);
@@ -1432,7 +1462,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     real solventRangeLo = solventDensityCoordS.uniqueKnots().front();
     real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
 
-
+    std::cout<<"pre NUMBER density spline"<<std::endl;
 
     // obtain physical number density:
     SplineCurve1D pathRadius = molPath.pathRadius();
@@ -1442,9 +1472,15 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             pathRadius, 
             numSolvInsideSample);
   
+    std::cout<<"post NUMBER density spline"<<std::endl;
+
+
     // find minimum instantaneous solvent density in this frame:
     std::pair<real, real> lim(molPath.sLo(), molPath.sHi());
     std::pair<real, real> minSolventDensity = numberDensity.minimum(lim);
+
+
+    std::cout<<"density estimation complete"<<std::endl;
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
@@ -1514,12 +1550,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                molPath);
 
 
+    // ADD TIMING DATA TO DATA HANDLE
+    //-------------------------------------------------------------------------
+
+    dhTiming.selectDataSet(0);
+    dhTiming.setPoint(0, 1.1111);
+
+
     // FINISH FRAME
     //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
     dhResMapping.finishFrame();
     dhFrameStream.finishFrame();
+    dhTiming.finishFrame();
 }
 
 
@@ -2224,4 +2268,18 @@ trajectoryAnalysis::writeOutput()
 {
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

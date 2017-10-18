@@ -70,6 +70,17 @@ NumberDensityCalculator::operator()(
     // calculate number density at evaluation points:
     std::vector<real> n = this -> operator()(p, r, totalNumber);
 
+    /* FIXME: p contains NaNs
+    std::cout<<"number density calculator pre spline"<<std::endl;
+    for( int i = 0; i < n.size(); i++ )
+    {
+        std::cout<<"s = "<<evalPoints[i]<<"  "
+                 <<"p = "<<p[i]<<"  "
+                 <<"n = "<<n[i]<<"  "
+                 <<std::endl;
+    }
+    */
+
     // interpolate points to and return spline curve:
     CubicSplineInterp1D Interp;
     return Interp(evalPoints, n, eSplineInterpBoundaryHermite);

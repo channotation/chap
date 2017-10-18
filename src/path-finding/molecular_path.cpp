@@ -43,9 +43,13 @@ MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints,
     pathPoints_ = pathPoints;
     pathRadii_ = pathRadii;
 
+    std::cout<<"MolPath constructor"<<std::endl;
+
     // construct centre line spline by interpolation of path points:
     CubicSplineInterp3D Interp3D;
     centreLine_ = Interp3D(pathPoints_, eSplineInterpBoundaryHermite);
+
+    std::cout<<"3D interp complete"<<std::endl;
 
     // get arc length at original control points:
     std::vector<real> arcLen = centreLine_.ctrlPointArcLength();
@@ -56,6 +60,8 @@ MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints,
     // interpolate radius:
     CubicSplineInterp1D Interp1D;
     poreRadius_ =  Interp1D(arcLen, pathRadii_, eSplineInterpBoundaryHermite);
+
+    std::cout<<"1D interp complete"<<std::endl;
 
     // reparameterise centre line spline by arc length:
     centreLine_.arcLengthParam();

@@ -43,6 +43,8 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
                                  std::vector<real> &f,
                                  eSplineInterpBoundaryCondition bc)
 {
+    std::cout<<"cubic spline interp BEGIN"<<std::endl;
+
     // sanity check:
     if( x.size() != f.size() )
     {
@@ -92,7 +94,17 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     
     // Solve System
     //-------------------------------------------------------------------------
-    
+  
+    // FIXME there are NaNs here that prevent solving the system!
+    /*
+    std::cout<<"RHS = "<<std::endl;
+    for(int i = 0; i < nSys*nRhs; i++)
+    {
+        std::cout<<rhsVec[i]<<std::endl;
+    }
+    std::cout<<std::endl;
+*/
+
     // solve tridiagonal system by Gaussian elimination:
     int status = LAPACKE_sgtsv(LAPACK_COL_MAJOR,
                                nSys, 
