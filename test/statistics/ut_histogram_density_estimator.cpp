@@ -68,8 +68,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorBreaksTest)
 
         // create break points:
         std::vector<real> breaks = hde.createBreaks(
-                testData_.front(),
-                testData_.back());
+                testData_);
 
         // check that break points cover data range:
         ASSERT_LT(breaks.front(), 
@@ -124,9 +123,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
         hde.setBinWidth(bw);
 
         // create breaks and estimate density:
-        std::vector<real> breaks = hde.createBreaks(
-                testData_.front(),
-                testData_.back());       
+        std::vector<real> breaks = hde.createBreaks(testData_);       
         std::vector<real> density = hde.calculateDensity(
                 testData_,
                 breaks);
@@ -151,6 +148,49 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
     }
 }
 
+
+/*!
+ * Tests the behaviour in case of an empty input dataset, in which case an
+ * all-zero density is returned.
+ */
+TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEmptyDatasetTest)
+{
+    // floating point comparison tolerance:
+    real eps = 10*std::numeric_limits<real>::epsilon();
+
+    // create empty dataset:
+    std::vector<real> emptyData;
+
+    // create histogram estimator and set bindwidth:
+    HistogramDensityEstimator hde;
+
+    // some bin widths to try:
+    // NOTE: if bin width too small, spline interpolation will fail!
+    std::vector<real> binWidth = {1.0, 0.1, 1e-2, 0.1*std::sqrt(2.0)};
+
+    // perform tests for each binwidth value:
+    for(auto bw : binWidth)
+    {
+        // set bin width:
+        hde.setBinWidth(bw);
+
+        // create breaks and estimate density:
+        std::vector<real> breaks = hde.createBreaks(emptyData);       
+        std::vector<real> density = hde.calculateDensity(
+                emptyData,
+                breaks);
+
+        // ensure that density values are all zero:
+        for(auto d : density)
+        {
+            ASSERT_EQ(0.0, d);
+        }
+
+        // first and last bin should be empty by constructrion:
+        ASSERT_NEAR(0.0, density.front(), 0.0);
+        ASSERT_NEAR(0.0, density.back(), 0.0);
+    }
+}
 
 
 /*!

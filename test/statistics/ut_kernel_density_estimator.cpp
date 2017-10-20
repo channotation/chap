@@ -99,8 +99,6 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
     // perform tests for each value of evaluation distance:
     for(auto maxEvalPointDist : maxEvalPointDistances)
     {
-        std::cout<<"maxEvalPointDist = "<<maxEvalPointDist<<std::endl;
-
         // set max eval dist to current value:
         kde.setMaxEvalPointDist(maxEvalPointDist);
 
@@ -119,8 +117,6 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
         // get actual data range:
         real dataLo = *std::min_element(testData_.begin(), testData_.end());
         real dataHi = *std::max_element(testData_.begin(), testData_.end());
-
-        std::cout<<"testData.size = "<<testData_.size()<<std::endl;
 
         // assert that data range is covered:
         ASSERT_GE(

@@ -221,13 +221,6 @@ KernelDensityEstimator::createEvaluationPoints(
     rangeLo -= evalRangeCutoff_ * bandWidth_;
     rangeHi += evalRangeCutoff_ * bandWidth_;
 
-    std::cout<<"bandWidth = "<<bandWidth_<<"   "
-             <<"evalRangeCutoff = "<<evalRangeCutoff_<<"  "
-             <<"rangeLo = "<<rangeLo<<"  "
-             <<"rangeHi = "<<rangeHi<<"  "
-             <<"sample.size = "<<samples.size()<<"  "
-             <<std::endl;
-
     // calculate data range:
     // (this enforces a minimum of 512 evaluation points)
     size_t minNumEvalPoints = 512;
