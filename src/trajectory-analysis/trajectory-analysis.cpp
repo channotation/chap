@@ -82,7 +82,8 @@ trajectoryAnalysis::trajectoryAnalysis()
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
     frameStreamData_.setMultipoint(true); 
 
-
+    // register internal timing dataset:
+    registerAnalysisDataset(&timingData_, "timingData");
 
     // default initial probe position and chanell direction:
     pfInitProbePos_ = {0.0, 0.0, 0.0};
@@ -136,7 +137,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "'Protein') "));
 
 	options -> addOption(SelectionOption("sel-solvent")
-                         .storeVector(&sel_).required()
+                         .storeVector(&sel_)
 	                     .description("Group of small particles to calculate "
                                       "density of (usually 'Water')"));
 
@@ -369,7 +370,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue(0.01)
                          .description("Spatial resolution of the density "
                                       "estimator. In case of a historgam, "
-                                      "this is the bin widtj, in case of a "
+                                      "this is the bin width, in case of a "
                                       "kernel density estimator, this is the "
                                       "spacing of the evaluation points."));
 
@@ -538,7 +539,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 11);
+    frameStreamData_.setColumnCount(0, 13);
     frameStreamColumnNames.push_back({"timeStamp",
                                       "argMinRadius",
                                       "minRadius",
@@ -549,7 +550,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "solventRangeLo",
                                       "solventRangeHi",
                                       "argMinSolventDensity",
-                                      "minSolventDensity"});
+                                      "minSolventDensity",
+                                      "arcLengthLo",
+                                      "arcLengthHi"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -616,6 +619,15 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     std::string frameStreamFileName = std::string("stream_") + jsonOutputFileName_;
     jsonFrameExporter -> setFileName(frameStreamFileName);
     frameStreamData_.addModule(jsonFrameExporter);
+
+
+    // TIMING DATA
+    //-------------------------------------------------------------------------
+
+    // TODO: perhaps mive to constructor?
+    timingData_.setDataSetCount(1);
+    timingData_.setColumnCount(0, 1);
+    timingData_.setMultipoint(false);
 
 
     // RESIDUE MAPPING DATA
@@ -697,30 +709,34 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
-    // prepare centre of geometry selection collection:
-    solvMappingSelCol_.setReferencePosType("res_cog");
-    solvMappingSelCol_.setOutputPosType("res_cog");
+    // only do this if solvent selection specified:
+    if( !sel_.empty() )
+    {
+        // prepare centre of geometry selection collection:
+        solvMappingSelCol_.setReferencePosType("res_cog");
+        solvMappingSelCol_.setOutputPosType("res_cog");
 
-    // create index groups from topology:
-    // TODO: this will not work for custom index groups
-    gmx_ana_indexgrps_t *solvIdxGroups;
-    gmx_ana_indexgrps_init(&solvIdxGroups,
-                           top.topology(),
-                           NULL);
+        // create index groups from topology:
+        // TODO: this will not work for custom index groups
+        gmx_ana_indexgrps_t *solvIdxGroups;
+        gmx_ana_indexgrps_init(&solvIdxGroups,
+                               top.topology(),
+                               NULL);
 
-    // selection text:
-    std::string solvMappingSelCogString = sel_[0].selectionText();
+        // selection text:
+        std::string solvMappingSelCogString = sel_[0].selectionText();
 
-    // create selection as defined by user:
-    solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
+        // create selection as defined by user:
+        solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
 
-    // compile the selections:
-    solvMappingSelCol_.setTopology(top.topology(), 0);
-    solvMappingSelCol_.setIndexGroups(solvIdxGroups);
-    solvMappingSelCol_.compile();
+        // compile the selections:
+        solvMappingSelCol_.setTopology(top.topology(), 0);
+        solvMappingSelCol_.setIndexGroups(solvIdxGroups);
+        solvMappingSelCol_.compile();
 
-    // free memory:
-    gmx_ana_indexgrps_free(solvIdxGroups);
+        // free memory:
+        gmx_ana_indexgrps_free(solvIdxGroups);
+    }
 
     
     // PREPARE TOPOLOGY QUERIES
@@ -947,10 +963,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // get data handles for this frame:
     AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
+    AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
 	// get data for frame number frnr into data handle:
     dhResMapping.startFrame(frnr, fr.time);
     dhFrameStream.startFrame(frnr, fr.time);
+    dhTiming.startFrame(frnr, fr.time);
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -1306,76 +1324,81 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
 
-    // evaluate solevnt mapping selections for this frame:
-    t_trxframe tmpFrame = fr;
-    solvMappingSelCol_.evaluate(&tmpFrame, pbc);
-
-    // TODO: make this a parameter:
-    real solvMappingMargin_ = 0.0;
-        
-    // get thread-local selection data:
-    const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
-
-    // map particles onto pathway:
-    clock_t tMapSol = std::clock();
-    std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
-            solvMapSel, 
-            mappingParams_);
-    tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
-
-    // find particles inside path (i.e. pore plus bulk sampling regime):
-    clock_t tSolInsideSample = std::clock();
-    std::map<int, bool> solvInsideSample = molPath.checkIfInside(
-            solventMappedCoords, solvMappingMargin_);
+    // create data containers:
+    std::map<int, gmx::RVec> solventMappedCoords; 
+    std::map<int, bool> solvInsideSample;
+    std::map<int, bool> solvInsidePore;
     int numSolvInsideSample = 0;
-    for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
-    {            
-        if( jt -> second == true )
-        {
-            numSolvInsideSample++;
-        }
-    }
-    tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
-
-
-    // find particles inside pore:
-    clock_t tSolInsidePore = std::clock();
-    std::map<int, bool> solvInsidePore = molPath.checkIfInside(
-            solventMappedCoords, 
-            solvMappingMargin_,
-            molPath.sLo(),
-            molPath.sHi());
     int numSolvInsidePore = 0;
-    for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
-    {            
-        if( jt -> second == true )
+
+    // only do this if solvent selection is valid:
+    if( !sel_.empty() )
+    {
+        // evaluate solevnt mapping selections for this frame:
+        t_trxframe tmpFrame = fr;
+        solvMappingSelCol_.evaluate(&tmpFrame, pbc);
+
+        // TODO: make this a parameter:
+        real solvMappingMargin_ = 0.0;
+            
+        // get thread-local selection data:
+        const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
+
+        // map particles onto pathway:
+        clock_t tMapSol = std::clock();
+        solventMappedCoords = molPath.mapSelection(solvMapSel, mappingParams_);
+        tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
+
+        // find particles inside path (i.e. pore plus bulk sampling regime):
+        clock_t tSolInsideSample = std::clock();
+        solvInsideSample = molPath.checkIfInside(
+                solventMappedCoords, 
+                solvMappingMargin_);
+        for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
+        {            
+            if( jt -> second == true )
+            {
+                numSolvInsideSample++;
+            }
+        }
+        tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
+
+        // find particles inside pore:
+        clock_t tSolInsidePore = std::clock();
+        solvInsidePore = molPath.checkIfInside(
+                solventMappedCoords, 
+                solvMappingMargin_,
+                molPath.sLo(),
+                molPath.sHi());
+        for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
+        {            
+            if( jt -> second == true )
+            {
+                numSolvInsidePore++;
+            }
+        }
+        tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
+
+        // now add mapped residue coordinates to data handle:
+        dhFrameStream.selectDataSet(5);
+        
+        // add mapped residues to data container:
+        for(auto it = solventMappedCoords.begin(); 
+            it != solventMappedCoords.end(); 
+            it++)
         {
-            numSolvInsidePore++;
+             dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
+             dhFrameStream.setPoint(1, it -> second[0]);     // s
+             dhFrameStream.setPoint(2, it -> second[1]);     // rho
+             dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
+             dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
+             dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
+             dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+             dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+             dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+             dhFrameStream.finishPointSet();
         }
     }
-    tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
-
-    // now add mapped residue coordinates to data handle:
-    dhFrameStream.selectDataSet(5);
-    
-    // add mapped residues to data container:
-    for(auto it = solventMappedCoords.begin(); 
-        it != solventMappedCoords.end(); 
-        it++)
-    {
-         dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
-         dhFrameStream.setPoint(1, it -> second[0]);     // s
-         dhFrameStream.setPoint(2, it -> second[1]);     // rho
-         dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
-         dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
-         dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
-         dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
-         dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
-         dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
-         dhFrameStream.finishPointSet();
-    }
-
-
 
     
     // ESTIMATE SOLVENT DENSITY
@@ -1432,8 +1455,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     real solventRangeLo = solventDensityCoordS.uniqueKnots().front();
     real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
 
-
-
     // obtain physical number density:
     SplineCurve1D pathRadius = molPath.pathRadius();
     NumberDensityCalculator ncc;
@@ -1465,6 +1486,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(8, solventRangeHi);
     dhFrameStream.setPoint(9, minSolventDensity.first); 
     dhFrameStream.setPoint(10, minSolventDensity.second);
+    dhFrameStream.setPoint(11, molPath.sLo()); 
+    dhFrameStream.setPoint(12, molPath.sHi());
     dhFrameStream.finishPointSet();
 
 
@@ -1514,12 +1537,20 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
                molPath);
 
 
+    // ADD TIMING DATA TO DATA HANDLE
+    //-------------------------------------------------------------------------
+
+    dhTiming.selectDataSet(0);
+    dhTiming.setPoint(0, 1.1111);
+
+
     // FINISH FRAME
     //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
     dhResMapping.finishFrame();
     dhFrameStream.finishFrame();
+    dhTiming.finishFrame();
 }
 
 
@@ -1556,6 +1587,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics solventRangeHiSummary;
     SummaryStatistics argMinSolventDensitySummary;
     SummaryStatistics minSolventDensitySummary;
+    SummaryStatistics arcLengthLoSummary;
+    SummaryStatistics arcLengthHiSummary;
 
     // prepare scalar time series objects for aggregate properties:
     ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
@@ -1612,6 +1645,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
         minSolventDensitySummary.update(
                 lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+        arcLengthLoSummary.update(
+                lineDoc["pathSummary"]["arcLengthLo"][0].GetDouble());
+        arcLengthHiSummary.update(
+                lineDoc["pathSummary"]["arcLengthHi"][0].GetDouble());
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
@@ -1692,6 +1729,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     size_t numSupportPoints = 1000;
     real supportPointsLo = solventRangeLoSummary.min() + 2.0*deEvalRangeCutoff_*deBandWidth_;
     real supportPointsHi = solventRangeHiSummary.max() - 2.0*deEvalRangeCutoff_*deBandWidth_;
+
+    // correct support point limits to fill entire channel:
+    if( supportPointsLo > arcLengthLoSummary.min() )
+    {
+        supportPointsLo = arcLengthLoSummary.min();
+    }
+    if( supportPointsHi < arcLengthHiSummary.max() )
+    {
+        supportPointsHi = arcLengthHiSummary.max();
+    }
 //    real supportPointsLo = -5.0;
 //    real supportPointsHi = 5.0;
     real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);
@@ -2224,4 +2271,18 @@ trajectoryAnalysis::writeOutput()
 {
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

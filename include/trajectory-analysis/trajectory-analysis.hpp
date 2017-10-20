@@ -34,10 +34,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	virtual void initOptions(IOptionsContainer *options,
 							 TrajectoryAnalysisSettings *settings);
 	
-	// ??
-//	virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-//                              const TopologyInformation &top);
-
     //
     virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
                               const TopologyInformation &top);
@@ -83,7 +79,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     AnalysisData                     frameStreamData_;
     AnalysisData                     dataResMapping_;
     AnalysisData                     dataResMappingPdb_;
-
+    AnalysisData timingData_;
 
 	std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
 	real 							 maxVdwRadius_;	// largest vdW radius of all atoms

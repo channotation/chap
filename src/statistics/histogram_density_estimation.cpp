@@ -39,9 +39,7 @@ HistogramDensityEstimator::estimate(
     std::sort(samples.begin(), samples.end());
 
     // set up break points for this data set: 
-    std::vector<real> breaks = createBreaks(
-            samples.front(),
-            samples.back());
+    std::vector<real> breaks = createBreaks(samples);
 
     // compute midpoints corresponding to these breakpoints:
     std::vector<real> midpoints = createMidpoints(breaks);
@@ -135,9 +133,17 @@ HistogramDensityEstimator::setBinWidth(
  */
 std::vector<real>
 HistogramDensityEstimator::createBreaks(
-        real rangeLo,
-        real rangeHi)
+        const std::vector<real> &samples)
 {
+    // handle case of empty sample:
+    real rangeLo = 0.0;
+    real rangeHi = 0.0;
+    if( samples.size() != 0 )
+    {
+        rangeLo = samples.front();
+        rangeHi = samples.back();
+    }
+
     // will shift by half a bin width past lower endpoint:
     real halfBinWidth = 0.5*binWidth_;
     real breaksLo = rangeLo - 3.0*halfBinWidth;
@@ -193,6 +199,15 @@ HistogramDensityEstimator::calculateDensity(
         const std::vector<real> &samples,
         const std::vector<real> &breaks)
 {
+    // initialise density as zero:
+    std::vector<real> density(breaks.size() - 1, 0.0);
+
+    // handle special case of empty dataset:
+    if( samples.size() == 0 )
+    {
+        return density;
+    }
+
     // loop over intervals and count samples:
     std::vector<int> counts;
     counts.reserve(breaks.size() - 1);
@@ -228,8 +243,6 @@ HistogramDensityEstimator::calculateDensity(
     }
 
     // calculate density:
-    std::vector<real> density;
-    density.resize(counts.size());
     std::transform(
             counts.begin(),
             counts.end(),
