@@ -44,6 +44,9 @@ class KernelDensityEstimator : public AbstractDensityEstimator
             KernelDensityEstimatorGaussianRawDensityTest);
     FRIEND_TEST(
             KernelDensityEstimatorTest, 
+            KernelDensityEstimatorEmptyDatasetTest);
+    FRIEND_TEST(
+            KernelDensityEstimatorTest, 
             KernelDensityEstimatorGaussianInterpDensityTest);
 
     public:

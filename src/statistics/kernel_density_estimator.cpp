@@ -28,7 +28,7 @@ KernelDensityEstimator::estimate(
     {
         throw std::runtime_error("kernel density estimation parameters not set!");
     }
-
+ 
     // construct evaluation points:
     std::vector<real> evalPoints = createEvaluationPoints(
             samples);
@@ -207,13 +207,26 @@ std::vector<real>
 KernelDensityEstimator::createEvaluationPoints(
         const std::vector<real> &samples)
 {
-    // find range covered by data:
-    real rangeLo = *std::min_element(samples.begin(), samples.end());
-    real rangeHi = *std::max_element(samples.begin(), samples.end());
+    // handle special case of empty sample:
+    real rangeLo = 0.0;
+    real rangeHi = 0.0;
+    if( samples.size() != 0 )
+    {
+        // find range covered by data:
+        rangeLo = *std::min_element(samples.begin(), samples.end());
+        rangeHi = *std::max_element(samples.begin(), samples.end());
+    }
 
     // extend this by multiple of bandwidth:
     rangeLo -= evalRangeCutoff_ * bandWidth_;
     rangeHi += evalRangeCutoff_ * bandWidth_;
+
+    std::cout<<"bandWidth = "<<bandWidth_<<"   "
+             <<"evalRangeCutoff = "<<evalRangeCutoff_<<"  "
+             <<"rangeLo = "<<rangeLo<<"  "
+             <<"rangeHi = "<<rangeHi<<"  "
+             <<"sample.size = "<<samples.size()<<"  "
+             <<std::endl;
 
     // calculate data range:
     // (this enforces a minimum of 512 evaluation points)
@@ -292,12 +305,19 @@ KernelDensityEstimator::calculateDensity(
         const std::vector<real> &samples,
         const std::vector<real> &evalPoints)
 {
+    // initialise density vector as zero:
+    std::vector<real> density(evalPoints.size(), 0.0);
+
+    // handle special case of empty sample:
+    if( samples.size() == 0 )
+    {
+        // just return zero density:
+        return density;
+    }
+
     // create kernel:
     KernelFunctionPointer Kernel = KernelFunctionFactory::create(
             kernelFunction_);
-
-    // initialise density vector as zero:
-    std::vector<real> density(evalPoints.size(), 0.0);
 
     // normalisation constant:
     real normalisation = 1.0 / (samples.size() * bandWidth_);

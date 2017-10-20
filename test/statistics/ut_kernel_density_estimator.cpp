@@ -99,6 +99,8 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
     // perform tests for each value of evaluation distance:
     for(auto maxEvalPointDist : maxEvalPointDistances)
     {
+        std::cout<<"maxEvalPointDist = "<<maxEvalPointDist<<std::endl;
+
         // set max eval dist to current value:
         kde.setMaxEvalPointDist(maxEvalPointDist);
 
@@ -117,6 +119,8 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
         // get actual data range:
         real dataLo = *std::min_element(testData_.begin(), testData_.end());
         real dataHi = *std::max_element(testData_.begin(), testData_.end());
+
+        std::cout<<"testData.size = "<<testData_.size()<<std::endl;
 
         // assert that data range is covered:
         ASSERT_GE(
@@ -165,6 +169,45 @@ TEST_F(
         for(auto d : density)
         {
             ASSERT_LE(0.0, d);
+        }
+    }
+}
+
+
+/*!
+ * Test the behaviour in the case of an empty input data set. In this case it 
+ * is asserted that the estimated density is zero everywhere.
+ */
+TEST_F(
+        KernelDensityEstimatorTest, 
+        KernelDensityEstimatorEmptyDatasetTest)
+{    
+    // define a number of bandwidths to test:    
+    std::vector<real> bandWidths = {10.0, 1.0, 0.1, 0.01, 0.001};
+
+    // create empty data set:
+    std::vector<real> emptyData;
+
+    // perform tests for all the above bandwidths:
+    for(auto bw : bandWidths)
+    {
+        // create kernel density estimator and set parameters:
+        // (note that large cutoff makes probability mass outside cutoff range
+        // negligible).
+        KernelDensityEstimator kde;
+        kde.setBandWidth(bw);
+        kde.setEvalRangeCutoff(0.0); 
+        kde.setMaxEvalPointDist(sd_);
+        kde.setKernelFunction(eKernelFunctionGaussian);
+
+        // get evaluation points and calculate density:
+        std::vector<real> evalPoints = kde.createEvaluationPoints(emptyData);
+        std::vector<real> density = kde.calculateDensity(emptyData, evalPoints);
+
+        // assert non-negativity of density:
+        for(auto d : density)
+        {
+            ASSERT_EQ(0.0, d);
         }
     }
 }
