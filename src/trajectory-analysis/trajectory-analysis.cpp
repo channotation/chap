@@ -539,7 +539,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 11);
+    frameStreamData_.setColumnCount(0, 13);
     frameStreamColumnNames.push_back({"timeStamp",
                                       "argMinRadius",
                                       "minRadius",
@@ -550,7 +550,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "solventRangeLo",
                                       "solventRangeHi",
                                       "argMinSolventDensity",
-                                      "minSolventDensity"});
+                                      "minSolventDensity",
+                                      "arcLengthLo",
+                                      "arcLengthHi"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -1227,9 +1229,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
 
 
-    std::cout<<"residue mapping complete"<<std::endl;
-
-
     // ESTIMATE HYDROPHOBICITY PROFILE
     //-------------------------------------------------------------------------
    
@@ -1317,8 +1316,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.finishPointSet();
     }
 
-    std::cout<<"hydrophobicity profile complete"<<std::endl;
-
 
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
@@ -1392,8 +1389,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
          dhFrameStream.finishPointSet();
     }
 
-    std::cout<<"solvent mapping complete"<<std::endl;
-
     
     // ESTIMATE SOLVENT DENSITY
     //-------------------------------------------------------------------------
@@ -1428,21 +1423,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // set parameters for density estimation:
     densityEstimator -> setParameters(deParams_);
 
-
-    std::cout<<"solvent sample coord S.size = "<<solventSampleCoordS.size()<<std::endl;
-    for(auto s : solventSampleCoordS)
-    {
-        std::cout<<"s = "<<s<<std::endl;
-    }
-
-
-    std::cout<<"pre density spline"<<std::endl;
-
     // estimate density of solvent particles along arc length coordinate:
     SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
             solventSampleCoordS);
-
-    std::cout<<"post density spline"<<std::endl;
 
     // add spline curve parameters to data handle:   
     dhFrameStream.selectDataSet(6);
@@ -1461,8 +1444,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     real solventRangeLo = solventDensityCoordS.uniqueKnots().front();
     real solventRangeHi = solventDensityCoordS.uniqueKnots().back();
 
-    std::cout<<"pre NUMBER density spline"<<std::endl;
-
     // obtain physical number density:
     SplineCurve1D pathRadius = molPath.pathRadius();
     NumberDensityCalculator ncc;
@@ -1471,15 +1452,9 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
             pathRadius, 
             numSolvInsideSample);
   
-    std::cout<<"post NUMBER density spline"<<std::endl;
-
-
     // find minimum instantaneous solvent density in this frame:
     std::pair<real, real> lim(molPath.sLo(), molPath.sHi());
     std::pair<real, real> minSolventDensity = numberDensity.minimum(lim);
-
-
-    std::cout<<"density estimation complete"<<std::endl;
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
@@ -1500,6 +1475,8 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(8, solventRangeHi);
     dhFrameStream.setPoint(9, minSolventDensity.first); 
     dhFrameStream.setPoint(10, minSolventDensity.second);
+    dhFrameStream.setPoint(11, molPath.sLo()); 
+    dhFrameStream.setPoint(12, molPath.sHi());
     dhFrameStream.finishPointSet();
 
 
@@ -1599,6 +1576,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics solventRangeHiSummary;
     SummaryStatistics argMinSolventDensitySummary;
     SummaryStatistics minSolventDensitySummary;
+    SummaryStatistics arcLengthLoSummary;
+    SummaryStatistics arcLengthHiSummary;
 
     // prepare scalar time series objects for aggregate properties:
     ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
@@ -1655,6 +1634,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
         minSolventDensitySummary.update(
                 lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+        arcLengthLoSummary.update(
+                lineDoc["pathSummary"]["arcLengthLo"][0].GetDouble());
+        arcLengthHiSummary.update(
+                lineDoc["pathSummary"]["arcLengthHi"][0].GetDouble());
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
@@ -1735,6 +1718,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     size_t numSupportPoints = 1000;
     real supportPointsLo = solventRangeLoSummary.min() + 2.0*deEvalRangeCutoff_*deBandWidth_;
     real supportPointsHi = solventRangeHiSummary.max() - 2.0*deEvalRangeCutoff_*deBandWidth_;
+
+    // correct support point limits to fill entire channel:
+    if( supportPointsLo > arcLengthLoSummary.min() )
+    {
+        supportPointsLo = arcLengthLoSummary.min();
+    }
+    if( supportPointsHi < arcLengthHiSummary.max() )
+    {
+        supportPointsHi = arcLengthHiSummary.max();
+    }
 //    real supportPointsLo = -5.0;
 //    real supportPointsHi = 5.0;
     real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);
