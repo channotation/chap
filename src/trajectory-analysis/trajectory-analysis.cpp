@@ -137,7 +137,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "'Protein') "));
 
 	options -> addOption(SelectionOption("sel-solvent")
-                         .storeVector(&sel_).required()
+                         .storeVector(&sel_)
 	                     .description("Group of small particles to calculate "
                                       "density of (usually 'Water')"));
 
@@ -370,7 +370,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue(0.01)
                          .description("Spatial resolution of the density "
                                       "estimator. In case of a historgam, "
-                                      "this is the bin widtj, in case of a "
+                                      "this is the bin width, in case of a "
                                       "kernel density estimator, this is the "
                                       "spacing of the evaluation points."));
 
@@ -709,30 +709,34 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
-    // prepare centre of geometry selection collection:
-    solvMappingSelCol_.setReferencePosType("res_cog");
-    solvMappingSelCol_.setOutputPosType("res_cog");
+    // only do this if solvent selection specified:
+    if( !sel_.empty() )
+    {
+        // prepare centre of geometry selection collection:
+        solvMappingSelCol_.setReferencePosType("res_cog");
+        solvMappingSelCol_.setOutputPosType("res_cog");
 
-    // create index groups from topology:
-    // TODO: this will not work for custom index groups
-    gmx_ana_indexgrps_t *solvIdxGroups;
-    gmx_ana_indexgrps_init(&solvIdxGroups,
-                           top.topology(),
-                           NULL);
+        // create index groups from topology:
+        // TODO: this will not work for custom index groups
+        gmx_ana_indexgrps_t *solvIdxGroups;
+        gmx_ana_indexgrps_init(&solvIdxGroups,
+                               top.topology(),
+                               NULL);
 
-    // selection text:
-    std::string solvMappingSelCogString = sel_[0].selectionText();
+        // selection text:
+        std::string solvMappingSelCogString = sel_[0].selectionText();
 
-    // create selection as defined by user:
-    solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
+        // create selection as defined by user:
+        solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
 
-    // compile the selections:
-    solvMappingSelCol_.setTopology(top.topology(), 0);
-    solvMappingSelCol_.setIndexGroups(solvIdxGroups);
-    solvMappingSelCol_.compile();
+        // compile the selections:
+        solvMappingSelCol_.setTopology(top.topology(), 0);
+        solvMappingSelCol_.setIndexGroups(solvIdxGroups);
+        solvMappingSelCol_.compile();
 
-    // free memory:
-    gmx_ana_indexgrps_free(solvIdxGroups);
+        // free memory:
+        gmx_ana_indexgrps_free(solvIdxGroups);
+    }
 
     
     // PREPARE TOPOLOGY QUERIES
@@ -1320,73 +1324,80 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // MAP SOLVENT PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
 
-    // evaluate solevnt mapping selections for this frame:
-    t_trxframe tmpFrame = fr;
-    solvMappingSelCol_.evaluate(&tmpFrame, pbc);
-
-    // TODO: make this a parameter:
-    real solvMappingMargin_ = 0.0;
-        
-    // get thread-local selection data:
-    const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
-
-    // map particles onto pathway:
-    clock_t tMapSol = std::clock();
-    std::map<int, gmx::RVec> solventMappedCoords = molPath.mapSelection(
-            solvMapSel, 
-            mappingParams_);
-    tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
-
-    // find particles inside path (i.e. pore plus bulk sampling regime):
-    clock_t tSolInsideSample = std::clock();
-    std::map<int, bool> solvInsideSample = molPath.checkIfInside(
-            solventMappedCoords, solvMappingMargin_);
+    // create data containers:
+    std::map<int, gmx::RVec> solventMappedCoords; 
+    std::map<int, bool> solvInsideSample;
+    std::map<int, bool> solvInsidePore;
     int numSolvInsideSample = 0;
-    for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
-    {            
-        if( jt -> second == true )
-        {
-            numSolvInsideSample++;
-        }
-    }
-    tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
-
-
-    // find particles inside pore:
-    clock_t tSolInsidePore = std::clock();
-    std::map<int, bool> solvInsidePore = molPath.checkIfInside(
-            solventMappedCoords, 
-            solvMappingMargin_,
-            molPath.sLo(),
-            molPath.sHi());
     int numSolvInsidePore = 0;
-    for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
-    {            
-        if( jt -> second == true )
-        {
-            numSolvInsidePore++;
-        }
-    }
-    tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
 
-    // now add mapped residue coordinates to data handle:
-    dhFrameStream.selectDataSet(5);
-    
-    // add mapped residues to data container:
-    for(auto it = solventMappedCoords.begin(); 
-        it != solventMappedCoords.end(); 
-        it++)
+    // only do this if solvent selection is valid:
+    if( !sel_.empty() )
     {
-         dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
-         dhFrameStream.setPoint(1, it -> second[0]);     // s
-         dhFrameStream.setPoint(2, it -> second[1]);     // rho
-         dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
-         dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
-         dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
-         dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
-         dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
-         dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
-         dhFrameStream.finishPointSet();
+        // evaluate solevnt mapping selections for this frame:
+        t_trxframe tmpFrame = fr;
+        solvMappingSelCol_.evaluate(&tmpFrame, pbc);
+
+        // TODO: make this a parameter:
+        real solvMappingMargin_ = 0.0;
+            
+        // get thread-local selection data:
+        const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
+
+        // map particles onto pathway:
+        clock_t tMapSol = std::clock();
+        solventMappedCoords = molPath.mapSelection(solvMapSel, mappingParams_);
+        tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
+
+        // find particles inside path (i.e. pore plus bulk sampling regime):
+        clock_t tSolInsideSample = std::clock();
+        solvInsideSample = molPath.checkIfInside(
+                solventMappedCoords, 
+                solvMappingMargin_);
+        for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
+        {            
+            if( jt -> second == true )
+            {
+                numSolvInsideSample++;
+            }
+        }
+        tSolInsideSample = (std::clock() - tSolInsideSample)/CLOCKS_PER_SEC;
+
+        // find particles inside pore:
+        clock_t tSolInsidePore = std::clock();
+        solvInsidePore = molPath.checkIfInside(
+                solventMappedCoords, 
+                solvMappingMargin_,
+                molPath.sLo(),
+                molPath.sHi());
+        for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
+        {            
+            if( jt -> second == true )
+            {
+                numSolvInsidePore++;
+            }
+        }
+        tSolInsidePore = (std::clock() - tSolInsidePore)/CLOCKS_PER_SEC;
+
+        // now add mapped residue coordinates to data handle:
+        dhFrameStream.selectDataSet(5);
+        
+        // add mapped residues to data container:
+        for(auto it = solventMappedCoords.begin(); 
+            it != solventMappedCoords.end(); 
+            it++)
+        {
+             dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
+             dhFrameStream.setPoint(1, it -> second[0]);     // s
+             dhFrameStream.setPoint(2, it -> second[1]);     // rho
+             dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
+             dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
+             dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
+             dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
+             dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
+             dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+             dhFrameStream.finishPointSet();
+        }
     }
 
     
