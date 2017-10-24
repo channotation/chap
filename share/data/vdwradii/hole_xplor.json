@@ -39,12 +39,12 @@
         {"atomname": "E2?", "resname": "GLN", "vdwr": 0.0713},
         {"atomname": "D2?", "resname": "ASN", "vdwr": 0.0713},
         {"atomname": "HZ?", "resname": "LYS", "vdwr": 0.0535},
-        {"atomname": "C", "resname": "???", "vdwr": 0.1871},
-        {"atomname": "H", "resname": "???", "vdwr": 0.0713},
-        {"atomname": "N", "resname": "???", "vdwr": 0.1425},
-        {"atomname": "O", "resname": "???", "vdwr": 0.1425},
-        {"atomname": "P", "resname": "???", "vdwr": 0.1800},
-        {"atomname": "S", "resname": "???", "vdwr": 0.1684},
+        {"atomname": "C???", "resname": "???", "vdwr": 0.1871},
+        {"atomname": "H???", "resname": "???", "vdwr": 0.0713},
+        {"atomname": "N???", "resname": "???", "vdwr": 0.1425},
+        {"atomname": "O???", "resname": "???", "vdwr": 0.1425},
+        {"atomname": "P???", "resname": "???", "vdwr": 0.1800},
+        {"atomname": "S???", "resname": "???", "vdwr": 0.1684},
         {"atomname": "LP", "resname": "???", "vdwr": 0.00},
         {"atomname": "MW", "resname": "???", "vdwr": 0.00}
     ]
