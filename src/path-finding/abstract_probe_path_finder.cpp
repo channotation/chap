@@ -19,7 +19,6 @@ AbstractProbePathFinder::AbstractProbePathFinder(
     , crntProbePos_()
     , nbh_()
 {
-
     // TODO: probe radius not really used, may be factored out?
     probeRadius_ = 0.0;
 
@@ -47,7 +46,7 @@ AbstractProbePathFinder::AbstractProbePathFinder(
  */
 void
 AbstractProbePathFinder::prepareNeighborhoodSearch(
-    t_pbc pbc,
+    t_pbc *pbc,
     gmx::AnalysisNeighborhoodPositions porePos,
     real cutoff)
 {
@@ -57,7 +56,7 @@ AbstractProbePathFinder::prepareNeighborhoodSearch(
     nbh_.setMode(gmx::AnalysisNeighborhood::eSearchMode_Automatic);
 
     // initialise search:
-    nbSearch_ = nbh_.initSearch(&pbc, porePos);
+    nbSearch_ = nbh_.initSearch(pbc, porePos);
 }
 
 

@@ -119,7 +119,8 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
 
     // will not use periodic boundary conditions:
-    settings -> setPBC(true);
+    // TODO set PBC back to true
+    settings -> setPBC(false);
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserPBC);
 
     // will make molecules whole:
@@ -794,8 +795,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         // has user provided a file name?
         if( !pfVdwRadiusJsonIsSet_ )
         {
-            std::cerr<<"ERROR: Option pfVdwRadiusDatabase set to 'user', but no custom van-der-Waals radii specified with pfVdwRadiusJson."<<std::endl;
-            std::abort();
+            throw std::runtime_error("ERROR: Option pfVdwRadiusDatabase set "
+                                     "to 'user', but no custom van-der-Waals "
+                                     "radii specified with pfVdwRadiusJson.");
         }
     }
 
@@ -1063,7 +1065,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         pfm.reset(new InplaneOptimisedProbePathFinder(pfPar_,
                                                       initProbePos,
                                                       chanDirVec,
-                                                      *pbc,
+                                                      pbc,
                                                       refSelection,
                                                       selVdwRadii));        
     }
@@ -1094,7 +1096,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
     
-
     // which method do we use for path alignment?
     if( pfPathAlignmentMethod_ == ePathAlignmentMethodNone )
     {
@@ -1152,7 +1153,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.finishPointSet();
     }
 
-
+   
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
  

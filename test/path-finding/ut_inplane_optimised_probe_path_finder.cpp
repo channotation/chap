@@ -246,7 +246,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
     InplaneOptimisedProbePathFinder pfm(params,
                                         initProbePos,
                                         chanDirVec,
-                                        pbc_,
+                                        &pbc_,
                                         nbhPos,
                                         vdwRadii);
 
@@ -374,7 +374,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
     InplaneOptimisedProbePathFinder pfm(params,
                                         initProbePos,
                                         chanDirVec,
-                                        pbc_,
+                                        &pbc_,
                                         nbhPos,
                                         vdwRadii);
 
@@ -503,7 +503,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirT
     InplaneOptimisedProbePathFinder pfm(params,
                                         initProbePos,
                                         chanDirVec,
-                                        pbc_,
+                                        &pbc_,
                                         nbhPos,
                                         vdwRadii);
 
