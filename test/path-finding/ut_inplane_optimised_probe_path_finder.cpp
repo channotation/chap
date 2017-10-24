@@ -31,7 +31,7 @@ class InplaneOptimisedProbePathFinderTest : public ::testing::Test
 
                 // simulated annealing parameters:
                 params_["saUseAdaptiveCandidateGeneration"] = 0;
-                params_["saRandomSeed"] = 15011991;
+                params_["saRandomSeed"] = 15011992;
                 params_["saMaxCoolingIter"] = 1000;
                 params_["saNumCostSamples"] = 10;
                 params_["saXi"] = 3.0;
