@@ -396,9 +396,14 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // HYDROPHOBICITY PARAMETERS
     //-------------------------------------------------------------------------
     
-    const char * const allowedHydrophobicityDatabase[] = {"memprotmd",
+    const char * const allowedHydrophobicityDatabase[] = {"hessa_2005",
+                                                          "kyte_doolittle_1982",
+                                                          "monera_1995",
+                                                          "moon_2011",
+                                                          "zhu_2016",
+                                                          "memprotmd",
                                                           "user"};
-    hydrophobicityDatabase_ = eHydrophobicityDatabaseMemprotMd;
+    hydrophobicityDatabase_ = eHydrophobicityDatabaseZhu2016;
     options -> addOption(EnumOption<eHydrophobicityDatabase>("hydrophob-database")
                          .enumValue(allowedHydrophobicityDatabase)
                          .store(&hydrophobicityDatabase_)
@@ -914,7 +919,27 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
             std::string("/share/data/hydrophobicity/");
     
     // select appropriate database file:
-    if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMemprotMd )
+    if( hydrophobicityDatabase_ == eHydrophobicityDatabaseHessa2005 )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "hessa_2005.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseKyteDoolittle1982 )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "kyte_doolittle_1982.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMonera1995 )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "monera_1995.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMoon2011 )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "moon_2011.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseZhu2016 )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "zhu_2016.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMemprotMd )
     {
         hydrophobicityJson_ = hydrophobicityFilePath + "memprotmd.json";
     }

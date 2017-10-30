@@ -15,7 +15,12 @@
 /*!
  * Enum for hydrophobicity databases bundled with source code. 
  */
-enum eHydrophobicityDatabase {eHydrophobicityDatabaseMemprotMd,
+enum eHydrophobicityDatabase {eHydrophobicityDatabaseHessa2005,
+                              eHydrophobicityDatabaseKyteDoolittle1982,
+                              eHydrophobicityDatabaseMonera1995,
+                              eHydrophobicityDatabaseMoon2011,
+                              eHydrophobicityDatabaseZhu2016,
+                              eHydrophobicityDatabaseMemprotMd,
                               eHydrophobicityDatabaseUser};
 
 

@@ -63,7 +63,7 @@ ResidueInformationProvider::chainFromTopology(
  *
  *  \code{.java} 
     {
-        "vdwradii": [
+        "hydrophobicity": [
             {"resname": "ALA", "hydrophobicity":  41.0},
             {"resname": "ARG", "hydrophobicity": -14.0}
         ]
