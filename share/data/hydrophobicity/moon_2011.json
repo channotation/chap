@@ -1,0 +1,30 @@
+{
+    "remark": "Hydropathy scale for amino acid side chains derived from transmembrane protein folding into lipid bilayers.",
+
+    "reference": {
+        "citation": "https://www.ncbi.nlm.nih.gov/pubmed/21606332"
+        },
+
+    "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity":  0.00},
+        {"resname": "ARG", "hydrophobicity":  3.71},
+        {"resname": "ASN", "hydrophobicity":  3.47},
+        {"resname": "ASP", "hydrophobicity":  2.95},
+        {"resname": "CYS", "hydrophobicity":  0.49},
+        {"resname": "GLN", "hydrophobicity":  3.01},
+        {"resname": "GLU", "hydrophobicity":  1.64},
+        {"resname": "GLY", "hydrophobicity":  1.72},
+        {"resname": "HIS", "hydrophobicity":  4.76},
+        {"resname": "ILE", "hydrophobicity": -1.56},
+        {"resname": "LEU", "hydrophobicity": -1.81},
+        {"resname": "LYS", "hydrophobicity":  5.39},
+        {"resname": "MET", "hydrophobicity": -0.76},
+        {"resname": "PHE", "hydrophobicity": -2.20},
+        {"resname": "PRO", "hydrophobicity": -1.52},
+        {"resname": "SER", "hydrophobicity":  1.83},
+        {"resname": "THR", "hydrophobicity":  1.78},
+        {"resname": "TRP", "hydrophobicity": -0.38},
+        {"resname": "TYR", "hydrophobicity": -1.09},
+        {"resname": "VAL", "hydrophobicity": -0.78}
+    ]
+}

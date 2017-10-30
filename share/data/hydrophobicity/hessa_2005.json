@@ -1,0 +1,30 @@
+{
+    "remark": "Hydropathy scale for amino acid side chains based on endoplasmic reticulum translocon recognition of transmembrane helices.",
+
+    "reference": {
+        "citation": "https://www.ncbi.nlm.nih.gov/pubmed/15674282"
+        },
+
+    "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity":  0.11},
+        {"resname": "ARG", "hydrophobicity":  2.58},
+        {"resname": "ASN", "hydrophobicity":  2.05},
+        {"resname": "ASP", "hydrophobicity":  3.49},
+        {"resname": "CYS", "hydrophobicity": -0.13},
+        {"resname": "GLN", "hydrophobicity":  2.36},
+        {"resname": "GLU", "hydrophobicity":  2.68},
+        {"resname": "GLY", "hydrophobicity":  0.74},
+        {"resname": "HIS", "hydrophobicity":  2.06},
+        {"resname": "ILE", "hydrophobicity": -0.60},
+        {"resname": "LEU", "hydrophobicity": -0.55},
+        {"resname": "LYS", "hydrophobicity":  2.71},
+        {"resname": "MET", "hydrophobicity": -0.10},
+        {"resname": "PHE", "hydrophobicity": -0.32},
+        {"resname": "PRO", "hydrophobicity":  2.23},
+        {"resname": "SER", "hydrophobicity":  0.84},
+        {"resname": "THR", "hydrophobicity":  0.52},
+        {"resname": "TRP", "hydrophobicity":  0.30},
+        {"resname": "TYR", "hydrophobicity":  0.68},
+        {"resname": "VAL", "hydrophobicity": -0.31}
+    ]
+}
