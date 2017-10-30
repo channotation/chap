@@ -2,7 +2,8 @@
     "remark": "Hydropathy scale for amino acid side chains based on an amalgam of experimental observations derived from the literature.",
 
     "reference": {
-        "citation": "https://www.ncbi.nlm.nih.gov/pubmed/7108955"
+        "link": "http://www.sciencedirect.com/science/article/pii/0022283682905150",
+        "doi": "10.1016/0022-2836(82)90515-0"
         },
 
     "hydrophobicity": [

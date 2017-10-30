@@ -2,7 +2,8 @@
     "remark": "Hydropathy scale for amino acid side chains derived from transmembrane protein folding into lipid bilayers.",
 
     "reference": {
-        "citation": "https://www.ncbi.nlm.nih.gov/pubmed/21606332"
+        "link": "http://www.pnas.org/content/108/25/10174",
+        "doi": "10.1073/pnas.1103979108"
         },
 
     "hydrophobicity": [

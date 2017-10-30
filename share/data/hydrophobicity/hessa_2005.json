@@ -2,7 +2,8 @@
     "remark": "Hydropathy scale for amino acid side chains based on endoplasmic reticulum translocon recognition of transmembrane helices.",
 
     "reference": {
-        "citation": "https://www.ncbi.nlm.nih.gov/pubmed/15674282"
+        "link": "https://www.nature.com/nature/journal/v433/n7024/full/nature03216.html",
+        "doi": "10.1038/nature03216"
         },
 
     "hydrophobicity": [

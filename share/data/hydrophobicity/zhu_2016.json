@@ -2,7 +2,8 @@
     "remark": "Hydrophobicity scale based on measuring contact angle of a water nanodroplet on planar peptide networks.",
 
     "reference": {
-        "citation": "https://www.ncbi.nlm.nih.gov/pubmed/27803319"
+        "link": "http://www.pnas.org/content/113/46/12946",
+        "doi": "10.1073/pnas.1616138113"
         },
 
     "hydrophobicity": [

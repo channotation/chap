@@ -1,8 +1,9 @@
 {
-    "remark": "Hydrophobicity scale as used on MemProtMD.",
+    "remark": "Hydrophobicity scale based on the stability of the single-stranded amphipathic alpha-helix.",
 
     "reference": {
-        "citation": "http://memprotmd.bioch.ox.ac.uk"
+        "link": "http://onlinelibrary.wiley.com/doi/10.1002/psc.310010507/full",
+        "doi": "10.1002/psc.310010507"
         },
 
     "hydrophobicity": [
