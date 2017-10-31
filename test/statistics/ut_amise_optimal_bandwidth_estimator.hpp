@@ -42,26 +42,53 @@ class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
  *
  */
 TEST_F(AmiseOptimalBandwidthEstimatorTest, 
-       AmiseOptimalBandwidthEstimatorGaussianDensityDerivativeFunctionalTest)
+       AmiseOptimalBandwidthEstimatorGaussianDensityRandomSampleTest)
 {
-    // error tolerance for this test:
-    real eps = std::numeric_limits<real>::epsilon();
- 
-    // pick an arbitrary standard deviation:
-    real sigma = 3.3;
-
-    // set the true values:
-    real truePhi6
-    real truePhi8
-
-    // create bandwidth estimator:
     AmiseOptimalBandwidthEstimator bwe;
 
-    // estimate the density derivative functionals:
-    real phi6 = bwe.gaussianDensityDerivativeFunctional(sigma, 6);
-    real phi8 = bwe.gaussianDensityDerivativeFunctional(sigma, 8);
+    // parameters of normal distribution:
+    std::vector<real> mean = {-1.0, 0.0, 1.0, 1000.0, std::sqrt(2.0)};
+    std::vector<real> sd = {1.0, 2.0, 3.0, 1.0, 0.5};
+    std::vector<real> num = {10.0, 200.0, 1000.0, 50.0, 100};
 
-    // assert correct value:
-    ASSERT_NEAR(truePhi6, phi6, eps);
-    ASSERT_NEAR(truePhi8, phi8, eps);
+    // prepare random distribution:
+    std::default_random_engine generator;
+
+    // generate test data sets:
+    std::vector<std::vector<real>> testData;
+    for(size_t i = 0; i < mean.size(); i++)
+    {
+        // prepare distribution:
+        std::normal_distribution<real> distribution(mean[i], sd[i]);
+
+        // draw random sample:
+        std::vector<real> data;
+        for(size_t j = 0; j < num[i]; j++)
+        {
+            data.push_back( distribution(generator) );
+        }
+
+        // estimate bandwidth:
+        real bw = bwe.estimate(samples);
+
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
