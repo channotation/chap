@@ -123,6 +123,7 @@ KernelDensityEstimator::setBandWidth(
     // sanity check
     if( bandWidth <= 0.0 )
     {
+        // TODO: in this case, estimate amise optimal density!
         throw std::logic_error("Bandwidth must be psotitive!");
     }
 
