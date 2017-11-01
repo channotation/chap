@@ -1,6 +1,7 @@
 #ifndef AMISE_OPTIMAL_BANDWIDTH_ESTIMATOR_HPP
 #define AMISE_OPTIMAL_BANDWIDTH_ESTIMATOR_HPP
 
+#include <cmath>
 #include <functional>
 #include <vector>
 

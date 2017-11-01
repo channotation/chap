@@ -1,3 +1,5 @@
+#include <random>
+
 #include <gtest/gtest.h>
 
 #include "statistics/amise_optimal_bandwidth_estimator.hpp"
@@ -38,45 +40,81 @@ class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
 };
 
 
-/*
+/*!
  *
  */
 TEST_F(AmiseOptimalBandwidthEstimatorTest, 
-       AmiseOptimalBandwidthEstimatorGaussianDensityRandomSampleTest)
+       AmiseOptimalBandwidthEstimatorGaussianDensityNonnegativityTest)
 {
-    AmiseOptimalBandwidthEstimator bwe;
-
+/*
     // parameters of normal distribution:
     std::vector<real> mean = {-1.0, 0.0, 1.0, 1000.0, std::sqrt(2.0)};
-    std::vector<real> sd = {1.0, 2.0, 3.0, 1.0, 0.5};
-    std::vector<real> num = {10.0, 200.0, 1000.0, 50.0, 100};
+    std::vector<real> sd = {1.0, std::sqrt(2.0), 100.0, 1.0, 2.0};
+    std::vector<int> num = {50, 10, 10, 10, 10};
 
     // prepare random distribution:
-    std::default_random_engine generator;
 
     // generate test data sets:
-    std::vector<std::vector<real>> testData;
     for(size_t i = 0; i < mean.size(); i++)
     {
         // prepare distribution:
+        std::default_random_engine generator;
         std::normal_distribution<real> distribution(mean[i], sd[i]);
+
+        std::cout<<"mu = "<<mean[i]<<"  "
+                 <<"sd = "<<sd[i]<<"  "
+                 <<"N = "<<num[i]<<"  ";
 
         // draw random sample:
         std::vector<real> data;
         for(size_t j = 0; j < num[i]; j++)
         {
             data.push_back( distribution(generator) );
+            std::cout<<data.back()<<"  ";
         }
 
         // estimate bandwidth:
-        real bw = bwe.estimate(samples);
+        AmiseOptimalBandwidthEstimator bwe;
+        real bw = bwe.estimate(data);
 
+        std::cout<<"bw = "<<bw<<std::endl;
+
+        // make sure bandwidth is positive:
+        ASSERT_LT(0.0, bw);
     }
+    
 }
 
 
+/*!
+ *
+ */
+TEST_F(AmiseOptimalBandwidthEstimatorTest, 
+       AmiseOptimalBandwidthEstimatorGaussianDensityReferenceImplementationTest)
+{
+    // error tolerance:
+    real eps = std::numeric_limits<real>::epsilon();
 
+    // randomly generated sample data (from standard normal):
+    std::vector<real> sample = {-0.4462099,
+                                -1.5673473,
+                                -0.4568042,
+                                -0.4100268,
+                                 0.7060560,
+                                -0.5724193,
+                                 0.8842685,
+                                -1.8202730,
+                                 0.6218274,
+                                -0.5386946};
 
+    // estimate AMISE-optimal bandwidth for this:
+    AmiseOptimalBandwidthEstimator bwe;
+    real bw = bwe.estimate(sample);
+
+    // compare to reference implementation value of bandwidth:
+    real trueBw = 0.156558;
+    ASSERT_NEAR(trueBw, bw, eps);
+}
 
 
 
