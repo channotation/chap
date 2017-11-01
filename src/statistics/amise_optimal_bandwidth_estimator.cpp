@@ -1,3 +1,6 @@
+#include <algorithm>
+
+#include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/special_functions/hermite.hpp>
 #include <boost/math/tools/roots.hpp>
 
@@ -121,6 +124,63 @@ AmiseOptimalBandwidthEstimator::functionalPhi8(real sigma)
 }
 
 
+
+/*
+ *
+ */
+real
+AmiseOptimalBandwidthEstimator::functionalPhiFast(
+        std::vector<real> &samples,
+        const real bw,
+        const int deriv)
+{
+    // TODO: handle this as input?
+    real eps = 0.1;
+    
+    // sort samples (TODO: move this to higher level function?):
+    std::sort(samples.begin(), samples.end());
+
+
+    // shift and scale the input data (assumes samples to be sorted!):
+    real shift = samples.front();
+    std::for_each(samples.begin(), samples.end(), [shift](real &s){s+=shift;});
+    real scale = 1.0/samples.back();
+    std::for_each(samples.begin(), samples.end(), [scale](real &s){s*=scale;});
+
+    // calculate q-factor:
+    real q = std::pow(-1.0, deriv) 
+           / (SQRT2PI_ * samples.size() * std::pow(bw, deriv + 1));
+    real epsPrime = eps / (samples.size() * std::abs(q));
+
+    // calculate interval radius:
+    real intervalRadius = bw/2.0;
+
+    // find interval centres and TODO cluster point by interval centre:
+    std::vector<real> intervalCentres(bw);
+    
+    // calculate factorial of derivative:
+    real derivFactorial = boost::math::factorial<real>(deriv);
+
+    // calculate curoff radius:
+    real cutoffRadius = intervalRadius 
+                      + 2.0*bw*std::sqrt(
+                            std::log(std::sqrt(derivFactorial)/epsPrime));
+
+    //  calculate truncation number
+    int p = truncationNumber(
+            bw, 
+            intervalRadius, 
+            cutoffRadius, 
+            epsPrime, 
+            deriv);
+
+
+    
+
+
+}
+
+
 /*!
  *
  */
@@ -130,9 +190,6 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
         real bw,
         const int deriv)
 {
-//    std::cout<<"functionalPhi"<<std::endl;
-//    std::cout<<"bw = "<<bw<<std::endl;
-
     // initialise sum as zero:
     double phi = 0.0;
 
@@ -142,43 +199,20 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
         for(auto sj : samples)
         {
             // evaluate ermite polynomial:
-            real h = boost::math::hermite(deriv, (si - sj)/bw/std::sqrt(2.0)) * std::pow(2, -deriv/2);
+            real h = boost::math::hermite(deriv, (si - sj)/bw/std::sqrt(2.0)) 
+                   * std::pow(2, -deriv/2);
 
             // evaluate kernel itself:
             real k = std::exp(-(si-sj)*(si-sj)/(2.0*bw*bw));
 
             // add to density derivative functional:
             phi += k*h;
-/*
-            std::cout<<"h = "<<h<<"  "
-                     <<"k = "<<k<<"  "
-                     <<"si = "<<si<<"  "
-                     <<"sj = "<<sj<<"  "
-                     <<"bw = "<<bw<<"  "
-                     <<"deriv = "<<deriv<<"  "
-                     <<"phi = "<<phi<<"  "
-                     <<std::endl;
-*/
-            if( std::isnan(phi) )
-            {
-                break;
-            }
-
-        }
-
-        if( std::isnan(phi) )
-        {
-            break;
         }
     }
-
-//    std::cout<<"phi_prefac = "<<phi<<"  ";
 
     // multiply constant pre-factor:
     int n = samples.size();
     phi /= n*(n - 1) * SQRT2PI_ * std::pow(bw, deriv + 1);
-
-//    std::cout<<"phi_postfac = "<<phi<<std::endl;
 
     // return the density functional:
     return phi;
@@ -256,5 +290,85 @@ AmiseOptimalBandwidthEstimator::optimalBandwidthEquation(
              <<"val = "<<val<<std::endl;
 
     return val;
+}
+
+
+/*!
+ * Returns a vector of interval centres covering the unit interval 
+ * \f$ [0.0, 1.0] \f$, where the distance between two interval centres is equal
+ * to the given bandwidth. The position of the lowest interval centre is 
+ * determined by
+ *
+ * \f[
+ *      c_0 = \frac{M*h - 1}{2}
+ * \f]
+ *
+ * where \f$ M \f$ is the miniumum number of intervals required to cover the 
+ * entire unit interval.
+ */
+std::vector<real>
+AmiseOptimalBandwidthEstimator::intervalCentres(const real bw)
+{
+    // how many intervals do we need to giver unit interval?
+    real numInterv = std::ceil(1.0/bw);
+
+    // factor in lowest overhand of covering intervals:
+    real centreLo = -0.5*(bw*numInterv - 1.0);
+
+    // build vector of interval centres:
+    std::vector<real> intervalCentres;
+    intervalCentres.reserve(numInterv);
+    for(size_t i = 0; i < numInterv; i++)
+    {
+        intervalCentres.push_back(centreLo + i*bw);
+    }
+
+    // return the interval centres:
+    return intervalCentres;
+}
+
+
+/*!
+ * Returns the truncation number that guarantees a given error bound.
+ */
+int
+AmiseOptimalBandwidthEstimator::truncationNumber(
+        const real bw,
+        const real ir,
+        const real cr,
+        const real epsPrime,
+        const unsigned int deriv)
+{
+    // hard coded limit to guarantee termination:
+    int maxTruncNum = 100;
+
+    // calculate squared bandwidth:
+    real sqbw = bw*bw;
+
+    // increment truncation number until error bound is met:
+    // TODO: a bisection based method would be faster!
+    int p = 1;
+    while(p <= maxTruncNum)
+    {
+        // calculate b smaller then cutoff radius:
+        real b = std::min<real>(cr, (ir + std::sqrt(ir + 8.0*p*sqbw))/2.0);
+
+        // compute error bound:
+        real tmp = std::exp( -(ir-b)*(ir-b)/(4.0*sqbw) );
+        tmp *= std::pow(ir*b/sqbw, p);
+        tmp *= std::sqrt(deriv)/boost::math::factorial<real>(p);
+
+        // target error bound reached?
+        if( tmp <= epsPrime )
+        {
+            return p;
+        }
+    }
+
+    // if we haven't returned yet, target error could not be met:
+    throw std::logic_error("Could not meet truncation error limit!");
+
+    // return negative truncation number:
+    return -1;
 }
 

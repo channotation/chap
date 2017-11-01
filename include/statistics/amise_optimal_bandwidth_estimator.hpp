@@ -34,6 +34,10 @@ class AmiseOptimalBandwidthEstimator
                 const std::vector<real> &samples,
                 const real bw,
                 const int deriv);
+        inline real functionalPhiFast(
+                std::vector<real> &samples,
+                const real bw,
+                const int deriv);
 
         // bandwidth to be used in derivative estimation:
         real gammaFactor_;
@@ -44,6 +48,21 @@ class AmiseOptimalBandwidthEstimator
         real optimalBandwidthEquation(
                 const real bw,
                 const std::vector<real> &samples);
+
+
+        std::vector<real> intervalCentres(
+                const real bw);
+
+        int truncationNumber(
+                const real bw,
+                const real ir,
+                const real cr,
+                const real epsPrime,
+                const unsigned int deriv);
+
+
+        //
+//        real cutoffRadius(const real );
 };
 
 
