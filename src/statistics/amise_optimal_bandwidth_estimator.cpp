@@ -59,7 +59,7 @@ AmiseOptimalBandwidthEstimator::estimate(
              <<std::endl;
 
     // calculate constant prefactor in gamma expression:
-    gammaFactor_ = gammaFactor(phi4, phi6);
+    gammaFactor_ = gammaFactor(phi4, phi6); // TODO correct!
 
     // parameters for boost root finder:
     std::cout<<std::endl;
@@ -130,8 +130,8 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
         real bw,
         const int deriv)
 {
-    std::cout<<"functionalPhi"<<std::endl;
-    std::cout<<"bw = "<<bw<<std::endl;
+//    std::cout<<"functionalPhi"<<std::endl;
+//    std::cout<<"bw = "<<bw<<std::endl;
 
     // initialise sum as zero:
     double phi = 0.0;
@@ -149,7 +149,7 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
 
             // add to density derivative functional:
             phi += k*h;
-
+/*
             std::cout<<"h = "<<h<<"  "
                      <<"k = "<<k<<"  "
                      <<"si = "<<si<<"  "
@@ -158,7 +158,7 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
                      <<"deriv = "<<deriv<<"  "
                      <<"phi = "<<phi<<"  "
                      <<std::endl;
-
+*/
             if( std::isnan(phi) )
             {
                 break;
@@ -172,13 +172,13 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
         }
     }
 
-    std::cout<<"phi_prefac = "<<phi<<"  ";
+//    std::cout<<"phi_prefac = "<<phi<<"  ";
 
     // multiply constant pre-factor:
     int n = samples.size();
     phi /= n*(n - 1) * SQRT2PI_ * std::pow(bw, deriv + 1);
 
-    std::cout<<"phi_postfac = "<<phi<<std::endl;
+//    std::cout<<"phi_postfac = "<<phi<<std::endl;
 
     // return the density functional:
     return phi;
@@ -194,9 +194,9 @@ AmiseOptimalBandwidthEstimator::gammaFactor(
         const real phi4,
         const real phi6)
 {
-    std::cout<<"phi4 = "<<phi4<<"  "
-             <<"phi6 = "<<phi6<<"  "
-             <<std::endl;
+//    std::cout<<"phi4 = "<<phi4<<"  "
+//             <<"phi6 = "<<phi6<<"  "
+//             <<std::endl;
              // FIXME ERROE here!
     return std::pow(-6.0*std::sqrt(2.0)*phi4 / phi6 , 1.0/7.0);
 }
@@ -238,14 +238,18 @@ AmiseOptimalBandwidthEstimator::optimalBandwidthEquation(
         const real bw,
         const std::vector<real> &samples)
 {
+    real bwIn = bw;
 
     // estimate density derivative functional:
     real phi4 = functionalPhi(samples, gamma(bw), 4);
 
     // return value of implcit equation:
-    real val = bw - std::pow(1.0/( 2.0*SQRTPI_*phi4*samples.size() ), 1.0/5.0);
+//    real val = bw - std::pow(1.0/( 2.0*SQRTPI_*phi4*samples.size() ), 1.0/5.0);
+
+    real val = bw - std::pow(1/(2*SQRTPI_*phi4*samples.size()) , 1.0/5.0);
 
     std::cout<<"bw = "<<bw<<"  "
+             <<"bwIn = "<<bwIn<<"  "
              <<"gammaFac = "<<gammaFactor_<<"  "
              <<"gamma = "<<gamma(bw)<<"  "
              <<"phi4 = "<<phi4<<"  "

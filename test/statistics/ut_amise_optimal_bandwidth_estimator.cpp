@@ -50,7 +50,7 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
     // parameters of normal distribution:
     std::vector<real> mean = {-1.0, 0.0, 1.0, 1000.0, std::sqrt(2.0)};
     std::vector<real> sd = {1.0, std::sqrt(2.0), 100.0, 1.0, 2.0};
-    std::vector<int> num = {50, 10, 10, 10, 10};
+    std::vector<int> num = {100, 10, 10, 10, 10};
 
     // prepare random distribution:
 
@@ -82,7 +82,7 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
         // make sure bandwidth is positive:
         ASSERT_LT(0.0, bw);
     }
-    
+   */ 
 }
 
 
@@ -107,9 +107,18 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
                                  0.6218274,
                                 -0.5386946};
 
+    std::vector<real> test;
+    for(int i = 0; i < 1000; i++)
+    {
+        for(auto s : sample)
+        {
+            test.push_back(s);
+        }
+    }
+
     // estimate AMISE-optimal bandwidth for this:
     AmiseOptimalBandwidthEstimator bwe;
-    real bw = bwe.estimate(sample);
+    real bw = bwe.estimate(test);
 
     // compare to reference implementation value of bandwidth:
     real trueBw = 0.156558;
