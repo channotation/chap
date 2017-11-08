@@ -27,7 +27,7 @@ class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
             std::normal_distribution<real> distribution(mu, sd);
 
             // create a random sample:
-            size_t numSamples = 1e4;
+            size_t numSamples = 1e0;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distribution(generator) );
@@ -129,7 +129,42 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
 }
 
 
+/*
+ *
+ */
+TEST_F(AmiseOptimalBandwidthEstimatorTest, 
+       AmiseOptimalBandwidthEstimatorApproximateDerivativeTest)
+{
 
+
+
+    std::vector<real> samples = {-1, -0.5, 1.0, 0.3, 0.2, 0.4, 0.1, 0.25};
+/*
+    samples = testData_;
+
+    std::cout<<"N = "<<samples.size()<<std::endl;
+
+
+    int deriv = 2;
+    real bw = 0.1;
+    AmiseOptimalBandwidthEstimator bwe;
+
+    clock_t t_direct = std::clock();
+    real phiDirect = bwe.functionalPhi(samples, bw, deriv);
+    t_direct = std::clock() - t_direct;
+
+    clock_t t_approx = std::clock();
+    real phiApprox = bwe.functionalPhiFast(samples, bw, deriv);
+    t_approx = std::clock() - t_approx;
+
+    std::cout<<"t_Direct = "<<t_direct<<"  ";
+    std::cout<<"t_Approx = "<<t_approx<<std::endl;
+
+    std::cout<<"phiDirect = "<<phiDirect<<"  ";
+    std::cout<<"phiApprox = "<<phiApprox<<std::endl;
+
+    */
+}
 
 
 

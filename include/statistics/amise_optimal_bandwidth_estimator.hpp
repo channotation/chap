@@ -15,6 +15,10 @@
  */
 class AmiseOptimalBandwidthEstimator
 {
+    friend class AmiseOptimalBandwidthEstimatorTest;
+    FRIEND_TEST(AmiseOptimalBandwidthEstimatorTest, 
+                AmiseOptimalBandwidthEstimatorApproximateDerivativeTest);
+
     public:
  
         // public interface for bandwidth estimation:
@@ -30,11 +34,11 @@ class AmiseOptimalBandwidthEstimator
         // density derivative functionals:
         inline real functionalPhi6(real sigma);
         inline real functionalPhi8(real sigma);        
-        inline real functionalPhi(
+        real functionalPhi(
                 const std::vector<real> &samples,
-                const real bw,
+                real bw,
                 const int deriv);
-        inline real functionalPhiFast(
+        real functionalPhiFast(
                 std::vector<real> &samples,
                 const real bw,
                 const int deriv);
@@ -52,6 +56,9 @@ class AmiseOptimalBandwidthEstimator
 
         std::vector<real> intervalCentres(
                 const real bw);
+        std::vector<size_t> nearestIntervalCentre(
+                const std::vector<real> &centres,
+                const std::vector<real> &samples);
 
         int truncationNumber(
                 const real bw,
@@ -60,9 +67,54 @@ class AmiseOptimalBandwidthEstimator
                 const real epsPrime,
                 const unsigned int deriv);
 
+        
+        real approximateDensityDerivative(
+                const std::vector<real> &samples,
+                const std::vector<real> &centres,
+                const std::vector<size_t> &centreIdx,
+                real eval,
+                real bw,
+                real rc,
+                real ri,
+                real epsPrime,
+                real q,
+                int deriv,
+                int p);
+
+        
+        real coefA(
+                int s,
+                int t,
+                int deriv);
+        real coefB(
+                int k,
+                int t,
+                int l,
+                const std::vector<real> &samples,
+                const std::vector<real> &centres,
+                const std::vector<size_t> &centreIdx,
+                real bw,
+                real coefQ);
+        real coefC(
+                int k,
+                int s,
+                int t,
+                int deriv,
+                real eval,
+                real centre,
+                real bw);
+        real coefQ(
+                real bw,
+                int deriv,
+                int numSamples);
+
 
         //
-//        real cutoffRadius(const real );
+        real cutoffRadius(
+                const real &ri,
+                const real &bw,
+                const real &derivFactorial,
+                const real &epsPrime);
 };
 
 

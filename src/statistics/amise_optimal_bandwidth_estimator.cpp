@@ -7,6 +7,8 @@
 #include "statistics/amise_optimal_bandwidth_estimator.hpp"
 #include "statistics/summary_statistics.hpp"
 
+using namespace boost::math;
+
 
 /*!
  * Estimates the AMISE-optimal bandwidth for kernel density estimation on a 
@@ -51,7 +53,7 @@ AmiseOptimalBandwidthEstimator::estimate(
     real phi4 = functionalPhi(samples, g1, 4); // TODO correct!
     phi6 = functionalPhi(samples, g2, 6); // TODO correct!
 
-
+/*
     std::cout<<std::endl<<std::endl;
     std::cout<<"phi6 = "<<phi6<<"  "
              <<"phi8 = "<<phi8<<"  "
@@ -59,7 +61,7 @@ AmiseOptimalBandwidthEstimator::estimate(
              <<"g2 = "<<g2<<"  "
              <<"phi4 = "<<phi4<<"  "
              <<"phi6 = "<<phi6<<"  "
-             <<std::endl;
+             <<std::endl;*/
 
     // calculate constant prefactor in gamma expression:
     gammaFactor_ = gammaFactor(phi4, phi6); // TODO correct!
@@ -131,53 +133,98 @@ AmiseOptimalBandwidthEstimator::functionalPhi8(real sigma)
 real
 AmiseOptimalBandwidthEstimator::functionalPhiFast(
         std::vector<real> &samples,
-        const real bw,
+        real bw,
         const int deriv)
 {
     // TODO: handle this as input?
-    real eps = 0.1;
-    
+    real eps = 0.01;
+
+    clock_t t_prep = std::clock();
+
     // sort samples (TODO: move this to higher level function?):
     std::sort(samples.begin(), samples.end());
 
 
     // shift and scale the input data (assumes samples to be sorted!):
-    real shift = samples.front();
-    std::for_each(samples.begin(), samples.end(), [shift](real &s){s+=shift;});
-    real scale = 1.0/samples.back();
+    real shift = *std::min_element(samples.begin(), samples.end());
+    std::for_each(samples.begin(), samples.end(), [shift](real &s){s-=shift;});
+    real scale = 1.0 / *std::max_element(samples.begin(), samples.end());
     std::for_each(samples.begin(), samples.end(), [scale](real &s){s*=scale;});
 
+/*
+    for(auto s : samples)
+    {
+        std::cout<<"s = "<<s<<std::endl;
+    }*/
+
+    bw = scale*bw;
+
+/*
+    std::cout<<"scale = "<<scale<<"  "
+             <<"shift = "<<shift<<"  "
+             <<"deriv = "<<deriv<<"  "
+             <<std::endl;*/
+
     // calculate q-factor:
-    real q = std::pow(-1.0, deriv) 
-           / (SQRT2PI_ * samples.size() * std::pow(bw, deriv + 1));
+    real q = coefQ(bw, deriv, samples.size());
     real epsPrime = eps / (samples.size() * std::abs(q));
 
     // calculate interval radius:
-    real intervalRadius = bw/2.0;
+    real ri = 0.5*bw;
 
-    // find interval centres and TODO cluster point by interval centre:
-    std::vector<real> intervalCentres(bw);
+    // find interval centres and cluster point by interval centre:
+    std::vector<real> centres = intervalCentres(bw);
+    std::vector<size_t> centreIdx = nearestIntervalCentre(centres, samples);
     
     // calculate factorial of derivative:
-    real derivFactorial = boost::math::factorial<real>(deriv);
+    real derivFactorial = factorial<real>(deriv);
 
     // calculate curoff radius:
-    real cutoffRadius = intervalRadius 
-                      + 2.0*bw*std::sqrt(
-                            std::log(std::sqrt(derivFactorial)/epsPrime));
+    real rc = cutoffRadius(ri, bw, derivFactorial, epsPrime);
 
-    //  calculate truncation number
-    int p = truncationNumber(
-            bw, 
-            intervalRadius, 
-            cutoffRadius, 
-            epsPrime, 
-            deriv);
+//    std::cout<<"pre truncation number"<<std::endl;    
 
+    //  calculate truncation number:
+    int p = truncationNumber(bw, ri, rc, epsPrime, deriv);
 
+//    std::cout<<"pre approx density derivative"<<std::endl;
     
 
+    t_prep = std::clock() - t_prep;
 
+    clock_t t_phi = std::clock();
+
+    //
+    real phi = 0.0;
+    for(auto s : samples)
+    {
+//        std::cout<<"phi = "<<phi<<std::endl;
+
+        phi += approximateDensityDerivative(
+                samples,
+                centres,
+                centreIdx,
+                s,
+                bw,
+                rc,
+                ri,
+                epsPrime,
+                q,
+                deriv,
+                p);
+    }
+
+    int n = samples.size();
+    phi /= (n-1);
+
+    t_phi = std::clock() - t_phi;
+
+    std::cout<<std::endl;
+    std::cout<<"t_prep = "<<t_prep<<std::endl;
+    std::cout<<"t_phi = "<<t_phi<<std::endl;
+
+    // return phi:
+    return phi;
 }
 
 
@@ -198,7 +245,7 @@ AmiseOptimalBandwidthEstimator::functionalPhi(
     {
         for(auto sj : samples)
         {
-            // evaluate ermite polynomial:
+            // evaluate hermite polynomial:
             real h = boost::math::hermite(deriv, (si - sj)/bw/std::sqrt(2.0)) 
                    * std::pow(2, -deriv/2);
 
@@ -329,6 +376,59 @@ AmiseOptimalBandwidthEstimator::intervalCentres(const real bw)
 
 
 /*!
+ * Finds the index of the nearest centre for each sample. Requires the samples
+ * vector to be sorted! Note that the assignment of sample points to clusters 
+ * is precomputed using this function rather than assigning cluster on the fly,
+ * because this enables a consistent treatment of data points located halfway
+ * between two cluster centres.
+ */
+std::vector<size_t>
+AmiseOptimalBandwidthEstimator::nearestIntervalCentre(
+        const std::vector<real> &centres,
+        const std::vector<real> &samples)
+{
+    // allocate memory for nearest centre indices:
+    std::vector<size_t> centreIdx;
+    centreIdx.reserve(samples.size());
+
+    // loop over samples:
+    for(auto &s : samples)
+    {
+        // find an upper bound:
+        auto ub = std::lower_bound(centres.begin(), centres.end(), s);
+
+        // handle edge cases:
+        if( ub == centres.begin() )
+        {
+            centreIdx.push_back(0);
+            continue;
+        }
+        if( ub == centres.end() )
+        {
+            centreIdx.push_back(centres.size() - 1);
+            continue;
+        }
+
+        // get lower bound (simply previous centre):
+        auto lb = ub--;
+
+        // which is closer?
+        if( *ub - s < s - *lb )
+        {
+            centreIdx.push_back(std::distance(ub, centres.begin()));
+        }
+        else
+        {
+            centreIdx.push_back(std::distance(lb, centres.begin()));
+        }
+    }
+
+    // return vector of nearest centre indices:
+    return centreIdx;
+}
+
+
+/*!
  * Returns the truncation number that guarantees a given error bound.
  */
 int
@@ -350,6 +450,8 @@ AmiseOptimalBandwidthEstimator::truncationNumber(
     int p = 1;
     while(p <= maxTruncNum)
     {
+//        std::cout<<"p = "<<p<<std::endl;
+
         // calculate b smaller then cutoff radius:
         real b = std::min<real>(cr, (ir + std::sqrt(ir + 8.0*p*sqbw))/2.0);
 
@@ -363,6 +465,9 @@ AmiseOptimalBandwidthEstimator::truncationNumber(
         {
             return p;
         }
+
+        // increment trial truncation number:
+        p++;
     }
 
     // if we haven't returned yet, target error could not be met:
@@ -371,4 +476,199 @@ AmiseOptimalBandwidthEstimator::truncationNumber(
     // return negative truncation number:
     return -1;
 }
+
+
+/*!
+ * Calculates the cutoff radius according to:
+ *
+ * \f[
+ *      r_{\text{c}} = r_{i} + 2h\sqrt{ \log{\sqrt{r!}}/\epsilon^\prime }
+ * \f]
+ */
+real
+AmiseOptimalBandwidthEstimator::cutoffRadius(
+        const real &ri,
+        const real &bw,
+        const real &derivFactorial,
+        const real &epsPrime)
+{
+    return ri + 2.0*bw*std::sqrt(std::log(std::sqrt(derivFactorial)/epsPrime));
+}
+
+
+/*!
+ *
+ */
+real
+AmiseOptimalBandwidthEstimator::approximateDensityDerivative(
+        const std::vector<real> &samples,
+        const std::vector<real> &centres,
+        const std::vector<size_t> &centreIdx,
+        real eval,
+        real bw,
+        real rc,
+        real ri,
+        real epsPrime,
+        real q,
+        int deriv,
+        int p)
+{
+    int test = 0;
+    int total = 0;
+    // loop over all centres:
+    real densityDerivative = 0.0;
+    for(int l = 0; l < centres.size(); l++)
+    {
+
+        // only perform addition for eval point within cutoff radius:
+        if( std::abs(eval - centres[l]) > rc )
+        {
+ /*           std::cout<<"  "
+                     <<"eval = "<<eval<<"  "
+                     <<"centre = "<<centres[l]<<"  "
+                     <<"rc = "<<rc<<"  "
+                     <<std::endl;*/
+            continue;
+        }
+
+        test++;
+
+        // sum over Taylor series up to truncation number:
+        for(size_t k = 0; k < p - 1; k++)
+        {
+            for(size_t s = 0; s < std::floor(deriv/2); s++)
+            {
+                for(size_t t = 0; t < deriv - 2*s; t++)
+                {
+                    real tmp = coefA(s, t, deriv);
+//                    std::cout<<" tmp_a = "<<tmp<<"  ";
+                    tmp *= coefB(k, t, l, samples, centres, centreIdx, bw, q);
+//                    std::cout<<" tmp_b = "<<tmp<<"  ";
+                    tmp *= coefC(k, s, t, deriv, eval, centres[l], bw);
+//                    std::cout<<" tmp_c = "<<tmp<<"  "<<std::endl;
+                    densityDerivative += tmp;
+
+                    total++;
+                }
+            }
+        }
+//        std::cout<<"l = "<<l<<"  "
+//                 <<"densityDerivative = "<<densityDerivative<<std::endl;
+    }
+
+
+    std::cout<<"p = "<<p<<"  "
+             <<"centres.size = "<<centres.size()<<"  "
+             <<"centres.used = "<<test<<"  "
+             <<"deriv = "<<deriv<<"  "
+             <<"totalComplexity = "<<total<<"  "
+             <<"N = "<<samples.size()<<"  "
+             <<std::endl;
+
+    // return density derivative:
+    return densityDerivative;
+}
+
+
+/*!
+ * Returns the following coefficient:
+ *
+ * \f[
+ *      a_{st} = \frac{-1^{s+t} r!}{2^s s! t! (r - 2s -t)!}
+ * \f]
+ */
+real
+AmiseOptimalBandwidthEstimator::coefA(
+        int s,
+        int t,
+        int deriv)
+{
+    real tmp =  std::pow(-1, s + t) * factorial<real>(deriv) / (std::pow(2, s) 
+           * factorial<real>(s) * factorial<real>(t) * factorial<real>(deriv - 2*s - t));
+/*    std::cout<<"coefA = "<<tmp<<"  "
+             <<"s = "<<s<<"  "
+             <<"t = "<<t<<"  "
+             <<"deriv = "<<deriv<<"  "
+             <<"s! = "<<std::tgamma(s)<<"  "
+             <<"t! = "<<factorial<real>(t)<<"  "
+             <<std::endl;*/
+    return tmp;
+}
+
+
+/*!
+ * Returns the following coefficient:
+ *
+ * \f[
+ *      B_{kt}^l = \frac{q}{k!} \sum_{x_i\in S_l} \exp\left( -\frac{(x_i - c_l)}{2h^2} \right) \left( \frac{x_i - c_l}{h} \right)^{k+t}
+ * \f]
+ */
+real
+AmiseOptimalBandwidthEstimator::coefB(
+        int k,
+        int t,
+        int l,
+        const std::vector<real> &samples,
+        const std::vector<real> &centres,
+        const std::vector<size_t> &centreIdx,
+        real bw,
+        real coefQ)
+{
+    // loop over all samples associated with this centre:
+    real coefB = 0.0;
+    for(size_t i = 0; i < samples.size(); i++)
+    {
+        // is sample in l-th interval?
+        if( centreIdx[i] == l )
+        {
+            real tmp = (samples[i] - centres[l]) / bw;
+            coefB += std::exp( -0.5*tmp*tmp ) * std::pow(tmp, k + t);
+        }
+    }
+
+    // scale and retrun coefficient:
+    coefB *= coefQ/factorial<real>(k);             
+    return coefB;
+}
+
+
+/*!
+ * Returns the following coefficient:
+ *
+ * \f[
+ *      c_l = \exp\left( -\frac{(x_j - c_l)^2}{2h^2} \right) \left( \frac{x_j - c_l}{h} \right)^{k+r-2s-t}
+ * \f]
+ */
+real
+AmiseOptimalBandwidthEstimator::coefC(
+        int k,
+        int s,
+        int t,
+        int deriv,
+        real eval,
+        real centre,
+        real bw)
+{
+    real tmp = (eval - centre)/bw;
+    return std::exp(-0.5*tmp*tmp) * std::pow(tmp, k + deriv - 2*s -t);
+}
+
+
+/*!
+ * Returns the following coefficient:
+ *
+ * \f[
+ *      q = \frac{(-1)^r}{\sqrt{2\pi}Nh^{r + 1}}
+ * \f]
+ */
+real
+AmiseOptimalBandwidthEstimator::coefQ(
+        real bw,
+        int deriv,
+        int numSamples)
+{
+    return std::pow(-1.0, deriv)/(SQRT2PI_*numSamples*std::pow(bw, deriv + 1));
+}
+
+
 
