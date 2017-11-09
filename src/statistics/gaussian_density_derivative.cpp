@@ -84,7 +84,7 @@ GaussianDensityDerivative::estimateApprox(
     epsPrime_ = setupScaledTolerance(sample.size());
     rc_ = setupCutoffRadius();
     trunc_ = setupTruncationNumber();
-    coefB_ = setupCoefB();
+    coefB_ = setupCoefB(sample);
 
     // allocate output vector of all zeros:
     std::vector<real> deriv;
@@ -95,10 +95,6 @@ GaussianDensityDerivative::estimateApprox(
     {
         deriv.push_back(estimApproxAt(sample, e));
     }
-
-    // scale derivative with correct prefactor:
-    real fac = q_;
-    std::for_each(deriv.begin(), deriv.end(), [fac](real &d){d *= fac;}); 
 
     // scale back data and evaluation point:
     scale = 1.0/scale;
@@ -125,8 +121,13 @@ GaussianDensityDerivative::estimApproxAt(
 
     //
     real sum = 0.0;
-    for(int l = 0; l < 1; l++)
+    for(unsigned int l = 0; l < centres_.size(); l++)
     {
+        if( std::abs(centres_[l] - eval) > rc_ )
+        {
+            continue;
+        }
+
         // sum up to truncation number terms:
         for(unsigned int k = 0; k < trunc_ - 1; k++)
         {
@@ -137,12 +138,25 @@ GaussianDensityDerivative::estimApproxAt(
             {
                 for(unsigned int t = 0; t <= r_ - 2*s; t++)
                 {
-                    real centre;
-                    real d = (eval - centre)/bw_;
-                    sum += coefA_.at(idxA) 
-                         * coefB_[0] 
+                    real d = (eval - centres_[l])/bw_;
+                    sum += coefA_.at(idxA)
+                         * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
                          * std::exp(-0.5*d*d) * std::pow(d, k + r_ - 2*s - t);
-
+/*
+                    std::cout<<"sum = "<<sum<<"  "
+                             <<"eval = "<<eval<<"  "
+                             <<"centre = "<<centres_[l]<<"  "
+                             <<"a = "<<coefA_.at(idxA)<<"  "
+                             <<"b = "<<coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t)<<"  " // FIXME 
+                             <<"d = "<<d<<"  " // TODO probablz correct
+                             <<"l = "<<l<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"s = "<<s<<"  "
+                             <<"t = "<<t<<"  "
+                             <<"q = "<<q_<<"  " // TODO correct
+                             <<"epsPrime = "<<epsPrime_<<"  " // TODO correct
+                             <<std::endl;
+*/
                     // increment indeces:
                     idxA++;
                 }
@@ -150,6 +164,8 @@ GaussianDensityDerivative::estimApproxAt(
         }
     }
 
+
+//    std::cout<<"return sum = "<<sum<<std::endl;
     return sum;
 }
 
@@ -277,9 +293,60 @@ GaussianDensityDerivative::setupCoefA()
  */
 std::vector<real>
 GaussianDensityDerivative::setupCoefB(
-        )
+        const std::vector<real> &sample)
 {
-        
+    // allocate coefficient matrix as NaN:
+    std::vector<real> coefB(centres_.size()*trunc_*(r_+1), std::nan(""));
+
+
+    // TODO: just initialise as zero? 
+    for(int n = 0; n < centres_.size(); n++)
+    {
+        for(int k = 0; k < trunc_; k++)
+        {
+            for(int t = 0; t < r_+1; t++)
+            {
+                coefB[n*trunc_*(r_+1) + k*(r_+1) + t] = 0.0;
+            }
+        }
+    }
+
+
+    
+
+
+    // loop over data points:
+    for(unsigned int i = 0; i < sample.size(); i++)
+    {
+        // scaled distance between cluster centre and data point:
+        real d = (centres_[idx_[i]] - sample[i])/bw_;
+        real e = std::exp(-0.5*d*d);
+
+        // loop up to truncation number:
+        for(int k = 0; k < trunc_; k++)
+        {
+            // loop up to derivative order:
+            for(int t = 0; t <= r_; t++)
+            {
+/*                std::cout<<"i = "<<i<<"  "
+                         <<"idx = "<<idx_.at(i)<<"  "
+                         <<"r = "<<r_<<"  "
+                         <<"trunc = "<<trunc_<<"  "
+                         <<"k = "<<k<<"  "
+                         <<"t = "<<t<<"  "
+                         <<std::endl;*/
+                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] = e*std::pow(d, k+t)/factorial(k);
+            }
+        }
+    }
+
+
+    // scale all coefficients by common prefactor:
+    real fac = q_;
+    std::for_each(coefB.begin(), coefB.end(), [fac](real &b){b*=fac;});
+
+
+    return coefB;
 }
 
 

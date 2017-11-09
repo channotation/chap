@@ -64,7 +64,7 @@ class GaussianDensityDerivative
 
         // calculation of coefficients:
         std::vector<real> setupCoefA();
-        std::vector<real> setupCoefB();
+        std::vector<real> setupCoefB(const std::vector<real> &sample);
         real setupCoefQ(unsigned int n);
         real setupCutoffRadius();
         real setupScaledTolerance(unsigned int n);
