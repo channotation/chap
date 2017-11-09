@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <limits>
 #include <random>
 
@@ -40,9 +41,78 @@ class GaussianDensityDerivativeTest : public ::testing::Test
         std::vector<real> testData_;
 };
 
+/*!
+ * Checks that space partitioning produces correct centres and that each data
+ * point is associated with the correct centre.
+ */
+TEST_F(GaussianDensityDerivativeTest, 
+       GaussianDensityDerivativeSpacePartitioningTest)
+{
+    real tolerance = std::numeric_limits<real>::epsilon();
+
+    // run this test for a variaty of bandwidths:
+    std::vector<real> bandwidth = {2.0, 1.0, 0.5, 0.3, 0.1, 0.0001};
+    for(auto bw : bandwidth)
+    {
+        // prepare density derivative estimator:
+        GaussianDensityDerivative gdd;
+        gdd.setDerivOrder(2);
+        gdd.setBandWidth(bw);
+        gdd.setErrorBound(0.001);
+
+        // obtain cluster centres:
+        std::vector<real> centres = gdd.setupClusterCentres();
+
+        // largest and smallest cluster centre:
+        real cMin = *std::min_element(centres.begin(), centres.end());
+        real cMax = *std::max_element(centres.begin(), centres.end());
+
+        // check that all centres fall into unit interval:
+        ASSERT_GE(cMax, cMin);
+        ASSERT_GE(cMin, 0.0);
+        ASSERT_GE(1.0, cMax);
+
+        // check that centre distance is bounded by half bandwidth: 
+        for(size_t i = 0; i < centres.size() - 1; i++)
+        {
+            ASSERT_LE(centres[i+1] - centres[i], bw/2.0 + tolerance);
+        }
+
+        // sample data in interval [0,1]:
+        std::vector<real> sample = {0.2, 0.1, 0.33, 0.4, 0.1, 0.9999, 0.7};
+
+        // find interval centre for each data point:
+        std::vector<unsigned int> idx = gdd.setupClusterIndices(sample);
+
+        // for each data point check that correct centre was found: 
+        for(size_t i = 0; i < sample.size(); i++)
+        {
+            // find distance from closest centre on record:
+            real d = sample.at(i) - centres.at(idx.at(i));
+            
+            // calculate distance from sample to all centres:
+            std::vector<real> dist;
+            dist.reserve(centres.size());
+            for(auto c : centres)
+            {
+                dist.push_back(std::abs(sample[i] - c));
+            }
+
+            // find minimal distance:
+            auto minIter = min_element(dist.begin(), dist.end());
+            real minDist = *minIter;
+            real minIdx = minIter - dist.begin();
+
+            // check that centre on record is actually closest:
+            ASSERT_LE(d, minDist);
+        }
+    }
+}
+
 
 /*!
- *
+ * Checks that the a-coefficients are correctly computed for two different
+ * derivative orders by comparison to manually calculated coefficients.
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
 {
@@ -54,18 +124,39 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
     gdd.setBandWidth(0.1);
     gdd.setErrorBound(0.001);
 
+    // manually computed coefficients for this parameter vector:
+    std::vector<real> coefATrue = {1, -2, 1, -1};
+
     // calculate coefficients using reference and optimised implementation:
     std::vector<real> coefA = gdd.setupCoefA();
-//    std::vector<real> coefARef = gdd.setupCoefARef();
-/*
-    // both coefficient vectors should have same size:
-    ASSERT_EQ(coefA.size(), coefARef.size());
 
-    // check that both functions return same values:
-    for(int i = 0; i < coefARef.size(); i++)
+    // check correct number of coefficients:
+    ASSERT_EQ(coefATrue.size(), coefA.size());
+
+    // check correct value of coefficients:
+    for(size_t i = 0; i < coefATrue.size(); i++)
     {
-        ASSERT_NEAR(coefARef[i], coefA[i], tolerance);   
-    }*/
+        ASSERT_NEAR(coefATrue[i], coefA[i], tolerance);
+    }
+
+    // set a different derivative order:
+    gdd.setDerivOrder(5);
+
+    // manually computed coefficients for this parameter vector:
+    coefATrue = {  1, -5,  10, -10,  5,  -1, 
+                 -10, 30, -30,  10, 15, -15};
+
+    // calculate coefficients using reference and optimised implementation:
+    coefA = gdd.setupCoefA();
+
+    // check correct number of coefficients:
+    ASSERT_EQ(coefATrue.size(), coefA.size());
+
+    // check correct value of coefficients:
+    for(size_t i = 0; i < coefATrue.size(); i++)
+    {
+        ASSERT_NEAR(coefATrue[i], coefA[i], tolerance);
+    }
 }
 
 

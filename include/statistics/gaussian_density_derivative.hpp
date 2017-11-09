@@ -14,8 +14,8 @@ class GaussianDensityDerivative
     public:
 
         std::vector<real> estimateApprox(
-                const std::vector<real> &sample,
-                const std::vector<real> &eval);
+                std::vector<real> &sample,
+                std::vector<real> &eval);
         std::vector<real> estimateDirect(
                 const std::vector<real> &sample,
                 const std::vector<real> &eval);
@@ -33,9 +33,21 @@ class GaussianDensityDerivative
         // internal variables:
         real bw_;
         unsigned int r_;
+        unsigned int rFac_;
+        unsigned int trunc_;
+        unsigned int numIntervals_;
+        real ri_;
+        real rc_;
+        real q_;
         real eps_;
+        real epsPrime_;
 
+        std::vector<real> centres_;
+        std::vector<unsigned int> idx_;
         std::vector<real> coefA_;
+        std::vector<real> coefB_;
+
+
 
         // 
         real estimDirectAt(
@@ -45,11 +57,18 @@ class GaussianDensityDerivative
                 const std::vector<real> &sample,
                 real eval);
 
+        // space partitioning:
+        std::vector<real> setupClusterCentres();
+        std::vector<unsigned int> setupClusterIndices(
+                const std::vector<real> &sample);
+
         // calculation of coefficients:
         std::vector<real> setupCoefA();
-        std::vector<real> setupCoefARef();
-        void setupCoefB();
-        real setupCoefQ();
+        std::vector<real> setupCoefB();
+        real setupCoefQ(unsigned int n);
+        real setupCutoffRadius();
+        real setupScaledTolerance(unsigned int n);
+        unsigned int setupTruncationNumber();
 
         // internal utilities:
         unsigned int factorial(unsigned int n);
