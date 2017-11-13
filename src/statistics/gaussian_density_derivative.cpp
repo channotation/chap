@@ -75,6 +75,8 @@ GaussianDensityDerivative::estimateApprox(
     std::for_each(eval.begin(), eval.end(), [scale](real &e){e *= scale;});
     bw_ *= scale;
 
+    std::cout<<"scale = "<<scale<<std::endl;
+
     // calculate space partitioning (this is data dependent, bc bw_ is scaled):
     centres_ = setupClusterCentres();
     idx_ = setupClusterIndices(sample);
@@ -142,7 +144,7 @@ GaussianDensityDerivative::estimApproxAt(
                     sum += coefA_.at(idxA)
                          * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
                          * std::exp(-0.5*d*d) * std::pow(d, k + r_ - 2*s - t);
-/*
+
                     std::cout<<"sum = "<<sum<<"  "
                              <<"eval = "<<eval<<"  "
                              <<"centre = "<<centres_[l]<<"  "
@@ -155,8 +157,9 @@ GaussianDensityDerivative::estimApproxAt(
                              <<"t = "<<t<<"  "
                              <<"q = "<<q_<<"  " // TODO correct
                              <<"epsPrime = "<<epsPrime_<<"  " // TODO correct
+                             <<"bw = "<<bw_<<"  "
                              <<std::endl;
-*/
+
                     // increment indeces:
                     idxA++;
                 }
@@ -328,17 +331,38 @@ GaussianDensityDerivative::setupCoefB(
             // loop up to derivative order:
             for(int t = 0; t <= r_; t++)
             {
-/*                std::cout<<"i = "<<i<<"  "
+                std::cout<<"i = "<<i<<"  "
                          <<"idx = "<<idx_.at(i)<<"  "
                          <<"r = "<<r_<<"  "
                          <<"trunc = "<<trunc_<<"  "
                          <<"k = "<<k<<"  "
                          <<"t = "<<t<<"  "
-                         <<std::endl;*/
-                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] = e*std::pow(d, k+t)/factorial(k);
+                         <<"c = "<<centres_[idx_[i]]<<"  "
+                         <<"s = "<<sample[i]<<"  "
+                         <<"b = "<<e*std::pow(d, k+t)/factorial(k)<<"  "
+                         <<std::endl;
+                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
             }
         }
     }
+
+
+
+    for(int l = 0; l < centres_.size(); l++)
+    {
+        for(int k = 0; k < trunc_; k++)
+        {
+            for(int t = 0; t <= r_; t++)
+            {
+                std::cout<<"l = "<<l<<"  "
+                         <<"k = "<<k<<"  "
+                         <<"t = "<<t<<"  "
+                         <<"B = "<<coefB[l*trunc_*(r_+1) + k*(r_+1) + t]<<"  "
+                         <<std::endl;
+            }
+        }
+    }
+
 
 
     // scale all coefficients by common prefactor:
@@ -346,8 +370,99 @@ GaussianDensityDerivative::setupCoefB(
     std::for_each(coefB.begin(), coefB.end(), [fac](real &b){b*=fac;});
 
 
+
+
     return coefB;
 }
+
+
+/*
+ *
+ */
+std::vector<real>
+GaussianDensityDerivative::compute_B(const std::vector<real> &sample)
+{
+	int p = trunc_;
+	int K = centres_.size();
+	int r = r_;
+    int num_of_B_terms = K*p*(r+1);
+	double h = bw_;
+	double q = q_;
+	std::vector<unsigned int> pClusterIndex = idx_;
+	std::vector<real> pClusterCenter = centres_; 
+	int N = sample.size();
+	std::vector<real> px = sample;
+ 
+    //printf("K=%d p=%d r=%d num_of_B_terms=%d\n",K,p,r,num_of_B_terms);   
+   
+    double *B_terms=new double[num_of_B_terms];   
+   
+    double *k_factorial;   
+    k_factorial=new double[p];   
+   
+    k_factorial[0]=1;   
+    for(int i=1; i<p ;i++){   
+        k_factorial[i]=k_factorial[i-1]/i;   
+        //printf("%f \n",k_factorial[i]);   
+    }   
+   
+    double *temp3;   
+    temp3=new double[p+r];   
+   
+    for(int n=0; n<K; n++){   
+        //printf("Cluster %d ",n);   
+        for(int k=0; k<p; k++){   
+            for(int m=0; m< r+1; m++){   
+                B_terms[(n*p*(r+1))+((r+1)*k)+m]=0.0;;   
+                //printf("%f ",B_terms[(n*p*(r+1))+((r+1)*k)+m]);   
+            }   
+        }   
+        //printf("\n");   
+    }   
+   
+    for(int i=0; i<N; i++){   
+        int cluster_number=pClusterIndex[i];   
+        double temp1=(px[i]-pClusterCenter[cluster_number])/h;   
+        double temp2=exp(-temp1*temp1/2);   
+        temp3[0]=1;   
+        for(int k=1; k<p+r; k++){   
+            temp3[k]=temp3[k-1]*temp1;   
+        }   
+   
+        for(int k=0; k<p; k++){   
+            for(int m=0; m< r+1; m++){   
+                B_terms[(cluster_number*p*(r+1))+((r+1)*k)+m]+=(temp2*temp3[k+m]);   
+            }   
+        }   
+    }   
+   
+    for(int n=0; n<K; n++){   
+        //printf("Cluster %d ",n);   
+        for(int k=0; k<p; k++){   
+            for(int m=0; m< r+1; m++){   
+                B_terms[(n*p*(r+1))+((r+1)*k)+m]*=(k_factorial[k]*q); 
+
+				std::cout<<"B_terms = "<<B_terms[(n*p*(r+1))+((r+1)*k)+m]<<std::endl;
+ 
+                //printf("%f ",B_terms[(n*p*(r+1))+((r+1)*k)+m]);   
+            }   
+        }   
+        //printf("\n");   
+    }   
+   
+   
+    delete []k_factorial;   
+    delete []temp3;
+
+	std::vector<real> coefB(num_of_B_terms);
+	for(int i = 0; i < num_of_B_terms; i++)
+	{
+		coefB.push_back(B_terms[i]);
+	} 
+
+	return coefB;
+}
+
 
 
 /*
