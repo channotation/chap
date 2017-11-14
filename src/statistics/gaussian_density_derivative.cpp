@@ -60,6 +60,11 @@ GaussianDensityDerivative::estimateApprox(
         std::vector<real> &sample,
         std::vector<real> &eval)
 {
+
+//    auto ss = getShiftAndScaleParams(sample, eval);
+//    shiftAndScale(sample, ss.first, ss.second);
+//    shiftAndScale(eval, ss.first, ss.second);
+/*
     // shift data and evaluation points:
     real shift = std::min(*std::min_element(sample.begin(), sample.end()),
                           *std::min_element(sample.begin(), sample.end()));
@@ -71,7 +76,7 @@ GaussianDensityDerivative::estimateApprox(
                               *std::max_element(sample.begin(), sample.end()));
     std::for_each(sample.begin(), sample.end(), [scale](real &s){s *= scale;});
     std::for_each(eval.begin(), eval.end(), [scale](real &e){e *= scale;});
-    bw_ *= scale;
+    bw_ *= scale;*/
 
     // calculate space partitioning (this is data dependent, bc bw_ is scaled):
     centres_ = setupClusterCentres();
@@ -84,23 +89,29 @@ GaussianDensityDerivative::estimateApprox(
     trunc_ = setupTruncationNumber();
     coefB_ = setupCoefB(sample);
 
-    // allocate output vector of all zeros:
-    std::vector<real> deriv;
-    deriv.reserve(eval.size());
+    std::cout<<"trunc = "<<trunc_<<std::endl;
 
     // loop over target points:
+    std::vector<real> deriv;
+    deriv.reserve(eval.size());
     for(auto e : eval)
     {
         deriv.push_back(estimApproxAt(sample, e));
     }
 
+        
+    // scale data and evaluation points back to original interval:
+//    shiftAndScaleInverse(sample, ss.first, ss.second);
+//    shiftAndScaleInverse(eval, ss.first, ss.second);
+
     // scale back data and evaluation point:
+    /*
     scale = 1.0/scale;
     std::for_each(sample.begin(), sample.end(), [scale](real &s){ s *= scale; });
     std::for_each(eval.begin(), eval.end(), [scale](real &e){ e *= scale; });
     std::for_each(sample.begin(), sample.end(), [shift](real &s){s += shift;});
     std::for_each(eval.begin(), eval.end(), [shift](real &e){e += shift; });
-    bw_ *= scale;
+    bw_ *= scale;*/
 
     // return vector of density derivative at each evaluation point:
     return deriv;
@@ -117,10 +128,11 @@ GaussianDensityDerivative::estimApproxAt(
 {
     unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
 
-    //
+    // build sum over centres:
     double sum = 0.0;
     for(unsigned int l = 0; l < centres_.size(); l++)
     {
+        // ignore centres that are more than the cutoff radius from eval point:
         if( std::abs(centres_[l] - eval) > rc_ )
         {
             continue;
@@ -131,7 +143,7 @@ GaussianDensityDerivative::estimApproxAt(
         {
             unsigned int idxA = 0;
 
-            //
+            // loops over coefficient matrices:
             for(unsigned int s = 0; s <= sMax; s++)
             {
                 for(unsigned int t = 0; t <= r_ - 2*s; t++)
@@ -142,18 +154,6 @@ GaussianDensityDerivative::estimApproxAt(
                     sum += coefA_.at(idxA)
                          * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
                          * e * p;
-                    std::cout<<"l = "<<l<<"  "
-                             <<"k = "<<k<<"  "
-                             <<"s = "<<s<<"  "
-                             <<"t = "<<t<<"  "
-                             <<"d = "<<d<<"  "
-                             <<"e = "<<e<<"  "
-                             <<"p = "<<p<<"  "
-                             <<"idxA = "<<idxA<<"  "
-                             <<"A = "<<coefA_.at(idxA)<<"  "
-                             <<"B = "<<coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t)<<"  "
-                             <<"sum = "<<sum<<"  "
-                             <<std::endl;
 
                     // increment indeces:
                     idxA++;
@@ -161,9 +161,6 @@ GaussianDensityDerivative::estimApproxAt(
             }
         }
     }
-
-    std::cout<<"eval = "<<eval<<"  "
-             <<"sum = "<<sum<<std::endl;
 
     return sum;
 }
@@ -319,8 +316,8 @@ GaussianDensityDerivative::setupCoefB(
             // loop up to derivative order:
             for(int t = 0; t <= r_; t++)
             {
-//                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
-                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
+                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
+//                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
             }
         }
     }
@@ -328,22 +325,6 @@ GaussianDensityDerivative::setupCoefB(
     // scale all coefficients by common prefactor:
     real fac = q_;
     std::for_each(coefB.begin(), coefB.end(), [fac](real &b){b*=fac;});
-
-
-    for(int l = 0; l < centres_.size(); l++)
-    {
-        for(int k = 0; k < trunc_; k++)
-        {
-            for(int t = 0; t <= r_; t++)
-            {
-                std::cout<<"l = "<<l<<"  "
-                         <<"k = "<<k<<"  "
-                         <<"t = "<<t<<"  "
-                         <<"B = "<<coefB[l*trunc_*(r_+1) + k*(r_+1) + t]<<"  "
-                         <<std::endl;
-            }
-        }
-    }
 
     // return coefficient matrix:
     return coefB;
@@ -639,26 +620,6 @@ GaussianDensityDerivative::compute_a()
 } 
 
 
-/*
- *
- */
-double   
-GaussianDensityDerivative::hermite(double x, int r)   
-{   
-    if(r==0)   
-    {   
-        return (1.0);   
-    }   
-    else if(r==1)   
-    {   
-        return (x);   
-    }   
-    else   
-    {   
-        return (x*hermite(x,r-1))-((r-1)*hermite(x,r-2));   
-    }   
-   
-}  
 
 
 
@@ -819,7 +780,7 @@ GaussianDensityDerivative::setupTruncationNumber()
         if( err < epsPrime_ )
         {
             // plus one for safety:
-            return p + 1;
+            return (p + 1);
         }
     }
 
@@ -828,6 +789,31 @@ GaussianDensityDerivative::setupTruncationNumber()
                              "exceeding maximum truncation number p = 500.");
     return -1;
 }
+
+
+/*!
+ * Evaluates the hermite polynomial of given order at \f$ x \f$. Uses direct
+ * recursion and is potentially not very efficient (but is only used in 
+ * reference implementation).
+ */
+real   
+GaussianDensityDerivative::hermite(
+        real x, 
+        unsigned int r)   
+{   
+    if( r == 0 )   
+    {   
+        return 1.0;   
+    }   
+    else if( r == 1 )   
+    {   
+        return x;   
+    }   
+    else   
+    {   
+        return x*hermite(x, r - 1) - (r - 1)*hermite(x, r - 2);   
+    }   
+}  
 
 
 /*!
@@ -846,14 +832,67 @@ GaussianDensityDerivative::factorial(real n)
 }
 
 
+/*!
+ * Finds the offset and scaling factor to map both given vectors onto the unit
+ * interval.
+ */
+std::pair<real, real>
+GaussianDensityDerivative::getShiftAndScaleParams(
+        const std::vector<real> &sample,
+        const std::vector<real> &eval)
+{
+    // sanity checks:
+    if( sample.empty() && eval.empty() )
+    {
+        throw std::runtime_error("Can not calculate shift and scale parameters"
+                                 " if both input vectors are empty!");
+    }
+
+    // find minimal and maximal values in sample and evaluation vectors:
+    auto rangeSample = std::minmax_element(sample.begin(), sample.end());
+    auto rangeEval = std::minmax_element(eval.begin(), eval.end());
+
+    // find minimum and maximum over both vectors:
+    real minVal = std::min(*rangeSample.first, *rangeEval.first);
+    real maxVal = std::max(*rangeEval.second, *rangeEval.second);
+    
+    // return parameters as pair:
+    return std::pair<real, real>(-minVal, 1.0/(maxVal - minVal));
+}
 
 
+/*!
+ * Shifts and scales all elements in given vector by a constant offset and
+ * factor.
+ */
+void
+GaussianDensityDerivative::shiftAndScale(
+        std::vector<real> &vec,
+        real shift,
+        real scale)
+{
+    std::for_each(
+            vec.begin(), 
+            vec.end(), 
+            [shift, scale](real &v){v = (v + shift)*scale;}); 
+}
 
 
-
-
-
-
-
-
+/*!
+ * Inverts the operation performed by shiftAndScale(). Assuming that the same 
+ * shift and scale parameters are used, this will map the input vector back to 
+ * its original interval.
+ */
+void
+GaussianDensityDerivative::shiftAndScaleInverse(
+        std::vector<real> &vec,
+        real shift,
+        real scale)
+{
+    scale = 1.0/scale;
+    std::for_each(
+            vec.begin(), 
+            vec.end(), 
+            [shift, scale](real &v){v = v*scale - shift;}); 
+}
 

@@ -21,18 +21,26 @@ class GaussianDensityDerivativeTest : public ::testing::Test
         GaussianDensityDerivativeTest()
         {
             // parameters of normal distribution:
-            real mu = -1.0;
-            real sd = 3.0;
+            real muA = -1.0;
+            real sdA = 0.5;
+            real muB = 0.0;
+            real sdB = 0.1;
+            real muC = 5.0;
+            real sdC = 1.5;
 
             // prepare random distribution:
             std::default_random_engine generator;
-            std::normal_distribution<real> distribution(mu, sd);
+            std::normal_distribution<real> distributionA(muA, sdA);
+            std::normal_distribution<real> distributionB(muB, sdB);
+            std::normal_distribution<real> distributionC(muC, sdC);
 
             // create a random sample:
-            size_t numSamples = 1e1;
+            size_t numSamples = 1e2 / 3;
             for(size_t i = 0; i < numSamples; i++)
             {
-                testData_.push_back( distribution(generator) );
+                testData_.push_back( distributionA(generator) );
+                testData_.push_back( distributionB(generator) );
+                testData_.push_back( distributionC(generator) );
             }
         };
 
@@ -40,6 +48,60 @@ class GaussianDensityDerivativeTest : public ::testing::Test
 
         std::vector<real> testData_;
 };
+
+
+/*!
+ * Checks that the shiftAndScale() functions maps correctly to the unit
+ * interval and that the shiftAndScaleInverse() function restores the original
+ * data points.
+ */
+TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeShiftScaleTest)
+{
+    real tolerance = std::numeric_limits<real>::epsilon();
+
+    // set up data vectors:
+    std::vector<real> vecA = {-1.0, 0.3, -0.215, 0.5, 1.0, 2.0};
+    std::vector<real> vecB = {0.333, 0.891, 1.5, 10.0, 1.1, 2.7};
+
+    // make copies for later reference:
+    std::vector<real> refVecA = vecA;
+    std::vector<real> refVecB = vecB;
+
+    // find parameters for shifting:
+    GaussianDensityDerivative gdd;
+    auto ss = gdd.getShiftAndScaleParams(vecA, vecB);
+
+    // map to unit interval:
+    gdd.shiftAndScale(vecA, ss.first, ss.second);
+    gdd.shiftAndScale(vecB, ss.first, ss.second);
+
+    // check that all values are in unit interval:
+    for(auto a : vecA)
+    {
+        ASSERT_GE(1.0, a);
+        ASSERT_LE(0.0, a);
+    }
+    for(auto b : vecB)
+    {
+        ASSERT_GE(1.0, b);
+        ASSERT_LE(0.0, b);        
+    }
+
+    // map back to original interval:
+    gdd.shiftAndScaleInverse(vecA, ss.first, ss.second);
+    gdd.shiftAndScaleInverse(vecB, ss.first, ss.second);
+    
+    // check that values match original values:
+    for(size_t i = 0; i < vecA.size(); i++)
+    {
+        ASSERT_NEAR(vecA[i], refVecA[i], tolerance);
+    }
+    for(size_t i = 0; i < vecB.size(); i++)
+    {
+        ASSERT_NEAR(vecB[i], refVecB[i], tolerance);
+    }
+}
+
 
 /*!
  * Checks that space partitioning produces correct centres and that each data
@@ -56,7 +118,6 @@ TEST_F(GaussianDensityDerivativeTest,
     for(auto bw : bandwidth)
     {
         // sample data in interval [0,1]:
-    //    std::vector<real> sample = {0.0, 0.1, 0.33, 0.4, 0.1, 0.9999, 0.7, 1.0};
         std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2};
     
         // prepare density derivative estimator:
@@ -229,7 +290,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     coefBTrue[nCoef - 14] =   1.510428548;
     coefBTrue[nCoef - 13] =   0.3776076734;
     coefBTrue[nCoef - 12] =   0.5034762025;
-    coefBTrue[nCoef - 11] =   0.5034762025;
+    coefBTrue[nCoef - 11] =   0.1258692294;
     coefBTrue[nCoef - 10] =   0.03146735206;
     coefBTrue[nCoef -  9] =   0.03146730736;
     coefBTrue[nCoef -  8] =   0.007866838016;
@@ -243,7 +304,6 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
     // calculate coefficients using reference and optimised implementation:
     std::vector<real> coefB = gdd.setupCoefB(sample);
-    std::vector<real> b = gdd.compute_B(sample);
 
     // check right number of coefficients:
     ASSERT_EQ(coefBTrue.size(), coefB.size());
@@ -251,13 +311,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     // assert that correct B coefficients have been computed:
     for(size_t i = 0; i < coefB.size(); i++)
     {
-        std::cout<<"B_true = "<<coefBTrue[i]<<"  "
-                 <<"coefB = "<<coefB[i]<<"  "
-                 <<"b = "<<b[i]<<"  "
-                 <<std::endl;
-
-        ASSERT_NEAR(b[i], coefB[i], tolerance);
-//        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
+        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
     }
 }
 
@@ -267,51 +321,60 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 {
-
-    std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2.0};
-//    sample = testData_;
-
-
-
-    auto minIt = std::min_element(sample.begin(), sample.end());
-    auto maxIt = std::max_element(sample.begin(), sample.end());
-
-
-    real scale = 1.0/((*maxIt) - (*minIt));
-    real shift = -(*minIt);
-
-    std::cout.precision(20);
-    std::cout<<"max = "<<(*maxIt)<<std::endl;
-    std::cout<<"min = "<<(*minIt)<<std::endl;
-
-    std::cout<<"scale = "<<scale<<std::endl;
-    std::cout<<"shift = "<<shift<<std::endl;
-
-    std::for_each(sample.begin(), sample.end(), [scale, shift](real &s){s = (s + shift)*scale;});
-
-    for(auto s : sample)
-    {
-        std::cout<<s<<std::endl;
-    }
-
+    // prepare sample and evaluation points:
+//    std::vector<real> sample = testData_;
+    std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2};
     std::vector<real> eval = sample;
 
-    real eps = 0.001;
+    // map input data to unit interval:
+    GaussianDensityDerivative gdd;
+    auto ss = gdd.getShiftAndScaleParams(sample, eval);
+    gdd.shiftAndScale(sample, ss.first, ss.second);
+    gdd.shiftAndScale(eval, ss.first, ss.second);
 
     
-    GaussianDensityDerivative gdd;
-    gdd.setDerivOrder(2);
-    gdd.setBandWidth(1.0);
-    gdd.setErrorBound(eps);
-
-    // estimate derivative via direct loop and via approximate method:
-    std::vector<real> derivDirect = gdd.estimateDirect(sample, eval);
-    std::vector<real> derivApprox = gdd.estimateApprox(sample, eval);
-
-    // loop over all eval points and assert equality of estimation methods:
-    for(int i = 0; i < eval.size(); i++)
+    // carry out test for multiple parameter combinations:
+    std::vector<real> epsilon = {1e-1, 1e-2, 1e-3};
+    std::vector<real> bandwidth = {10.0, 1.0, 0.1};
+    for(auto eps : epsilon)
     {
-        ASSERT_NEAR(derivDirect[i], derivApprox[i], eps);
+        for(auto bw : bandwidth)
+        {
+            // set parameters:
+            gdd.setDerivOrder(2);
+            gdd.setBandWidth(bw*ss.second);
+            gdd.setErrorBound(eps);
+
+            // estimate derivative via direct loop and via approximate method:
+            std::vector<real> derivDirect = gdd.estimateDirect(sample, eval);
+            std::vector<real> derivApprox = gdd.estimateApprox(sample, eval);
+
+            std::vector<real> derivDir = gdd.EvaluateDirect(eval, sample);
+            std::vector<real> derivApp = gdd.Evaluate(eval, sample);
+
+            // check equality of estimation methods:
+            for(int i = 0; i < eval.size(); i++)
+            {
+                // difference between estimation methods:
+                real d = std::abs(derivDirect[i] - derivApprox[i]);
+                real a = std::abs(derivDirect[i] + derivApprox[i])/2.0;
+
+                std::cout<<"bw = "<<bw
+                         <<"  eps = "<<eps
+                         <<"  d/a = "<<d/a
+                         <<"  d = "<<d
+                         <<"  a = "<<a
+                         <<"  direct = "<<derivDirect[i]
+                         <<"  approx = "<<derivApprox[i]
+                         <<"  dir = "<<derivDir[i]
+                         <<"  app = "<<derivDir[i]
+                         <<std::endl;
+
+                // assertion on relative error:
+                ASSERT_NEAR(0.0, d/a, 1*eps);
+//                ASSERT_NEAR(0.0, d, 100.0*eps);
+            }
+        }
     }
 }
 
