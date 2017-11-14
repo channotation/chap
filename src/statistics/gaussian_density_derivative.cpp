@@ -60,24 +60,6 @@ GaussianDensityDerivative::estimateApprox(
         std::vector<real> &sample,
         std::vector<real> &eval)
 {
-
-//    auto ss = getShiftAndScaleParams(sample, eval);
-//    shiftAndScale(sample, ss.first, ss.second);
-//    shiftAndScale(eval, ss.first, ss.second);
-/*
-    // shift data and evaluation points:
-    real shift = std::min(*std::min_element(sample.begin(), sample.end()),
-                          *std::min_element(sample.begin(), sample.end()));
-    std::for_each(sample.begin(), sample.end(), [shift](real &s){s -= shift;});
-    std::for_each(eval.begin(), eval.end(), [shift](real &e){e -= shift;});
-
-    // scale data, evaluation points and bandwidth:
-    real scale = 1.0/std::max(*std::max_element(sample.begin(), sample.end()),
-                              *std::max_element(sample.begin(), sample.end()));
-    std::for_each(sample.begin(), sample.end(), [scale](real &s){s *= scale;});
-    std::for_each(eval.begin(), eval.end(), [scale](real &e){e *= scale;});
-    bw_ *= scale;*/
-
     // calculate space partitioning (this is data dependent, bc bw_ is scaled):
     centres_ = setupClusterCentres();
     idx_ = setupClusterIndices(sample);
@@ -91,6 +73,8 @@ GaussianDensityDerivative::estimateApprox(
 
     std::cout<<"trunc = "<<trunc_<<std::endl;
 
+//    return Evaluate(eval, sample); // FIXME
+
     // loop over target points:
     std::vector<real> deriv;
     deriv.reserve(eval.size());
@@ -98,20 +82,6 @@ GaussianDensityDerivative::estimateApprox(
     {
         deriv.push_back(estimApproxAt(sample, e));
     }
-
-        
-    // scale data and evaluation points back to original interval:
-//    shiftAndScaleInverse(sample, ss.first, ss.second);
-//    shiftAndScaleInverse(eval, ss.first, ss.second);
-
-    // scale back data and evaluation point:
-    /*
-    scale = 1.0/scale;
-    std::for_each(sample.begin(), sample.end(), [scale](real &s){ s *= scale; });
-    std::for_each(eval.begin(), eval.end(), [scale](real &e){ e *= scale; });
-    std::for_each(sample.begin(), sample.end(), [shift](real &s){s += shift;});
-    std::for_each(eval.begin(), eval.end(), [shift](real &e){e += shift; });
-    bw_ *= scale;*/
 
     // return vector of density derivative at each evaluation point:
     return deriv;
@@ -130,13 +100,31 @@ GaussianDensityDerivative::estimApproxAt(
 
     // build sum over centres:
     double sum = 0.0;
+    int count = 0;
     for(unsigned int l = 0; l < centres_.size(); l++)
     {
+        double d = (eval - centres_[l])/bw_;
+        double e = std::exp(-0.5*d*d);
+  
         // ignore centres that are more than the cutoff radius from eval point:
         if( std::abs(centres_[l] - eval) > rc_ )
         {
+            // FIXME: commenting this back in makes test fail!
             continue;
+/*            std::cout<<"l = "<<l<<"  "
+                     <<"c = "<<centres_[l]<<"  "
+                     <<"eval = "<<eval<<"  "
+                     <<"dist = "<<std::abs(centres_[l] - eval)<<"  "
+                     <<"rc = "<<rc_<<"  "
+                     <<std::endl;*/
         }
+/*
+        std::vector<real> p(trunc_+r_);
+        p[0] = 1.0;
+        for(int i = 0; i < trunc_ + r_; i++)
+        {
+            p[i] = p[i-1]*d;
+        }*/
 
         // sum up to truncation number terms:
         for(unsigned int k = 0; k < trunc_ - 1; k++)
@@ -148,19 +136,36 @@ GaussianDensityDerivative::estimApproxAt(
             {
                 for(unsigned int t = 0; t <= r_ - 2*s; t++)
                 {
-                    real d = (eval - centres_[l])/bw_;
-                    real e = std::exp(-0.5*d*d);
                     real p = std::pow(d, k + r_ - 2*s - t); 
-                    sum += coefA_.at(idxA)
+                    real tmp = coefA_.at(idxA)
                          * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
                          * e * p;
+                    sum += tmp;
+
+                    std::cout<<"l = "<<l<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"s = "<<s<<"  "
+                             <<"t = "<<t<<"  "
+                             <<"bw = "<<bw_<<"  "
+                             <<"c = "<<centres_[l]<<"  "
+                             <<"eval = "<<eval<<"  "
+                             <<"d = "<<d<<"  "                           
+                             <<"e = "<<e<<"  "
+                             <<"p = "<<p<<"  "
+                             <<"a = "<<coefA_[idxA]<<"  "
+                             <<"b = "<<coefB_[l*trunc_*(r_+1) + k*(r_+1) + t]<<"  "
+                             <<"tmp = "<<tmp<<"  "
+                             <<std::endl;
 
                     // increment indeces:
                     idxA++;
+                    count++;
                 }
             }
         }
     }
+
+    std::cout<<"count = "<<count<<std::endl;
 
     return sum;
 }
@@ -246,6 +251,8 @@ GaussianDensityDerivative::setupClusterIndices(
 std::vector<real>
 GaussianDensityDerivative::setupCoefA()
 {
+    return compute_a();
+
     // (inclusive) maximum of indices to coefficient matrix:
     unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
     unsigned int tMax = r_;
@@ -291,6 +298,9 @@ std::vector<real>
 GaussianDensityDerivative::setupCoefB(
         const std::vector<real> &sample)
 {
+    // FIXME uncomment when done debugging:
+    return compute_B(sample);
+
     // allocate coefficient matrix as NaN:
     std::vector<real> coefB(centres_.size()*trunc_*(r_+1), 0.0);
 
@@ -316,8 +326,8 @@ GaussianDensityDerivative::setupCoefB(
             // loop up to derivative order:
             for(int t = 0; t <= r_; t++)
             {
-                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
-//                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
+//                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
+                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
             }
         }
     }
@@ -461,8 +471,9 @@ GaussianDensityDerivative::Evaluate(
         double temp1=py[j]-pClusterCenter[target_cluster_number];   
         double dist=abs(temp1);   
         while (dist <= ry && target_cluster_number <K && target_cluster_number >=0){   
+//        while (target_cluster_number <K && target_cluster_number >=0){   
    
-            //printf("j=%d y=%f Influential cluster=%d\n",j,py[j],target_cluster_number);   
+//            printf("j=%d y=%f Influential cluster=%d\n",j,py[j],target_cluster_number);   
             //Do something   
             double temp2=exp(-temp1*temp1/two_h_square);   
             double temp1h=temp1/h;   
@@ -493,7 +504,8 @@ GaussianDensityDerivative::Evaluate(
             double temp1=py[j]-pClusterCenter[target_cluster_number];   
             double dist=abs(temp1);   
             while (dist <= ry && target_cluster_number <K && target_cluster_number >=0){   
-                //printf("j=%d y=%f Influential cluster=%d\n",j,py[j],target_cluster_number);   
+//            while (target_cluster_number <K && target_cluster_number >=0){   
+//                printf("j=%d y=%f Influential cluster=%d\n",j,py[j],target_cluster_number);   
                 //Do something   
                 double temp2=exp(-temp1*temp1/two_h_square);   
                 double temp1h=temp1/h;   
@@ -739,7 +751,7 @@ real GaussianDensityDerivative::setupCutoffRadius()
     // as data is scaled to unit interval, maximum cutoff radius is 1.0:
     real tmp = std::min(1.0, 
                2.0*bw_*std::sqrt(std::log(std::sqrt(rFac_)/epsPrime_)));
-    return bw_/2.0 + tmp;
+    return ri_ + tmp;
 }
 
 

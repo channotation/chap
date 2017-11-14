@@ -35,7 +35,7 @@ class GaussianDensityDerivativeTest : public ::testing::Test
             std::normal_distribution<real> distributionC(muC, sdC);
 
             // create a random sample:
-            size_t numSamples = 1e2 / 3;
+            size_t numSamples = 1e1 / 3;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distributionA(generator) );
@@ -112,13 +112,12 @@ TEST_F(GaussianDensityDerivativeTest,
 {
     real tolerance = std::numeric_limits<real>::epsilon();
 
-
     // run this test for a variaty of bandwidths:
     std::vector<real> bandwidth = {2.0, 1.0, 0.5, 0.3, 0.1, 0.0001};
     for(auto bw : bandwidth)
     {
         // sample data in interval [0,1]:
-        std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2};
+        std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 1.0};
     
         // prepare density derivative estimator:
         GaussianDensityDerivative gdd;
@@ -233,7 +232,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 {
-    real tolerance = 1e2*std::numeric_limits<real>::epsilon();
+    real tolerance = 1.0*std::numeric_limits<real>::epsilon();
 
     // prepare density derivative estimator:
     unsigned int deriv = 2;
@@ -244,7 +243,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
     // sample data in interval [0,1]:
     std::vector<real> sample = {0.0, 1.0};
-
+    sample = testData_;
 
     // prepare spatial partitioning:
     gdd.centres_ = gdd.setupClusterCentres();
@@ -304,6 +303,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
     // calculate coefficients using reference and optimised implementation:
     std::vector<real> coefB = gdd.setupCoefB(sample);
+    std::vector<real> b = gdd.compute_B(sample);
 
     // check right number of coefficients:
     ASSERT_EQ(coefBTrue.size(), coefB.size());
@@ -311,7 +311,12 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     // assert that correct B coefficients have been computed:
     for(size_t i = 0; i < coefB.size(); i++)
     {
-        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
+        std::cout<<"i = "<<i<<"  "
+                 <<"b = "<<b[i]<<"  "
+                 <<"coefB = "<<coefB[i]<<"  "
+                 <<std::endl;
+        ASSERT_NEAR(b[i], coefB[i], tolerance);
+//        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
     }
 }
 
@@ -322,8 +327,8 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 {
     // prepare sample and evaluation points:
-//    std::vector<real> sample = testData_;
-    std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2};
+    std::vector<real> sample = testData_;
+//    std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2};
     std::vector<real> eval = sample;
 
     // map input data to unit interval:
@@ -342,7 +347,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
         {
             // set parameters:
             gdd.setDerivOrder(2);
-            gdd.setBandWidth(bw*ss.second);
+            gdd.setBandWidth(bw);
             gdd.setErrorBound(eps);
 
             // estimate derivative via direct loop and via approximate method:
@@ -361,6 +366,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 
                 std::cout<<"bw = "<<bw
                          <<"  eps = "<<eps
+                         <<" eval = "<<eval[i]
                          <<"  d/a = "<<d/a
                          <<"  d = "<<d
                          <<"  a = "<<a
@@ -368,11 +374,13 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                          <<"  approx = "<<derivApprox[i]
                          <<"  dir = "<<derivDir[i]
                          <<"  app = "<<derivDir[i]
+                         <<"  n = "<<sample.size()
+                         <<"  m = "<<eval.size()
                          <<std::endl;
 
                 // assertion on relative error:
-                ASSERT_NEAR(0.0, d/a, 1*eps);
-//                ASSERT_NEAR(0.0, d, 100.0*eps);
+//                ASSERT_NEAR(0.0, d/a, 3*eps);
+                ASSERT_NEAR(0.0, d, 1.1*eps);
             }
         }
     }
