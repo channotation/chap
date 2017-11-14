@@ -66,13 +66,19 @@ class GaussianDensityDerivative
         std::vector<real> setupCoefA();
         std::vector<real> setupCoefB(const std::vector<real> &sample);
 		std::vector<real> compute_B(const std::vector<real> &sample);
-        real setupCoefQ(unsigned int n);
+        std::vector<real> compute_a();
+        std::vector<real> EvaluateDirect(std::vector<real> eval, std::vector<real> sample);
+        std::vector<real> Evaluate(std::vector<real> eval, std::vector<real> sample);
+        double hermite(double x, int r);
+        void choose_parameters(std::vector<real> sample, std::vector<real> eval);
+        std::pair<std::vector<real>, std::vector<int>> space_sub_division(std::vector<real> sample);
+real setupCoefQ(unsigned int n);
         real setupCutoffRadius();
         real setupScaledTolerance(unsigned int n);
         unsigned int setupTruncationNumber();
 
         // internal utilities:
-        unsigned int factorial(unsigned int n);
+        real factorial(real n);
 };
 
 #endif
