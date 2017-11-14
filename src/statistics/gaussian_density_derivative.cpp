@@ -118,7 +118,7 @@ GaussianDensityDerivative::estimApproxAt(
     unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
 
     //
-    real sum = 0.0;
+    double sum = 0.0;
     for(unsigned int l = 0; l < centres_.size(); l++)
     {
         if( std::abs(centres_[l] - eval) > rc_ )
@@ -137,9 +137,23 @@ GaussianDensityDerivative::estimApproxAt(
                 for(unsigned int t = 0; t <= r_ - 2*s; t++)
                 {
                     real d = (eval - centres_[l])/bw_;
+                    real e = std::exp(-0.5*d*d);
+                    real p = std::pow(d, k + r_ - 2*s - t); 
                     sum += coefA_.at(idxA)
                          * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
-                         * std::exp(-0.5*d*d) * std::pow(d, k + r_ - 2*s - t);
+                         * e * p;
+                    std::cout<<"l = "<<l<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"s = "<<s<<"  "
+                             <<"t = "<<t<<"  "
+                             <<"d = "<<d<<"  "
+                             <<"e = "<<e<<"  "
+                             <<"p = "<<p<<"  "
+                             <<"idxA = "<<idxA<<"  "
+                             <<"A = "<<coefA_.at(idxA)<<"  "
+                             <<"B = "<<coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t)<<"  "
+                             <<"sum = "<<sum<<"  "
+                             <<std::endl;
 
                     // increment indeces:
                     idxA++;
@@ -147,6 +161,9 @@ GaussianDensityDerivative::estimApproxAt(
             }
         }
     }
+
+    std::cout<<"eval = "<<eval<<"  "
+             <<"sum = "<<sum<<std::endl;
 
     return sum;
 }
@@ -278,32 +295,23 @@ GaussianDensityDerivative::setupCoefB(
         const std::vector<real> &sample)
 {
     // allocate coefficient matrix as NaN:
-    std::vector<real> coefB(centres_.size()*trunc_*(r_+1), std::nan(""));
-
-
-    // TODO: just initialise as zero? 
-    for(int n = 0; n < centres_.size(); n++)
-    {
-        for(int k = 0; k < trunc_; k++)
-        {
-            for(int t = 0; t < r_+1; t++)
-            {
-                coefB[n*trunc_*(r_+1) + k*(r_+1) + t] = 0.0;
-            }
-        }
-    }
-
-
-    
-
+    std::vector<real> coefB(centres_.size()*trunc_*(r_+1), 0.0);
 
     // loop over data points:
     for(unsigned int i = 0; i < sample.size(); i++)
     {
         // scaled distance between cluster centre and data point:
-		// FIXME: this was causing a sign error, but it's probably better to invert order than multiply by -1
-        real d = -(centres_[idx_[i]] - sample[i])/bw_;
+        real d = (sample[i] - centres_[idx_[i]])/bw_;
         real e = std::exp(-0.5*d*d);
+
+        
+        std::vector<real> p(trunc_ + r_);
+        p[0] = 1.0;
+        for(unsigned int k = 1; k < trunc_ + r_; k++)
+        {
+            p[k] = p[k-1]*d;
+        }
+    
 
         // loop up to truncation number:
         for(int k = 0; k < trunc_; k++)
@@ -311,7 +319,8 @@ GaussianDensityDerivative::setupCoefB(
             // loop up to derivative order:
             for(int t = 0; t <= r_; t++)
             {
-                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
+//                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
+                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
             }
         }
     }
@@ -319,6 +328,22 @@ GaussianDensityDerivative::setupCoefB(
     // scale all coefficients by common prefactor:
     real fac = q_;
     std::for_each(coefB.begin(), coefB.end(), [fac](real &b){b*=fac;});
+
+
+    for(int l = 0; l < centres_.size(); l++)
+    {
+        for(int k = 0; k < trunc_; k++)
+        {
+            for(int t = 0; t <= r_; t++)
+            {
+                std::cout<<"l = "<<l<<"  "
+                         <<"k = "<<k<<"  "
+                         <<"t = "<<t<<"  "
+                         <<"B = "<<coefB[l*trunc_*(r_+1) + k*(r_+1) + t]<<"  "
+                         <<std::endl;
+            }
+        }
+    }
 
     // return coefficient matrix:
     return coefB;
