@@ -231,7 +231,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 {
-    real tolerance = 1.0*std::numeric_limits<real>::epsilon();
+    real tolerance = 10.0*std::numeric_limits<real>::epsilon();
 
     // prepare density derivative estimator:
     unsigned int deriv = 2;
@@ -242,7 +242,6 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
     // sample data in interval [0,1]:
     std::vector<real> sample = {0.0, 1.0};
-    sample = testData_;
 
     // prepare spatial partitioning:
     gdd.centres_ = gdd.setupClusterCentres();
@@ -302,7 +301,6 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
     // calculate coefficients using reference and optimised implementation:
     std::vector<real> coefB = gdd.setupCoefB(sample);
-    std::vector<real> b = gdd.compute_B(sample);
 
     // check right number of coefficients:
     ASSERT_EQ(coefBTrue.size(), coefB.size());
@@ -310,12 +308,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     // assert that correct B coefficients have been computed:
     for(size_t i = 0; i < coefB.size(); i++)
     {
-        std::cout<<"i = "<<i<<"  "
-                 <<"b = "<<b[i]<<"  "
-                 <<"coefB = "<<coefB[i]<<"  "
-                 <<std::endl;
-        ASSERT_NEAR(b[i], coefB[i], tolerance);
-//        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
+        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
     }
 }
 
@@ -340,7 +333,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
     std::normal_distribution<real> distributionC(muC, sdC);
     
     // carry out test on various sized random samples:
-    std::vector<real> numSamples = {10, 100, 1000, 1000};
+    std::vector<real> numSamples = {10, 100, 1000};
     for(auto n : numSamples)
     {
         // create a random sample:
@@ -376,31 +369,12 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                 // estimate derivative via direct loop and via approximate method:
                 std::vector<real> derivDirect = gdd.estimateDirect(sample, eval);
                 std::vector<real> derivApprox = gdd.estimateApprox(sample, eval);
-                std::vector<real> derivDir = gdd.EvaluateDirect(eval, sample);
-                std::vector<real> derivApp = gdd.Evaluate(eval, sample);
 
                 // check equality of estimation methods:
                 for(size_t i = 0; i < eval.size(); i++)
                 {
                     // difference between estimation methods:
                     real d = std::abs(derivDirect[i] - derivApprox[i]);
-                    real a = std::abs(derivDirect[i] + derivApprox[i])/2.0;
-
-                    std::cout.precision(10);
-                    std::cout<<"bw = "<<bw
-                             <<"  n = "<<n
-                             <<"  eps = "<<eps
-                             <<" eval = "<<eval[i]
-                             <<"  d/a = "<<d/a
-                             <<"  d = "<<d
-                             <<"  a = "<<a
-                             <<"  direct = "<<derivDirect[i]
-                             <<"  approx = "<<derivApprox[i]
-                             <<"  dir = "<<derivDir[i]
-                             <<"  app = "<<derivApp[i]
-                             <<"  n = "<<sample.size()
-                             <<"  m = "<<eval.size()
-                             <<std::endl;
 
                     // assertion on relative error:
                     // eps scaled to account for buildup of floaring pt error:

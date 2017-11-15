@@ -57,7 +57,7 @@ class GaussianDensityDerivative
         real estimApproxAtOld2(
                 const std::vector<real> &sample,
                 real eval);
-        real estimApproxAtNew(
+        real estimApproxAtOld(
                 const std::vector<real> &sample,
                 real eval);
 
@@ -73,14 +73,6 @@ class GaussianDensityDerivative
         real setupCutoffRadius();
         real setupScaledTolerance(unsigned int n);
         unsigned int setupTruncationNumber();
-
-        // FIXME: marked for deletion
-        std::vector<real> compute_B(const std::vector<real> &sample);
-        std::vector<real> compute_a();
-        std::vector<real> EvaluateDirect(std::vector<real> eval, std::vector<real> sample);
-        std::vector<real> Evaluate(std::vector<real> eval, std::vector<real> sample);
-        void choose_parameters(std::vector<real> sample, std::vector<real> eval);
-        std::pair<std::vector<real>, std::vector<int>> space_sub_division(std::vector<real> sample);
 
         // internal utilities:
         real hermite(
