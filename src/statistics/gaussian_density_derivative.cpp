@@ -93,7 +93,7 @@ GaussianDensityDerivative::estimateApprox(
  */
 real
 GaussianDensityDerivative::estimApproxAt(
-        const std::vector<real> &sample,
+        const std::vector<real> &/*sample*/,
         real eval)
 {  
     // iteration limit for coefficient loop:
@@ -101,7 +101,7 @@ GaussianDensityDerivative::estimApproxAt(
        
     // loop over cluster centres:
     real sum = 0.0;
-    for(int l = 0; l < centres_.size(); l++)
+    for(size_t l = 0; l < centres_.size(); l++)
     {  
         // distance from cluster centre:
         real diff = eval - centres_[l];
@@ -160,7 +160,7 @@ GaussianDensityDerivative::estimApproxAt(
  */
 real
 GaussianDensityDerivative::estimApproxAtOld(
-        const std::vector<real> &sample,
+        const std::vector<real> &/*sample*/,
         real eval)
 {
     unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
@@ -284,7 +284,7 @@ GaussianDensityDerivative::setupClusterCentres()
     ri_ = 1.0/numIntervals_;
 
     std::vector<real> centres;
-    for(int i = 0; i < numIntervals_; i++)
+    for(unsigned int i = 0; i < numIntervals_; i++)
     {
         centres.push_back(i*ri_ + ri_/2.0);
     }
@@ -329,7 +329,7 @@ GaussianDensityDerivative::setupCoefA()
     // precompute constant factor in s index:
     std::vector<real> sConstFac;
     sConstFac.reserve(sNum);
-    for(int s = 0; s <= sMax; s++)
+    for(unsigned int s = 0; s <= sMax; s++)
     {
         sConstFac.push_back(std::pow(2, s) * factorial(s));
     }
@@ -337,16 +337,16 @@ GaussianDensityDerivative::setupCoefA()
     // precompute constant factor in t index:
     std::vector<real> tConstFac;
     tConstFac.reserve(tNum);
-    for(int t = 0; t <= tMax; t++)
+    for(unsigned int t = 0; t <= tMax; t++)
     {
         tConstFac.push_back(factorial(t));
     }
 
     // compute coefficients:
     std::vector<real> coefA;
-    for(int s = 0; s <= sMax; s++)
+    for(unsigned int s = 0; s <= sMax; s++)
     {
-        for(int t = 0; t <= r_ - 2*s; t++)
+        for(unsigned int t = 0; t <= r_ - 2*s; t++)
         {
             coefA.push_back( 
                     std::pow(-1, s + t) * rFac_
@@ -388,10 +388,10 @@ GaussianDensityDerivative::setupCoefB(
     
 
         // loop up to truncation number:
-        for(int k = 0; k < trunc_; k++)
+        for(unsigned int k = 0; k < trunc_; k++)
         {
             // loop up to derivative order:
-            for(int t = 0; t <= r_; t++)
+            for(unsigned int t = 0; t <= r_; t++)
             {
 //                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
                 coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
@@ -747,8 +747,8 @@ GaussianDensityDerivative::EvaluateDirect(std::vector<real> sample, std::vector<
  *
  */
 void
-GaussianDensityDerivative::choose_parameters(std::vector<real> sample,
-	std::vector<real> eval)
+GaussianDensityDerivative::choose_parameters(std::vector<real> /*sample*/,
+	std::vector<real> /*eval*/)
 {   
     real h = bw_;
     real h_square = h*h;
@@ -826,7 +826,7 @@ real GaussianDensityDerivative::setupCutoffRadius()
  *
  */
 real
-GaussianDensityDerivative::setupScaledTolerance(unsigned int n)
+GaussianDensityDerivative::setupScaledTolerance(unsigned int /*n*/) // FIXME remove n?
 {
     return eps_/std::sqrt(factorial(r_));    
 }
@@ -846,7 +846,7 @@ GaussianDensityDerivative::setupTruncationNumber()
     real riSq = ri_*ri_;
 
     // find lowest truncation number that guarantees error bound:
-    for(int p = 0; p <= TRUNCMAX; p++)
+    for(unsigned int p = 0; p <= TRUNCMAX; p++)
     {
         // calculate error for given truncation number?
         real b = std::min<real>(rc_, ri_ + 0.5*std::sqrt(riSq + 8.0*p*bwSq));

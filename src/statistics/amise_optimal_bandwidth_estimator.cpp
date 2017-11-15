@@ -130,6 +130,7 @@ AmiseOptimalBandwidthEstimator::functionalPhi8(real sigma)
 /*
  *
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::functionalPhiFast(
         std::vector<real> &samples,
@@ -151,19 +152,19 @@ AmiseOptimalBandwidthEstimator::functionalPhiFast(
     real scale = 1.0 / *std::max_element(samples.begin(), samples.end());
     std::for_each(samples.begin(), samples.end(), [scale](real &s){s*=scale;});
 
-/*
+
     for(auto s : samples)
     {
         std::cout<<"s = "<<s<<std::endl;
-    }*/
+    }
 
     bw = scale*bw;
 
-/*
+
     std::cout<<"scale = "<<scale<<"  "
              <<"shift = "<<shift<<"  "
              <<"deriv = "<<deriv<<"  "
-             <<std::endl;*/
+             <<std::endl;
 
     // calculate q-factor:
     real q = coefQ(bw, deriv, samples.size());
@@ -196,8 +197,8 @@ AmiseOptimalBandwidthEstimator::functionalPhiFast(
 
     //
     real phi = 0.0;
-    for(auto s : samples)
-    {
+//    for(auto s : samples)
+//    {
 //        std::cout<<"phi = "<<phi<<std::endl;
 
         phi += approximateDensityDerivative(
@@ -212,7 +213,7 @@ AmiseOptimalBandwidthEstimator::functionalPhiFast(
                 q,
                 deriv,
                 p);
-    }
+//    }
 
     int n = samples.size();
     phi /= (n-1);
@@ -225,7 +226,7 @@ AmiseOptimalBandwidthEstimator::functionalPhiFast(
 
     // return phi:
     return phi;
-}
+}*/
 
 
 /*!
@@ -353,6 +354,7 @@ AmiseOptimalBandwidthEstimator::optimalBandwidthEquation(
  * where \f$ M \f$ is the miniumum number of intervals required to cover the 
  * entire unit interval.
  */
+/*
 std::vector<real>
 AmiseOptimalBandwidthEstimator::intervalCentres(const real bw)
 {
@@ -373,7 +375,7 @@ AmiseOptimalBandwidthEstimator::intervalCentres(const real bw)
     // return the interval centres:
     return intervalCentres;
 }
-
+*/
 
 /*!
  * Finds the index of the nearest centre for each sample. Requires the samples
@@ -382,6 +384,7 @@ AmiseOptimalBandwidthEstimator::intervalCentres(const real bw)
  * because this enables a consistent treatment of data points located halfway
  * between two cluster centres.
  */
+/*
 std::vector<size_t>
 AmiseOptimalBandwidthEstimator::nearestIntervalCentre(
         const std::vector<real> &centres,
@@ -426,11 +429,12 @@ AmiseOptimalBandwidthEstimator::nearestIntervalCentre(
     // return vector of nearest centre indices:
     return centreIdx;
 }
-
+*/
 
 /*!
  * Returns the truncation number that guarantees a given error bound.
  */
+/*
 int
 AmiseOptimalBandwidthEstimator::truncationNumber(
         const real bw,
@@ -476,7 +480,7 @@ AmiseOptimalBandwidthEstimator::truncationNumber(
     // return negative truncation number:
     return -1;
 }
-
+*/
 
 /*!
  * Calculates the cutoff radius according to:
@@ -485,6 +489,7 @@ AmiseOptimalBandwidthEstimator::truncationNumber(
  *      r_{\text{c}} = r_{i} + 2h\sqrt{ \log{\sqrt{r!}}/\epsilon^\prime }
  * \f]
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::cutoffRadius(
         const real &ri,
@@ -494,11 +499,12 @@ AmiseOptimalBandwidthEstimator::cutoffRadius(
 {
     return ri + 2.0*bw*std::sqrt(std::log(std::sqrt(derivFactorial)/epsPrime));
 }
-
+*/
 
 /*!
  *
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::approximateDensityDerivative(
         const std::vector<real> &samples,
@@ -511,23 +517,25 @@ AmiseOptimalBandwidthEstimator::approximateDensityDerivative(
         real epsPrime,
         real q,
         int deriv,
-        int p)
+        unsigned int p)
 {
+
+    ri = 1.0;
     int test = 0;
     int total = 0;
     // loop over all centres:
     real densityDerivative = 0.0;
-    for(int l = 0; l < centres.size(); l++)
+    for(unsigned int l = 0; l < centres.size(); l++)
     {
 
         // only perform addition for eval point within cutoff radius:
         if( std::abs(eval - centres[l]) > rc )
         {
- /*           std::cout<<"  "
+            std::cout<<"  "
                      <<"eval = "<<eval<<"  "
                      <<"centre = "<<centres[l]<<"  "
                      <<"rc = "<<rc<<"  "
-                     <<std::endl;*/
+                     <<std::endl;
             continue;
         }
 
@@ -567,7 +575,7 @@ AmiseOptimalBandwidthEstimator::approximateDensityDerivative(
 
     // return density derivative:
     return densityDerivative;
-}
+}*/
 
 
 /*!
@@ -577,6 +585,7 @@ AmiseOptimalBandwidthEstimator::approximateDensityDerivative(
  *      a_{st} = \frac{-1^{s+t} r!}{2^s s! t! (r - 2s -t)!}
  * \f]
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::coefA(
         int s,
@@ -585,15 +594,15 @@ AmiseOptimalBandwidthEstimator::coefA(
 {
     real tmp =  std::pow(-1, s + t) * factorial<real>(deriv) / (std::pow(2, s) 
            * factorial<real>(s) * factorial<real>(t) * factorial<real>(deriv - 2*s - t));
-/*    std::cout<<"coefA = "<<tmp<<"  "
+    std::cout<<"coefA = "<<tmp<<"  "
              <<"s = "<<s<<"  "
              <<"t = "<<t<<"  "
              <<"deriv = "<<deriv<<"  "
              <<"s! = "<<std::tgamma(s)<<"  "
              <<"t! = "<<factorial<real>(t)<<"  "
-             <<std::endl;*/
+             <<std::endl;
     return tmp;
-}
+}*/
 
 
 /*!
@@ -603,6 +612,7 @@ AmiseOptimalBandwidthEstimator::coefA(
  *      B_{kt}^l = \frac{q}{k!} \sum_{x_i\in S_l} \exp\left( -\frac{(x_i - c_l)}{2h^2} \right) \left( \frac{x_i - c_l}{h} \right)^{k+t}
  * \f]
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::coefB(
         int k,
@@ -629,7 +639,7 @@ AmiseOptimalBandwidthEstimator::coefB(
     // scale and retrun coefficient:
     coefB *= coefQ/factorial<real>(k);             
     return coefB;
-}
+}*/
 
 
 /*!
@@ -639,6 +649,7 @@ AmiseOptimalBandwidthEstimator::coefB(
  *      c_l = \exp\left( -\frac{(x_j - c_l)^2}{2h^2} \right) \left( \frac{x_j - c_l}{h} \right)^{k+r-2s-t}
  * \f]
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::coefC(
         int k,
@@ -651,7 +662,7 @@ AmiseOptimalBandwidthEstimator::coefC(
 {
     real tmp = (eval - centre)/bw;
     return std::exp(-0.5*tmp*tmp) * std::pow(tmp, k + deriv - 2*s -t);
-}
+}*/
 
 
 /*!
@@ -661,6 +672,7 @@ AmiseOptimalBandwidthEstimator::coefC(
  *      q = \frac{(-1)^r}{\sqrt{2\pi}Nh^{r + 1}}
  * \f]
  */
+/*
 real
 AmiseOptimalBandwidthEstimator::coefQ(
         real bw,
@@ -669,6 +681,6 @@ AmiseOptimalBandwidthEstimator::coefQ(
 {
     return std::pow(-1.0, deriv)/(SQRT2PI_*numSamples*std::pow(bw, deriv + 1));
 }
-
+*/
 
 

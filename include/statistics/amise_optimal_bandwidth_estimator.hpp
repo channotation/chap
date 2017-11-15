@@ -38,10 +38,10 @@ class AmiseOptimalBandwidthEstimator
                 const std::vector<real> &samples,
                 real bw,
                 const int deriv);
-        real functionalPhiFast(
-                std::vector<real> &samples,
-                const real bw,
-                const int deriv);
+ //       real functionalPhiFast(
+   //             std::vector<real> &samples,
+     //           const real bw,
+       //         const int deriv);
 
         // bandwidth to be used in derivative estimation:
         real gammaFactor_;
@@ -54,7 +54,7 @@ class AmiseOptimalBandwidthEstimator
                 const std::vector<real> &samples);
 
 
-        std::vector<real> intervalCentres(
+/*        std::vector<real> intervalCentres(
                 const real bw);
         std::vector<size_t> nearestIntervalCentre(
                 const std::vector<real> &centres,
@@ -66,8 +66,8 @@ class AmiseOptimalBandwidthEstimator
                 const real cr,
                 const real epsPrime,
                 const unsigned int deriv);
-
-        
+*/
+       /* 
         real approximateDensityDerivative(
                 const std::vector<real> &samples,
                 const std::vector<real> &centres,
@@ -79,9 +79,9 @@ class AmiseOptimalBandwidthEstimator
                 real epsPrime,
                 real q,
                 int deriv,
-                int p);
+                unsigned int p);*/
 
-        
+  /*      
         real coefA(
                 int s,
                 int t,
@@ -108,13 +108,13 @@ class AmiseOptimalBandwidthEstimator
                 int deriv,
                 int numSamples);
 
-
+*/
         //
-        real cutoffRadius(
+  /*      real cutoffRadius(
                 const real &ri,
                 const real &bw,
                 const real &derivFactorial,
-                const real &epsPrime);
+                const real &epsPrime);*/
 };
 
 

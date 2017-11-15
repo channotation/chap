@@ -35,7 +35,7 @@ class GaussianDensityDerivativeTest : public ::testing::Test
             std::normal_distribution<real> distributionC(muC, sdC);
 
             // create a random sample:
-            size_t numSamples = 1e1 / 3;
+            size_t numSamples = 1e2 / 3;
             for(size_t i = 0; i < numSamples; i++)
             {
                 testData_.push_back( distributionA(generator) );
@@ -169,7 +169,6 @@ TEST_F(GaussianDensityDerivativeTest,
             // find minimal distance:
             auto minIter = min_element(dist.begin(), dist.end());
             real minDist = *minIter;
-            real minIdx = minIter - dist.begin();
 
             // check that centre on record is actually closest:
             ASSERT_LE(d, minDist);
@@ -326,63 +325,89 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 {
-    // prepare sample and evaluation points:
-    std::vector<real> sample = testData_;
-//    std::vector<real> sample = {0.0, 0.33, 0.5, 0.7, 0.4, 0.5, 0.121, 0.9, 2};
-    std::vector<real> eval = sample;
+    // parameters of normal distribution:
+    real muA = -1.0;
+    real sdA = 0.5;
+    real muB = 0.0;
+    real sdB = 0.1;
+    real muC = 5.0;
+    real sdC = 1.5;
 
-    // map input data to unit interval:
-    GaussianDensityDerivative gdd;
-    auto ss = gdd.getShiftAndScaleParams(sample, eval);
-    gdd.shiftAndScale(sample, ss.first, ss.second);
-    gdd.shiftAndScale(eval, ss.first, ss.second);
-
+    // prepare random distribution:
+    std::default_random_engine generator;
+    std::normal_distribution<real> distributionA(muA, sdA);
+    std::normal_distribution<real> distributionB(muB, sdB);
+    std::normal_distribution<real> distributionC(muC, sdC);
     
-    // carry out test for multiple parameter combinations:
-    std::vector<real> epsilon = {1e-1, 1e-2, 1e-3};
-    std::vector<real> bandwidth = {10.0, 1.0, 0.1};
-    for(auto eps : epsilon)
+    // carry out test on various sized random samples:
+    std::vector<real> numSamples = {10, 100, 1000};
+    for(auto n : numSamples)
     {
-        for(auto bw : bandwidth)
+        // create a random sample:
+        std::vector<real> sample;
+        for(size_t i = 0; i < n; i++)
         {
-            // set parameters:
-            gdd.setDerivOrder(2);
-            gdd.setBandWidth(bw);
-            gdd.setErrorBound(eps);
+            sample.push_back( distributionA(generator) );
+            sample.push_back( distributionB(generator) );
+            sample.push_back( distributionC(generator) );
+        }
 
-            // estimate derivative via direct loop and via approximate method:
-            std::vector<real> derivDirect = gdd.estimateDirect(sample, eval);
-            std::vector<real> derivApprox = gdd.estimateApprox(sample, eval);
+        // evaluation points equal to sample points:
+        std::vector<real> eval = sample;
+        
+        // map input data to unit interval:
+        GaussianDensityDerivative gdd;
+        auto ss = gdd.getShiftAndScaleParams(sample, eval);
+        gdd.shiftAndScale(sample, ss.first, ss.second);
+        gdd.shiftAndScale(eval, ss.first, ss.second);
 
-            std::vector<real> derivDir = gdd.EvaluateDirect(eval, sample);
-            std::vector<real> derivApp = gdd.Evaluate(eval, sample);
-
-            // check equality of estimation methods:
-            for(int i = 0; i < eval.size(); i++)
+        // carry out test for multiple parameter combinations:
+        std::vector<real> epsilon = {1e-1, 1e-2, 1e-3};
+        std::vector<real> bandwidth = {10.0, 1.0, 0.1};
+        for(auto eps : epsilon)
+        {
+            for(auto bw : bandwidth)
             {
-                // difference between estimation methods:
-                real d = std::abs(derivDirect[i] - derivApprox[i]);
-                real a = std::abs(derivDirect[i] + derivApprox[i])/2.0;
+                // set parameters:
+                gdd.setDerivOrder(2);
+                gdd.setBandWidth(bw);
+                gdd.setErrorBound(eps);
 
-                std::cout<<"bw = "<<bw
-                         <<"  eps = "<<eps
-                         <<" eval = "<<eval[i]
-                         <<"  d/a = "<<d/a
-                         <<"  d = "<<d
-                         <<"  a = "<<a
-                         <<"  direct = "<<derivDirect[i]
-                         <<"  approx = "<<derivApprox[i]
-                         <<"  dir = "<<derivDir[i]
-                         <<"  app = "<<derivDir[i]
-                         <<"  n = "<<sample.size()
-                         <<"  m = "<<eval.size()
-                         <<std::endl;
+                // estimate derivative via direct loop and via approximate method:
+                std::vector<real> derivDirect = gdd.estimateDirect(sample, eval);
+                std::vector<real> derivApprox = gdd.estimateApprox(sample, eval);
 
-                // assertion on relative error:
-//                ASSERT_NEAR(0.0, d/a, 3*eps);
-                ASSERT_NEAR(0.0, d, 1.1*eps);
+                std::vector<real> derivDir = gdd.EvaluateDirect(eval, sample);
+                std::vector<real> derivApp = gdd.Evaluate(eval, sample);
+
+                // check equality of estimation methods:
+                for(size_t i = 0; i < eval.size(); i++)
+                {
+                    // difference between estimation methods:
+                    real d = std::abs(derivDirect[i] - derivApprox[i]);
+                    real a = std::abs(derivDirect[i] + derivApprox[i])/2.0;
+
+                    std::cout<<"bw = "<<bw
+                             <<"  n = "<<n
+                             <<"  eps = "<<eps
+                             <<" eval = "<<eval[i]
+                             <<"  d/a = "<<d/a
+                             <<"  d = "<<d
+                             <<"  a = "<<a
+                             <<"  direct = "<<derivDirect[i]
+                             <<"  approx = "<<derivApprox[i]
+                             <<"  dir = "<<derivDir[i]
+                             <<"  app = "<<derivDir[i]
+                             <<"  n = "<<sample.size()
+                             <<"  m = "<<eval.size()
+                             <<std::endl;
+
+                    // assertion on relative error:
+                    // machine error as safety margin for floating point error:
+                    ASSERT_NEAR(0.0, d, 1.1*eps + std::numeric_limits<real>::epsilon());
+                }
             }
         }
-    }
+    }    
 }
 
