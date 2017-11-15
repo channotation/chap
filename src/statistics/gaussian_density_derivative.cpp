@@ -95,6 +95,73 @@ real
 GaussianDensityDerivative::estimApproxAt(
         const std::vector<real> &sample,
         real eval)
+{  
+    // iteration limit for coefficient loop:
+    unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
+       
+    // loop over cluster centres:
+    real sum = 0.0;
+    for(int l = 0; l < centres_.size(); l++)
+    {  
+        // distance from cluster centre:
+        real diff = eval - centres_[l];
+
+        // skip this iteration, if cluster centre is beyond cutoff radius:
+        if( std::abs(diff) > rc_ )
+        {
+            continue;
+        }
+
+        // scale distance by bandwidth:
+        diff /= bw_;
+       
+        // calculate exponential term:
+        real expTerm = exp(-0.5*diff*diff);   
+
+        // the power term can be precomputed for efficiency:
+        std::vector<real> powTerm(trunc_ + r_);
+        powTerm[0] = 1.0;   
+        for(unsigned int i = 1; i < trunc_ + r_; i++)
+        {   
+            powTerm[i] = powTerm[i - 1] * diff;   
+        }   
+
+        // loop up to truncation number:
+        for(unsigned int k = 0; k <= trunc_ - 1; k++)
+        {   
+            // A-coefficient will be accessed in same order as it is created:
+            unsigned int idxA = 0;  
+
+            // sums over coefficients:
+            for(unsigned int s = 0; s <= sMax; s++)
+            {   
+                for(unsigned int t = 0; t <= r_ - 2*s; t++)
+                {
+                    // add to sum:
+                    sum += coefA_[idxA] 
+                         * coefB_[l*trunc_*(r_+1) + (r_+1)*k + t]
+                         * powTerm[k + r_ - 2*s - t]
+                         * expTerm;
+
+                    // increment coefficient A index:
+                    idxA++;   
+                }   
+            }   
+        }   
+    }   
+
+    // return derivative value at this point:
+    return sum;
+}
+
+
+/*!
+ *
+ */
+real
+GaussianDensityDerivative::estimApproxAtOld(
+        const std::vector<real> &sample,
+        real eval)
 {
     unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
 

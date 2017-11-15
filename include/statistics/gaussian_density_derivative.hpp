@@ -54,6 +54,9 @@ class GaussianDensityDerivative
         real estimApproxAt(
                 const std::vector<real> &sample,
                 real eval);
+        real estimApproxAtOld(
+                const std::vector<real> &sample,
+                real eval);
 
         // space partitioning:
         std::vector<real> setupClusterCentres();
