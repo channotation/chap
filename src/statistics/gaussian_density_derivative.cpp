@@ -76,23 +76,140 @@ GaussianDensityDerivative::estimateApprox(
 //    return Evaluate(eval, sample); // FIXME
 
     // loop over target points:
-    std::vector<real> deriv;
+    std::vector<real> deriv = Evaluate(eval, sample);
+    
     deriv.reserve(eval.size());
     for(auto e : eval)
     {
         deriv.push_back(estimApproxAt(sample, e));
     }
+    
 
     // return vector of density derivative at each evaluation point:
     return deriv;
 }
 
 
+/*
+ *
+ */
+real
+GaussianDensityDerivative::estimApproxAtNew(
+        const std::vector<real> & /*sample*/,
+        real eval)
+{
+   
+    //int num_of_influential_neighbors=(int)ceil(ry/rx);   
+    //printf("Num of influential right or left neighbors = %d\n",num_of_influential_neighbors);   
+  
+    int r = r_;
+    int p = trunc_;
+//    int M = eval.size();
+    int K = centres_.size();
+
+    real h = bw_;
+    real two_h_square = 2*h*h;
+
+    real rx = 1.0/K;
+    real ry = rc_; 
+
+    real py = eval;
+//    std::vector<real> px = sample;
+
+
+    real pD = 0.0;
+    
+    
+    std::vector<real> pClusterCenter = centres_;
+    std::vector<real> a_terms = coefA_;
+    std::vector<real> B_terms = coefB_;
+
+
+
+    double *temp3;   
+    temp3=new double[p+r];   
+   
+   
+           
+    int target_cluster_number=std::min((int)floor(py/rx),K-1);   
+    double temp1=py-pClusterCenter[target_cluster_number];   
+    double dist=abs(temp1);   
+    while (dist <= ry && target_cluster_number <K && target_cluster_number >=0){   
+//        while (target_cluster_number <K && target_cluster_number >=0){   
+
+//            printf("j=%d y=%f Influential cluster=%d\n",j,py[j],target_cluster_number);   
+        //Do something   
+        double temp2=exp(-temp1*temp1/two_h_square);   
+        double temp1h=temp1/h;   
+        temp3[0]=1;   
+        for(int i=1; i<p+r; i++){   
+            temp3[i]=temp3[i-1]*temp1h;   
+        }   
+
+        for(int k=0; k<=p-1; k++){   
+            int dummy=0;   
+            for(int l=0; l <= (int)floor((double)r/2); l++){   
+                for(int m=0; m <= r-(2*l); m++){   
+                    pD=pD+(a_terms[dummy]*B_terms[(target_cluster_number*p*(r+1))+((r+1)*k)+m]*temp2*temp3[k+r-(2*l)-m]);   
+                    dummy++;   
+                }   
+            }   
+        }   
+        //   
+               
+
+        target_cluster_number++;   
+        temp1=py-pClusterCenter[target_cluster_number];   
+        dist=abs(temp1);   
+    }   
+
+    target_cluster_number=std::min((int)floor(py/rx),K-1)-1;   
+    if (target_cluster_number >=0){   
+        double temp1=py-pClusterCenter[target_cluster_number];   
+        double dist=abs(temp1);   
+        while (dist <= ry && target_cluster_number <K && target_cluster_number >=0){   
+//            while (target_cluster_number <K && target_cluster_number >=0){   
+//                printf("j=%d y=%f Influential cluster=%d\n",j,py[j],target_cluster_number);   
+            //Do something   
+            double temp2=exp(-temp1*temp1/two_h_square);   
+            double temp1h=temp1/h;   
+            temp3[0]=1;   
+            for(int i=1; i<p+r; i++){   
+                temp3[i]=temp3[i-1]*temp1h;   
+            }   
+
+            for(int k=0; k<=p-1; k++){   
+                int dummy=0;   
+                for(int l=0; l <= (int)floor((double)r/2); l++){   
+                    for(int m=0; m <= r-(2*l); m++){   
+                        pD=pD+(a_terms[dummy]*B_terms[(target_cluster_number*p*(r+1))+((r+1)*k)+m]*temp2*temp3[k+r-(2*l)-m]);   
+                        dummy++;   
+                    }   
+                }   
+            }   
+            //   
+            target_cluster_number--;   
+            temp1=py-pClusterCenter[target_cluster_number];   
+            dist=abs(temp1);   
+        }   
+    }   
+   
+       
+   
+    delete []temp3;
+
+
+    return pD;
+
+}
+
+
+
 /*!
  *
  */
 real
-GaussianDensityDerivative::estimApproxAt(
+GaussianDensityDerivative::estimApproxAtOld2(
         const std::vector<real> &/*sample*/,
         real eval)
 {  
@@ -159,7 +276,7 @@ GaussianDensityDerivative::estimApproxAt(
  *
  */
 real
-GaussianDensityDerivative::estimApproxAtOld(
+GaussianDensityDerivative::estimApproxAt(
         const std::vector<real> &/*sample*/,
         real eval)
 {
@@ -208,7 +325,7 @@ GaussianDensityDerivative::estimApproxAtOld(
                          * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
                          * e * p;
                     sum += tmp;
-
+/*
                     std::cout<<"l = "<<l<<"  "
                              <<"k = "<<k<<"  "
                              <<"s = "<<s<<"  "
@@ -222,7 +339,7 @@ GaussianDensityDerivative::estimApproxAtOld(
                              <<"a = "<<coefA_[idxA]<<"  "
                              <<"b = "<<coefB_[l*trunc_*(r_+1) + k*(r_+1) + t]<<"  "
                              <<"tmp = "<<tmp<<"  "
-                             <<std::endl;
+                             <<std::endl;*/
 
                     // increment indeces:
                     idxA++;
@@ -366,7 +483,7 @@ GaussianDensityDerivative::setupCoefB(
         const std::vector<real> &sample)
 {
     // FIXME uncomment when done debugging:
-    return compute_B(sample);
+//    return compute_B(sample);
 
     // allocate coefficient matrix as NaN:
     std::vector<real> coefB(centres_.size()*trunc_*(r_+1), 0.0);

@@ -340,7 +340,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
     std::normal_distribution<real> distributionC(muC, sdC);
     
     // carry out test on various sized random samples:
-    std::vector<real> numSamples = {10, 100, 1000};
+    std::vector<real> numSamples = {10, 100, 1000, 1000};
     for(auto n : numSamples)
     {
         // create a random sample:
@@ -376,7 +376,6 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                 // estimate derivative via direct loop and via approximate method:
                 std::vector<real> derivDirect = gdd.estimateDirect(sample, eval);
                 std::vector<real> derivApprox = gdd.estimateApprox(sample, eval);
-
                 std::vector<real> derivDir = gdd.EvaluateDirect(eval, sample);
                 std::vector<real> derivApp = gdd.Evaluate(eval, sample);
 
@@ -387,6 +386,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                     real d = std::abs(derivDirect[i] - derivApprox[i]);
                     real a = std::abs(derivDirect[i] + derivApprox[i])/2.0;
 
+                    std::cout.precision(10);
                     std::cout<<"bw = "<<bw
                              <<"  n = "<<n
                              <<"  eps = "<<eps
@@ -397,14 +397,14 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                              <<"  direct = "<<derivDirect[i]
                              <<"  approx = "<<derivApprox[i]
                              <<"  dir = "<<derivDir[i]
-                             <<"  app = "<<derivDir[i]
+                             <<"  app = "<<derivApp[i]
                              <<"  n = "<<sample.size()
                              <<"  m = "<<eval.size()
                              <<std::endl;
 
                     // assertion on relative error:
-                    // machine error as safety margin for floating point error:
-                    ASSERT_NEAR(0.0, d, 1.1*eps + std::numeric_limits<real>::epsilon());
+                    // eps scaled to account for buildup of floaring pt error:
+                    ASSERT_NEAR(0.0, d, 1.1*eps);
                 }
             }
         }

@@ -54,7 +54,10 @@ class GaussianDensityDerivative
         real estimApproxAt(
                 const std::vector<real> &sample,
                 real eval);
-        real estimApproxAtOld(
+        real estimApproxAtOld2(
+                const std::vector<real> &sample,
+                real eval);
+        real estimApproxAtNew(
                 const std::vector<real> &sample,
                 real eval);
 
