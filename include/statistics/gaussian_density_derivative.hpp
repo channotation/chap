@@ -27,6 +27,10 @@ class GaussianDensityDerivative
 
 //    private:
 
+
+        std::vector<real> compute_B(std::vector<real> sample);
+
+
         // internal constants:
         const real SQRT2PI_ = std::sqrt(2.0*M_PI);
 

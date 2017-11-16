@@ -56,6 +56,103 @@ GaussianDensityDerivative::estimDirectAt(
  *
  */
 std::vector<real>
+GaussianDensityDerivative::compute_B(std::vector<real> sample)
+{
+    int r = r_;
+    int p = trunc_;
+    int K = centres_.size();
+    int N = sample.size();
+    int num_of_B_terms=centres_.size()*trunc_*(r_+1);  
+    real q = q_;
+    real h = bw_;
+    std::vector<real> px = sample;   
+    std::vector<double> B_terms(num_of_B_terms);
+    std::vector<real> pClusterCenter = centres_;
+    std::vector<unsigned int> pClusterIndex = idx_;
+
+    double *k_factorial;   
+    k_factorial=new double[p];   
+   
+    k_factorial[0]=1;   
+    for(int i=1; i<p ;i++){   
+        k_factorial[i]=k_factorial[i-1]/i;   
+        //printf("%f \n",k_factorial[i]);   
+    }   
+   
+    double *temp3;   
+    temp3=new double[p+r];   
+   
+    for(int n=0; n<K; n++){   
+        //printf("Cluster %d ",n);   
+        for(int k=0; k<p; k++){   
+            for(int m=0; m< r+1; m++){   
+                B_terms[(n*p*(r+1))+((r+1)*k)+m]=0.0;;   
+                //printf("%f ",B_terms[(n*p*(r+1))+((r+1)*k)+m]);   
+            }   
+        }   
+        //printf("\n");   
+    }   
+   
+    for(int i=0; i<N; i++){   
+        int cluster_number=pClusterIndex[i];   
+        double temp1=(px[i]-pClusterCenter[cluster_number])/h;   
+        double temp2=exp(-temp1*temp1/2);   
+        temp3[0]=1;   
+        for(int k=1; k<p+r; k++){   
+            temp3[k]=temp3[k-1]*temp1;   
+        }   
+   
+        for(int k=0; k<p; k++){   
+            for(int m=0; m< r+1; m++){   
+                B_terms[(cluster_number*p*(r+1))+((r+1)*k)+m]+=(temp2*temp3[k+m]);   
+    
+
+                int tmp = cluster_number*p*(r+1) + k*(r+1) + m;
+                if( tmp == 156286 && false )
+                {
+                    std::cout<<"posterior raykar"<<"  "
+                             <<"i = "<<i<<"  "
+                             <<"tmp = "<<tmp<<"  "
+                             <<"bw = "<<bw_<<"  "
+                             <<"eps = "<<eps_<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"t = "<<m<<"  "
+                             <<"e = "<<temp2<<"  "
+                             <<"d = "<<temp1<<"  "
+                             <<"p = "<<temp3[k+m]<<"  "
+                             <<"k! = "<<factorial(k)<<"  "
+                             <<"B = "<<B_terms[idx_[i]*trunc_*(r_+1) + (r_+1)*k + m]<<"  "
+                             <<"B[-1] = "<<B_terms[idx_[i]*trunc_*(r_+1) + (r_+1)*k + m]<<"  "
+                             <<std::endl;
+                }
+        }   
+        }   
+    }   
+   
+    for(int n=0; n<K; n++){   
+        //printf("Cluster %d ",n);   
+        for(int k=0; k<p; k++){   
+            for(int m=0; m< r+1; m++){   
+                B_terms[(n*p*(r+1))+((r+1)*k)+m]*=(k_factorial[k]*q);   
+                //printf("%f ",B_terms[(n*p*(r+1))+((r+1)*k)+m]);   
+            }   
+        }   
+        //printf("\n");   
+    }   
+   
+   
+    delete []k_factorial;   
+    delete []temp3;  
+
+    std::vector<real> ret(B_terms.begin(), B_terms.end());
+    return ret;
+}
+
+
+/*
+ *
+ */
+std::vector<real>
 GaussianDensityDerivative::estimateApprox(
         std::vector<real> &sample,
         std::vector<real> &eval)
@@ -454,46 +551,62 @@ std::vector<real>
 GaussianDensityDerivative::setupCoefB(
         const std::vector<real> &sample)
 {
-    // FIXME uncomment when done debugging:
-//    return compute_B(sample);
-
-    // allocate coefficient matrix as NaN:
-    std::vector<real> coefB(centres_.size()*trunc_*(r_+1), 0.0);
+    // allocate coefficient matrix:
+    std::vector<double> coefB(centres_.size()*trunc_*(r_ + 1), 0.0);
 
     // loop over data points:
     for(unsigned int i = 0; i < sample.size(); i++)
     {
         // scaled distance between cluster centre and data point:
-        real d = (sample[i] - centres_[idx_[i]])/bw_;
-        real e = std::exp(-0.5*d*d);
+        double diff = (sample[i] - centres_[idx_[i]])/bw_;
+        double expTerm = std::exp(-diff*diff/2.0);
 
-        
-        std::vector<real> p(trunc_ + r_);
-        p[0] = 1.0;
+        // power term can be precomputed for efficiency
+        // NOTE: this needs double precision to ovoid overflow!
+        std::vector<double> powTerm(trunc_ + r_);
+        powTerm[0] = 1.0;
         for(unsigned int k = 1; k < trunc_ + r_; k++)
         {
-            p[k] = p[k-1]*d;
+            powTerm[k] = powTerm[k - 1] * diff;
         }
     
-
         // loop up to truncation number:
         for(unsigned int k = 0; k < trunc_; k++)
         {
             // loop up to derivative order:
             for(unsigned int t = 0; t <= r_; t++)
             {
-//                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*std::pow(d, k+t)/factorial(k);
-                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += e*p.at(k+t)/factorial(k);
+                coefB[idx_[i]*trunc_*(r_+1) + k*(r_+1) + t] += expTerm
+                                                             * powTerm[k + t];
             }
         }
     }
 
-    // scale all coefficients by common prefactor:
-    real fac = q_;
-    std::for_each(coefB.begin(), coefB.end(), [fac](real &b){b*=fac;});
+    // precompute the factorial term for efficiency:
+    // (need subsequent factorials, avoid repeated calls to factorial())
+    // (also compute the inverse here, so that later we can avoid division)
+    std::vector<double> facTerm(trunc_);
+    facTerm[0] = q_;
+    for(unsigned int i = 1; i < trunc_; i++)
+    {
+        facTerm[i] = facTerm[i - 1]/i;
+    }
+
+    // factorial term factored in via separate loop:
+    for(unsigned int i = 0; i < centres_.size(); i++)
+    {
+        for(unsigned int k = 0; k < trunc_; k++)
+        {
+            for(unsigned int t = 0; t < r_ + 1; t++)
+            {
+                coefB[i*trunc_*(r_ + 1) + k*(r_ + 1) + t] *= facTerm[k];
+            }
+        }
+    }
 
     // return coefficient matrix:
-    return coefB;
+    std::vector<real> ret(coefB.begin(), coefB.end());
+    return ret;
 }
 
 

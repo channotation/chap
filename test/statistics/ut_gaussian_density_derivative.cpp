@@ -204,9 +204,8 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeTruncationTest)
     for(auto n : numSamples)
     {
         // create a random sample:
-        unsigned int numSamples = 1000;
         std::vector<real> sample;
-        for(size_t i = 0; i < numSamples; i++)
+        for(size_t i = 0; i < n; i++)
         {
             sample.push_back( distributionA(generator) );
             sample.push_back( distributionB(generator) );
@@ -306,11 +305,103 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
 
 /*!
  */
-/*
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 {
-    real tolerance = 10.0*std::numeric_limits<real>::epsilon();
+    real tolerance = std::numeric_limits<real>::epsilon();
 
+    // parameters of normal distribution:
+    real muA = -1.0;
+    real sdA = 0.5;
+    real muB = 0.0;
+    real sdB = 0.1;
+    real muC = 5.0;
+    real sdC = 1.5;
+
+    // prepare random distribution:
+    std::default_random_engine generator;
+    std::normal_distribution<real> distributionA(muA, sdA);
+    std::normal_distribution<real> distributionB(muB, sdB);
+    std::normal_distribution<real> distributionC(muC, sdC);
+ 
+    clock_t mine = 0.0;
+    clock_t raykar = 0.0;
+
+    // perform test for various parameters:
+    std::vector<unsigned int> numSamples = {10, 100, 1000, 10000};
+    std::vector<real> bandwidth = {1.0, 0.1, 0.01, 0.001, 0.0001};
+    std::vector<real> epsilon = {0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001};
+    for(auto n : numSamples)
+    {
+        // create a random sample:
+        std::vector<real> sample;
+        for(size_t i = 0; i < n; i++)
+        {
+            sample.push_back( distributionA(generator) );
+            sample.push_back( distributionB(generator) );
+            sample.push_back( distributionC(generator) );
+        }
+       
+        // shift and scale data:
+        GaussianDensityDerivative gdd;
+        std::vector<real> eval = sample; // as dummy input to scaling
+        auto ss = gdd.getShiftAndScaleParams(sample, eval);
+        gdd.shiftAndScale(sample, ss.first, ss.second);
+ 
+        // loop over parameters:
+        for(auto bw : bandwidth)
+        {
+            for(auto eps : epsilon)
+            {
+                // set parameters:
+                unsigned int deriv = 2;
+                gdd.setDerivOrder(deriv);
+                gdd.setBandWidth(bw);
+                gdd.setErrorBound(eps);
+
+                // determine required coefficients:
+                gdd.q_ = gdd.setupCoefQ(sample.size());
+                gdd.epsPrime_ = gdd.setupScaledTolerance(sample.size());
+                gdd.rc_ = gdd.setupCutoffRadius();
+                gdd.centres_ = gdd.setupClusterCentres();
+                gdd.idx_ = gdd.setupClusterIndices(sample);
+                gdd.trunc_ = gdd.setupTruncationNumber();
+
+                // compute coefficients:
+                clock_t tmp = std::clock();
+                std::vector<real> coefB = gdd.setupCoefB(sample);
+                mine += std::clock() - tmp;
+                tmp = std::clock();
+                std::vector<real> B = gdd.compute_B(sample); // TODO
+                raykar += std::clock() - tmp;
+                
+                // check validity of coefficients:
+                for(unsigned int i = 0; i < coefB.size(); i++)
+                {
+                    if( (B[i] != 0.0 || coefB[i] != 0.0) && false )
+                    {
+                        std::cout<<"i = "<<i<<"  "
+                                 <<"n = "<<n<<"  "
+                                 <<"bw = "<<bw<<"  "
+                                 <<"eps = "<<eps<<"  "
+                                 <<"coefB = "<<coefB[i]<<"  "
+                                 <<"B = "<<B[i]<<"  "
+                                 <<std::endl;
+                    }
+                    ASSERT_FALSE(std::isnan(B[i]));
+                    ASSERT_FALSE(std::isnan(coefB[i]));
+                    real tol = std::max(tolerance, std::fabs(coefB[i]));
+                    ASSERT_NEAR(coefB[i], B[i], tol); 
+                }
+            }
+        }
+    }
+
+
+    std::cout<<"t_mine = "<<mine/CLOCKS_PER_SEC<<std::endl;
+    std::cout<<"t_raykar = "<<raykar/CLOCKS_PER_SEC<<std::endl;
+
+
+/*
     // prepare density derivative estimator:
     unsigned int deriv = 2;
     GaussianDensityDerivative gdd;
@@ -379,6 +470,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
     // calculate coefficients using reference and optimised implementation:
     std::vector<real> coefB = gdd.setupCoefB(sample);
+    std::vector<real> b = gdd.compute_B(sample);
 
     // check right number of coefficients:
     ASSERT_EQ(coefBTrue.size(), coefB.size());
@@ -386,9 +478,11 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     // assert that correct B coefficients have been computed:
     for(size_t i = 0; i < coefB.size(); i++)
     {
-        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
+        ASSERT_NEAR(b[i], coefB[i], tolerance);
+//        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
     }
-}*/
+    */
+}
 
 
 /*!
