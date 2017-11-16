@@ -350,8 +350,12 @@ GaussianDensityDerivative::setupCoefQ(unsigned int n)
 }
 
 
-/*
+/*!
+ * Determines the cutoff radius according to:
  *
+ * \f[
+ *      R_\text{c} = R_\text{i} + \min(1, 2h\sqrt{\log\big(\sqrt{r!}/\epsilon^\prime\big)})
+ * \f]
  */
 real GaussianDensityDerivative::setupCutoffRadius()
 {
@@ -362,8 +366,14 @@ real GaussianDensityDerivative::setupCutoffRadius()
 }
 
 
-/*
+/*!
+ * Computes the appropriately scaled tolerance according to
  *
+ * \f[
+ *      \epsilon^\prime = \frac{\epsilon}{N*q}
+ * \f]
+ *
+ * where the factor \f$ q \f$ is calculated with setupCoefQ().
  */
 real
 GaussianDensityDerivative::setupScaledTolerance(unsigned int n)
