@@ -304,6 +304,10 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
 
 
 /*!
+ * Checks that all B coefficients computed for a variety of parameters and 
+ * random data sets of various sizes are finate and not NaN or Inf. This 
+ * might happen for large truncation numbers where floating point numbers might
+ * over or underflow.
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 {
@@ -370,6 +374,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
                 for(unsigned int i = 0; i < coefB.size(); i++)
                 {
                     ASSERT_FALSE(std::isnan(coefB[i]));
+                    ASSERT_FALSE(std::isinf(coefB[i]));
                 }
             }
         }
@@ -378,7 +383,11 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 
 
 /*!
- *
+ * Checks that the derivative computed using the approximate method of Raykar 
+ * is consistent with the derivative computed by direct evaluation of the 
+ * double sum. This is done for various parameters combinations and for a 
+ * number of different size random data sets sampled from a Gaussian mixture
+ * distribution.
  */
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 {
