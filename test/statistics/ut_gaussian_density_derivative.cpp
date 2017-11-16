@@ -488,7 +488,6 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 /*!
  *
  */
-/*
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 {
     // parameters of normal distribution:
@@ -506,7 +505,8 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
     std::normal_distribution<real> distributionC(muC, sdC);
     
     // carry out test on various sized random samples:
-    std::vector<real> numSamples = {10, 100, 1000};
+    // can not be much larger as direct evaluation too slow:
+    std::vector<real> numSamples = {5, 50, 500};
     for(auto n : numSamples)
     {
         // create a random sample:
@@ -528,8 +528,8 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
         gdd.shiftAndScale(eval, ss.first, ss.second);
 
         // carry out test for multiple parameter combinations:
-        std::vector<real> epsilon = {1e-1, 1e-2, 1e-3};
-        std::vector<real> bandwidth = {10.0, 1.0, 0.1, 0.01};
+        std::vector<real> epsilon = {1e-1, 1e-2, 1e-3, 1e-4};
+        std::vector<real> bandwidth = {10.0, 1.0, 0.1, 0.01, 0.001};
         for(auto eps : epsilon)
         {
             for(auto bw : bandwidth)
@@ -548,13 +548,25 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                 {
                     // difference between estimation methods:
                     real d = std::abs(derivDirect[i] - derivApprox[i]);
+                    real tol = std::max(eps,
+                                        eps*std::fabs(derivDirect[i]));
+/*                    std::cout<<"i = "<<i<<"  "
+                             <<"n = "<<n<<"  "
+                             <<"bw = "<<bw<<"  "
+                             <<"eps = "<<eps<<"  "
+                             <<"epsPrime = "<<gdd.epsPrime_<<"  "
+                             <<"trunc = "<<gdd.trunc_<<"  "
+                             <<"dir = "<<derivDirect[i]<<"  "
+                             <<"app = "<<derivApprox[i]<<"  "
+                             <<"tol = "<<tol<<"  "
+                             <<std::endl;*/
 
                     // assertion on relative error:
                     // eps scaled to account for buildup of floaring pt error:
-                    ASSERT_NEAR(0.0, d, 1.1*eps);
+                    ASSERT_NEAR(derivDirect[i], derivApprox[i], 5*tol);
                 }
             }
         }
     }    
 }
-*/
+

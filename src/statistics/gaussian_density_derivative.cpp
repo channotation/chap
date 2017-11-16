@@ -42,10 +42,10 @@ GaussianDensityDerivative::estimDirectAt(
         const std::vector<real> &sample,
         real eval)
 {
-    real d = 0.0;
+    double d = 0.0;
     for(auto s : sample)
     {
-        real diff = (eval - s)/bw_;
+        double diff = (eval - s)/bw_;
         d += std::exp(-0.5*diff*diff)*hermite(diff, r_);
     }
     return d;
@@ -197,30 +197,20 @@ GaussianDensityDerivative::estimApproxAt(
     int count = 0;
 
     // sum up the terms in approximation of derivative:
-    real sum = 0.0;           
+    double sumPos = 0.0;
+    double sumNeg = 0.0;
+    double sum = 0.0;           
     for(unsigned int l = 0; l < centres_.size(); l++)
     {
         // distance from cluster centre:
-        real dist = eval - centres_[l];
+        double dist = eval - centres_[l];
 
 
         count++;
         // skip this iteration if cluster centre beyond cutoff radius:
         if( std::fabs(dist) > rc_ )
         {
-//            std::cout<<"dist = "<<std::fabs(dist)<<"  "
-//                     <<"rc_ = "<<rc_<<"  "
-//                     <<"bw_ = "<<bw_<<"  "
-//                     <<std::endl;
-            // According to the paper we should be able to skip these, but if
-            // I do I increase the error above the prescribed threshold. In the
-            // implementation by Raykar there may be an error: By using abs
-            // instead of std::abs their distance is always zero, hence they 
-            // never skip cluster centres. Not skipping cluster centres should
-            // not impact the scaling with number of samples, but only with
-            // bandwidth, as the bandwidth determines clister spacing. I will
-            // leave this continue commented out for the time being.
-//            continue; // TODO
+            continue; // TODO
             skip++;            
         }
 
@@ -231,7 +221,7 @@ GaussianDensityDerivative::estimApproxAt(
         double expTerm = exp(-0.5*dist*dist);
 
         // also precompute power term:
-        std::vector<real> powTerm(trunc_ + r_);
+        std::vector<double> powTerm(trunc_ + r_);
         powTerm[0] = 1.0;
         for(unsigned int i = 1; i < trunc_ + r_; i++)
         {   
@@ -254,13 +244,54 @@ GaussianDensityDerivative::estimApproxAt(
                          * coefB_[l*trunc_*(r_ + 1) + (r_ + 1)*k + m]
                          * expTerm
                          * powTerm[k + r_ - 2*s - m];
-                    
+                  
+                    double tmp = coefA_[idxA]
+                               * coefB_[l*trunc_*(r_+1) + (r_+1)*k + m]
+                               * expTerm
+                               * powTerm[k+r_ - 2*s - m];
+
+                    if(std::isnan(tmp))
+                    {
+                        std::cout<<"bw = "<<bw_<<"  "
+                                 <<"eps = "<<eps_<<"  "
+                                 <<"trunc = "<<trunc_<<"  "
+                                 <<"k = "<<k<<"  "
+                                 <<"s = "<<s<<"  "
+                                 <<"t = "<<m<<"  "
+                                 <<"A = "<<coefA_[idxA]<<"  "
+                                 <<"B = "<<coefB_[l*trunc_*(r_+1) + k*(r_+1) + m]<<"  "
+                                 <<"d = "<<dist<<"  "
+                                 <<"e = "<<expTerm<<"  "
+                                 <<"p = "<<powTerm[k+r_ - 2*s - m]<<"  "
+                                 <<std::endl;
+                    }
+
+
+                    if(tmp > 0)
+                    {
+                        sumPos += tmp;
+                    }
+                    else
+                    {
+                        sumNeg += tmp;
+                    }
+
                     // increment A-coefficient index:
                     idxA++;
                 }   
             }   
         }   
     }   
+
+    double sumAdd = sumNeg + sumPos;
+    if( std::fabs(sum - sumAdd) > std::numeric_limits<real>::epsilon() )
+    {
+        std::cout<<"ATTENTION  "
+                 <<"sum = "<<sum<<"  "
+                 <<"sumAdd = "<<sumAdd<<"  "
+                 <<"diff = "<<std::fabs(sum - sumAdd)<<"  "
+                 <<std::endl;
+    }
    
 
     std::cout<<"bw = "<<bw_<<"  "
@@ -636,9 +667,9 @@ real GaussianDensityDerivative::setupCutoffRadius()
  *
  */
 real
-GaussianDensityDerivative::setupScaledTolerance(unsigned int /*n*/) // FIXME remove n?
+GaussianDensityDerivative::setupScaledTolerance(unsigned int n) // FIXME remove n?
 {
-    return eps_/std::sqrt(factorial(r_));    
+    return eps_/(n*q_);
 }
 
 
@@ -649,19 +680,21 @@ unsigned int
 GaussianDensityDerivative::setupTruncationNumber()
 {
     // hardcoded limit for truncation number:
+    // NOTE: this number will be exponent of distance between point and 
+    // cluster, if too large, double will overflow!
     const unsigned int TRUNCMAX = 500;
 
     // factors constant in the loop:
-    real bwSq = bw_*bw_;
-    real riSq = ri_*ri_;
+    double bwSq = bw_*bw_;
+    double riSq = ri_*ri_;
 
     // find lowest truncation number that guarantees error bound:
     for(unsigned int p = 0; p <= TRUNCMAX; p++)
     {
         // calculate error for given truncation number?
-        real b = std::min<real>(rc_, 0.5*(ri_ + std::sqrt(riSq + 8.0*p*bwSq)));
-        real d = ri_ - b;
-        real err = std::sqrt(rFac_)/factorial(p) 
+        double b = std::min<double>(rc_, 0.5*(ri_ + std::sqrt(riSq + 8.0*p*bwSq)));
+        double d = ri_ - b;
+        double err = std::sqrt(rFac_)/factorial(p) 
                  * std::pow(ri_*b/bwSq, p) 
                  * std::exp(-0.25*d*d/(bwSq));
 
@@ -685,9 +718,9 @@ GaussianDensityDerivative::setupTruncationNumber()
  * recursion and is potentially not very efficient (but is only used in 
  * reference implementation).
  */
-real   
+double   
 GaussianDensityDerivative::hermite(
-        real x, 
+        double x, 
         unsigned int r)   
 {   
     if( r == 0 )   
@@ -709,8 +742,8 @@ GaussianDensityDerivative::hermite(
  * Returns the factorial of the given number. Uses floating point variable to
  * be able to represent factorial of larger numbers beyond the largest integer.
  */
-real
-GaussianDensityDerivative::factorial(real n)
+double
+GaussianDensityDerivative::factorial(double n)
 {
     real f = 1.0;
     for(int i = 1; i <= n; i++)

@@ -29,7 +29,7 @@ class GaussianDensityDerivative
 
 
         std::vector<real> compute_B(std::vector<real> sample);
-
+        real Evaluate();
 
         // internal constants:
         const real SQRT2PI_ = std::sqrt(2.0*M_PI);
@@ -79,11 +79,11 @@ class GaussianDensityDerivative
         unsigned int setupTruncationNumber();
 
         // internal utilities:
-        real hermite(
-                real x, 
+        double hermite(
+                double x, 
                 unsigned int r);
-        real factorial(
-                real n);
+        double factorial(
+                double n);
         std::pair<real, real> getShiftAndScaleParams(
                 const std::vector<real> &sample,
                 const std::vector<real> &eval);
