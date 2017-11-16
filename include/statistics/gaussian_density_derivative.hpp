@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include <gromacs/utility/real.h>
 
 
@@ -11,6 +13,20 @@
  */
 class GaussianDensityDerivative
 {
+    friend class GaussianDensityDerivativeTest;
+    FRIEND_TEST(GaussianDensityDerivativeTest, 
+                GaussianDensityDerivativeShiftScaleTest);
+    FRIEND_TEST(GaussianDensityDerivativeTest, 
+                GaussianDensityDerivativeSpacePartitioningTest);
+    FRIEND_TEST(GaussianDensityDerivativeTest, 
+                GaussianDensityDerivativeTruncationTest);
+    FRIEND_TEST(GaussianDensityDerivativeTest, 
+                GaussianDensityDerivativeCoefATest);
+    FRIEND_TEST(GaussianDensityDerivativeTest, 
+                GaussianDensityDerivativeCoefBTest);
+    FRIEND_TEST(GaussianDensityDerivativeTest, 
+                GaussianDensityDerivativeConsistencyTest);
+
     public:
 
         std::vector<real> estimateApprox(
@@ -25,7 +41,7 @@ class GaussianDensityDerivative
         void setDerivOrder(unsigned int r);
         void setErrorBound(real eps);
 
-//    private:
+    private:
 
         // internal variables:
         unsigned int numIntervals_;
