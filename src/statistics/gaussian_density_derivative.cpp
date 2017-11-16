@@ -96,16 +96,25 @@ GaussianDensityDerivative::estimApproxAt(
     // upper bound for coefficient loop:
     unsigned int sMax = floor(static_cast<real>(r_)/2.0);
 
+    int skip = 0;
+    int count = 0;
+
     // sum up the terms in approximation of derivative:
     real sum = 0.0;           
     for(unsigned int l = 0; l < centres_.size(); l++)
     {
         // distance from cluster centre:
         real dist = eval - centres_[l];
-      
+
+
+        count++;
         // skip this iteration if cluster centre beyond cutoff radius:
         if( std::fabs(dist) > rc_ )
         {
+//            std::cout<<"dist = "<<std::fabs(dist)<<"  "
+//                     <<"rc_ = "<<rc_<<"  "
+//                     <<"bw_ = "<<bw_<<"  "
+//                     <<std::endl;
             // According to the paper we should be able to skip these, but if
             // I do I increase the error above the prescribed threshold. In the
             // implementation by Raykar there may be an error: By using abs
@@ -114,7 +123,8 @@ GaussianDensityDerivative::estimApproxAt(
             // not impact the scaling with number of samples, but only with
             // bandwidth, as the bandwidth determines clister spacing. I will
             // leave this continue commented out for the time being.
-            // continue; // TODO
+//            continue; // TODO
+            skip++;            
         }
 
         // scale distance with bandwidth:
@@ -155,6 +165,12 @@ GaussianDensityDerivative::estimApproxAt(
         }   
     }   
    
+
+    std::cout<<"bw = "<<bw_<<"  "
+             <<"eps = "<<eps_<<"  "
+             <<"Could have skipped "<<skip<<" out of "<<count<<"."
+             <<"   "<<(real)skip/(real)count*100.0<<" %"<<std::endl;
+
     // return density derivative at evaluation point:
     return sum;
 }
@@ -530,11 +546,11 @@ GaussianDensityDerivative::setupTruncationNumber()
     for(unsigned int p = 0; p <= TRUNCMAX; p++)
     {
         // calculate error for given truncation number?
-        real b = std::min<real>(rc_, ri_ + 0.5*std::sqrt(riSq + 8.0*p*bwSq));
+        real b = std::min<real>(rc_, 0.5*(ri_ + std::sqrt(riSq + 8.0*p*bwSq)));
         real d = ri_ - b;
         real err = std::sqrt(rFac_)/factorial(p) 
                  * std::pow(ri_*b/bwSq, p) 
-                 * std::exp(-0.5*d*d/(bwSq));
+                 * std::exp(-0.25*d*d/(bwSq));
 
         // has error bound been reached?
         if( err < epsPrime_ )

@@ -178,6 +178,83 @@ TEST_F(GaussianDensityDerivativeTest,
 
 
 /*!
+ * Checks the the correct truncation number is found for a variety of 
+ * parameters and random data sets.
+ */
+TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeTruncationTest)
+{
+    // parameters of normal distribution:
+    real muA = -1.0;
+    real sdA = 0.5;
+    real muB = 0.0;
+    real sdB = 0.1;
+    real muC = 5.0;
+    real sdC = 1.5;
+
+    // prepare random distribution:
+    std::default_random_engine generator;
+    std::normal_distribution<real> distributionA(muA, sdA);
+    std::normal_distribution<real> distributionB(muB, sdB);
+    std::normal_distribution<real> distributionC(muC, sdC);
+    
+    // perform test for various parameters:
+    std::vector<unsigned int> numSamples = {10, 100, 1000, 10000};
+    std::vector<real> bandwidth = {1.0, 0.1, 0.01, 0.001, 0.0001};
+    std::vector<real> epsilon = {0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001};
+    for(auto n : numSamples)
+    {
+        // create a random sample:
+        unsigned int numSamples = 1000;
+        std::vector<real> sample;
+        for(size_t i = 0; i < numSamples; i++)
+        {
+            sample.push_back( distributionA(generator) );
+            sample.push_back( distributionB(generator) );
+            sample.push_back( distributionC(generator) );
+        }
+        
+        // loop over parameters:
+        for(auto bw : bandwidth)
+        {
+            for(auto eps : epsilon)
+            {
+                // set parameters:
+                GaussianDensityDerivative gdd;
+                unsigned int deriv = 2;
+                gdd.setDerivOrder(deriv);
+                gdd.setBandWidth(bw);
+                gdd.setErrorBound(eps);
+
+                // determine required coefficients:
+                gdd.q_ = gdd.setupCoefQ(sample.size());
+                gdd.epsPrime_ = gdd.setupScaledTolerance(sample.size());
+                gdd.rc_ = gdd.setupCutoffRadius();
+                gdd.centres_ = gdd.setupClusterCentres();
+
+                // calculate truncation number:
+                unsigned int trunc = gdd.setupTruncationNumber();
+
+                // check validity of truncation number:
+                ASSERT_FALSE(std::isnan(trunc));
+                ASSERT_GE(trunc, 0);
+
+                // check that truncation criterion is met:
+                real b = std::min<real>(gdd.rc_, 
+                                  0.5*(gdd.ri_ + std::sqrt(gdd.ri_*gdd.ri_ + 
+                                  8.0*trunc*gdd.bw_*gdd.bw_)));
+                real error = std::sqrt(gdd.factorial(gdd.r_))
+                           / gdd.factorial(trunc)
+                           * std::pow((gdd.ri_ * b / (gdd.bw_*gdd.bw_)), trunc)
+                           * std::exp(-(std::pow(gdd.ri_ - b, 2))
+                                      / (gdd.bw_*gdd.bw_));
+                ASSERT_LE(error, gdd.epsPrime_);                
+            }
+        }
+    }
+}
+
+
+/*!
  * Checks that the a-coefficients are correctly computed for two different
  * derivative orders by comparison to manually calculated coefficients.
  */
@@ -229,6 +306,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefATest)
 
 /*!
  */
+/*
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
 {
     real tolerance = 10.0*std::numeric_limits<real>::epsilon();
@@ -310,12 +388,13 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     {
         ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
     }
-}
+}*/
 
 
 /*!
  *
  */
+/*
 TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 {
     // parameters of normal distribution:
@@ -356,7 +435,7 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
 
         // carry out test for multiple parameter combinations:
         std::vector<real> epsilon = {1e-1, 1e-2, 1e-3};
-        std::vector<real> bandwidth = {10.0, 1.0, 0.1};
+        std::vector<real> bandwidth = {10.0, 1.0, 0.1, 0.01};
         for(auto eps : epsilon)
         {
             for(auto bw : bandwidth)
@@ -384,4 +463,4 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
         }
     }    
 }
-
+*/
