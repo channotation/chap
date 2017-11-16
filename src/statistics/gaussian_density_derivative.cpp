@@ -56,103 +56,6 @@ GaussianDensityDerivative::estimDirectAt(
  *
  */
 std::vector<real>
-GaussianDensityDerivative::compute_B(std::vector<real> sample)
-{
-    int r = r_;
-    int p = trunc_;
-    int K = centres_.size();
-    int N = sample.size();
-    int num_of_B_terms=centres_.size()*trunc_*(r_+1);  
-    real q = q_;
-    real h = bw_;
-    std::vector<real> px = sample;   
-    std::vector<double> B_terms(num_of_B_terms);
-    std::vector<real> pClusterCenter = centres_;
-    std::vector<unsigned int> pClusterIndex = idx_;
-
-    double *k_factorial;   
-    k_factorial=new double[p];   
-   
-    k_factorial[0]=1;   
-    for(int i=1; i<p ;i++){   
-        k_factorial[i]=k_factorial[i-1]/i;   
-        //printf("%f \n",k_factorial[i]);   
-    }   
-   
-    double *temp3;   
-    temp3=new double[p+r];   
-   
-    for(int n=0; n<K; n++){   
-        //printf("Cluster %d ",n);   
-        for(int k=0; k<p; k++){   
-            for(int m=0; m< r+1; m++){   
-                B_terms[(n*p*(r+1))+((r+1)*k)+m]=0.0;;   
-                //printf("%f ",B_terms[(n*p*(r+1))+((r+1)*k)+m]);   
-            }   
-        }   
-        //printf("\n");   
-    }   
-   
-    for(int i=0; i<N; i++){   
-        int cluster_number=pClusterIndex[i];   
-        double temp1=(px[i]-pClusterCenter[cluster_number])/h;   
-        double temp2=exp(-temp1*temp1/2);   
-        temp3[0]=1;   
-        for(int k=1; k<p+r; k++){   
-            temp3[k]=temp3[k-1]*temp1;   
-        }   
-   
-        for(int k=0; k<p; k++){   
-            for(int m=0; m< r+1; m++){   
-                B_terms[(cluster_number*p*(r+1))+((r+1)*k)+m]+=(temp2*temp3[k+m]);   
-    
-
-                int tmp = cluster_number*p*(r+1) + k*(r+1) + m;
-                if( tmp == 156286 && false )
-                {
-                    std::cout<<"posterior raykar"<<"  "
-                             <<"i = "<<i<<"  "
-                             <<"tmp = "<<tmp<<"  "
-                             <<"bw = "<<bw_<<"  "
-                             <<"eps = "<<eps_<<"  "
-                             <<"k = "<<k<<"  "
-                             <<"t = "<<m<<"  "
-                             <<"e = "<<temp2<<"  "
-                             <<"d = "<<temp1<<"  "
-                             <<"p = "<<temp3[k+m]<<"  "
-                             <<"k! = "<<factorial(k)<<"  "
-                             <<"B = "<<B_terms[idx_[i]*trunc_*(r_+1) + (r_+1)*k + m]<<"  "
-                             <<"B[-1] = "<<B_terms[idx_[i]*trunc_*(r_+1) + (r_+1)*k + m]<<"  "
-                             <<std::endl;
-                }
-        }   
-        }   
-    }   
-   
-    for(int n=0; n<K; n++){   
-        //printf("Cluster %d ",n);   
-        for(int k=0; k<p; k++){   
-            for(int m=0; m< r+1; m++){   
-                B_terms[(n*p*(r+1))+((r+1)*k)+m]*=(k_factorial[k]*q);   
-                //printf("%f ",B_terms[(n*p*(r+1))+((r+1)*k)+m]);   
-            }   
-        }   
-        //printf("\n");   
-    }   
-   
-   
-    delete []k_factorial;   
-    delete []temp3;  
-
-    std::vector<real> ret(B_terms.begin(), B_terms.end());
-    return ret;
-}
-
-
-/*
- *
- */
-std::vector<real>
 GaussianDensityDerivative::estimateApprox(
         std::vector<real> &sample,
         std::vector<real> &eval)
@@ -193,9 +96,6 @@ GaussianDensityDerivative::estimApproxAt(
     // upper bound for coefficient loop:
     unsigned int sMax = floor(static_cast<real>(r_)/2.0);
 
-    int skip = 0;
-    int count = 0;
-
     // sum up the terms in approximation of derivative:
     double sumPos = 0.0;
     double sumNeg = 0.0;
@@ -205,13 +105,10 @@ GaussianDensityDerivative::estimApproxAt(
         // distance from cluster centre:
         double dist = eval - centres_[l];
 
-
-        count++;
         // skip this iteration if cluster centre beyond cutoff radius:
         if( std::fabs(dist) > rc_ )
         {
-            continue; // TODO
-            skip++;            
+            continue;
         }
 
         // scale distance with bandwidth:
@@ -244,37 +141,6 @@ GaussianDensityDerivative::estimApproxAt(
                          * coefB_[l*trunc_*(r_ + 1) + (r_ + 1)*k + m]
                          * expTerm
                          * powTerm[k + r_ - 2*s - m];
-                  
-                    double tmp = coefA_[idxA]
-                               * coefB_[l*trunc_*(r_+1) + (r_+1)*k + m]
-                               * expTerm
-                               * powTerm[k+r_ - 2*s - m];
-
-                    if(std::isnan(tmp))
-                    {
-                        std::cout<<"bw = "<<bw_<<"  "
-                                 <<"eps = "<<eps_<<"  "
-                                 <<"trunc = "<<trunc_<<"  "
-                                 <<"k = "<<k<<"  "
-                                 <<"s = "<<s<<"  "
-                                 <<"t = "<<m<<"  "
-                                 <<"A = "<<coefA_[idxA]<<"  "
-                                 <<"B = "<<coefB_[l*trunc_*(r_+1) + k*(r_+1) + m]<<"  "
-                                 <<"d = "<<dist<<"  "
-                                 <<"e = "<<expTerm<<"  "
-                                 <<"p = "<<powTerm[k+r_ - 2*s - m]<<"  "
-                                 <<std::endl;
-                    }
-
-
-                    if(tmp > 0)
-                    {
-                        sumPos += tmp;
-                    }
-                    else
-                    {
-                        sumNeg += tmp;
-                    }
 
                     // increment A-coefficient index:
                     idxA++;
@@ -283,174 +149,7 @@ GaussianDensityDerivative::estimApproxAt(
         }   
     }   
 
-    double sumAdd = sumNeg + sumPos;
-    if( std::fabs(sum - sumAdd) > std::numeric_limits<real>::epsilon() )
-    {
-        std::cout<<"ATTENTION  "
-                 <<"sum = "<<sum<<"  "
-                 <<"sumAdd = "<<sumAdd<<"  "
-                 <<"diff = "<<std::fabs(sum - sumAdd)<<"  "
-                 <<std::endl;
-    }
-   
-
-    std::cout<<"bw = "<<bw_<<"  "
-             <<"eps = "<<eps_<<"  "
-             <<"Could have skipped "<<skip<<" out of "<<count<<"."
-             <<"   "<<(real)skip/(real)count*100.0<<" %"<<std::endl;
-
     // return density derivative at evaluation point:
-    return sum;
-}
-
-
-
-/*!
- *
- */
-real
-GaussianDensityDerivative::estimApproxAtOld2(
-        const std::vector<real> &/*sample*/,
-        real eval)
-{  
-    // iteration limit for coefficient loop:
-    unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
-       
-    // loop over cluster centres:
-    real sum = 0.0;
-    for(size_t l = 0; l < centres_.size(); l++)
-    {  
-        // distance from cluster centre:
-        real diff = eval - centres_[l];
-
-        // skip this iteration, if cluster centre is beyond cutoff radius:
-        if( std::abs(diff) > rc_ )
-        {
-            continue;
-        }
-
-        // scale distance by bandwidth:
-        diff /= bw_;
-       
-        // calculate exponential term:
-        real expTerm = exp(-0.5*diff*diff);   
-
-        // the power term can be precomputed for efficiency:
-        std::vector<real> powTerm(trunc_ + r_);
-        powTerm[0] = 1.0;   
-        for(unsigned int i = 1; i < trunc_ + r_; i++)
-        {   
-            powTerm[i] = powTerm[i - 1] * diff;   
-        }   
-
-        // loop up to truncation number:
-        for(unsigned int k = 0; k <= trunc_ - 1; k++)
-        {   
-            // A-coefficient will be accessed in same order as it is created:
-            unsigned int idxA = 0;  
-
-            // sums over coefficients:
-            for(unsigned int s = 0; s <= sMax; s++)
-            {   
-                for(unsigned int t = 0; t <= r_ - 2*s; t++)
-                {
-                    // add to sum:
-                    sum += coefA_[idxA] 
-                         * coefB_[l*trunc_*(r_+1) + (r_+1)*k + t]
-                         * powTerm[k + r_ - 2*s - t]
-                         * expTerm;
-
-                    // increment coefficient A index:
-                    idxA++;   
-                }   
-            }   
-        }   
-    }   
-
-    // return derivative value at this point:
-    return sum;
-}
-
-
-/*!
- *
- */
-real
-GaussianDensityDerivative::estimApproxAtOld(
-        const std::vector<real> &/*sample*/,
-        real eval)
-{
-    unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
-
-    // build sum over centres:
-    double sum = 0.0;
-    int count = 0;
-    for(unsigned int l = 0; l < centres_.size(); l++)
-    {
-        double d = (eval - centres_[l])/bw_;
-        double e = std::exp(-0.5*d*d);
-  
-        // ignore centres that are more than the cutoff radius from eval point:
-        if( std::abs(centres_[l] - eval) > rc_ )
-        {
-            // FIXME: commenting this back in makes test fail!
-            continue;
-/*            std::cout<<"l = "<<l<<"  "
-                     <<"c = "<<centres_[l]<<"  "
-                     <<"eval = "<<eval<<"  "
-                     <<"dist = "<<std::abs(centres_[l] - eval)<<"  "
-                     <<"rc = "<<rc_<<"  "
-                     <<std::endl;*/
-        }
-/*
-        std::vector<real> p(trunc_+r_);
-        p[0] = 1.0;
-        for(int i = 0; i < trunc_ + r_; i++)
-        {
-            p[i] = p[i-1]*d;
-        }*/
-
-        // sum up to truncation number terms:
-        for(unsigned int k = 0; k < trunc_ - 1; k++)
-        {
-            unsigned int idxA = 0;
-
-            // loops over coefficient matrices:
-            for(unsigned int s = 0; s <= sMax; s++)
-            {
-                for(unsigned int t = 0; t <= r_ - 2*s; t++)
-                {
-                    real p = std::pow(d, k + r_ - 2*s - t); 
-                    real tmp = coefA_.at(idxA)
-                         * coefB_.at(l*trunc_*(r_+1) + k*(r_+1) + t) 
-                         * e * p;
-                    sum += tmp;
-/*
-                    std::cout<<"l = "<<l<<"  "
-                             <<"k = "<<k<<"  "
-                             <<"s = "<<s<<"  "
-                             <<"t = "<<t<<"  "
-                             <<"bw = "<<bw_<<"  "
-                             <<"c = "<<centres_[l]<<"  "
-                             <<"eval = "<<eval<<"  "
-                             <<"d = "<<d<<"  "                           
-                             <<"e = "<<e<<"  "
-                             <<"p = "<<p<<"  "
-                             <<"a = "<<coefA_[idxA]<<"  "
-                             <<"b = "<<coefB_[l*trunc_*(r_+1) + k*(r_+1) + t]<<"  "
-                             <<"tmp = "<<tmp<<"  "
-                             <<std::endl;*/
-
-                    // increment indeces:
-                    idxA++;
-                    count++;
-                }
-            }
-        }
-    }
-
-    std::cout<<"count = "<<count<<std::endl;
-
     return sum;
 }
 
@@ -667,7 +366,7 @@ real GaussianDensityDerivative::setupCutoffRadius()
  *
  */
 real
-GaussianDensityDerivative::setupScaledTolerance(unsigned int n) // FIXME remove n?
+GaussianDensityDerivative::setupScaledTolerance(unsigned int n)
 {
     return eps_/(n*q_);
 }

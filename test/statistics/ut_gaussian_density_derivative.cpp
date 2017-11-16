@@ -323,9 +323,6 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
     std::normal_distribution<real> distributionB(muB, sdB);
     std::normal_distribution<real> distributionC(muC, sdC);
  
-    clock_t mine = 0.0;
-    clock_t raykar = 0.0;
-
     // perform test for various parameters:
     std::vector<unsigned int> numSamples = {10, 100, 1000, 10000};
     std::vector<real> bandwidth = {1.0, 0.1, 0.01, 0.001, 0.0001};
@@ -367,121 +364,16 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeCoefBTest)
                 gdd.trunc_ = gdd.setupTruncationNumber();
 
                 // compute coefficients:
-                clock_t tmp = std::clock();
                 std::vector<real> coefB = gdd.setupCoefB(sample);
-                mine += std::clock() - tmp;
-                tmp = std::clock();
-                std::vector<real> B = gdd.compute_B(sample); // TODO
-                raykar += std::clock() - tmp;
                 
                 // check validity of coefficients:
                 for(unsigned int i = 0; i < coefB.size(); i++)
                 {
-                    if( (B[i] != 0.0 || coefB[i] != 0.0) && false )
-                    {
-                        std::cout<<"i = "<<i<<"  "
-                                 <<"n = "<<n<<"  "
-                                 <<"bw = "<<bw<<"  "
-                                 <<"eps = "<<eps<<"  "
-                                 <<"coefB = "<<coefB[i]<<"  "
-                                 <<"B = "<<B[i]<<"  "
-                                 <<std::endl;
-                    }
-                    ASSERT_FALSE(std::isnan(B[i]));
                     ASSERT_FALSE(std::isnan(coefB[i]));
-                    real tol = std::max(tolerance, std::fabs(coefB[i]));
-                    ASSERT_NEAR(coefB[i], B[i], tol); 
                 }
             }
         }
     }
-
-
-    std::cout<<"t_mine = "<<mine/CLOCKS_PER_SEC<<std::endl;
-    std::cout<<"t_raykar = "<<raykar/CLOCKS_PER_SEC<<std::endl;
-
-
-/*
-    // prepare density derivative estimator:
-    unsigned int deriv = 2;
-    GaussianDensityDerivative gdd;
-    gdd.setDerivOrder(deriv);
-    gdd.setBandWidth(0.1);
-    gdd.setErrorBound(0.001);
-
-    // sample data in interval [0,1]:
-    std::vector<real> sample = {0.0, 1.0};
-
-    // prepare spatial partitioning:
-    gdd.centres_ = gdd.setupClusterCentres();
-    gdd.idx_ = gdd.setupClusterIndices(sample);
-
-    // calculate parameters need for coefficient calculation:
-    gdd.q_ = gdd.setupCoefQ(sample.size());
-    gdd.epsPrime_ = gdd.setupScaledTolerance(sample.size());
-    gdd.rc_ = gdd.setupCutoffRadius();
-    gdd.trunc_ = gdd.setupTruncationNumber();
-
-    // reference values for coefficients:
-    int nCoef = gdd.trunc_*(deriv+1)*gdd.centres_.size(); 
-    std::vector<real> coefBTrue(nCoef, 0.0);
-    coefBTrue[ 0] = 193.3340454;
-    coefBTrue[ 1] = -48.33351135;
-    coefBTrue[ 2] =  12.08337784;
-    coefBTrue[ 3] = -48.3335113;
-    coefBTrue[ 4] =  12.08337784;
-    coefBTrue[ 5] =  -3.02084446;
-    coefBTrue[ 6] =   6.041688919;
-    coefBTrue[ 7] =  -1.51042223;
-    coefBTrue[ 8] =   0.3776055574;
-    coefBTrue[ 9] =  -0.5034740567;
-    coefBTrue[10] =   0.1258685142;
-    coefBTrue[11] =  -0.03146712855;
-    coefBTrue[12] =   0.03146712855;
-    coefBTrue[13] =  -0.007866782136;
-    coefBTrue[14] =   0.001966695534;
-    coefBTrue[15] =  -0.001573356567;
-    coefBTrue[16] =   0.0003933391417;
-    coefBTrue[17] =  -9.833478543e-05;
-    coefBTrue[18] =   6.555652362e-05;
-    coefBTrue[19] =  -1.638913091e-05;
-    coefBTrue[20] =   4.097282726e-06;
-    coefBTrue[nCoef - 21] = 193.3340302;
-    coefBTrue[nCoef - 20] =  48.3335762;
-    coefBTrue[nCoef - 19] =  12.08341122;
-    coefBTrue[nCoef - 18] =  48.3335762;
-    coefBTrue[nCoef - 17] =  12.08341122;
-    coefBTrue[nCoef - 16] =   3.020857096;
-    coefBTrue[nCoef - 15] =   6.041705608;
-    coefBTrue[nCoef - 14] =   1.510428548;
-    coefBTrue[nCoef - 13] =   0.3776076734;
-    coefBTrue[nCoef - 12] =   0.5034762025;
-    coefBTrue[nCoef - 11] =   0.1258692294;
-    coefBTrue[nCoef - 10] =   0.03146735206;
-    coefBTrue[nCoef -  9] =   0.03146730736;
-    coefBTrue[nCoef -  8] =   0.007866838016;
-    coefBTrue[nCoef -  7] =   0.001966712065;
-    coefBTrue[nCoef -  6] =   0.00157336751;
-    coefBTrue[nCoef -  5] =   0.0003933424305;
-    coefBTrue[nCoef -  4] =   9.833574586e-05;
-    coefBTrue[nCoef -  3] =   6.555706932e-05;
-    coefBTrue[nCoef -  2] =   1.638929098e-05;
-    coefBTrue[nCoef -  1] =   4.097328656e-06;
-
-    // calculate coefficients using reference and optimised implementation:
-    std::vector<real> coefB = gdd.setupCoefB(sample);
-    std::vector<real> b = gdd.compute_B(sample);
-
-    // check right number of coefficients:
-    ASSERT_EQ(coefBTrue.size(), coefB.size());
-
-    // assert that correct B coefficients have been computed:
-    for(size_t i = 0; i < coefB.size(); i++)
-    {
-        ASSERT_NEAR(b[i], coefB[i], tolerance);
-//        ASSERT_NEAR(coefBTrue[i], coefB[i], tolerance);
-    }
-    */
 }
 
 
@@ -547,22 +439,10 @@ TEST_F(GaussianDensityDerivativeTest, GaussianDensityDerivativeConsistencyTest)
                 for(size_t i = 0; i < eval.size(); i++)
                 {
                     // difference between estimation methods:
-                    real d = std::abs(derivDirect[i] - derivApprox[i]);
                     real tol = std::max(eps,
                                         eps*std::fabs(derivDirect[i]));
-/*                    std::cout<<"i = "<<i<<"  "
-                             <<"n = "<<n<<"  "
-                             <<"bw = "<<bw<<"  "
-                             <<"eps = "<<eps<<"  "
-                             <<"epsPrime = "<<gdd.epsPrime_<<"  "
-                             <<"trunc = "<<gdd.trunc_<<"  "
-                             <<"dir = "<<derivDirect[i]<<"  "
-                             <<"app = "<<derivApprox[i]<<"  "
-                             <<"tol = "<<tol<<"  "
-                             <<std::endl;*/
 
                     // assertion on relative error:
-                    // eps scaled to account for buildup of floaring pt error:
                     ASSERT_NEAR(derivDirect[i], derivApprox[i], 5*tol);
                 }
             }

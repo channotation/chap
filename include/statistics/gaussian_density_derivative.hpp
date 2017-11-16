@@ -27,41 +27,29 @@ class GaussianDensityDerivative
 
 //    private:
 
-
-        std::vector<real> compute_B(std::vector<real> sample);
-        real Evaluate();
-
-        // internal constants:
-        const real SQRT2PI_ = std::sqrt(2.0*M_PI);
-
         // internal variables:
-        real bw_;
+        unsigned int numIntervals_;
         unsigned int r_;
         unsigned int rFac_;
         unsigned int trunc_;
-        unsigned int numIntervals_;
-        real ri_;
-        real rc_;
-        real q_;
+
+        real bw_;
         real eps_;
         real epsPrime_;
+        real q_;
+        real ri_;
+        real rc_;
 
         std::vector<real> centres_;
-        std::vector<unsigned int> idx_;
         std::vector<real> coefA_;
         std::vector<real> coefB_;
+        std::vector<unsigned int> idx_;
 
         // estimation at an individual evaluation point: 
         real estimDirectAt(
                 const std::vector<real> &sample,
                 real eval);
         real estimApproxAt(
-                const std::vector<real> &sample,
-                real eval);
-        real estimApproxAtOld2(
-                const std::vector<real> &sample,
-                real eval);
-        real estimApproxAtOld(
                 const std::vector<real> &sample,
                 real eval);
 
