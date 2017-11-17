@@ -54,7 +54,7 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
     real tol = 0.1;
 
     // parameters:
-    int numReps = 3;
+    int numReps = 1; // TODO
     std::vector<real> mean = {-10, 0.0, std::sqrt(2.0)};
     std::vector<real> numSamples = {500, 1000, 1500};
     std::vector<real> standardDeviation = {100.0, 10.0, 1.0, 0.1, 0.01};
@@ -91,13 +91,13 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
     //                sampleStandardDeviation.push_back(ssd);
 
                     // shift and scale data:
-                    GaussianDensityDerivative gdd;
-                    auto ss = gdd.getShiftAndScaleParams(sample, sample);
-                    gdd.shiftAndScale(sample, ss.first, ss.second);
+//                    GaussianDensityDerivative gdd;
+//                    auto ss = gdd.getShiftAndScaleParams(sample, sample);
+//                    gdd.shiftAndScale(sample, ss.first, ss.second);
                 
                     // estimate bandwidth:
                     AmiseOptimalBandwidthEstimator bwe;
-                    real bw = bwe.estimate(sample) / ss.second;
+                    real bw = bwe.estimate(sample);
     //                bandWidth.push_back(bw);
 
                     // Silverman's rule of thumb should be accurate for pure Gaussian:
@@ -138,5 +138,63 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
                  <<"ratio = "<<1.06*sampleStandardDeviation[i]/std::pow(numSamples, 1.0/5.0)/bandWidth[i]<<"  "
                  <<std::endl;
     }*/
+}
+
+
+/*
+ *
+ */
+TEST_F(AmiseOptimalBandwidthEstimatorTest, 
+       AmiseOptimalBandwidthEstimatorGaussianDensitySpeedTest)
+{
+    int num = 10000;
+    int numReps = 5;
+    real mu  = 0.0;
+    real sd = 1.0;
+
+    std::default_random_engine generator;
+    std::normal_distribution<real> distribution(mu, sd);
+    
+    std::vector<real> sampleSingle;
+    for(int i = 0; i < num; i++)
+    {
+        sampleSingle.push_back(distribution(generator));
+    }
+
+
+    std::vector<real> sampleRep;
+    for(int i = 0; i < num; i++)
+    {
+        sampleRep.push_back(distribution(generator));
+    }
+
+
+
+    clock_t time = std::clock();
+
+    AmiseOptimalBandwidthEstimator bwe;
+    bwe.estimate(sampleSingle);
+
+    time = std::clock() - time;
+
+    std::cout<<"time single = "<<time/CLOCKS_PER_SEC<<std::endl;
+
+
+/*
+    time = std::clock();
+
+    for(int i = 0; i < numReps; i++)
+    {
+        AmiseOptimalBandwidthEstimator bwe;
+        bwe.estimate(sampleRep); 
+    }
+
+
+    time = std::clock() - time;
+
+    std::cout<<"time repeat = "<<time/CLOCKS_PER_SEC/numReps<<std::endl;
+*/
+
+
 }
 

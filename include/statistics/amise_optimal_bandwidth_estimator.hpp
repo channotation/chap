@@ -25,7 +25,7 @@ class AmiseOptimalBandwidthEstimator
  
         // public interface for bandwidth estimation:
         real estimate(
-                std::vector<real> &samples);
+                const std::vector<real> &samples);
 
     private:
        
@@ -39,11 +39,11 @@ class AmiseOptimalBandwidthEstimator
         // density derivative functionals:
         inline real functionalPhi6(real sigma);
         inline real functionalPhi8(real sigma);        
-        real functionalPhi(
-                const std::vector<real> &sample,
-                real bw,
-                const int deriv);
-        real functionalPhiFast(
+//        real functionalPhi(
+//                const std::vector<real> &sample,
+//                real bw,
+//                const int deriv);
+        inline real functionalPhiFast(
                 const std::vector<real> &samples,
                 real bw,
                 int deriv);
@@ -51,7 +51,7 @@ class AmiseOptimalBandwidthEstimator
         // bandwidth to be used in derivative estimation:
         real gammaFactor_;
         inline real gammaFactor(const real phi4, const real phi6); 
-        real gamma(real bw);
+        inline real gamma(real bw);
     
         // implicit equation for omptimal bandwidth:
         real optimalBandwidthEquation(
