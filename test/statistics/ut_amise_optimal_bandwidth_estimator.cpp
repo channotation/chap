@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "statistics/amise_optimal_bandwidth_estimator.hpp"
-
+#include "statistics/summary_statistics.hpp"
 
 /*!
  * \brief Test fixture for the HistogramDensityEstimator.
@@ -41,139 +41,102 @@ class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
 
 
 /*!
- *
+ * Checks the validity of the AMISE optimal bandwidth estimates by comparison
+ * to the bandwidth estimated from Silverman's rule of thumb. This is carried
+ * out for a Gaussian distribution (for which Silverman's rule should be exact
+ * in the limit of large N) for a variety of sample sizes and parameters in the
+ * original distribution.
  */
 TEST_F(AmiseOptimalBandwidthEstimatorTest, 
-       AmiseOptimalBandwidthEstimatorGaussianDensityNonnegativityTest)
+       AmiseOptimalBandwidthEstimatorGaussianDensitySilvermanTest)
 {
-/*
-    // parameters of normal distribution:
-    std::vector<real> mean = {-1.0, 0.0, 1.0, 1000.0, std::sqrt(2.0)};
-    std::vector<real> sd = {1.0, std::sqrt(2.0), 100.0, 1.0, 2.0};
-    std::vector<int> num = {100, 10, 10, 10, 10};
+    // tolerance threshold:
+    real tol = 0.1;
 
-    // prepare random distribution:
+    // parameters:
+    int numReps = 3;
+    std::vector<real> mean = {-10, 0.0, std::sqrt(2.0)};
+    std::vector<real> numSamples = {500, 1000, 1500};
+    std::vector<real> standardDeviation = {100.0, 10.0, 1.0, 0.1, 0.01};
 
-    // generate test data sets:
-    for(size_t i = 0; i < mean.size(); i++)
+    // build sample from Guassian with varying standard deviation:
+//    std::vector<real> bandWidth;
+//    std::vector<real> sampleStandardDeviation;
+    for(auto mu : mean)
     {
-        // prepare distribution:
-        std::default_random_engine generator;
-        std::normal_distribution<real> distribution(mean[i], sd[i]);
-
-        std::cout<<"mu = "<<mean[i]<<"  "
-                 <<"sd = "<<sd[i]<<"  "
-                 <<"N = "<<num[i]<<"  ";
-
-        // draw random sample:
-        std::vector<real> data;
-        for(size_t j = 0; j < num[i]; j++)
+        for(auto num : numSamples)
         {
-            data.push_back( distribution(generator) );
-            std::cout<<data.back()<<"  ";
-        }
+            for(auto sd : standardDeviation)
+            {
+                // prepare Gaussian distribution:
+                std::default_random_engine generator;
+                std::normal_distribution<real> distribution(mu, sd);
+                
+                for(size_t i = 0; i < numReps; i++)
+                {            
+                    // draw a sample:
+                    std::vector<real> sample;
+                    for(int j = 0; j < num; j++)
+                    {
+                        sample.push_back( distribution(generator) );
+                    }
 
-        // estimate bandwidth:
-        AmiseOptimalBandwidthEstimator bwe;
-        real bw = bwe.estimate(data);
+                    // obtain sample standard deviation:
+                    SummaryStatistics sumStat;
+                    for(auto s : sample)
+                    {
+                        sumStat.update(s);
+                    }
+                    real ssd = sumStat.sd();
+    //                sampleStandardDeviation.push_back(ssd);
 
-        std::cout<<"bw = "<<bw<<std::endl;
+                    // shift and scale data:
+                    GaussianDensityDerivative gdd;
+                    auto ss = gdd.getShiftAndScaleParams(sample, sample);
+                    gdd.shiftAndScale(sample, ss.first, ss.second);
+                
+                    // estimate bandwidth:
+                    AmiseOptimalBandwidthEstimator bwe;
+                    real bw = bwe.estimate(sample) / ss.second;
+    //                bandWidth.push_back(bw);
 
-        // make sure bandwidth is positive:
-        ASSERT_LT(0.0, bw);
-    }
-   */ 
-}
+                    // Silverman's rule of thumb should be accurate for pure Gaussian:
+                    real silverman = 1.06*ssd/std::pow(num, 1.0/5.0);
 
+                    // valid bandwidth should always be positive:
+                    ASSERT_GT(bw, 0.0);
+                    ASSERT_GT(silverman, 0.0);
 
-/*!
- *
- */
-TEST_F(AmiseOptimalBandwidthEstimatorTest, 
-       AmiseOptimalBandwidthEstimatorGaussianDensityReferenceImplementationTest)
-{
     /*
-    // error tolerance:
-    real eps = std::numeric_limits<real>::epsilon();
-
-    // randomly generated sample data (from standard normal):
-    std::vector<real> sample = {-0.4462099,
-                                -1.5673473,
-                                -0.4568042,
-                                -0.4100268,
-                                 0.7060560,
-                                -0.5724193,
-                                 0.8842685,
-                                -1.8202730,
-                                 0.6218274,
-                                -0.5386946};
-
-    std::vector<real> test;
-    for(int i = 0; i < 1000; i++)
-    {
-        for(auto s : sample)
-        {
-            test.push_back(s);
+                    std::cout.precision(5);
+                    std::cout<<"n = "<<num<<"  "
+                             <<"sd = "<<ssd<<"  "
+                             <<"bw = "<<bw<<"  "
+                             <<"silverman = "<<silverman<<"  "
+                             <<"abs = "<<std::fabs(bw - silverman)<<"  "
+                             <<"rel = "<<std::fabs(bw - silverman)/silverman<<"  "
+                             <<"ratio = "<<silverman/bw<<"  "
+                             <<std::endl;
+    */
+                    // check consistency between Silverman and AMISE estimates:
+                    ASSERT_NEAR(std::fabs(bw - silverman)/silverman, 0.0, tol);
+                }
+            }
         }
     }
 
-    // estimate AMISE-optimal bandwidth for this:
-    AmiseOptimalBandwidthEstimator bwe;
-    real bw = bwe.estimate(test);
-
-    // compare to reference implementation value of bandwidth:
-    real trueBw = 0.156558;
-    ASSERT_NEAR(trueBw, bw, eps);
-
-    */
-}
-
 
 /*
- *
- */
-TEST_F(AmiseOptimalBandwidthEstimatorTest, 
-       AmiseOptimalBandwidthEstimatorApproximateDerivativeTest)
-{
-
-
-
-    std::vector<real> samples = {-1, -0.5, 1.0, 0.3, 0.2, 0.4, 0.1, 0.25};
-/*
-    samples = testData_;
-
-    std::cout<<"N = "<<samples.size()<<std::endl;
-
-
-    int deriv = 2;
-    real bw = 0.1;
-    AmiseOptimalBandwidthEstimator bwe;
-
-    clock_t t_direct = std::clock();
-    real phiDirect = bwe.functionalPhi(samples, bw, deriv);
-    t_direct = std::clock() - t_direct;
-
-    clock_t t_approx = std::clock();
-    real phiApprox = bwe.functionalPhiFast(samples, bw, deriv);
-    t_approx = std::clock() - t_approx;
-
-    std::cout<<"t_Direct = "<<t_direct<<"  ";
-    std::cout<<"t_Approx = "<<t_approx<<std::endl;
-
-    std::cout<<"phiDirect = "<<phiDirect<<"  ";
-    std::cout<<"phiApprox = "<<phiApprox<<std::endl;
-
-    */
+    std::cout.precision(5);
+    for(size_t i = 0; i < bandWidth.size(); i++)
+    {
+        std::cout<<"sd = "<<standardDeviation[i]<<"  "
+                 <<"ssd = "<<sampleStandardDeviation[i]<<"  "
+                 <<"bw = "<<bandWidth[i]<<"  "
+                 <<"ssd/bw = "<<sampleStandardDeviation[i]/bandWidth[i]<<"  "
+                 <<"silverman = "<<1.06*sampleStandardDeviation[i]/std::pow(numSamples, 1.0/5.0)<<"  "
+                 <<"ratio = "<<1.06*sampleStandardDeviation[i]/std::pow(numSamples, 1.0/5.0)/bandWidth[i]<<"  "
+                 <<std::endl;
+    }*/
 }
-
-
-
-
-
-
-
-
-
-
-
 
