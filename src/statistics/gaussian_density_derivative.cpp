@@ -3,12 +3,13 @@
 
 #include "statistics/gaussian_density_derivative.hpp"
 
-#include <iostream> // TODO
-
 
 /*!
  * Estimates the density derivative at a set of evaluation points by direct
- * evaluation of the hermite polynomial.
+ * evaluation of the hermite polynomial. This has an overall complexity 
+ * propertional to the product of number of samples and number of evaluation
+ * points and is hence of quadratic complexity if evalution points and sample
+ * points are identical.
  */
 std::vector<real>
 GaussianDensityDerivative::estimateDirect(
@@ -35,7 +36,14 @@ GaussianDensityDerivative::estimateDirect(
 
 
 /*!
- * Estimates the density derivative at a single point by direct evaluation.
+ * Estimates the density derivative at a single point by direct evaluation
+ * of
+ *
+ * \f[
+ *      p^{(r)}(e) \frac{(-1)^r}{\sqrt{2\pi}nh^{r+1}} \sum_{i=1}^n H_r\left( \frac{e - s_i}{h} \right) \exp\left( -\frac{(e - s_i)^2}{2h^2} \right)
+ * \f]
+ *
+ * where \f$ H_r(x) \f$ is the probabilist's hermite polynomial.
  */
 real
 GaussianDensityDerivative::estimDirectAt(
@@ -52,13 +60,18 @@ GaussianDensityDerivative::estimDirectAt(
 }
 
 
-/*
- *
+/*!
+ * Evaluates the derivative of a Gaussian kernel density using an approximate 
+ * expression that is of linear complexity in the order of samples and
+ * evaluation points. This function calculates coefficients and then passes
+ * the evaluation of the derivative at one given evaluation point to 
+ * estimateApproxAt(). Note that this function assumes the data to lie in the 
+ * interval \f$ [0,1] \f$.
  */
 std::vector<real>
 GaussianDensityDerivative::estimateApprox(
-        std::vector<real> &sample,
-        std::vector<real> &eval)
+        const std::vector<real> &sample,
+        const std::vector<real> &eval)
 {
     // calculate space partitioning (this is data dependent, bc bw_ is scaled):
     centres_ = setupClusterCentres();
@@ -77,7 +90,7 @@ GaussianDensityDerivative::estimateApprox(
     deriv.reserve(eval.size());
     for(auto e : eval)
     {
-        deriv.push_back(estimApproxAt(sample, e));
+        deriv.push_back(estimApproxAt(e));
     }
     
     // return vector of density derivative at each evaluation point:
@@ -85,12 +98,19 @@ GaussianDensityDerivative::estimateApprox(
 }
 
 
-/*
+/*!
+ * Evaluates the \f$ r \f$-th derivative of the Gaussian density at the given
+ * evaluation point using the approximate expression
  *
+ * \f[
+ *      p^{(r)}_\epsilon(e) \sum_{ l : \left| e - c_l \right| \leq r_\text{c} } \sum_{k=0}^{p-1} \sum_{s=0}^{ \lfloor r/2 \rfloor } \sum_{t=0}^{r-2s} a_{st} B_{kt}^l \exp\left( -\frac{(e - c_l)^2}{2h^2} \right) \times \left( \frac{e - c_l}{h} \right)^{k + r - 2s - t}
+ * \f]
+ *
+ * where the coefficients \f$ a_{st} \f$ and \f$ B_{kt}^l \f$ can be 
+ * precomputed for repeated use of this function.
  */
 real
 GaussianDensityDerivative::estimApproxAt(
-        const std::vector<real> & /*sample*/,
         real eval)
 { 
     // upper bound for coefficient loop:
@@ -134,13 +154,13 @@ GaussianDensityDerivative::estimApproxAt(
             // loop over coefficients:
             for(unsigned int s = 0; s <= sMax; s++)
             {   
-                for(unsigned int m = 0; m <= r_ - 2*s; m++)
+                for(unsigned int t = 0; t <= r_ - 2*s; t++)
                 {   
                     // add to sum:
                     sum += coefA_[idxA]
-                         * coefB_[l*trunc_*(r_ + 1) + (r_ + 1)*k + m]
+                         * coefB_[l*trunc_*(r_ + 1) + (r_ + 1)*k + t]
                          * expTerm
-                         * powTerm[k + r_ - 2*s - m];
+                         * powTerm[k + r_ - 2*s - t];
 
                     // increment A-coefficient index:
                     idxA++;
@@ -228,14 +248,18 @@ GaussianDensityDerivative::setupClusterIndices(
 }
 
 
-/*
+/*!
+ * Calculates the coefficients
  *
+ * \f[
+ *      a_{st} = \frac{(-1)^{s+t} r!}{2^2 s! t! (r - 2s - t)!}
+ * \f]
+ *
+ * which depend only on the derivative order and can be reused with new data.
  */
 std::vector<real>
 GaussianDensityDerivative::setupCoefA()
 {
-//    return compute_a();
-
     // (inclusive) maximum of indices to coefficient matrix:
     unsigned int sMax = std::floor(static_cast<real>(r_)/2.0);
     unsigned int tMax = r_;
@@ -274,8 +298,16 @@ GaussianDensityDerivative::setupCoefA()
 }
 
 
-/*
+/*!
+ * Calculates the coefficient matrix
  *
+ * \f[
+ *      B_{kt}^l = \sum_{s_i \in S_l} q \exp\left( -\frac{(x_i - c_l)^2}{2h^2} \right) \times  \left( \frac{s_i - c_l}{h} \right)^{k+1}
+ * \f]
+ *
+ * where \f$ S_l \f$ is the \f$ l \f$-th interval computed with 
+ * setupClusterCentres(). Note that these coefficients have to be recomputed 
+ * for new data.
  */
 std::vector<real>
 GaussianDensityDerivative::setupCoefB(
@@ -340,8 +372,14 @@ GaussianDensityDerivative::setupCoefB(
 }
 
 
-/*
+/*!
+ * Calculates the scalar coefficient
  *
+ * \f[
+ *      q = \frac{(-1)^r}{\sqrt{2\pi} n h^{r+1}}
+ * \f]
+ *
+ * which depends on the bandwidth and the number of sample points.
  */
 real
 GaussianDensityDerivative::setupCoefQ(unsigned int n)
@@ -351,11 +389,14 @@ GaussianDensityDerivative::setupCoefQ(unsigned int n)
 
 
 /*!
- * Determines the cutoff radius according to:
+ * Determines the cutoff radius according to
  *
  * \f[
  *      R_\text{c} = R_\text{i} + \min(1, 2h\sqrt{\log\big(\sqrt{r!}/\epsilon^\prime\big)})
  * \f]
+ *
+ * where the scaled error tolerance, \f$ \epsilon^\prime \f$ is determined 
+ * using setupScaledTolerance().
  */
 real GaussianDensityDerivative::setupCutoffRadius()
 {
