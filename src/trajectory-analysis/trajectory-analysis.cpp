@@ -404,7 +404,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                                           "zhu_2016",
                                                           "memprotmd",
                                                           "user"};
-    hydrophobicityDatabase_ = eHydrophobicityDatabaseWhimleyWhite1996;
+    hydrophobicityDatabase_ = eHydrophobicityDatabaseWimleyWhite1996;
     options -> addOption(EnumOption<eHydrophobicityDatabase>("hydrophob-database")
                          .enumValue(allowedHydrophobicityDatabase)
                          .store(&hydrophobicityDatabase_)
@@ -935,6 +935,10 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseMoon2011 )
     {
         hydrophobicityJson_ = hydrophobicityFilePath + "moon_2011.json";
+    }
+    else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseWimleyWhite1996 )
+    {
+        hydrophobicityJson_ = hydrophobicityFilePath + "wimley_white_1996.json";
     }
     else if( hydrophobicityDatabase_ == eHydrophobicityDatabaseZhu2016 )
     {
