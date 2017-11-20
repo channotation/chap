@@ -1518,7 +1518,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(10, minSolventDensity.second);
     dhFrameStream.setPoint(11, molPath.sLo()); 
     dhFrameStream.setPoint(12, molPath.sHi());
-    dhFrameStream.setPoint(13, deParams_.bandWidth());
+    dhFrameStream.setPoint(13, deParams_.bandWidth()*deParams_.bandWidthScale());
     dhFrameStream.finishPointSet();
 
 
