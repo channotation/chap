@@ -13,7 +13,7 @@
  * given sample. Requires there to be at least two distinct sample points.
  */
 real
-AmiseOptimalBandwidthEstimator::estimate(
+AmiseOptimalBandWidthEstimator::estimate(
         const std::vector<real> &sampleIn)
 {
     // make copy of sample:
@@ -63,7 +63,7 @@ AmiseOptimalBandwidthEstimator::estimate(
 
     // objective function for root finding:
     std::function<real(real)> objectiveFunction = std::bind(
-            &AmiseOptimalBandwidthEstimator::optimalBandwidthEquation,
+            &AmiseOptimalBandWidthEstimator::optimalBandwidthEquation,
             this,
             std::placeholders::_1,
             sample);
@@ -92,7 +92,7 @@ AmiseOptimalBandwidthEstimator::estimate(
  * This is based on an approximation assuming a Gaussian probability density.
  */
 real
-AmiseOptimalBandwidthEstimator::functionalPhi6(real sigma)
+AmiseOptimalBandWidthEstimator::functionalPhi6(real sigma)
 {
     return -15.0 / ( 16.0 * std::pow(sigma, 7) * SQRTPI_ );
 }
@@ -108,7 +108,7 @@ AmiseOptimalBandwidthEstimator::functionalPhi6(real sigma)
  * This is based on an approximation assuming a Gaussian probability density.
  */
 real
-AmiseOptimalBandwidthEstimator::functionalPhi8(real sigma)
+AmiseOptimalBandWidthEstimator::functionalPhi8(real sigma)
 {
     return 105.0 / ( 32.0 * std::pow(sigma, 9) * SQRTPI_ );
 }
@@ -127,7 +127,7 @@ AmiseOptimalBandwidthEstimator::functionalPhi8(real sigma)
  * complexity with the number of sample points.
  */
 real
-AmiseOptimalBandwidthEstimator::functionalPhiFast(
+AmiseOptimalBandWidthEstimator::functionalPhiFast(
         const std::vector<real> &sample,
         real bw,
         int deriv)
@@ -154,7 +154,7 @@ AmiseOptimalBandwidthEstimator::functionalPhiFast(
  * gammaFactor_ prior to calling gamma().
  */
 real
-AmiseOptimalBandwidthEstimator::gammaFactor(
+AmiseOptimalBandWidthEstimator::gammaFactor(
         const real phi4,
         const real phi6)
 {
@@ -172,11 +172,11 @@ AmiseOptimalBandwidthEstimator::gammaFactor(
  *
  * Note that as the prefactor on square brackets is independent of \f$ h \f$,
  * it is computed only once using gammaFactor() and stored in a member variable
- * of AmiseOptimalBandwidthEstimator (this precompution must be carried out
+ * of AmiseOptimalBandWidthEstimator (this precompution must be carried out
  * manually!).
  */
 real
-AmiseOptimalBandwidthEstimator::gamma(real bw)
+AmiseOptimalBandWidthEstimator::gamma(real bw)
 {
     return gammaFactor_ * std::pow(bw, 5.0/7.0);
 }
@@ -194,7 +194,7 @@ AmiseOptimalBandwidthEstimator::gamma(real bw)
  * obtain a kernel density estimate via the KernelDensityEstimator class.
  */
 real
-AmiseOptimalBandwidthEstimator::optimalBandwidthEquation(
+AmiseOptimalBandWidthEstimator::optimalBandwidthEquation(
         const real bw,
         const std::vector<real> &samples)
 {

@@ -37,7 +37,7 @@
  *
  * \note The current implementation assumes a Gaussian kernel.
  */
-class AmiseOptimalBandwidthEstimator
+class AmiseOptimalBandWidthEstimator
 {
     friend class AmiseOptimalBandwidthEstimatorTest;
     FRIEND_TEST(AmiseOptimalBandwidthEstimatorTest, 

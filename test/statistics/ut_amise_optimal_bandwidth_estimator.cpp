@@ -6,9 +6,9 @@
 #include "statistics/summary_statistics.hpp"
 
 /*!
- * \brief Test fixture for the AmiseOptimalBandwidthEstimator.
+ * \brief Test fixture for the AmiseOptimalBandWidthEstimator.
  */
-class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
+class AmiseOptimalBandWidthEstimatorTest : public ::testing::Test
 {
     public:
 
@@ -16,7 +16,7 @@ class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
          * Constructor is used to set up a random sample drawn from as 
          * Gaussian distribution.
          */
-        AmiseOptimalBandwidthEstimatorTest()
+        AmiseOptimalBandWidthEstimatorTest()
         {
 
         };
@@ -30,8 +30,8 @@ class AmiseOptimalBandwidthEstimatorTest : public ::testing::Test
  * in the limit of large N) for a variety of sample sizes and parameters in the
  * original distribution.
  */
-TEST_F(AmiseOptimalBandwidthEstimatorTest, 
-       AmiseOptimalBandwidthEstimatorGaussianDensitySilvermanTest)
+TEST_F(AmiseOptimalBandWidthEstimatorTest, 
+       AmiseOptimalBandWidthEstimatorGaussianDensitySilvermanTest)
 {
     // tolerance threshold:
     real tol = 0.1;
@@ -71,7 +71,7 @@ TEST_F(AmiseOptimalBandwidthEstimatorTest,
                     real ssd = sumStat.sd();
                 
                     // estimate bandwidth:
-                    AmiseOptimalBandwidthEstimator bwe;
+                    AmiseOptimalBandWidthEstimator bwe;
                     real bw = bwe.estimate(sample);
 
                     // Silverman's rule of thumb should be accurate for pure Gaussian:

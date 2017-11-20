@@ -41,6 +41,7 @@
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
 
+#include "statistics/amise_optimal_bandwidth_estimator.hpp"
 #include "statistics/histogram_density_estimator.hpp"
 #include "statistics/kernel_density_estimator.hpp"
 #include "statistics/summary_statistics.hpp"
@@ -369,18 +370,20 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&deResolution_)
                          .defaultValue(0.01)
                          .description("Spatial resolution of the density "
-                                      "estimator. In case of a historgam, "
+                                      "estimator. In case of a histogram, "
                                       "this is the bin width, in case of a "
                                       "kernel density estimator, this is the "
                                       "spacing of the evaluation points."));
 
-    // TODO: add functionality to determine this automatically
     options -> addOption(RealOption("de-bandwidth")
                          .store(&deBandWidth_)
                          .defaultValue(0.1)
                          .description("Bandwidth for the kernel density "
                                       "estimator. Ignored for other "
-                                      "methods."));
+                                      "methods. If negative or zero, bandwidth"
+                                      " will be determined automatically "
+                                      "to minimise the asymptotic mean "
+                                      "integrated squared error (AMISE)."));
 
     options -> addOption(RealOption("de-eval-cutoff")
                          .store(&deEvalRangeCutoff_)
@@ -539,7 +542,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
 
     // prepare container for aggregated data:
-    frameStreamData_.setColumnCount(0, 13);
+    frameStreamData_.setColumnCount(0, 14);
     frameStreamColumnNames.push_back({"timeStamp",
                                       "argMinRadius",
                                       "minRadius",
@@ -552,7 +555,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                       "argMinSolventDensity",
                                       "minSolventDensity",
                                       "arcLengthLo",
-                                      "arcLengthHi"});
+                                      "arcLengthHi",
+                                      "bandWidth"});
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
@@ -1428,6 +1432,12 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
     else if( deMethod_ == eDensityEstimatorKernel )
     {
+        if( deParams_.bandWidth() <= 0.0 )
+        {
+            AmiseOptimalBandWidthEstimator bwe;
+            deParams_.setBandWidth( bwe.estimate(solventSampleCoordS) );
+        }
+
         densityEstimator.reset(new KernelDensityEstimator());
     }
 
@@ -1488,6 +1498,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     dhFrameStream.setPoint(10, minSolventDensity.second);
     dhFrameStream.setPoint(11, molPath.sLo()); 
     dhFrameStream.setPoint(12, molPath.sHi());
+    dhFrameStream.setPoint(13, deParams_.bandWidth());
     dhFrameStream.finishPointSet();
 
 
@@ -1589,6 +1600,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics minSolventDensitySummary;
     SummaryStatistics arcLengthLoSummary;
     SummaryStatistics arcLengthHiSummary;
+    SummaryStatistics bandWidthSummary;
 
     // prepare scalar time series objects for aggregate properties:
     ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
@@ -1599,6 +1611,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     ScalarTimeSeries numSampleTimeSeries("numSample");
     ScalarTimeSeries argMinSolventDensityTimeSeries("argMinSolventDensity");
     ScalarTimeSeries minSolventDensityTimeSeries("minSolventDensity");
+    ScalarTimeSeries bandWidthTimeSeries("bandWidth");
 
 
     // number of residues in pore forming group:
@@ -1649,6 +1662,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["arcLengthLo"][0].GetDouble());
         arcLengthHiSummary.update(
                 lineDoc["pathSummary"]["arcLengthHi"][0].GetDouble());
+        bandWidthSummary.update(
+                lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
@@ -1678,6 +1693,9 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         minSolventDensityTimeSeries.addDataPoint(
                 timeStamp,
                 lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+        bandWidthTimeSeries.addDataPoint(
+                timeStamp,
+                lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
 
 
         // in first line, also read number of residues in pore forming group:
@@ -1706,6 +1724,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathSummaryTimeSeries.addScalarTimeSeries(numSampleTimeSeries);
     pathSummaryTimeSeries.addScalarTimeSeries(argMinSolventDensityTimeSeries);
     pathSummaryTimeSeries.addScalarTimeSeries(minSolventDensityTimeSeries);
+    pathSummaryTimeSeries.addScalarTimeSeries(bandWidthTimeSeries);
 
     // close per frame data set:
     inFile.close();
@@ -2002,6 +2021,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     pathSummary.AddMember(
             "minSolventDensity",
             ssjc.convert(minSolventDensitySummary, outDoc.GetAllocator()),
+            outDoc.GetAllocator());
+    pathSummary.AddMember(
+            "bandWidth",
+            ssjc.convert(bandWidthSummary, outDoc.GetAllocator()),
             outDoc.GetAllocator());
 
     MultiscalarTimeSeriesJsonConverter mtjc;
