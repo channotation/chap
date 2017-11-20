@@ -1,0 +1,31 @@
+{
+    "remark": "Hydropathy scale for amino acid side chains based on an amalgam of experimental observations derived from the literature.",
+
+    "reference": {
+        "link": "http://www.sciencedirect.com/science/article/pii/0022283682905150",
+        "doi": "10.1016/0022-2836(82)90515-0"
+        },
+
+    "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity":  1.80},
+        {"resname": "ARG", "hydrophobicity": -4.50},
+        {"resname": "ASN", "hydrophobicity": -3.50},
+        {"resname": "ASP", "hydrophobicity": -3.50},
+        {"resname": "CYS", "hydrophobicity":  2.50},
+        {"resname": "GLN", "hydrophobicity": -3.50},
+        {"resname": "GLU", "hydrophobicity": -3.50},
+        {"resname": "GLY", "hydrophobicity": -0.40},
+        {"resname": "HIS", "hydrophobicity": -3.20},
+        {"resname": "ILE", "hydrophobicity":  4.50},
+        {"resname": "LEU", "hydrophobicity":  3.80},
+        {"resname": "LYS", "hydrophobicity": -3.90},
+        {"resname": "MET", "hydrophobicity":  1.90},
+        {"resname": "PHE", "hydrophobicity":  2.80},
+        {"resname": "PRO", "hydrophobicity": -1.60},
+        {"resname": "SER", "hydrophobicity": -0.80},
+        {"resname": "THR", "hydrophobicity": -0.70},
+        {"resname": "TRP", "hydrophobicity": -0.90},
+        {"resname": "TYR", "hydrophobicity": -1.30},
+        {"resname": "VAL", "hydrophobicity":  4.20}
+    ]
+}

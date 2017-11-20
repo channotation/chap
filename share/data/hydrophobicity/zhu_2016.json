@@ -1,0 +1,31 @@
+{
+    "remark": "Hydrophobicity scale based on measuring contact angle of a water nanodroplet on planar peptide networks.",
+
+    "reference": {
+        "link": "http://www.pnas.org/content/113/46/12946",
+        "doi": "10.1073/pnas.1616138113"
+        },
+
+    "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity": -0.495},
+        {"resname": "ARG", "hydrophobicity":  4.383},
+        {"resname": "ASN", "hydrophobicity":  2.354},
+        {"resname": "ASP", "hydrophobicity":  9.573},
+        {"resname": "CYS", "hydrophobicity":  0.081},
+        {"resname": "GLN", "hydrophobicity":  2.176},
+        {"resname": "GLU", "hydrophobicity":  3.173},
+        {"resname": "GLY", "hydrophobicity":  0.386},
+        {"resname": "HIS", "hydrophobicity":  2.029},
+        {"resname": "ILE", "hydrophobicity": -0.528},
+        {"resname": "LEU", "hydrophobicity": -0.342},
+        {"resname": "LYS", "hydrophobicity":  2.101},
+        {"resname": "MET", "hydrophobicity": -0.324},
+        {"resname": "PHE", "hydrophobicity": -0.370},
+        {"resname": "PRO", "hydrophobicity": -0.322},
+        {"resname": "SER", "hydrophobicity":  0.936},
+        {"resname": "THR", "hydrophobicity":  0.853},
+        {"resname": "TRP", "hydrophobicity": -0.270},
+        {"resname": "TYR", "hydrophobicity":  1.677},
+        {"resname": "VAL", "hydrophobicity": -0.308}
+    ]
+}
