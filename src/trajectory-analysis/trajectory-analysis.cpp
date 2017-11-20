@@ -400,10 +400,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                                           "kyte_doolittle_1982",
                                                           "monera_1995",
                                                           "moon_2011",
+                                                          "wimley_white_1996",
                                                           "zhu_2016",
                                                           "memprotmd",
                                                           "user"};
-    hydrophobicityDatabase_ = eHydrophobicityDatabaseZhu2016;
+    hydrophobicityDatabase_ = eHydrophobicityDatabaseWhimleyWhite1996;
     options -> addOption(EnumOption<eHydrophobicityDatabase>("hydrophob-database")
                          .enumValue(allowedHydrophobicityDatabase)
                          .store(&hydrophobicityDatabase_)

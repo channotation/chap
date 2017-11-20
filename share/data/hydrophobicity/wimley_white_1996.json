@@ -1,0 +1,30 @@
+{
+    "remark": "Wimley-White whole-residue hydrophobicity scale.",
+
+    "reference": {
+        "citation": "http://blanco.biomol.uci.edu/hydrophobicity_scales.html"
+        },
+
+    "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity":  0.33},
+        {"resname": "ARG", "hydrophobicity":  1.00},
+        {"resname": "ASN", "hydrophobicity":  0.43},
+        {"resname": "ASP", "hydrophobicity":  2.41},
+        {"resname": "CYS", "hydrophobicity":  0.22},
+        {"resname": "GLN", "hydrophobicity":  0.19},
+        {"resname": "GLU", "hydrophobicity":  1.61},
+        {"resname": "GLY", "hydrophobicity":  1.14},
+        {"resname": "HIS", "hydrophobicity":  1.37},
+        {"resname": "ILE", "hydrophobicity": -0.81},
+        {"resname": "LEU", "hydrophobicity": -0.69},
+        {"resname": "LYS", "hydrophobicity":  1.81},
+        {"resname": "MET", "hydrophobicity": -0.44},
+        {"resname": "PHE", "hydrophobicity": -0.58},
+        {"resname": "PRO", "hydrophobicity": -0.31},
+        {"resname": "SER", "hydrophobicity":  0.33},
+        {"resname": "THR", "hydrophobicity":  0.11},
+        {"resname": "TRP", "hydrophobicity": -0.24},
+        {"resname": "TYR", "hydrophobicity":  0.23},
+        {"resname": "VAL", "hydrophobicity": -0.53}
+    ]
+}
