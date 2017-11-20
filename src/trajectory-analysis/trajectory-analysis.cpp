@@ -377,7 +377,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     options -> addOption(RealOption("de-bandwidth")
                          .store(&deBandWidth_)
-                         .defaultValue(0.1)
+                         .defaultValue(-1.0)
                          .description("Bandwidth for the kernel density "
                                       "estimator. Ignored for other "
                                       "methods. If negative or zero, bandwidth"
