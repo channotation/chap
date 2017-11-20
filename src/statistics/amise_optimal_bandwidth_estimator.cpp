@@ -7,12 +7,6 @@
 #include "statistics/amise_optimal_bandwidth_estimator.hpp"
 #include "statistics/summary_statistics.hpp"
 
-using namespace boost::math;
-
-
-#include <chrono> // TODO
-using namespace std::chrono;
-
 
 /*!
  * Estimates the AMISE-optimal bandwidth for kernel density estimation on a 
@@ -22,9 +16,8 @@ real
 AmiseOptimalBandwidthEstimator::estimate(
         const std::vector<real> &sampleIn)
 {
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
     // make copy of sample:
+    // (not so memory efficient, but avoids rescaling the data back)
     auto sample = sampleIn;
 
     // sanity checks:
@@ -34,13 +27,9 @@ AmiseOptimalBandwidthEstimator::estimate(
                                "estimation with fewer than two samples.");
     }
 
-    high_resolution_clock::time_point t4 = high_resolution_clock::now();
-
     // shift and scale data:
     auto ss = gdd_.getShiftAndScaleParams(sample, sample);
     gdd_.shiftAndScale(sample, ss.first, ss.second);
-
-    high_resolution_clock::time_point t5 = high_resolution_clock::now();
 
     // estimate standard deviation of the sample:
     SummaryStatistics sumStats;
@@ -50,8 +39,6 @@ AmiseOptimalBandwidthEstimator::estimate(
     }
     real sigma = sumStats.sd();
 
-    high_resolution_clock::time_point t6 = high_resolution_clock::now();
-
     // estimate functionals six and eight by assuming Gaussianity:
     real phi6 = functionalPhi6(sigma); // TODO correct!
     real phi8 = functionalPhi8(sigma); // TODO correct!
@@ -60,43 +47,19 @@ AmiseOptimalBandwidthEstimator::estimate(
     real g1 = std::pow(-6.0 / ( SQRT2PI_*phi6*sample.size() ), 1.0/7.0); // TODO correct!
     real g2 = std::pow(30.0 / ( SQRT2PI_*phi8*sample.size() ), 1.0/9.0); // TODO correct!
 
-/*
-    std::cout<<std::endl<<std::endl;
-    std::cout<<"phi6 = "<<phi6<<"  "
-             <<"phi8 = "<<phi8<<"  "
-             <<"g1 = "<<g1<<"  "
-             <<"g2 = "<<g2<<"  "
-             <<std::endl; */
-    high_resolution_clock::time_point t7 = high_resolution_clock::now();
-
     // estimate functionals via KDE with bandwidth from optimal MSE:
     real phi4 = functionalPhiFast(sample, g1, 4); // TODO correct!
     phi6 = functionalPhiFast(sample, g2, 6); // TODO correct!
     
-    high_resolution_clock::time_point t8 = high_resolution_clock::now();
-
-/*
-    std::cout<<std::endl<<std::endl;
-    std::cout<<"phi6 = "<<phi6<<"  "
-             <<"phi8 = "<<phi8<<"  "
-             <<"g1 = "<<g1<<"  "
-             <<"g2 = "<<g2<<"  "
-             <<"phi4 = "<<phi4<<"  "
-             <<"phi6 = "<<phi6<<"  "
-             <<std::endl;*/
-
     // calculate constant prefactor in gamma expression:
-    gammaFactor_ = gammaFactor(phi4, phi6); // TODO correct!
-
-    high_resolution_clock::time_point t9 = high_resolution_clock::now();
-    
+    gammaFactor_ = gammaFactor(phi4, phi6); // TODO correct!   
 
     // parameters for boost root finder:
     // initial guess is Silverman's rule of thumb:
     real guess = 1.06*sigma/std::pow(sample.size(), 1.0/5.0);
     real factor = 2.0;
     boost::uintmax_t it = 20;
-    boost::math::tools::eps_tolerance<real> tol(2); // two significant sigits
+    boost::math::tools::eps_tolerance<real> tol(std::numeric_limits<real>::digits - 4);
 
     // objective function for root finding:
     std::function<real(real)> objectiveFunction = std::bind(
@@ -104,8 +67,6 @@ AmiseOptimalBandwidthEstimator::estimate(
             this,
             std::placeholders::_1,
             sample);
-
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
     // find root:
     std::pair<real, real> root = bracket_and_solve_root(
@@ -115,28 +76,6 @@ AmiseOptimalBandwidthEstimator::estimate(
         true, 
         tol, 
         it); 
-
-    high_resolution_clock::time_point t3 = high_resolution_clock::now();
-
-    
-    auto prep = duration_cast<microseconds>( t2 - t1 ).count();
-    auto opti = duration_cast<microseconds>( t3 - t2 ).count();
-    auto tscale = duration_cast<microseconds>( t4 - t1 ).count();
-    auto tsumStats = duration_cast<microseconds>( t5 - t4 ).count();
-    auto tphi46 = duration_cast<microseconds>( t8 - t7 ).count();
-    auto tgammafac = duration_cast<microseconds>( t9 - t8 ).count();
-    auto trootprep = duration_cast<microseconds>( t2 - t9 ).count();
-
-    std::cout<<"prep = "<<prep<<"  "
-             <<"opti = "<<opti<<"  "
-             <<"prop/opti = "<<(double)prep/(double)opti*100<<"  "
-             <<"scale = "<<tscale<<"  "
-             <<"sumStats = "<<tsumStats<<"  "
-             <<"phi46 = "<<tphi46<<"  "
-             <<"gamm = "<<tgammafac<<"  "
-             <<"rootprep = "<<trootprep<<"  "
-             <<std::endl;
-
 
     // return AMISE-optimal bandwidth (scaled back to original interval):
     return root.first / ss.second;
@@ -175,9 +114,17 @@ AmiseOptimalBandwidthEstimator::functionalPhi8(real sigma)
 }
 
 
-
-/*
+/*!
+ * Evaluation the functional
  *
+ * \f[
+ *      \Phi_r = \frac{1}{N}\sum_{i=1}^N p^{(r)}(s_i)
+ * \f]
+ *
+ * i.e. the sum over the density derivative evaluated at each sample point. The
+ * derivative itself is evaluated using the GaussianDensityDerivative class,
+ * which uses an approximate method to evaluate this expression in linear 
+ * complexity with the number of sample points.
  */
 real
 AmiseOptimalBandwidthEstimator::functionalPhiFast(
@@ -203,45 +150,6 @@ AmiseOptimalBandwidthEstimator::functionalPhiFast(
 
 
 /*!
- *
- */
-/*
-real
-AmiseOptimalBandwidthEstimator::functionalPhi(
-        const std::vector<real> &samples,
-        real bw,
-        const int deriv)
-{
-    // initialise sum as zero:
-    double phi = 0.0;
-
-    // loop over samples:
-    for(auto si : samples)
-    {
-        for(auto sj : samples)
-        {
-            // evaluate hermite polynomial:
-            real h = boost::math::hermite(deriv, (si - sj)/bw/std::sqrt(2.0)) 
-                   * std::pow(2, -deriv/2);
-
-            // evaluate kernel itself:
-            real k = std::exp(-(si-sj)*(si-sj)/(2.0*bw*bw));
-
-            // add to density derivative functional:
-            phi += k*h;
-        }
-    }
-
-    // multiply constant pre-factor:
-    int n = samples.size();
-    phi /= n*(n - 1) * SQRT2PI_ * std::pow(bw, deriv + 1);
-
-    // return the density functional:
-    return phi;
-}*/
-
-
-/*!
  * Computes the constant prefactor in gamma(), which needs to be assigned to
  * gammaFactor_ prior to calling gamma().
  */
@@ -250,10 +158,6 @@ AmiseOptimalBandwidthEstimator::gammaFactor(
         const real phi4,
         const real phi6)
 {
-//    std::cout<<"phi4 = "<<phi4<<"  "
-//             <<"phi6 = "<<phi6<<"  "
-//             <<std::endl;
-             // FIXME ERROE here!
     return std::pow(-6.0*std::sqrt(2.0)*phi4 / phi6 , 1.0/7.0);
 }
 
@@ -298,19 +202,7 @@ AmiseOptimalBandwidthEstimator::optimalBandwidthEquation(
     // estimate density derivative functional:
     real phi4 = functionalPhiFast(samples, gamma(bw), 4);
 
-    // return value of implcit equation:
-//    real val = bw - std::pow(1.0/( 2.0*SQRTPI_*phi4*samples.size() ), 1.0/5.0);
-
-    real val = bw - std::pow(1.0/(2.0*SQRTPI_*phi4*samples.size()) , 1.0/5.0);
-
-
-    std::cout<<"bw = "<<bw<<"  "
-             <<"gammaFac = "<<gammaFactor_<<"  "
-             <<"gamma = "<<gamma(bw)<<"  "
-             <<"phi4 = "<<phi4<<"  "
-             <<"val = "<<val<<std::endl;
-
-    return val;
+    // evaluate optimal bandwidth equation:
+    return bw - std::pow(1.0/(2.0*SQRTPI_*phi4*samples.size()) , 1.0/5.0);
 }
-
 
