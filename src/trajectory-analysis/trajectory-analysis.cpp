@@ -1452,7 +1452,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
     else if( deMethod_ == eDensityEstimatorKernel )
     {
-        if( deParams_.bandWidth() <= 0.0 )
+        if( deBandWidth_ <= 0.0 )
         {
             AmiseOptimalBandWidthEstimator bwe;
             deParams_.setBandWidth( bwe.estimate(solventPoreCoordS) );
