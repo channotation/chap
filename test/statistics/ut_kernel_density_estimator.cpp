@@ -59,8 +59,6 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorParameterTest)
     ASSERT_THROW(kde.estimate(testData_), std::runtime_error);
 
     // assert exceptions parameters:
-    ASSERT_THROW(kde.setBandWidth(-1.0), std::logic_error);
-    ASSERT_THROW(kde.setBandWidth(0.0), std::logic_error);
     ASSERT_THROW(kde.setMaxEvalPointDist(-1.0), std::logic_error);
     ASSERT_THROW(kde.setMaxEvalPointDist(0.0), std::logic_error);
     ASSERT_THROW(kde.setEvalRangeCutoff(-1.0), std::logic_error);
@@ -234,6 +232,7 @@ TEST_F(
             KernelDensityEstimator kde;
             DensityEstimationParameters params;
             params.setBandWidth(bw);
+            params.setBandWidthScale(1.0);
             params.setEvalRangeCutoff(5.0); 
             params.setMaxEvalPointDist(evalPointDistFac*bw);
             params.setKernelFunction(eKernelFunctionGaussian);

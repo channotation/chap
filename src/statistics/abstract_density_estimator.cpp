@@ -3,12 +3,15 @@
 
 /*!
  * Constructor sets all parameters to meaningless values and all flags to 
- * false.
+ * false. An exception is the bandwidth scale, which defaults to 1.0 and is 
+ * assumed to be set.
  */
 DensityEstimationParameters::DensityEstimationParameters()
     : binWidth_(-1.0)
     , binWidthIsSet_(false)
     , bandWidth_(-1.0)
+    , bandWidthScale_(1.0)
+    , bandWidthScaleIsSet_(true)
     , bandWidthIsSet_(false)
     , maxEvalPointDist_(-1.0)
     , maxEvalPointDistIsSet_(false)
@@ -44,6 +47,19 @@ DensityEstimationParameters::setBandWidth(
 {
     bandWidth_ = bandWidth;
     bandWidthIsSet_ = true;
+}
+
+
+/*!
+ * Sets the value of the band width parameter to the given value and the 
+ * corresponding flag to true.
+ */
+void
+DensityEstimationParameters::setBandWidthScale(
+        real scale)
+{
+    bandWidthScale_ = scale;
+    bandWidthScaleIsSet_ = true;
 }
 
 
@@ -123,6 +139,26 @@ bool
 DensityEstimationParameters::bandWidthIsSet() const
 {
     return bandWidthIsSet_;
+}
+
+
+/*!
+ * Returns the band width scale parameter.
+ */
+real
+DensityEstimationParameters::bandWidthScale() const
+{
+    return bandWidthScale_;
+}
+
+
+/*!
+ * Returns a flag indicating whether the band width scale has been set.
+ */
+bool
+DensityEstimationParameters::bandWidthScaleIsSet() const
+{
+    return bandWidthScaleIsSet_;
 }
 
 

@@ -161,6 +161,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     DensityEstimationParameters deParams_;
     real deResolution_;
     real deBandWidth_;
+    real deBandWidthScale_;
     real deEvalRangeCutoff_;
 
 

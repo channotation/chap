@@ -155,9 +155,6 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
  */
 TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEmptyDatasetTest)
 {
-    // floating point comparison tolerance:
-    real eps = 10*std::numeric_limits<real>::epsilon();
-
     // create empty dataset:
     std::vector<real> emptyData;
 
