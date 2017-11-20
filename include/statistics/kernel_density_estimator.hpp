@@ -66,12 +66,14 @@ class KernelDensityEstimator : public AbstractDensityEstimator
 
         // internal parameters:
         real bandWidth_;
+        real bandWidthScale_;
         real maxEvalPointDist_;
         real evalRangeCutoff_;
         eKernelFunction kernelFunction_;
 
         // auxiliary functions for parameter setting:
         void setBandWidth(const real bandWidth);
+        void setBandWidthScale(const real scale);
         void setMaxEvalPointDist(const real maxEvalPointDist);
         void setEvalRangeCutoff(const real evalRangeCutoff);
         void setKernelFunction(const eKernelFunction kernelFunction);

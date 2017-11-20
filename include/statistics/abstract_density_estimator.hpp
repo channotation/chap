@@ -31,6 +31,7 @@ class DensityEstimationParameters
         // setter methods:
         void setBinWidth(real binWidth);
         void setBandWidth(real bandWidth);
+        void setBandWidthScale(real scale);
         void setMaxEvalPointDist(real maxEvalPointDist);
         void setEvalRangeCutoff(real evalRangeCutoff);
         void setKernelFunction(eKernelFunction kernelFunction);
@@ -41,6 +42,9 @@ class DensityEstimationParameters
 
         real bandWidth() const;
         bool bandWidthIsSet() const;
+
+        real bandWidthScale() const;
+        bool bandWidthScaleIsSet() const;
 
         real maxEvalPointDist() const;
         bool maxEvalPointDistIsSet() const;
@@ -59,6 +63,9 @@ class DensityEstimationParameters
 
         real bandWidth_;
         bool bandWidthIsSet_;
+
+        real bandWidthScale_;
+        bool bandWidthScaleIsSet_;
 
         real maxEvalPointDist_;
         bool maxEvalPointDistIsSet_;

@@ -89,6 +89,11 @@ KernelDensityEstimator::setParameters(
         throw std::runtime_error("Kernel bandwidth is not set!");
     }
 
+    if( params.bandWidthScaleIsSet() )
+    {
+        setBandWidthScale(params.bandWidthScale());
+    }
+
     if( params.evalRangeCutoffIsSet() )
     {
         setEvalRangeCutoff(params.evalRangeCutoff());
@@ -123,11 +128,30 @@ KernelDensityEstimator::setBandWidth(
     // sanity check
     if( bandWidth <= 0.0 )
     {
-        throw std::logic_error("Bandwidth must be psotitive!");
+        throw std::logic_error("Bandwidth must be positive!");
     }
 
     // set internal band width parameter:
     bandWidth_ = bandWidth;
+}
+
+
+/*!
+ * Sets the band width scake to the given value. Throws exception if scale is
+ * not positive.
+ */
+void 
+KernelDensityEstimator::setBandWidthScale(
+        const real scale)
+{
+    // sanity check
+    if( scale <= 0.0 )
+    {
+        throw std::logic_error("Band width scale must be positive!");
+    }
+
+    // set internal band width parameter:
+    bandWidthScale_ = scale;
 }
 
 
@@ -316,6 +340,9 @@ KernelDensityEstimator::calculateDensity(
     real normalisation = 1.0 / (samples.size() * bandWidth_);
     normalisation *= Kernel -> normalisingFactor();
 
+    // scaled bandwidth:
+    real bw = bandWidth_ * bandWidthScale_;
+
     // loop over evaluation points:
     for(size_t i = 0; i < evalPoints.size(); i++)
     {
@@ -323,7 +350,7 @@ KernelDensityEstimator::calculateDensity(
         for(auto sample : samples)
         {
             density[i] += Kernel -> operator()( 
-                    (evalPoints[i] - sample)/bandWidth_ );
+                    (evalPoints[i] - sample)/bw );
         }
 
         // normalise density at this evaluation point:

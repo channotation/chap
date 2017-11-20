@@ -385,6 +385,13 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "to minimise the asymptotic mean "
                                       "integrated squared error (AMISE)."));
 
+    options -> addOption(RealOption("de-bw-scale")
+                         .store(&deBandWidthScale_)
+                         .defaultValue(1.0)
+                         .description("Scaling factor for the band width."
+                                      "Useful to set a bandwidth relative to "
+                                      "the AMISE-optimal value."));
+
     options -> addOption(RealOption("de-eval-cutoff")
                          .store(&deEvalRangeCutoff_)
                          .defaultValue(5)
@@ -506,6 +513,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     {
         deParams_.setKernelFunction(eKernelFunctionGaussian);
         deParams_.setBandWidth(deBandWidth_);
+        deParams_.setBandWidthScale(deBandWidthScale_);
         deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
         deParams_.setMaxEvalPointDist(deResolution_);
     }
@@ -1413,14 +1421,26 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // build a vector of sample points inside the pathway:
     std::vector<real> solventSampleCoordS;
     solventSampleCoordS.reserve(solventMappedCoords.size());
-    for(auto isInsidePath : solvInsideSample)
+    for(auto isInsideSample : solvInsideSample)
     {
         // is this particle inside the pathway?
-        if( isInsidePath.second )
+        if( isInsideSample.second )
         {
             // add arc length coordinate to sample vector:
             solventSampleCoordS.push_back(
-                    solventMappedCoords[isInsidePath.first][SS]);
+                    solventMappedCoords[isInsideSample.first][SS]);
+        }
+    }
+
+    // sample points inside the por eonly for bandwidth estimation:
+    std::vector<real> solventPoreCoordS;
+    solventPoreCoordS.reserve(solventMappedCoords.size());
+    for(auto isInsidePore : solvInsidePore)
+    {
+        if( isInsidePore.second )
+        {
+            solventPoreCoordS.push_back(
+                    solventMappedCoords[isInsidePore.first][SS]);
         }
     }
 
@@ -1435,7 +1455,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         if( deParams_.bandWidth() <= 0.0 )
         {
             AmiseOptimalBandWidthEstimator bwe;
-            deParams_.setBandWidth( bwe.estimate(solventSampleCoordS) );
+            deParams_.setBandWidth( bwe.estimate(solventPoreCoordS) );
         }
 
         densityEstimator.reset(new KernelDensityEstimator());

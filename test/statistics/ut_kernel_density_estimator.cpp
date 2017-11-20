@@ -232,6 +232,7 @@ TEST_F(
             KernelDensityEstimator kde;
             DensityEstimationParameters params;
             params.setBandWidth(bw);
+            params.setBandWidthScale(1.0);
             params.setEvalRangeCutoff(5.0); 
             params.setMaxEvalPointDist(evalPointDistFac*bw);
             params.setKernelFunction(eKernelFunctionGaussian);
