@@ -23,8 +23,8 @@ AmiseOptimalBandWidthEstimator::estimate(
     // sanity checks:
     if( sample.size() < 2 )
     {
-        throw std::logic_error("Can not use AMISE optimal bandwidth "
-                               "estimation with fewer than two samples.");
+        // one angstrom returned in this case as default:
+        return 0.1;
     }
 
     // shift and scale data:
