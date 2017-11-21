@@ -126,7 +126,7 @@ class WavefrontObjExporter
         inline void writeComment(std::string comment);
         inline void writeGroup(std::string group);
         inline void writeVertex(gmx::RVec vertex);
-        inline void writeVertexNorm(gmx::RVec norm);
+        inline void writeVertexNormal(gmx::RVec norm);
         inline void writeFace(const WavefrontObjFace &face);
 };
 

@@ -48,11 +48,14 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // preallocate output vertices:
     std::vector<gmx::RVec> vertices;
     vertices.reserve(tangents.size()*nPhi);
+    std::vector<gmx::RVec> vertexNormals;
+    vertexNormals.reserve(vertices.size()*nPhi);
 
 
     // construct vertices around first point:
     gmx::RVec normal = orthogonalVector(tangents[0]);
     unitv(normal, normal);
+    vertexNormals.push_back(normal);
     std::vector<gmx::RVec> newVertices = vertexRing(centrePoints[0],
                                                     tangents[0],
                                                     normal,
@@ -76,6 +79,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
         // update normal by rotating it like the tangent:
         normal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
+        vertexNormals.push_back(normal);
 
         // construct sample points:
         newVertices = vertexRing(centrePoints[i],
@@ -113,6 +117,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // assemble OBJ object:
     WavefrontObjObject obj("pore");
     obj.addVertices(vertices);
+    obj.addVertexNormals(vertexNormals);
     obj.addGroup(surface);
 
     // scale object by factor of 10 to convert nm to Ang:

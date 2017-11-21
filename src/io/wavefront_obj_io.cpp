@@ -300,6 +300,13 @@ WavefrontObjExporter::write(std::string fileName,
         writeVertex(object.vertices_[i]);
     }
 
+    // write vertex normals:
+    obj_<<std::endl;
+    for(unsigned int i = 0; i < object.normals_.size(); i++)
+    {
+        writeVertexNormal(object.normals_[i]);
+    }
+
     // write groups:
     std::vector<WavefrontObjGroup>::iterator it;
     for(it = object.groups_.begin(); it != object.groups_.end(); it++)
@@ -356,7 +363,7 @@ WavefrontObjExporter::writeVertex(gmx::RVec vertex)
  * Writes a vertex normal to an OBJ file.
  */
 void
-WavefrontObjExporter::writeVertexNorm(gmx::RVec norm)
+WavefrontObjExporter::writeVertexNormal(gmx::RVec norm)
 {
     obj_<<"vn "<<norm[XX]<<" "
                <<norm[YY]<<" "
