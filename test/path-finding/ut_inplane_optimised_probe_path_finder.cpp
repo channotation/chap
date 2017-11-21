@@ -46,24 +46,22 @@ class InplaneOptimisedProbePathFinderTest : public ::testing::Test
 
                 // set periodic boundary condition struct:
                 // NOTE: box is chosen so that periodicity does not matter
-                matrix boxMat;
-                boxMat[XX][XX] = 100.0*params_["pfMaxProbeRadius"];
-                boxMat[XX][YY] = 0.0;
-                boxMat[XX][ZZ] = 0.0;
-                boxMat[YY][XX] = 0.0;
-                boxMat[YY][YY] = 100.0*params_["pfMaxProbeRadius"];
-                boxMat[YY][ZZ] = 0.0;
-                boxMat[ZZ][XX] = 0.0;
-                boxMat[ZZ][YY] = 0.0;
-                boxMat[ZZ][ZZ] = 100.0*params_["pfMaxProbeRadius"];
-                set_pbc(&pbc_, -1, boxMat);
+                boxMat_[XX][XX] = 0.0;
+                boxMat_[XX][YY] = 0.0;
+                boxMat_[XX][ZZ] = 0.0;
+                boxMat_[YY][XX] = 0.0;
+                boxMat_[YY][YY] = 0.0;
+                boxMat_[YY][ZZ] = 0.0;
+                boxMat_[ZZ][XX] = 0.0;
+                boxMat_[ZZ][YY] = 0.0;
+                boxMat_[ZZ][ZZ] = 0.0;
         };
 
         // standard parameters for tests:
         std::map<std::string, real> params_;
 
-        // pbc struct:
-        t_pbc pbc_;
+        // box matrix for pbc:
+        matrix boxMat_;
 
         // mathematical constants:
         const real PI_ = std::acos(-1.0);
@@ -199,6 +197,10 @@ class InplaneOptimisedProbePathFinderTest : public ::testing::Test
  */
 TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirTest)
 {
+    // set up periodic boundary conditions:
+    t_pbc pbc;
+    set_pbc(&pbc, 1, boxMat_);
+ 
     // set parameters to defaults:
     std::map<std::string, real> params = params_;
 
@@ -233,7 +235,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
 
     // prepare neighborhood search:
     gmx::AnalysisNeighborhoodPositions nbhPos(particleCentres);   
-    gmx::AnalysisNeighborhoodSearch nbSearch = nbh.initSearch(&pbc_,
+    gmx::AnalysisNeighborhoodSearch nbSearch = nbh.initSearch(&pbc,
                                                               nbhPos);
 
     // prepare path finder:
@@ -246,7 +248,142 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
     InplaneOptimisedProbePathFinder pfm(params,
                                         initProbePos,
                                         chanDirVec,
-                                        &pbc_,
+                                        &pbc,
+                                        nbhPos,
+                                        vdwRadii);
+
+    // set path finder parameters:
+    // TODO: have to transfer all parameters from constructor to here:
+    PathFindingParameters par;
+    par.setProbeStepLength(params["pfProbeStepLength"]);
+    par.setMaxProbeRadius(params["pfProbeMaxRadius"]);
+    par.setMaxProbeSteps(params["pfProbeMaxSteps"]);
+    pfm.setParameters(par);
+
+    // find and extract path and path points:
+    pfm.findPath();
+    std::vector<real> radii = pfm.pathRadii();
+    std::vector<gmx::RVec> points = pfm.pathPoints();
+    
+    // check that no points are negative:
+    std::function<bool(real)> lt;
+    lt = std::bind(isLesserThan, std::placeholders::_1, 0.0);
+    int nNegative = std::count_if(radii.begin(), radii.end(), lt);
+    ASSERT_GE(0, nNegative);
+
+    // check that no more than two points exceed the termination radius:
+    std::function<bool(real)> gt;
+    gt = std::bind(isGreaterThan, std::placeholders::_1, params["pfProbeMaxRadius"]);
+    int nGreaterLimit = std::count_if(radii.begin(), radii.end(), gt);
+    ASSERT_GE(2, nGreaterLimit);
+
+    // extract the pore internal points:
+    std::vector<real> internalRadii;
+    std::vector<gmx::RVec> internalPoints;
+    for(unsigned int i = 0; i < radii.size(); i++)
+    {
+        if( points[i][poreDir] >= poreCentre[poreDir] - 0.5*poreLength && 
+            points[i][poreDir] <= poreCentre[poreDir] + 0.5*poreLength )
+        {
+            internalPoints.push_back(points[i]);
+            internalRadii.push_back(radii[i]);
+        }
+    }
+
+    // check that all internal radii have the minimal free distance:
+    real minFreeRadTol = 10*std::numeric_limits<real>::epsilon();
+    for(unsigned int i = 0; i < internalRadii.size(); i++)
+    {
+        ASSERT_LE(poreMinFreeRadius - minFreeRadTol, internalRadii[i]);
+    }
+
+    // check that all internal radii have less than the maximal free distance:
+    real maxFreeRadTol = 10*std::numeric_limits<real>::epsilon();
+    for(unsigned int i = 0; i < internalRadii.size(); i++)
+    {
+ 
+        ASSERT_GE(poreMaxFreeRadius + maxFreeRadTol, internalRadii[i]);
+    }
+
+    // check that all internal points lie on the centreline:
+    real clDistTol = 10*std::numeric_limits<real>::epsilon();
+    for(unsigned int i = 0; i < internalPoints.size(); i++)
+    {
+        ASSERT_NEAR(poreCentre[notPoreDirA], 
+                    internalPoints[i][notPoreDirA], 
+                    clDistTol);
+        ASSERT_NEAR(poreCentre[notPoreDirB], 
+                    internalPoints[i][notPoreDirB], 
+                    clDistTol);
+    }
+}
+
+
+
+
+/*! 
+ * \brief Tests InplaneOptimisedProbePathFinder on a cylidnrical pore pointing 
+ * in the \f$ y \f$-direction.
+ *
+ * Similar to the previous test, but with the main direction of the pore 
+ * aligned with the Cartesian \f$ y \f$-axis. Additionally, several parameters
+ * such as the pore and van-der-Waals radii, the initial probe position, and
+ * the channel direction vector are slightly different.
+ */
+TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirTest)
+{
+    // set up periodic boundary conditions:
+    t_pbc pbc;
+    set_pbc(&pbc, 1, boxMat_);
+
+    // set parameters to defaults:
+    std::map<std::string, real> params = params_;
+
+    // define pore parameters:
+    real poreLength = 2.0;
+    real poreCentreRadius = 0.5;
+    real poreVdwRadius = 0.2;
+    gmx::RVec poreCentre(-std::sqrt(2.0), std::sqrt(3.0), std::sqrt(2.0));
+    int poreDir = YY;
+    int notPoreDirA = XX;
+    int notPoreDirB = ZZ;
+
+    // calculate true pore radius:
+    real poreMinFreeRadius = poreCentreRadius - poreVdwRadius;
+    real poreMaxFreeRadius = std::sqrt(std::pow(poreVdwRadius/4.0, 2.0) + 
+                             std::pow(poreCentreRadius, 2.0)) - poreVdwRadius;
+
+    // create pore pointing in the z-direction:
+    std::vector<gmx::RVec> particleCentres = makePore(poreLength,
+                                                      poreCentreRadius,
+                                                      poreVdwRadius,
+                                                      poreCentre,
+                                                      poreDir);    
+    std::vector<real> vdwRadii;
+    vdwRadii.insert(vdwRadii.begin(), particleCentres.size(), poreVdwRadius);
+
+    // prepare an analysis neighborhood:
+    gmx::AnalysisNeighborhood nbh;
+    nbh.setCutoff(0.0);
+    nbh.setXYMode(false);
+    nbh.setMode(gmx::AnalysisNeighborhood::eSearchMode_Grid);
+
+    // prepare neighborhood search:
+    gmx::AnalysisNeighborhoodPositions nbhPos(particleCentres);
+    gmx::AnalysisNeighborhoodSearch nbSearch = nbh.initSearch(&pbc,
+                                                              nbhPos);
+
+    // prepare path finder:
+    gmx::RVec initProbePos(poreCentre[XX] + 0.1*poreCentreRadius, 
+                           poreCentre[YY] - 0.5*poreCentreRadius, 
+                           poreCentre[ZZ] + 0.3*poreCentreRadius);
+    gmx::RVec chanDirVec(0.5, 1.0, 0.5);
+
+    // create path finder:
+    InplaneOptimisedProbePathFinder pfm(params,
+                                        initProbePos,
+                                        chanDirVec,
+                                        &pbc,
                                         nbhPos,
                                         vdwRadii);
 
@@ -318,134 +455,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
 
 /*! 
  * \brief Tests InplaneOptimisedProbePathFinder on a cylidnrical pore pointing 
- * in the \f$ y \f$-direction.
- *
- * Similar to the previous test, but with the main direction of the pore 
- * aligned with the Cartesian \f$ y \f$-axis. Additionally, several parameters
- * such as the pore and van-der-Waals radii, the initial probe position, and
- * the channel direction vector are slightly different.
- */
-TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirTest)
-{
-    // set parameters to defaults:
-    std::map<std::string, real> params = params_;
-
-    // define pore parameters:
-    real poreLength = 2.0;
-    real poreCentreRadius = 0.5;
-    real poreVdwRadius = 0.2;
-    gmx::RVec poreCentre(-std::sqrt(2.0), std::sqrt(3.0), std::sqrt(2.0));
-    int poreDir = YY;
-    int notPoreDirA = XX;
-    int notPoreDirB = ZZ;
-
-    // calculate true pore radius:
-    real poreMinFreeRadius = poreCentreRadius - poreVdwRadius;
-    real poreMaxFreeRadius = std::sqrt(std::pow(poreVdwRadius/4.0, 2.0) + 
-                             std::pow(poreCentreRadius, 2.0)) - poreVdwRadius;
-
-    // create pore pointing in the z-direction:
-    std::vector<gmx::RVec> particleCentres = makePore(poreLength,
-                                                      poreCentreRadius,
-                                                      poreVdwRadius,
-                                                      poreCentre,
-                                                      poreDir);    
-    std::vector<real> vdwRadii;
-    vdwRadii.insert(vdwRadii.begin(), particleCentres.size(), poreVdwRadius);
-
-    // prepare an analysis neighborhood:
-    gmx::AnalysisNeighborhood nbh;
-    nbh.setCutoff(0.0);
-    nbh.setXYMode(false);
-    nbh.setMode(gmx::AnalysisNeighborhood::eSearchMode_Grid);
-
-    // prepare neighborhood search:
-    gmx::AnalysisNeighborhoodPositions nbhPos(particleCentres);
-    gmx::AnalysisNeighborhoodSearch nbSearch = nbh.initSearch(&pbc_,
-                                                              nbhPos);
-
-    // prepare path finder:
-    gmx::RVec initProbePos(poreCentre[XX] + 0.1*poreCentreRadius, 
-                           poreCentre[YY] - 0.5*poreCentreRadius, 
-                           poreCentre[ZZ] + 0.3*poreCentreRadius);
-    gmx::RVec chanDirVec(0.5, 1.0, 0.5);
-
-    // create path finder:
-    InplaneOptimisedProbePathFinder pfm(params,
-                                        initProbePos,
-                                        chanDirVec,
-                                        NULL,
-                                        nbhPos,
-                                        vdwRadii);
-
-    // set path finder parameters:
-    // TODO: have to transfer all parameters from constructor to here:
-    PathFindingParameters par;
-    par.setProbeStepLength(params["pfProbeStepLength"]);
-    par.setMaxProbeRadius(params["pfProbeMaxRadius"]);
-    par.setMaxProbeSteps(params["pfProbeMaxSteps"]);
-    pfm.setParameters(par);
-
-    // find and extract path and path points:
-    pfm.findPath();
-    std::vector<real> radii = pfm.pathRadii();
-    std::vector<gmx::RVec> points = pfm.pathPoints();
-    
-    // check that no points are negative:
-    std::function<bool(real)> lt;
-    lt = std::bind(isLesserThan, std::placeholders::_1, 0.0);
-    int nNegative = std::count_if(radii.begin(), radii.end(), lt);
-    ASSERT_GE(0, nNegative);
-
-    // check that no more than two points exceed the termination radius:
-    std::function<bool(real)> gt;
-    gt = std::bind(isGreaterThan, std::placeholders::_1, params["pfProbeMaxRadius"]);
-    int nGreaterLimit = std::count_if(radii.begin(), radii.end(), gt);
-    ASSERT_GE(2, nGreaterLimit);
-
-    // extract the pore internal points:
-    std::vector<real> internalRadii;
-    std::vector<gmx::RVec> internalPoints;
-    for(unsigned int i = 0; i < radii.size(); i++)
-    {
-        if( points[i][poreDir] >= poreCentre[poreDir] - 0.5*poreLength && 
-            points[i][poreDir] <= poreCentre[poreDir] + 0.5*poreLength )
-        {
-            internalPoints.push_back(points[i]);
-            internalRadii.push_back(radii[i]);
-        }
-    }
-
-    // check that all internal radii have the minimal free distance:
-    real minFreeRadTol = 10*std::numeric_limits<real>::epsilon();
-    for(unsigned int i = 0; i < internalRadii.size(); i++)
-    {
-        ASSERT_LE(poreMinFreeRadius - minFreeRadTol, internalRadii[i]);
-    }
-
-    // check that all internal radii have less than the maximal free distance:
-    real maxFreeRadTol = 10*std::numeric_limits<real>::epsilon();
-    for(unsigned int i = 0; i < internalRadii.size(); i++)
-    {
-       ASSERT_GE(poreMaxFreeRadius + maxFreeRadTol, internalRadii[i]);
-    }
-
-    // check that all internal points lie on the centreline:
-    real clDistTol = 10*std::numeric_limits<real>::epsilon();
-    for(unsigned int i = 0; i < internalPoints.size(); i++)
-    {
-        ASSERT_NEAR(poreCentre[notPoreDirA], 
-                    internalPoints[i][notPoreDirA], 
-                    clDistTol);
-        ASSERT_NEAR(poreCentre[notPoreDirB], 
-                    internalPoints[i][notPoreDirB], 
-                    clDistTol);
-    }
-}
-
-
-/*! 
- * \brief Tests InplaneOptimisedProbePathFinder on a cylidnrical pore pointing 
  * in the \f$ z \f$-direction.
  *
  * Similar to the previous test, but with the main direction of the pore 
@@ -456,14 +465,19 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
 
 TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirTest)
 {
+    // set up periodic boundary conditions:
+    t_pbc pbc;
+    set_pbc(&pbc, 1, boxMat_);
+
     // set parameters to defaults:
     std::map<std::string, real> params = params_;
 
     // define pore parameters:
     real poreLength = 3.0;
-    real poreCentreRadius = 0.5;
-    real poreVdwRadius = 0.35;
-    gmx::RVec poreCentre(std::sqrt(2), -std::sqrt(6), std::sqrt(3));
+    real poreCentreRadius = 0.25;
+    real poreVdwRadius = 0.2;
+//    gmx::RVec poreCentre(std::sqrt(2), -std::sqrt(6), std::sqrt(3));
+    gmx::RVec poreCentre(0.0, 0.0, 0.0);
     int poreDir = ZZ;
     int notPoreDirA = XX;
     int notPoreDirB = YY;
@@ -490,20 +504,20 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirT
 
     // prepare neighborhood search:
     gmx::AnalysisNeighborhoodPositions nbhPos(particleCentres);
-    gmx::AnalysisNeighborhoodSearch nbSearch = nbh.initSearch(&pbc_,
+    gmx::AnalysisNeighborhoodSearch nbSearch = nbh.initSearch(&pbc,
                                                               nbhPos);
 
     // prepare path finder:
-    gmx::RVec initProbePos(poreCentre[XX] + 0.5*poreCentreRadius, 
-                           poreCentre[YY] - 0.5*poreCentreRadius, 
-                           poreCentre[ZZ] + 0.5*poreCentreRadius);
-    gmx::RVec chanDirVec(-0.5, 0.5, 1.0);
+    gmx::RVec initProbePos(poreCentre[XX] + 0.0*poreCentreRadius, 
+                           poreCentre[YY] - 0.0*poreCentreRadius, 
+                           poreCentre[ZZ] + 0.0*poreCentreRadius);
+    gmx::RVec chanDirVec(-0.0, 0.0, 1.0);
 
     // create path finder:
     InplaneOptimisedProbePathFinder pfm(params,
                                         initProbePos,
                                         chanDirVec,
-                                        NULL,
+                                        &pbc,
                                         nbhPos,
                                         vdwRadii);
 
