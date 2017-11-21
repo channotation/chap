@@ -28,7 +28,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
 
         // auxiliary functions for setting neighborhood search parameters:
         void prepareNeighborhoodSearch(
-                t_pbc pbc,
+                t_pbc *pbc,
                 gmx::AnalysisNeighborhoodPositions porePos,
                 real cutoff);
 

@@ -21,7 +21,7 @@ class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
         InplaneOptimisedProbePathFinder(std::map<std::string, real> params,
                                         gmx::RVec initProbePos,
                                         gmx::RVec chanDirVec,
-                                        t_pbc pbc,
+                                        t_pbc *pbc,
                                         gmx::AnalysisNeighborhoodPositions porePos,
                                         std::vector<real> vdwRadii);
 
@@ -34,7 +34,7 @@ class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
     private:
 
         gmx::AnalysisNeighborhoodPositions porePos_;
-        t_pbc pbc_;
+        t_pbc *pbc_;
 
         gmx::RVec chanDirVec_;
         gmx::RVec orthVecU_;

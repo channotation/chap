@@ -17,7 +17,7 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
         std::map<std::string, real> params,
         gmx::RVec initProbePos,
         gmx::RVec chanDirVec,
-        t_pbc pbc,
+        t_pbc *pbc,
         gmx::AnalysisNeighborhoodPositions porePos,
         std::vector<real> vdwRadii)
     : AbstractProbePathFinder(params, initProbePos, vdwRadii)
@@ -202,7 +202,6 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
     std::cout<<"initProbePos = "<<initProbePos_[0]<<"  "
                                 <<initProbePos_[1]<<"  "
                                 <<initProbePos_[2]<<"  "
-             <<"status = "<<status<<"  "
              <<"bestState = "<<sam.getBestState()[0]<<" "
                              <<sam.getBestState()[1]<<" "
              <<std::endl;
@@ -234,9 +233,9 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
     gmx::RVec direction(chanDirVec_);
     if( !forward )
     {
-        direction[0] = -direction[0];
-        direction[1] = -direction[1];
-        direction[2] = -direction[2];
+        direction[XX] = -direction[XX];
+        direction[YY] = -direction[YY];
+        direction[ZZ] = -direction[ZZ];
     }
 
     // initial state in optimisation space is always null vector:
@@ -299,6 +298,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         path_.push_back(crntProbePos_);
         radii_.push_back(nmm.getOptimPoint().second);     
 
+        // check termination conditions:
         if( numProbeSteps >= maxProbeSteps_ )
         {
             break;

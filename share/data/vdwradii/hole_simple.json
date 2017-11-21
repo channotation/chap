@@ -6,12 +6,12 @@
         },
 
     "vdwradii": [
-        {"atomname": "C", "resname": "???", "vdwr": 0.185},
-        {"atomname": "H", "resname": "???", "vdwr": 0.100},
-        {"atomname": "N", "resname": "???", "vdwr": 0.175},
-        {"atomname": "O", "resname": "???", "vdwr": 0.165},
-        {"atomname": "P", "resname": "???", "vdwr": 0.210},
-        {"atomname": "S", "resname": "???", "vdwr": 0.200},
+        {"atomname": "C???", "resname": "???", "vdwr": 0.185},
+        {"atomname": "H???", "resname": "???", "vdwr": 0.100},
+        {"atomname": "N???", "resname": "???", "vdwr": 0.175},
+        {"atomname": "O???", "resname": "???", "vdwr": 0.165},
+        {"atomname": "P???", "resname": "???", "vdwr": 0.210},
+        {"atomname": "S???", "resname": "???", "vdwr": 0.200},
         {"atomname": "E2", "resname": "GLN", "vdwr": 0.100},
         {"atomname": "D2", "resname": "ASN", "vdwr": 0.100},
         {"atomname": "LP", "resname": "???", "vdwr": 0.00},
