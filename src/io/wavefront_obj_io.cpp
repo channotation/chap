@@ -67,24 +67,24 @@ WavefrontObjObject::scale(real fac)
 {
     // shift vertices to be centred around origin:
     gmx::RVec shift = calculateCog();
-    shift[0] = -shift[0];
-    shift[1] = -shift[1];
-    shift[2] = -shift[2];
+    shift[XX] = -shift[XX];
+    shift[YY] = -shift[YY];
+    shift[ZZ] = -shift[ZZ];
     this -> shift(shift);
 
     // scale all position vectors:
     std::vector<gmx::RVec>::iterator it;
     for(it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        (*it)[0] *= fac;
-        (*it)[1] *= fac;
-        (*it)[2] *= fac;
+        (*it)[XX] *= fac;
+        (*it)[YY] *= fac;
+        (*it)[ZZ] *= fac;
     }
 
     // shift vertices back to original centre of geometry:
-    shift[0] *= -fac;
-    shift[1] *= -fac;
-    shift[2] *= -fac;
+    shift[XX] *= -fac;
+    shift[YY] *= -fac;
+    shift[ZZ] *= -fac;
     this -> shift(shift);
 }
 
@@ -97,9 +97,9 @@ void WavefrontObjObject::shift(gmx::RVec shift)
     std::vector<gmx::RVec>::iterator it;
     for(it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        (*it)[0] += shift[0];
-        (*it)[1] += shift[1];
-        (*it)[2] += shift[2];
+        (*it)[XX] += shift[XX];
+        (*it)[YY] += shift[YY];
+        (*it)[ZZ] += shift[ZZ];
     }    
 }
 
@@ -115,14 +115,14 @@ WavefrontObjObject::calculateCog()
     std::vector<gmx::RVec>::iterator it;
     for(it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        cog[0] += (*it)[0];
-        cog[1] += (*it)[1];
-        cog[2] += (*it)[2];
+        cog[XX] += (*it)[XX];
+        cog[YY] += (*it)[YY];
+        cog[ZZ] += (*it)[ZZ];
     }
 
-    cog[0] /= vertices_.size();
-    cog[1] /= vertices_.size();
-    cog[2] /= vertices_.size();
+    cog[XX] /= vertices_.size();
+    cog[YY] /= vertices_.size();
+    cog[ZZ] /= vertices_.size();
 
     return cog;
 }
@@ -176,6 +176,7 @@ WavefrontObjExporter::writeComment(std::string comment)
     obj_ <<"# "<<comment<<std::endl;
 }
 
+
 /*!
  * Writes a group line to an OBJ file.
  */
@@ -186,16 +187,30 @@ WavefrontObjExporter::writeGroup(std::string group)
     obj_ <<"g "<<group<<std::endl;
 }
 
+
 /*!
  * Writes a vertex entry to an OBJ file.
  */
 void
 WavefrontObjExporter::writeVertex(gmx::RVec vertex)
 {
-    obj_<<"v "<<vertex[0]<<" "
-              <<vertex[1]<<" "
-              <<vertex[2]<<std::endl;
+    obj_<<"v "<<vertex[XX]<<" "
+              <<vertex[YY]<<" "
+              <<vertex[ZZ]<<std::endl;
 }
+
+
+/*!
+ * Writes a vertex normal to an OBJ file.
+ */
+void
+WavefrontObjExporter::writeVertexNorm(gmx::RVec norm)
+{
+    obj_<<"vn "<<norm[XX]<<" "
+               <<norm[YY]<<" "
+               <<norm[ZZ]<<std::endl;
+}
+
 
 /*!
  * Writes a face entry to OBJ file.
