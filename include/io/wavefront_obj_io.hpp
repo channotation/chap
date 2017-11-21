@@ -81,15 +81,15 @@ class WavefrontObjObject
         void addVertexNormals(const std::vector<gmx::RVec> &normals);
         void addGroup(const WavefrontObjGroup &group);
 
+        // returns flag indicating whether object is valid:
+        bool valid() const;
+
         // functions to manipulate data:
         void scale(real fac);
         void shift(gmx::RVec shift);
 
         // functions to query data:
         gmx::RVec calculateCog();
-
-        // returns flag indicating whether object is valid:
-        bool valid() const;
 
         // data:
         std::string name_;

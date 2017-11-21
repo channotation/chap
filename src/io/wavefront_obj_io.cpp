@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "io/wavefront_obj_io.hpp"
 
 
@@ -230,12 +232,61 @@ WavefrontObjObject::calculateCog()
 
 
 /*!
+ * Returns a flag indicating if the Wavefront object is valid. In particular,
+ * it check that each vertex or vertex normal referenced by the faces is 
+ * present in the vertex or vertex normal set.
+ */
+bool
+WavefrontObjObject::valid() const
+{
+    // loop over groups:
+    for( auto& group : groups_ )
+    {
+        // loop over faces:
+        for( auto& face : group.faces_ )
+        {
+            // loop over vertices:
+            for( size_t i = 0; i < face.numVertices(); i++ )
+            {
+                // are all referenced vertices present?
+                if( face.vertexIdx(i) > vertices_.size() ||
+                    face.vertexIdx(i) < 1 )
+                {
+                    return false;
+                }
+
+                // are all referenced normals present?
+                if( face.hasNormals() )
+                {
+                    if( face.normalIdx(i) > normals_.size() ||
+                        face.normalIdx(i) < 1 )
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    // if nothing failed, return true:
+    return true;
+}
+
+
+/*!
  * Writes an OBJ object to a file of the given name. 
  */
 void
 WavefrontObjExporter::write(std::string fileName,
                             WavefrontObjObject object)
 {
+    // sanity checks:
+    if( !object.valid() )
+    {
+        throw std::logic_error("WavefrontObjExporter encountered invalid "
+                               "OBJ object.");
+    }
+
     // open file stream:
     obj_.open(fileName.c_str(), std::fstream::out);
 
@@ -311,36 +362,6 @@ WavefrontObjExporter::writeVertexNorm(gmx::RVec norm)
                <<norm[YY]<<" "
                <<norm[ZZ]<<std::endl;
 }
-
-
-/*!
- * Writes a face entry to OBJ file.
- */
-/*
-void
-WavefrontObjExporter::writeFace(
-        std::vector<int> vertexIdx,
-        std::vector<int> normalIdx)
-{
-    obj_<<"f ";
-
-    for(unsigned int i = 0; i < vertexIdx.size(); i++)
-    {
-        // write vertex index:
-        obj_<<vertexIdx[i];
-        
-        // optionally write normal index:
-        if( !normalIdx.empty() )
-        {
-            obj_<<normalIdx[i];
-        }
-
-        // white space before next vertex:
-        obj_<<" ";
-    }
-
-    obj_<<std::endl;
-}*/
 
 
 /*
