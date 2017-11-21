@@ -24,7 +24,7 @@ void
 MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
 {
-
+    
 //    real d = 0.1;
 //    real r = 1;
 
@@ -89,7 +89,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
 
     // construct triangular faces:
-    std::vector<std::vector<int>> faces;
+    WavefrontObjGroup surface("surface");
     for(int i = 0; i < nLen - 1; i++)
     {
         for(int j = 0; j < nPhi - 1; j++)
@@ -104,16 +104,16 @@ MolecularPathObjExporter::operator()(std::string fileName,
             std::vector<int> faceA = {kbl + 1, ktl + 1, ktr + 1};
             std::vector<int> faceB = {kbl + 1, ktr + 1, kbr + 1};
 
-            // add to vector of faces:
-            faces.push_back(faceA);
-            faces.push_back(faceB);   
+            surface.addFace(faceA);
+            surface.addFace(faceB);
         }
     }
 
-    // create an OBJ object:
+
+    // assemble OBJ object:
     WavefrontObjObject obj("pore");
     obj.addVertices(vertices);
-    obj.addGroup("inner_surface", faces);
+    obj.addGroup(surface);
 
     // scale object by factor of 10 to convert nm to Ang:
     obj.scale(10.0);
@@ -122,6 +122,8 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
     objExp.write(fileName, obj);
+
+    
 }
 
 

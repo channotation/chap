@@ -2,12 +2,89 @@
 
 
 /*!
- * Construct a new group with given name and list of faces.
+ * Constructs a face from a vector of vertex indices.
  */
-WavefrontObjGroup::WavefrontObjGroup(std::string name, 
-                                     std::vector<std::vector<int>> faces)
+WavefrontObjFace::WavefrontObjFace(
+        const std::vector<int> &vertexIdx)
+    : vertexIdx_(vertexIdx)
+{
+    
+}
+
+
+/*!
+ * Constructs a face from vectors of vertex indices and normal indeces. These
+ * should be of the same size.
+ */
+WavefrontObjFace::WavefrontObjFace(
+        const std::vector<int> &vertexIdx,
+        const std::vector<int> &normalIdx)
+{
+    // sanity check:
+    if( normalIdx.size() != vertexIdx.size() )
+    {
+        throw std::logic_error("Number of vertex normals must equal number "
+                               "of vertices.");
+    }
+
+    // assign to internal objects:
+    vertexIdx_ = vertexIdx;
+    normalIdx_ = normalIdx;
+}
+
+
+/*!
+ * Returns number of vertices associated with this face.
+ */
+int
+WavefrontObjFace::numVertices() const
+{
+    return vertexIdx_.size();
+}
+
+
+/*!
+ * Returns the i-th vertex index.
+ */
+int
+WavefrontObjFace::vertexIdx(int i) const
+{
+    return vertexIdx_[i];
+}
+
+
+/*!
+ * Returns the i-th normal index.
+ */
+int
+WavefrontObjFace::normalIdx(int i) const
+{
+    return normalIdx_[i];
+}
+
+
+/*!
+ * Returns a flag indicating whether this face has vertex normals.
+ */
+bool
+WavefrontObjFace::hasNormals() const
+{
+    if( normalIdx_.size() == vertexIdx_.size() )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+
+/*!
+ * Construct a new group with given name. Faces can be added using addFace().
+ */
+WavefrontObjGroup::WavefrontObjGroup(std::string name)
     : groupname_(name)
-    , faces_(faces)
 {
     
 }
@@ -21,6 +98,16 @@ WavefrontObjGroup::WavefrontObjGroup(const WavefrontObjGroup &other)
     , faces_(other.faces_)
 {
     
+}
+
+
+/*!
+ * Adds face to internal list of faces. 
+ */
+void
+WavefrontObjGroup::addFace(const WavefrontObjFace &face)
+{
+    faces_.push_back(face);
 }
 
 
@@ -39,9 +126,23 @@ WavefrontObjObject::WavefrontObjObject(std::string name)
  * of vertices and there is no check for redundancy.
  */
 void
-WavefrontObjObject::addVertices(std::vector<gmx::RVec> vertices)
+WavefrontObjObject::addVertices(const std::vector<gmx::RVec> &vertices)
 {
     vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+}
+
+
+/*!
+ * Add new vertex normals to the OBJ object. These are appended to the existing
+ * list of vertex normals and the user is responsible for ensuring that the 
+ * final number of vertex normals is either equal to the number of vertices or
+ * zero.
+ */
+void
+WavefrontObjObject::addVertexNormals(const std::vector<gmx::RVec> &normals)
+{
+    // accept normals:
+    normals_.insert(normals_.end(), normals.begin(), normals.end());
 }
 
 
@@ -49,9 +150,9 @@ WavefrontObjObject::addVertices(std::vector<gmx::RVec> vertices)
  * Adds a new named group to the OBJ object.
  */
 void
-WavefrontObjObject::addGroup(std::string name, std::vector<std::vector<int>> faces)
+WavefrontObjObject::addGroup(const WavefrontObjGroup &group)
 {
-    groups_.push_back( WavefrontObjGroup(name, faces) );
+    groups_.push_back( group );
 }
 
 
@@ -215,14 +316,51 @@ WavefrontObjExporter::writeVertexNorm(gmx::RVec norm)
 /*!
  * Writes a face entry to OBJ file.
  */
+/*
 void
-WavefrontObjExporter::writeFace(std::vector<int> face)
+WavefrontObjExporter::writeFace(
+        std::vector<int> vertexIdx,
+        std::vector<int> normalIdx)
 {
     obj_<<"f ";
 
-    for(unsigned int i = 0; i < face.size(); i++)
+    for(unsigned int i = 0; i < vertexIdx.size(); i++)
     {
-        obj_<<face[i]<<"  ";
+        // write vertex index:
+        obj_<<vertexIdx[i];
+        
+        // optionally write normal index:
+        if( !normalIdx.empty() )
+        {
+            obj_<<normalIdx[i];
+        }
+
+        // white space before next vertex:
+        obj_<<" ";
+    }
+
+    obj_<<std::endl;
+}*/
+
+
+/*
+ *
+ */
+void
+WavefrontObjExporter::writeFace(const WavefrontObjFace &face)
+{
+    obj_<<"f ";
+
+    for(size_t i = 0; i < face.numVertices(); i++)
+    {
+        obj_<<face.vertexIdx(i);
+
+        if( face.hasNormals() )
+        {
+            obj_<<"//"<<face.normalIdx(i);
+        }
+
+        obj_<<" ";
     }
 
     obj_<<std::endl;
