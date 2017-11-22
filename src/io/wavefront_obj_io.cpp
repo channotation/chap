@@ -10,7 +10,13 @@ WavefrontObjFace::WavefrontObjFace(
         const std::vector<int> &vertexIdx)
     : vertexIdx_(vertexIdx)
 {
-    
+    // check uniqueness of indices:
+    std::vector<int> tmp = vertexIdx_;
+    std::sort(tmp.begin(), tmp.end());
+    if( std::adjacent_find(tmp.begin(), tmp.end()) != tmp.end() )
+    {
+        throw std::logic_error("Vertex indices must be unique.");
+    }
 }
 
 

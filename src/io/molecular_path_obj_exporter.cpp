@@ -5,7 +5,176 @@
 #include <gromacs/utility/real.h> 
 
 #include "io/molecular_path_obj_exporter.hpp"
-#include "io/wavefront_obj_io.hpp"
+
+
+/*
+ *
+ */
+RegularVertexGrid::RegularVertexGrid(
+        std::vector<real> s,
+        std::vector<real> phi)
+    : s_(s)
+    , phi_(phi)
+{
+    
+}
+
+
+/*
+ *
+ */
+void
+RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex)
+{
+    std::pair<size_t, size_t> key(i, j);
+    vertices_[key] = vertex;
+
+/*
+    std::cout<<"i = "<<i<<"  "
+             <<"j = "<<j<<"  "
+             <<"x = "<<vertices_[key][0]<<"  "
+             <<"y = "<<vertices_[key][1]<<"  "
+             <<"z = "<<vertices_[key][2]<<"  "
+             <<"key.1 = "<<key.first<<"  "
+             <<"key.2 = "<<key.second<<"  "
+             <<std::endl;*/
+}
+
+
+
+/*
+ *
+ */
+void
+RegularVertexGrid::interpolateMissing()
+{
+    // loop over grid points:
+    for(size_t i = 0; i < s_.size(); i++)
+    {
+        for(size_t j = 0; j < phi_.size(); j++)
+        {
+            // is value present?
+            std::pair<size_t, size_t> key(i, j);
+            auto it = vertices_.find(key);
+            if( it == vertices_.end() )
+            {
+                // TODO find nearest neighbours on grid
+
+
+                // TODO bilinear interpolation.
+            }
+        }
+    }
+}
+
+
+/*
+ *
+ */
+std::vector<gmx::RVec>
+RegularVertexGrid::vertices()
+{
+    // build linearly indexed vector from dual indexed map:
+    std::vector<gmx::RVec> vert;
+    vert.reserve(vertices_.size());
+    for(size_t i = 0; i < s_.size(); i++)
+    {
+        for(size_t j = 0; j < phi_.size(); j++)
+        {
+            std::pair<size_t, size_t> key(i, j);
+            if( vertices_.find(key) != vertices_.end() )
+            {
+                vert.push_back(vertices_[key]); 
+/*                std::cout<<"i = "<<i<<"  "
+                         <<"j = "<<j<<"  "
+                         <<"x = "<<vertices_[key][0]<<"  "
+                         <<"y = "<<vertices_[key][1]<<"  "
+                         <<"z = "<<vertices_[key][2]<<"  "
+                         <<"key.1 = "<<key.first<<"  "
+                         <<"key.2 = "<<key.second<<"  "
+                         <<std::endl;*/
+            }
+            else
+            {
+                throw std::logic_error("Invalid vertex reference encountered.");
+            }
+        }
+    }
+
+    return vert;
+}
+
+
+/*
+ *
+ */
+std::vector<gmx::RVec>
+RegularVertexGrid::normals()
+{
+    std::vector<gmx::RVec> norm;
+    return norm;
+}
+
+
+/*
+ *
+ */
+std::vector<WavefrontObjFace>
+RegularVertexGrid::faces()
+{
+    // sanity checks:
+    if( phi_.size() * s_.size() != vertices_.size() )
+    {
+        std::cout<<"phi.size = "<<phi_.size()<<"  "
+                 <<"s.size = "<<s_.size()<<"  "
+                 <<"vert.size = "<<vertices_.size()<<"  "
+                 <<std::endl;
+        throw std::logic_error("Cannot generate faces on incomplete grid.");
+    }
+
+    // preallocate face vector:
+    std::vector<WavefrontObjFace> faces;
+    faces.reserve(phi_.size()*s_.size());
+
+    // loop over grid:
+    for(size_t i = 0; i < s_.size() - 1; i++)
+    {
+        for(size_t j = 0; j < phi_.size() - 1; j++)
+        {
+            // calculate linear indices:
+            int kbl = i*phi_.size() + j; 
+            int kbr = kbl + 1;
+            int ktl = kbl + phi_.size();
+            int ktr = kbr + phi_.size();
+
+            // two faces per square:
+            faces.push_back( WavefrontObjFace(
+                    {kbl + 1, ktr + 1, ktl + 1}) );
+            faces.push_back( WavefrontObjFace(
+                    {kbl + 1, kbr + 1, ktr + 1}) );
+        }
+    }
+
+    // wrap around:
+    for(size_t i = 0; i < s_.size() - 1; i++)
+    {
+        // calculate linear indices:
+        int kbl = i*phi_.size() + phi_.size() - 1; 
+        int kbr = i*phi_.size();
+        int ktl = kbl + phi_.size();
+        int ktr = kbr + phi_.size();
+
+        // two faces per square:
+        faces.push_back( WavefrontObjFace(
+                {kbl + 1, ktr + 1, ktl + 1}) );
+        faces.push_back( WavefrontObjFace(
+                {kbl + 1, kbr + 1, ktr + 1}) );
+    }
+
+    // return face vector:
+    return faces;
+}
+
 
 
 /*
@@ -17,9 +186,6 @@ MolecularPathObjExporter::MolecularPathObjExporter()
 }
 
 
-/*
- *
- */
 void
 MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
@@ -31,8 +197,215 @@ MolecularPathObjExporter::operator()(std::string fileName,
     bool useNormals = true;
     real extrapDist = 0.0;
 
-    int nLen = 10;
-    int nPhi = 10;
+    int nLen = 50;
+    int nPhi = 30;
+
+    int numPhi = 30;
+    int numLen = 50;
+
+//    real deltaLen = molPath.length() / (nLen - 1);
+    real deltaPhi = 2.0*PI_/(nPhi - 1);
+
+
+
+    // get tangents and points on centre line to centre line:
+    std::vector<gmx::RVec> tangents = molPath.sampleNormTangents(nLen, extrapDist);
+
+    std::vector<gmx::RVec> centrePoints = molPath.samplePoints(nLen, extrapDist);
+    std::vector<real> radii = molPath.sampleRadii(nLen, extrapDist);
+
+    // preallocate output vertices:
+//    std::vector<gmx::RVec> vertices;
+//    vertices.reserve(tangents.size()*nPhi);
+//    std::vector<gmx::RVec> vertexNormals;
+//    vertexNormals.reserve(vertices.size()*nPhi);
+
+
+    // construct vertices around first point:
+    gmx::RVec normal = orthogonalVector(tangents[0]);
+    unitv(normal, normal);
+    auto ring = vertexRing(
+            centrePoints[0],
+            tangents[0],
+            normal,
+            radii[0],
+            deltaPhi,
+            nPhi);
+
+    // add vertices and normals to containers:
+    /*
+    vertices.insert(
+            vertices.end(), 
+            ring.first.begin(), 
+            ring.first.end());
+    vertexNormals.insert(
+            vertexNormals.end(), 
+            ring.second.begin(), 
+            ring.second.end());*/
+    
+
+    SplineCurve1D pathRadius = molPath.pathRadius();    
+    SplineCurve3D centreLine = molPath.centreLine();
+
+    gmx::RVec prevTangent;
+
+    std::vector<real> s;
+    std::vector<real> phi;
+    for(int i = 0; i < numLen; i++)
+    {
+        s.push_back(molPath.sLo() + molPath.length()/numLen*i);
+    }
+    for(int i = 0; i < numPhi; i++)
+    {
+        phi.push_back(2.0*M_PI/numPhi*i);
+    }
+    RegularVertexGrid grid(s, phi);
+
+    int vertIdxA = numPhi + 1;
+    int vertIdxB = numPhi + 2;
+    int vertIdxC = numPhi + 3;
+
+    real eval = molPath.sLo();
+    real evalStep = molPath.length()/numLen;
+    size_t i = 0;
+    while( i < numLen )
+    {
+        eval = s[i];
+        real crntRadius = pathRadius.evaluate(eval, 0);
+        gmx::RVec crntCentre = centreLine.evaluate(eval, 0);
+        gmx::RVec crntTangent = centreLine.tangentVec(eval);
+        gmx::RVec crntNormal = orthogonalVector(crntTangent);
+
+        // find axis of tangent rotation:
+        gmx::RVec tangentRotAxis;
+        cprod(prevTangent, crntTangent, tangentRotAxis);
+
+        // find tangent angle of rotation:
+        real tangentRotCos = iprod(crntTangent, prevTangent);
+        real tangentRotAxisLen = norm(tangentRotAxis);
+        real tangentRotAngle = std::atan2(tangentRotAxisLen, tangentRotCos);
+
+        // update normal by rotating it like the tangent:
+        crntNormal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
+
+        
+        // angular loop:
+        real angleIncrement = 2.0*M_PI/(numPhi);
+        for(size_t j = 0; j < numPhi; j++)
+        {
+            // rotate normal vector:
+            gmx::RVec rotNormal = rotateAboutAxis(
+                    crntNormal, 
+                    crntTangent,
+                    j*angleIncrement);
+
+            // generate vertex:
+            gmx::RVec vertex = crntCentre;
+            vertex[XX] += crntRadius*rotNormal[XX];
+            vertex[YY] += crntRadius*rotNormal[YY];
+            vertex[ZZ] += crntRadius*rotNormal[ZZ];
+
+            // add to grid:
+            std::cout<<"x = "<<vertex[XX]<<"  "
+                     <<"y = "<<vertex[YY]<<"  "
+                     <<"z = "<<vertex[ZZ]<<"  "
+                     <<std::endl;
+            grid.addVertex(i, j, vertex);
+
+
+            // add vertices, and normals to container:
+//            vertices.push_back(vertex);
+//            vertexNormals.push_back(rotNormal);
+            vertIdxA++;
+        }
+
+/*
+        auto ring = vertexRing(
+            crntCentre,
+            crntTangent,
+            crntNormal,
+            crntRadius,
+            deltaPhi,
+            nPhi);
+           
+        for(int i = 0; i < ring.first.size(); i++)
+        {
+            gmx::RVec diff;
+            rvec_sub(ring.first[i], centrePoints[i-1], diff);
+            real angle = iprod(tangents[i-1], diff) / ( norm(tangents[i-1]) * norm(diff) );
+
+            if( angle > 0 || true )
+            {
+                vertices.push_back(ring.first[i]);
+                vertexNormals.push_back(ring.second[i]);
+            }
+        }
+*/
+
+        prevTangent = crntTangent;
+//        eval += evalStep;
+        i++;
+    }
+
+
+    // obtain vertices, normals, and faces from grid:
+    auto vertices = grid.vertices();
+    auto faces = grid.faces();
+
+    std::cout<<"vertices.size = "<<vertices.size()<<"  "
+             <<"faces.size = "<<faces.size()<<"  "
+             <<std::endl;
+
+    
+
+    // add faces to surface:
+    WavefrontObjGroup surface("pore_surface");
+    for(auto face : faces)
+    {
+/*        std::cout<<"face = "<<"  "
+                 <<face.vertexIdx_[0]<<"  "
+                 <<face.vertexIdx_[1]<<"  "
+                 <<face.vertexIdx_[2]<<"  "
+                 <<std::endl;*/
+        surface.addFace(face);
+    }
+    
+    // assemble OBJ object:
+    WavefrontObjObject obj("pore");
+    obj.addVertices(vertices);
+//    obj.addVertexNormals(vertexNormals);
+    obj.addGroup(surface);
+
+    // scale object by factor of 10 to convert nm to Ang:
+    obj.scale(10.0);
+    obj.calculateCog();
+
+    // create OBJ exporter and write to file:
+    WavefrontObjExporter objExp;
+    objExp.write(fileName, obj);
+
+    
+}
+
+
+
+/*
+ *
+ */
+/*
+void
+MolecularPathObjExporter::operator()(std::string fileName,
+                                     MolecularPath &molPath)
+{
+    
+//    real d = 0.1;
+//    real r = 1;
+
+    bool useNormals = true;
+    real extrapDist = 0.0;
+
+    int nLen = 250;
+    int nPhi = 30;
 
 
 //    real deltaLen = molPath.length() / (nLen - 1);
@@ -97,6 +470,20 @@ MolecularPathObjExporter::operator()(std::string fileName,
                 radii[i],
                 deltaPhi,
                 nPhi);
+
+        for(int i = 0; i < ring.first.size(); i++)
+        {
+            gmx::RVec diff;
+            rvec_sub(ring.first[i], centrePoints[i-1], diff);
+            real angle = iprod(tangents[i-1], diff) / ( norm(tangents[i-1]) * norm(diff) );
+
+            if( angle > 0 )
+            {
+//                vertices.push_back(ring.first[i]);
+//                vertexNormals.push_back(ring.second[i]);
+            }
+        }
+
         
         // add vertices and normals to containers:
         vertices.insert(
@@ -110,9 +497,14 @@ MolecularPathObjExporter::operator()(std::string fileName,
     }
 
 
+    std::cout<<"vertices.size = "<<vertices.size()<<"  "
+             <<"nLen = "<<nLen<<"  "
+             <<"nPhi = "<<nPhi<<"  "
+             <<std::endl;
+
     // construct triangular faces:
     WavefrontObjGroup surface("pore_surface");
-    for(int i = 0; i < nLen - 1; i++)
+    for(int i = 0; i < vertices.size() / nPhi - 1; i++)
     {
         for(int j = 0; j < nPhi - 1; j++)
         {
@@ -161,6 +553,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
     
 }
+*/
 
 
 /*

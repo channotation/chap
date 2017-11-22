@@ -159,10 +159,7 @@ proc draw_wavefront_obj {obj} {
         error "Enequal length vertex index lists."
     }
 
-    puts "vertex idx"
-    puts [llength $vertex_idx_a]
-    puts [llength $vertex_idx_b]
-    puts [llength $vertex_idx_c]
+    set switch 1
 
     # have vertex normals?
     set num_vert_idx [llength $vertex_idx_a]
@@ -171,6 +168,13 @@ proc draw_wavefront_obj {obj} {
     
         # loop over faces and draw them:
         foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c {
+
+            set switch [expr $switch * -1]
+            if { $switch == 1 } {
+                draw color red
+            } else { 
+                draw color blue
+            }
 
             draw trinorm "[lindex $vert_x $ia] [lindex $vert_y $ia] [lindex $vert_z $ia]" \
                          "[lindex $vert_x $ib] [lindex $vert_y $ib] [lindex $vert_z $ib]" \
@@ -182,11 +186,16 @@ proc draw_wavefront_obj {obj} {
 
     } else {
         
-        puts "triangle"
-
         # loop over faces and draw them:
         foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c {
 
+            set switch [expr $switch * -1]
+            if { $switch == 1 } {
+                draw color red
+            } else { 
+                draw color blue
+            }
+            
             draw triangle "[lindex $vert_x $ia] [lindex $vert_y $ia] [lindex $vert_z $ia]" \
                           "[lindex $vert_x $ib] [lindex $vert_y $ib] [lindex $vert_z $ib]" \
                           "[lindex $vert_x $ic] [lindex $vert_y $ic] [lindex $vert_z $ic]" 
