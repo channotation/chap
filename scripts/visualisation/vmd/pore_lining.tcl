@@ -110,7 +110,7 @@ foreach rid $res_id pl $pore_lining pf $pore_facing {
     # is residue pore lining?
     if { $pl == 1 } {
        
-        puts "pf = $pf"
+#        puts "pf = $pf"
 
         # is residue also pore facing:
         if { $pf == 1 } {
@@ -148,7 +148,8 @@ foreach rid $res_id pl $pore_lining pf $pore_facing {
 
 draw color blue
 #draw material Transparent
-source wobj.tcl
+# FIXME
+source ~/repos/chap/scripts/visualisation/vmd/wobj.tcl
 
 
 ###############################################################################

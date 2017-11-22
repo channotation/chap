@@ -28,10 +28,11 @@ MolecularPathObjExporter::operator()(std::string fileName,
 //    real d = 0.1;
 //    real r = 1;
 
-    real extrapDist = 1.0;
+    bool useNormals = true;
+    real extrapDist = 0.0;
 
-    int nLen = 100;
-    int nPhi = 100;
+    int nLen = 10;
+    int nPhi = 10;
 
 
 //    real deltaLen = molPath.length() / (nLen - 1);
@@ -55,15 +56,23 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // construct vertices around first point:
     gmx::RVec normal = orthogonalVector(tangents[0]);
     unitv(normal, normal);
-    vertexNormals.push_back(normal);
-    std::vector<gmx::RVec> newVertices = vertexRing(centrePoints[0],
-                                                    tangents[0],
-                                                    normal,
-                                                    radii[0],
-                                                    deltaPhi,
-                                                    nPhi);
-    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
+    auto ring = vertexRing(
+            centrePoints[0],
+            tangents[0],
+            normal,
+            radii[0],
+            deltaPhi,
+            nPhi);
 
+    // add vertices and normals to containers:
+    vertices.insert(
+            vertices.end(), 
+            ring.first.begin(), 
+            ring.first.end());
+    vertexNormals.insert(
+            vertexNormals.end(), 
+            ring.second.begin(), 
+            ring.second.end());
 
     // follow spline curve and construct vertices around all other points:
     for(unsigned int i = 1; i < tangents.size(); i++)
@@ -79,21 +88,30 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
         // update normal by rotating it like the tangent:
         normal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
-        vertexNormals.push_back(normal);
 
         // construct sample points:
-        newVertices = vertexRing(centrePoints[i],
-                                 tangents[i],
-                                 normal,
-                                 radii[i],
-                                 deltaPhi,
-                                 nPhi);
-        vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
+        ring = vertexRing(
+                centrePoints[i],
+                tangents[i],
+                normal,
+                radii[i],
+                deltaPhi,
+                nPhi);
+        
+        // add vertices and normals to containers:
+        vertices.insert(
+                vertices.end(), 
+                ring.first.begin(), 
+                ring.first.end());
+        vertexNormals.insert(
+                vertexNormals.end(), 
+                ring.second.begin(), 
+                ring.second.end());
     }
 
 
     // construct triangular faces:
-    WavefrontObjGroup surface("surface");
+    WavefrontObjGroup surface("pore_surface");
     for(int i = 0; i < nLen - 1; i++)
     {
         for(int j = 0; j < nPhi - 1; j++)
@@ -105,11 +123,24 @@ MolecularPathObjExporter::operator()(std::string fileName,
             int ktr = kbr + nPhi;
 
             // two triangles for each square:
-            std::vector<int> faceA = {kbl + 1, ktl + 1, ktr + 1};
-            std::vector<int> faceB = {kbl + 1, ktr + 1, kbr + 1};
+            std::unique_ptr<WavefrontObjFace> faceA;
+            std::unique_ptr<WavefrontObjFace> faceB;
+            if( useNormals )
+            {
+                faceA.reset(new WavefrontObjFace({kbl + 1, ktr + 1, ktl + 1},
+                                                 {kbl + 1, ktl + 1, ktr + 1}));
+                faceB.reset(new WavefrontObjFace({kbl + 1, kbr + 1, ktr + 1},
+                                                 {kbl + 1, kbr + 1, ktr + 1}));
+            }
+            else
+            {
+                faceA.reset(new WavefrontObjFace({kbl + 1, ktr + 1, ktl + 1}));
+                faceB.reset(new WavefrontObjFace({kbl + 1, kbr + 1, ktr + 1}));
+            }
 
-            surface.addFace(faceA);
-            surface.addFace(faceB);
+            // add faces to overall surface:
+            surface.addFace(*faceA);
+            surface.addFace(*faceB);
         }
     }
 
@@ -145,7 +176,7 @@ MolecularPathObjExporter::numPlanarVertices(real &d, real &r)
 /*
  *
  */
-std::vector<gmx::RVec> 
+std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>>
 MolecularPathObjExporter::vertexRing(gmx::RVec base,
                                      gmx::RVec tangent,
                                      gmx::RVec normal,
@@ -156,8 +187,10 @@ MolecularPathObjExporter::vertexRing(gmx::RVec base,
     // make sure input normal vector is normalised:
     unitv(normal, normal);
 
-    // preallocate vertex vector:
+    // preallocate vertex and normal vectors:
     std::vector<gmx::RVec> vertices;
+    vertices.reserve(nIncrements);
+    std::vector<gmx::RVec> normals;
     vertices.reserve(nIncrements);
 
     // sample vertices in a ring around the base point: 
@@ -165,6 +198,7 @@ MolecularPathObjExporter::vertexRing(gmx::RVec base,
     {
         // rotate normal vector:
         gmx::RVec rotNormal = rotateAboutAxis(normal, tangent, j*angleIncrement);
+        normals.push_back(rotNormal);
 
         // generate vertex:
         gmx::RVec vertex = base;
@@ -175,7 +209,10 @@ MolecularPathObjExporter::vertexRing(gmx::RVec base,
     }
 
     // return ring of vertices:
-    return vertices;
+    std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>> ret;
+    ret.first = vertices;
+    ret.second = normals;
+    return ret;
 }
 
 

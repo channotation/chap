@@ -36,12 +36,13 @@ class MolecularPathObjExporter
         inline int numPlanarVertices(real &d, real &r);
 
         // 
-        inline std::vector<gmx::RVec> vertexRing(gmx::RVec base,
-                                                 gmx::RVec tangent,
-                                                 gmx::RVec normal,
-                                                 real radius,
-                                                 real angleIncrement,
-                                                 size_t nIncrements);
+        inline std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>> vertexRing(
+                gmx::RVec base,
+                gmx::RVec tangent,
+                gmx::RVec normal,
+                real radius,
+                real angleIncrement,
+                size_t nIncrements);
 
         // 
         gmx::RVec orthogonalVector(gmx::RVec vec);

@@ -56,7 +56,7 @@ class WavefrontObjGroup
         WavefrontObjGroup(const WavefrontObjGroup &other);
 
         // add face to group:
-        void addFace(const WavefrontObjFace &face);
+        void addFace(WavefrontObjFace face);
 
         // data:
         std::string groupname_;

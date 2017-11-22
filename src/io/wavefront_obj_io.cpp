@@ -107,7 +107,7 @@ WavefrontObjGroup::WavefrontObjGroup(const WavefrontObjGroup &other)
  * Adds face to internal list of faces. 
  */
 void
-WavefrontObjGroup::addFace(const WavefrontObjFace &face)
+WavefrontObjGroup::addFace(WavefrontObjFace face)
 {
     faces_.push_back(face);
 }
