@@ -191,183 +191,20 @@ MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
 {
     
-//    real d = 0.1;
-//    real r = 1;
 
     bool useNormals = true;
     real extrapDist = 0.0;
 
-    int nLen = 50;
-    int nPhi = 30;
-
     int numPhi = 30;
-    int numLen = 50;
+    int numLen = std::pow(2, 6) + 1;
 
-//    real deltaLen = molPath.length() / (nLen - 1);
-    real deltaPhi = 2.0*PI_/(nPhi - 1);
-
-
+    std::cout<<"gen grid = "<<numLen<<std::endl;
     // generate a grid of vertices:
     RegularVertexGrid grid = generateGrid(molPath, numLen, numPhi, extrapDist);
 
     // correct mesh:
     grid.interpolateMissing();
  
-
-
-
-
-/*
-
-    // get tangents and points on centre line to centre line:
-    std::vector<gmx::RVec> tangents = molPath.sampleNormTangents(nLen, extrapDist);
-    std::vector<gmx::RVec> centrePoints = molPath.samplePoints(nLen, extrapDist);
-    std::vector<real> radii = molPath.sampleRadii(nLen, extrapDist);
-
-    // generate normals:
-
-
-    // preallocate output vertices:
-//    std::vector<gmx::RVec> vertices;
-//    vertices.reserve(tangents.size()*nPhi);
-//    std::vector<gmx::RVec> vertexNormals;
-//    vertexNormals.reserve(vertices.size()*nPhi);
-
-
-    // construct vertices around first point:
-    gmx::RVec normal = orthogonalVector(tangents[0]);
-    unitv(normal, normal);
-    auto ring = vertexRing(
-            centrePoints[0],
-            tangents[0],
-            normal,
-            radii[0],
-            deltaPhi,
-            nPhi);
-
-    // add vertices and normals to containers:
-    
-    vertices.insert(
-            vertices.end(), 
-            ring.first.begin(), 
-            ring.first.end());
-    vertexNormals.insert(
-            vertexNormals.end(), 
-            ring.second.begin(), 
-            ring.second.end());
-    
-
-    SplineCurve1D pathRadius = molPath.pathRadius();    
-    SplineCurve3D centreLine = molPath.centreLine();
-
-    gmx::RVec prevTangent;
-
-    std::vector<real> s;
-    std::vector<real> phi;
-    for(int i = 0; i < numLen; i++)
-    {
-        s.push_back(molPath.sLo() + molPath.length()/numLen*i);
-    }
-    for(int i = 0; i < numPhi; i++)
-    {
-        phi.push_back(2.0*M_PI/numPhi*i);
-    }
-    RegularVertexGrid grid(s, phi);
-
-    int vertIdxA = numPhi + 1;
-    int vertIdxB = numPhi + 2;
-    int vertIdxC = numPhi + 3;
-
-    real eval = molPath.sLo();
-    real evalStep = molPath.length()/numLen;
-    size_t i = 0;
-    while( i < numLen )
-    {
-        eval = s[i];
-        real crntRadius = pathRadius.evaluate(eval, 0);
-        gmx::RVec crntCentre = centreLine.evaluate(eval, 0);
-        gmx::RVec crntTangent = centreLine.tangentVec(eval);
-        gmx::RVec crntNormal = orthogonalVector(crntTangent);
-
-        // find axis of tangent rotation:
-        gmx::RVec tangentRotAxis;
-        cprod(prevTangent, crntTangent, tangentRotAxis);
-
-        // find tangent angle of rotation:
-        real tangentRotCos = iprod(crntTangent, prevTangent);
-        real tangentRotAxisLen = norm(tangentRotAxis);
-        real tangentRotAngle = std::atan2(tangentRotAxisLen, tangentRotCos);
-
-        // update normal by rotating it like the tangent:
-        crntNormal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
-
-
-        // TODO
-        // 0. pick numLen as power of two
-        // 1. precompute tangents and normals and centres
-        // 2. starting from end points, half intervals in s
-        // (3. at midpoint, evaluate clashes) <-- later
-        // 4. add vertices in this ring to grid
-
-        
-        // angular loop:
-        real angleIncrement = 2.0*M_PI/(numPhi);
-        for(size_t j = 0; j < numPhi; j++)
-        {
-            // rotate normal vector:
-            gmx::RVec rotNormal = rotateAboutAxis(
-                    crntNormal, 
-                    crntTangent,
-                    j*angleIncrement);
-
-            // generate vertex:
-            gmx::RVec vertex = crntCentre;
-            vertex[XX] += crntRadius*rotNormal[XX];
-            vertex[YY] += crntRadius*rotNormal[YY];
-            vertex[ZZ] += crntRadius*rotNormal[ZZ];
-
-            // add to grid:
-            std::cout<<"x = "<<vertex[XX]<<"  "
-                     <<"y = "<<vertex[YY]<<"  "
-                     <<"z = "<<vertex[ZZ]<<"  "
-                     <<std::endl;
-            grid.addVertex(i, j, vertex);
-
-
-            // add vertices, and normals to container:
-//            vertices.push_back(vertex);
-//            vertexNormals.push_back(rotNormal);
-            vertIdxA++;
-        }
-
-
-        auto ring = vertexRing(
-            crntCentre,
-            crntTangent,
-            crntNormal,
-            crntRadius,
-            deltaPhi,
-            nPhi);
-           
-        for(int i = 0; i < ring.first.size(); i++)
-        {
-            gmx::RVec diff;
-            rvec_sub(ring.first[i], centrePoints[i-1], diff);
-            real angle = iprod(tangents[i-1], diff) / ( norm(tangents[i-1]) * norm(diff) );
-
-            if( angle > 0 || true )
-            {
-                vertices.push_back(ring.first[i]);
-                vertexNormals.push_back(ring.second[i]);
-            }
-        }
-
-
-        prevTangent = crntTangent;
-//        eval += evalStep;
-        i++;
-    }
-*/
 
     // obtain vertices, normals, and faces from grid:
     auto vertices = grid.vertices();
@@ -458,6 +295,14 @@ MolecularPathObjExporter::generateGrid(
         size_t numPhi,
         real extrapDist)
 {    
+    // check if number of intervals is power of two:
+    int numInt = numLen - 1;
+    if( (numInt & (numInt)) == 0 && numInt > 0 )
+    {
+        throw std::logic_error("Number of steps along pore must be power of "
+                               "two.");
+    }
+
     // generate grid coordinates:
     auto s = molPath.sampleArcLength(numLen, extrapDist);
     std::vector<real> phi;
@@ -477,7 +322,84 @@ MolecularPathObjExporter::generateGrid(
 
     // sample normals along molecular path:
     auto normals = generateNormals(tangents);
+    
+    // first and last vertex ring:
+    int idxLen = 0;
+    for(size_t k = 0; k < phi.size(); k++)
+    {
+        // rotate normal vector:
+        gmx::RVec rotNormal = rotateAboutAxis(
+                normals[idxLen], 
+                tangents[idxLen],
+                phi[k]);
 
+        // generate vertex:
+        gmx::RVec vertex = centres[idxLen];
+        vertex[XX] += radii[idxLen]*rotNormal[XX];
+        vertex[YY] += radii[idxLen]*rotNormal[YY];
+        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+
+        // add to grid:
+        grid.addVertex(idxLen, k, vertex);
+    }
+    idxLen = s.size() - 1;
+    for(size_t k = 0; k < phi.size(); k++)
+    {
+        // rotate normal vector:
+        gmx::RVec rotNormal = rotateAboutAxis(
+                normals[idxLen], 
+                tangents[idxLen],
+                phi[k]);
+
+        // generate vertex:
+        gmx::RVec vertex = centres[idxLen];
+        vertex[XX] += radii[idxLen]*rotNormal[XX];
+        vertex[YY] += radii[idxLen]*rotNormal[YY];
+        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+
+        // add to grid:
+        grid.addVertex(idxLen, k, vertex);
+    }
+
+    // build intermediate vertex rings:
+    for(int i = 1; i <= numLen; i *= 2)
+    {
+        for(int j = 1; j < i; j += 2)
+        {
+            idxLen = j*(numLen - 1)/i;
+
+            // angular loop:
+            for(size_t k = 0; k < phi.size(); k++)
+            {
+                // rotate normal vector:
+                gmx::RVec rotNormal = rotateAboutAxis(
+                        normals[idxLen], 
+                        tangents[idxLen],
+                        phi[k]);
+
+                // generate vertex:
+                gmx::RVec vertex = centres[idxLen];
+                vertex[XX] += radii[idxLen]*rotNormal[XX];
+                vertex[YY] += radii[idxLen]*rotNormal[YY];
+                vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+
+                // add to grid:
+                grid.addVertex(idxLen, k, vertex);
+            }
+
+
+            std::cout<<"i = "<<i<<"  "
+                     <<"j = "<<j<<"  "
+                     <<"numLen = "<<numLen<<"  "
+                     <<"crnt = "<<idxLen<<"  "
+                     <<"s.size = "<<s.size()<<"  "
+                     <<"lo = "<<(j-1)*(numLen - 1)/i<<"  "
+                     <<"hi = "<<(j+1)*(numLen - 1)/i<<"  "
+                     <<std::endl;
+        }
+    }
+
+/*
     // generate vertices along molecular path:
     for(size_t i = 0; i < s.size(); i++)
     {        
@@ -500,177 +422,12 @@ MolecularPathObjExporter::generateGrid(
             grid.addVertex(i, j, vertex);
         }
     }
- 
+*/
+
     // return grid:
     return grid;
 }
 
-
-/*
- *
- */
-/*
-void
-MolecularPathObjExporter::operator()(std::string fileName,
-                                     MolecularPath &molPath)
-{
-    
-//    real d = 0.1;
-//    real r = 1;
-
-    bool useNormals = true;
-    real extrapDist = 0.0;
-
-    int nLen = 250;
-    int nPhi = 30;
-
-
-//    real deltaLen = molPath.length() / (nLen - 1);
-    real deltaPhi = 2.0*PI_/(nPhi - 1);
-
-
-
-    // get tangents and points on centre line to centre line:
-    std::vector<gmx::RVec> tangents = molPath.sampleNormTangents(nLen, extrapDist);
-
-    std::vector<gmx::RVec> centrePoints = molPath.samplePoints(nLen, extrapDist);
-    std::vector<real> radii = molPath.sampleRadii(nLen, extrapDist);
-
-    // preallocate output vertices:
-    std::vector<gmx::RVec> vertices;
-    vertices.reserve(tangents.size()*nPhi);
-    std::vector<gmx::RVec> vertexNormals;
-    vertexNormals.reserve(vertices.size()*nPhi);
-
-
-    // construct vertices around first point:
-    gmx::RVec normal = orthogonalVector(tangents[0]);
-    unitv(normal, normal);
-    auto ring = vertexRing(
-            centrePoints[0],
-            tangents[0],
-            normal,
-            radii[0],
-            deltaPhi,
-            nPhi);
-
-    // add vertices and normals to containers:
-    vertices.insert(
-            vertices.end(), 
-            ring.first.begin(), 
-            ring.first.end());
-    vertexNormals.insert(
-            vertexNormals.end(), 
-            ring.second.begin(), 
-            ring.second.end());
-
-    // follow spline curve and construct vertices around all other points:
-    for(unsigned int i = 1; i < tangents.size(); i++)
-    {
-        // find axis of tangent rotation:
-        gmx::RVec tangentRotAxis;
-        cprod(tangents[i - 1], tangents[i], tangentRotAxis);
-
-        // find tangent angle of rotation:
-        real tangentRotCos = iprod(tangents[i], tangents[i - 1]);
-        real tangentRotAxisLen = norm(tangentRotAxis);
-        real tangentRotAngle = std::atan2(tangentRotAxisLen, tangentRotCos);
-
-        // update normal by rotating it like the tangent:
-        normal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
-
-        // construct sample points:
-        ring = vertexRing(
-                centrePoints[i],
-                tangents[i],
-                normal,
-                radii[i],
-                deltaPhi,
-                nPhi);
-
-        for(int i = 0; i < ring.first.size(); i++)
-        {
-            gmx::RVec diff;
-            rvec_sub(ring.first[i], centrePoints[i-1], diff);
-            real angle = iprod(tangents[i-1], diff) / ( norm(tangents[i-1]) * norm(diff) );
-
-            if( angle > 0 )
-            {
-//                vertices.push_back(ring.first[i]);
-//                vertexNormals.push_back(ring.second[i]);
-            }
-        }
-
-        
-        // add vertices and normals to containers:
-        vertices.insert(
-                vertices.end(), 
-                ring.first.begin(), 
-                ring.first.end());
-        vertexNormals.insert(
-                vertexNormals.end(), 
-                ring.second.begin(), 
-                ring.second.end());
-    }
-
-
-    std::cout<<"vertices.size = "<<vertices.size()<<"  "
-             <<"nLen = "<<nLen<<"  "
-             <<"nPhi = "<<nPhi<<"  "
-             <<std::endl;
-
-    // construct triangular faces:
-    WavefrontObjGroup surface("pore_surface");
-    for(int i = 0; i < vertices.size() / nPhi - 1; i++)
-    {
-        for(int j = 0; j < nPhi - 1; j++)
-        {
-            // calculate linear indeces:
-            int kbl = i*nPhi + j; 
-            int kbr = kbl + 1;
-            int ktl = kbl + nPhi;
-            int ktr = kbr + nPhi;
-
-            // two triangles for each square:
-            std::unique_ptr<WavefrontObjFace> faceA;
-            std::unique_ptr<WavefrontObjFace> faceB;
-            if( useNormals )
-            {
-                faceA.reset(new WavefrontObjFace({kbl + 1, ktr + 1, ktl + 1},
-                                                 {kbl + 1, ktl + 1, ktr + 1}));
-                faceB.reset(new WavefrontObjFace({kbl + 1, kbr + 1, ktr + 1},
-                                                 {kbl + 1, kbr + 1, ktr + 1}));
-            }
-            else
-            {
-                faceA.reset(new WavefrontObjFace({kbl + 1, ktr + 1, ktl + 1}));
-                faceB.reset(new WavefrontObjFace({kbl + 1, kbr + 1, ktr + 1}));
-            }
-
-            // add faces to overall surface:
-            surface.addFace(*faceA);
-            surface.addFace(*faceB);
-        }
-    }
-
-
-    // assemble OBJ object:
-    WavefrontObjObject obj("pore");
-    obj.addVertices(vertices);
-    obj.addVertexNormals(vertexNormals);
-    obj.addGroup(surface);
-
-    // scale object by factor of 10 to convert nm to Ang:
-    obj.scale(10.0);
-    obj.calculateCog();
-
-    // create OBJ exporter and write to file:
-    WavefrontObjExporter objExp;
-    objExp.write(fileName, obj);
-
-    
-}
-*/
 
 
 /*
