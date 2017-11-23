@@ -58,14 +58,65 @@ RegularVertexGrid::interpolateMissing()
             auto it = vertices_.find(key);
             if( it == vertices_.end() )
             {
-                // TODO find nearest neighbours on grid
-
-
-                // TODO bilinear interpolation.
+                vertices_[key] = linearInterp(i, j);
             }
         }
     }
 }
+
+
+/*
+ *
+ */
+gmx::RVec
+RegularVertexGrid::linearInterp(size_t idxS, size_t idxPhi)
+{
+    // nearest neighbours and interpolated vertex:
+    gmx::RVec upperVertex;
+    gmx::RVec lowerVertex;
+    gmx::RVec interpVertex;
+
+    // position of neighbouring verteices along the centre line:
+    real sHi;
+    real sLo;
+
+    // find nearest present neighbour at higher index:
+    for(size_t i = idxS; i < s_.size(); i++)
+    {
+        // check if this vertex is present:
+        std::pair<size_t, size_t> key(i, idxPhi);
+        auto it = vertices_.find(key);
+        if( it != vertices_.end() )
+        {
+            upperVertex = it -> second;
+            sHi = s_[i];
+            break;
+        }
+    }
+
+    // find nearest present neighbour at lower index:
+    for(size_t i = idxS; i < s_.size(); i--)
+    {
+        // check if this vertex is present:
+        std::pair<size_t, size_t> key(i, idxPhi);
+        auto it = vertices_.find(key);
+        if( it != vertices_.end() )
+        {
+            lowerVertex = it -> second;
+            sLo = s_[i];
+            break;
+        }
+    }
+
+    // linearly interpolate between the two vectors:
+    real gamma = std::fabs((s_[idxS] - sLo)/(sHi - sLo));
+    svmul((1.0 - gamma), upperVertex, upperVertex);
+    svmul(gamma, lowerVertex, lowerVertex);
+    rvec_add(lowerVertex, upperVertex, interpVertex); 
+
+    return interpVertex;
+}
+
 
 
 /*
@@ -202,8 +253,6 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // generate a grid of vertices:
     RegularVertexGrid grid = generateGrid(molPath, numLen, numPhi, extrapDist);
 
-    // correct mesh:
-    grid.interpolateMissing();
  
 
     // obtain vertices, normals, and faces from grid:
@@ -399,30 +448,8 @@ MolecularPathObjExporter::generateGrid(
         }
     }
 
-/*
-    // generate vertices along molecular path:
-    for(size_t i = 0; i < s.size(); i++)
-    {        
-        // angular loop:
-        for(size_t j = 0; j < phi.size(); j++)
-        {
-            // rotate normal vector:
-            gmx::RVec rotNormal = rotateAboutAxis(
-                    normals[i], 
-                    tangents[i],
-                    phi[j]);
-
-            // generate vertex:
-            gmx::RVec vertex = centres[i];
-            vertex[XX] += radii[i]*rotNormal[XX];
-            vertex[YY] += radii[i]*rotNormal[YY];
-            vertex[ZZ] += radii[i]*rotNormal[ZZ];
-
-            // add to grid:
-            grid.addVertex(i, j, vertex);
-        }
-    }
-*/
+    // correct mesh:
+    grid.interpolateMissing();
 
     // return grid:
     return grid;

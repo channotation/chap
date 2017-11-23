@@ -37,6 +37,8 @@ class RegularVertexGrid
         const std::vector<real> phi_;
         const std::vector<real> s_;
 
+        gmx::RVec linearInterp(size_t idxS, size_t idxPhi); 
+
         std::map<std::pair<size_t, size_t>, gmx::RVec> vertices_;
 //        std::vector<gmx::RVec> vertices_;
         
