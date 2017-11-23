@@ -207,12 +207,25 @@ MolecularPathObjExporter::operator()(std::string fileName,
     real deltaPhi = 2.0*PI_/(nPhi - 1);
 
 
+    // generate a grid of vertices:
+    RegularVertexGrid grid = generateGrid(molPath, numLen, numPhi, extrapDist);
+
+    // correct mesh:
+    grid.interpolateMissing();
+ 
+
+
+
+
+/*
 
     // get tangents and points on centre line to centre line:
     std::vector<gmx::RVec> tangents = molPath.sampleNormTangents(nLen, extrapDist);
-
     std::vector<gmx::RVec> centrePoints = molPath.samplePoints(nLen, extrapDist);
     std::vector<real> radii = molPath.sampleRadii(nLen, extrapDist);
+
+    // generate normals:
+
 
     // preallocate output vertices:
 //    std::vector<gmx::RVec> vertices;
@@ -233,7 +246,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
             nPhi);
 
     // add vertices and normals to containers:
-    /*
+    
     vertices.insert(
             vertices.end(), 
             ring.first.begin(), 
@@ -241,7 +254,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
     vertexNormals.insert(
             vertexNormals.end(), 
             ring.second.begin(), 
-            ring.second.end());*/
+            ring.second.end());
     
 
     SplineCurve1D pathRadius = molPath.pathRadius();    
@@ -288,6 +301,14 @@ MolecularPathObjExporter::operator()(std::string fileName,
         // update normal by rotating it like the tangent:
         crntNormal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
 
+
+        // TODO
+        // 0. pick numLen as power of two
+        // 1. precompute tangents and normals and centres
+        // 2. starting from end points, half intervals in s
+        // (3. at midpoint, evaluate clashes) <-- later
+        // 4. add vertices in this ring to grid
+
         
         // angular loop:
         real angleIncrement = 2.0*M_PI/(numPhi);
@@ -319,7 +340,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
             vertIdxA++;
         }
 
-/*
+
         auto ring = vertexRing(
             crntCentre,
             crntTangent,
@@ -340,13 +361,13 @@ MolecularPathObjExporter::operator()(std::string fileName,
                 vertexNormals.push_back(ring.second[i]);
             }
         }
-*/
+
 
         prevTangent = crntTangent;
 //        eval += evalStep;
         i++;
     }
-
+*/
 
     // obtain vertices, normals, and faces from grid:
     auto vertices = grid.vertices();
@@ -387,6 +408,102 @@ MolecularPathObjExporter::operator()(std::string fileName,
     
 }
 
+
+/*
+ *
+ */
+std::vector<gmx::RVec>
+MolecularPathObjExporter::generateNormals(
+        const std::vector<gmx::RVec> &tangents)
+{
+    // preallocate container for normal vectors:
+    std::vector<gmx::RVec> normals;
+    normals.reserve(tangents.size());
+
+    // generate initial normal:
+    gmx::RVec normal = orthogonalVector(tangents[0]);
+    unitv(normal, normal);
+    normals.push_back(normal);
+ 
+    // loop over tangent vectors and update normals:
+    for(unsigned int i = 1; i < tangents.size(); i++)
+    {
+        // find axis of tangent rotation:
+        gmx::RVec tangentRotAxis;
+        cprod(tangents[i - 1], tangents[i], tangentRotAxis);
+
+        // find tangent angle of rotation:
+        real tangentRotCos = iprod(tangents[i], tangents[i - 1]);
+        real tangentRotAxisLen = norm(tangentRotAxis);
+        real tangentRotAngle = std::atan2(tangentRotAxisLen, tangentRotCos);
+
+        // update normal by rotating it like the tangent:
+        normal = rotateAboutAxis(normal, tangentRotAxis, tangentRotAngle);
+        unitv(normal, normal);
+        normals.push_back(normal);
+    }
+
+    // return normal vectors:
+    return normals;
+}
+
+
+/*
+ *
+ */
+RegularVertexGrid
+MolecularPathObjExporter::generateGrid(
+        MolecularPath &molPath,
+        size_t numLen,
+        size_t numPhi,
+        real extrapDist)
+{    
+    // generate grid coordinates:
+    auto s = molPath.sampleArcLength(numLen, extrapDist);
+    std::vector<real> phi;
+    phi.reserve(numPhi);
+    for(size_t i = 0; i < numPhi; i++)
+    {
+        phi.push_back(i*2.0*M_PI/numPhi);
+    }
+
+    // generate grid from coordinates:
+    RegularVertexGrid grid(s, phi);
+
+    // sample centre points radii, and tangents along molecular path:
+    auto centres = molPath.samplePoints(s);
+    auto radii  = molPath.sampleRadii(s);
+    auto tangents = molPath.sampleNormTangents(s);
+
+    // sample normals along molecular path:
+    auto normals = generateNormals(tangents);
+
+    // generate vertices along molecular path:
+    for(size_t i = 0; i < s.size(); i++)
+    {        
+        // angular loop:
+        for(size_t j = 0; j < phi.size(); j++)
+        {
+            // rotate normal vector:
+            gmx::RVec rotNormal = rotateAboutAxis(
+                    normals[i], 
+                    tangents[i],
+                    phi[j]);
+
+            // generate vertex:
+            gmx::RVec vertex = centres[i];
+            vertex[XX] += radii[i]*rotNormal[XX];
+            vertex[YY] += radii[i]*rotNormal[YY];
+            vertex[ZZ] += radii[i]*rotNormal[ZZ];
+
+            // add to grid:
+            grid.addVertex(i, j, vertex);
+        }
+    }
+ 
+    // return grid:
+    return grid;
+}
 
 
 /*

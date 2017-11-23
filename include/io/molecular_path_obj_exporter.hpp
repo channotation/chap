@@ -71,6 +71,15 @@ class MolecularPathObjExporter
         inline int numPlanarVertices(real &d, real &r);
 
         // 
+        std::vector<gmx::RVec> generateNormals(
+                const std::vector<gmx::RVec> &tangents);
+        RegularVertexGrid generateGrid(
+                MolecularPath &molPath,
+                size_t numLen,
+                size_t numPhi,
+                real extrapDist);
+
+        // 
         inline std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>> vertexRing(
                 gmx::RVec base,
                 gmx::RVec tangent,
