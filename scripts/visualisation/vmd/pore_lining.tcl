@@ -105,7 +105,7 @@ set pore_facing [lindex $pore_lining_data 2]
 
 # loop over all residues:
 foreach rid $res_id pl $pore_lining pf $pore_facing {
-#break
+break
 
     # is residue pore lining?
     if { $pl == 1 } {

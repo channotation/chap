@@ -48,20 +48,39 @@ RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex)
 void
 RegularVertexGrid::interpolateMissing()
 {
+    int nMissing = 0;
+
     // loop over grid points:
-    for(size_t i = 0; i < s_.size(); i++)
+    for(size_t i = 1; i < s_.size(); i *= 2)
     {
-        for(size_t j = 0; j < phi_.size(); j++)
+        for(size_t j = 1; j < i; j += 2)
         {
-            // is value present?
-            std::pair<size_t, size_t> key(i, j);
-            auto it = vertices_.find(key);
-            if( it == vertices_.end() )
+            int idxLen = j*(s_.size() - 1)/i;
+
+            for(size_t k = 0; k < phi_.size(); k++)
             {
-                vertices_[key] = linearInterp(i, j);
+                // is value present?
+                std::pair<size_t, size_t> key(idxLen, k);
+                auto it = vertices_.find(key);
+                if( it == vertices_.end() )
+                {
+                    nMissing++;
+
+                    gmx::RVec vert = linearInterp(idxLen, k);
+                    vertices_[key] = vert;
+    /*                std::cout<<"vert_x = "<<vert[XX]<<"  "
+                             <<"vert_y = "<<vert[YY]<<"  "
+                             <<"vert_z = "<<vert[ZZ]<<"  "
+                             <<"vert_x = "<<vertices_[key][XX]<<"  "
+                             <<"vert_y = "<<vertices_[key][YY]<<"  "
+                             <<"vert_z = "<<vertices_[key][ZZ]<<"  "
+                             <<std::endl;*/
+                }
             }
         }
     }
+
+    std::cout<<"nMissing = "<<nMissing<<std::endl;
 }
 
 
@@ -74,15 +93,16 @@ RegularVertexGrid::linearInterp(size_t idxS, size_t idxPhi)
     // nearest neighbours and interpolated vertex:
     gmx::RVec upperVertex;
     gmx::RVec lowerVertex;
-    gmx::RVec interpVertex;
+    gmx::RVec interpVertex(0, 0, 0);
 
     // position of neighbouring verteices along the centre line:
     real sHi;
     real sLo;
 
     // find nearest present neighbour at higher index:
-    for(size_t i = idxS; i < s_.size(); i++)
+    for(size_t i = idxS; i < s_.size(); ++i)
     {
+
         // check if this vertex is present:
         std::pair<size_t, size_t> key(i, idxPhi);
         auto it = vertices_.find(key);
@@ -95,11 +115,12 @@ RegularVertexGrid::linearInterp(size_t idxS, size_t idxPhi)
     }
 
     // find nearest present neighbour at lower index:
-    for(size_t i = idxS; i < s_.size(); i--)
+    for(int i = idxS; i > 0 ; --i)
     {
+
         // check if this vertex is present:
         std::pair<size_t, size_t> key(i, idxPhi);
-        auto it = vertices_.find(key);
+        auto it = vertices_.find(key);        
         if( it != vertices_.end() )
         {
             lowerVertex = it -> second;
@@ -113,6 +134,20 @@ RegularVertexGrid::linearInterp(size_t idxS, size_t idxPhi)
     svmul((1.0 - gamma), upperVertex, upperVertex);
     svmul(gamma, lowerVertex, lowerVertex);
     rvec_add(lowerVertex, upperVertex, interpVertex); 
+    std::cout<<"gamma = "<<gamma<<"  "
+             <<"sLo = "<<sLo<<"  "
+             <<"sHi = "<<sHi<<"  "
+             <<"sMi = "<<s_[idxS]<<"  "
+             <<"xl = "<<lowerVertex[XX]<<"  "
+             <<"yl = "<<lowerVertex[YY]<<"  "
+             <<"zl = "<<lowerVertex[ZZ]<<"  "
+             <<"xu = "<<upperVertex[XX]<<"  "
+             <<"yu = "<<upperVertex[YY]<<"  "
+             <<"zu = "<<upperVertex[ZZ]<<"  "
+             <<"xi = "<<interpVertex[XX]<<"  "
+             <<"yi = "<<interpVertex[YY]<<"  "
+             <<"zi = "<<interpVertex[ZZ]<<"  "
+             <<std::endl;
 
     return interpVertex;
 }
@@ -246,8 +281,8 @@ MolecularPathObjExporter::operator()(std::string fileName,
     bool useNormals = true;
     real extrapDist = 0.0;
 
-    int numPhi = 30;
-    int numLen = std::pow(2, 6) + 1;
+    int numPhi = 15;
+    int numLen = std::pow(2, 4) + 1;
 
     std::cout<<"gen grid = "<<numLen<<std::endl;
     // generate a grid of vertices:
@@ -418,7 +453,7 @@ MolecularPathObjExporter::generateGrid(
             idxLen = j*(numLen - 1)/i;
 
             // angular loop:
-            for(size_t k = 0; k < phi.size(); k++)
+            for(size_t k = 0; k < phi.size(); k += 1)
             {
                 // rotate normal vector:
                 gmx::RVec rotNormal = rotateAboutAxis(
@@ -433,7 +468,17 @@ MolecularPathObjExporter::generateGrid(
                 vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
 
                 // add to grid:
-                grid.addVertex(idxLen, k, vertex);
+                if( idxLen >= 2 && idxLen <= 3 && k == 3)
+                {
+                    std::cout<<"missing"<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"idxLen = "<<idxLen<<"  "
+                             <<std::endl;
+                }
+                else
+                {
+                    grid.addVertex(idxLen, k, vertex);
+                }
             }
 
 
@@ -449,6 +494,10 @@ MolecularPathObjExporter::generateGrid(
     }
 
     // correct mesh:
+    
+    // FIXME I think the porblem is that interpolation in XYZ does also shift
+    // the vertex in S direction. Might be better to interpolate R if a con-
+    // flict is found...
     grid.interpolateMissing();
 
     // return grid:
