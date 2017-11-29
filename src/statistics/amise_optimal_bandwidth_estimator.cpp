@@ -1,4 +1,4 @@
-#include <algorithm>
+#include <numeric>
 
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/special_functions/hermite.hpp>
