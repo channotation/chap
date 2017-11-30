@@ -452,7 +452,10 @@ MolecularPathObjExporter::generateGrid(
         {
             idxLen = j*(numLen - 1)/i;
 
-            // angular loop:
+
+
+            // create ring of vertices:
+            std::vector<gmx::RVec> vertRing;
             for(size_t k = 0; k < phi.size(); k += 1)
             {
                 // rotate normal vector:
@@ -467,19 +470,91 @@ MolecularPathObjExporter::generateGrid(
                 vertex[YY] += radii[idxLen]*rotNormal[YY];
                 vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
 
-                // add to grid:
-                if( idxLen >= 2 && idxLen <= 3 && k == 3)
-                {
-                    std::cout<<"missing"<<"  "
-                             <<"k = "<<k<<"  "
-                             <<"idxLen = "<<idxLen<<"  "
-                             <<std::endl;
-                }
-                else
-                {
-                    grid.addVertex(idxLen, k, vertex);
-                }
+                vertRing.push_back(vertex);
             }
+ 
+
+            // check for clashes:
+            bool clash = false;
+            real angleThreshold = 0.0;
+            for(size_t k = 0; k < vertRing.size(); k++)
+            {
+                gmx::RVec vecA;
+                gmx::RVec vecB;
+                rvec_sub(vertRing[k], centres[idxLen - 1], vecA);
+                rvec_sub(vertRing[k], centres[idxLen + 1], vecB);
+
+                real cosA = iprod(tangents[idxLen - 1], vecA);
+                real cosB = iprod(tangents[idxLen + 1], vecB);
+
+                if( cosA < angleThreshold || cosB > -angleThreshold )
+                {
+                    std::cout<<"clash!"<<std::endl;
+                    
+                    clash = true;
+                    break;
+                } 
+            }
+
+            if( clash )
+            {
+                // adjust tangent and normals:
+                rvec_add(tangents[idxLen - 1], tangents[idxLen + 1], tangents[idxLen]);
+                svmul(0.5, tangents[idxLen], tangents[idxLen]);
+                normals = generateNormals(tangents); // TODO: more efficient jsut recomp one
+
+                // adjust radius:
+//                radii[idxLen] = 0.5*(radii[idxLen - 1] + radii[idxLen + 1]);
+//                radii[idxLen] = std::min(radii[idxLen - 1], radii[idxLen + 1]);                
+            }
+
+            // recompute ring of vertices:            
+            vertRing.clear();
+            for(size_t k = 0; k < phi.size(); k += 1)
+            {
+                // rotate normal vector:
+                gmx::RVec rotNormal = rotateAboutAxis(
+                        normals[idxLen], 
+                        tangents[idxLen],
+                        phi[k]);
+
+                // generate vertex:
+                gmx::RVec vertex = centres[idxLen];
+                vertex[XX] += radii[idxLen]*rotNormal[XX];
+                vertex[YY] += radii[idxLen]*rotNormal[YY];
+                vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+
+                vertRing.push_back(vertex);
+            }
+            
+            // check for clashes AGAIN:
+            clash = false;
+            angleThreshold = 0.0;
+            for(size_t k = 0; k < vertRing.size(); k++)
+            {
+                gmx::RVec vecA;
+                gmx::RVec vecB;
+                rvec_sub(vertRing[k], centres[idxLen - 1], vecA);
+                rvec_sub(vertRing[k], centres[idxLen + 1], vecB);
+
+                real cosA = iprod(tangents[idxLen - 1], vecA);
+                real cosB = iprod(tangents[idxLen + 1], vecB);
+
+                if( cosA < angleThreshold || cosB > -angleThreshold )
+                {
+                    std::cout<<"REPEATED clash!"<<std::endl;
+                    
+                    clash = true;
+                    break;
+                } 
+            }
+
+            // add vertices to grid:
+            for(size_t k = 0; k < vertRing.size(); k++)
+            {
+                grid.addVertex(idxLen, k, vertRing[k]);
+            }
+ 
 
 
             std::cout<<"i = "<<i<<"  "
@@ -498,7 +573,7 @@ MolecularPathObjExporter::generateGrid(
     // FIXME I think the porblem is that interpolation in XYZ does also shift
     // the vertex in S direction. Might be better to interpolate R if a con-
     // flict is found...
-    grid.interpolateMissing();
+//    grid.interpolateMissing();
 
     // return grid:
     return grid;
