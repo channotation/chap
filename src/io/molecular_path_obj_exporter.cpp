@@ -41,6 +41,16 @@ RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex)
 }
 
 
+/*
+ *
+ */
+void
+RegularVertexGrid::addVertexNormal(size_t i, size_t j, gmx::RVec normal)
+{
+    std::pair<size_t, size_t> key(i, j);
+    normals_[key] = normal;
+}
+
 
 /*
  *
@@ -182,7 +192,7 @@ RegularVertexGrid::vertices()
             }
             else
             {
-                throw std::logic_error("Invalid vertex reference encountered.");
+//                throw std::logic_error("Invalid vertex reference encountered.");
             }
         }
     }
@@ -198,6 +208,23 @@ std::vector<gmx::RVec>
 RegularVertexGrid::normals()
 {
     std::vector<gmx::RVec> norm;
+    norm.reserve(normals_.size());
+    for(size_t i = 0; i < s_.size(); i++)
+    {
+        for(size_t j = 0; j < phi_.size(); j++)
+        {
+            std::pair<size_t, size_t> key(i, j);
+            if( normals_.find(key) != normals_.end() )
+            {
+                norm.push_back(normals_[key]); 
+            }
+            else
+            {
+//                throw std::logic_error("Invalid vertex normal reference "
+//                                       "encountered.");
+            }
+        }
+    }
     return norm;
 }
 
@@ -215,7 +242,13 @@ RegularVertexGrid::faces()
                  <<"s.size = "<<s_.size()<<"  "
                  <<"vert.size = "<<vertices_.size()<<"  "
                  <<std::endl;
-        throw std::logic_error("Cannot generate faces on incomplete grid.");
+//        throw std::logic_error("Cannot generate faces on incomplete grid.");
+    }
+
+    if( !normals_.empty() && normals_.size() != vertices_.size() )
+    {
+        throw std::logic_error("Number of vertex normals does not equal "
+                               "number of vertices.");
     }
 
     // preallocate face vector:
@@ -234,10 +267,22 @@ RegularVertexGrid::faces()
             int ktr = kbr + phi_.size();
 
             // two faces per square:
-            faces.push_back( WavefrontObjFace(
-                    {kbl + 1, ktr + 1, ktl + 1}) );
-            faces.push_back( WavefrontObjFace(
-                    {kbl + 1, kbr + 1, ktr + 1}) );
+            if( normals_.empty() )
+            {
+                faces.push_back( WavefrontObjFace(
+                        {kbl + 1, ktr + 1, ktl + 1}) );
+                faces.push_back( WavefrontObjFace(
+                        {kbl + 1, kbr + 1, ktr + 1}) );
+            }
+            else
+            {
+                faces.push_back( WavefrontObjFace(
+                        {kbl + 1, ktr + 1, ktl + 1},
+                        {kbl + 1, ktr + 1, ktl + 1}) );
+                faces.push_back( WavefrontObjFace(
+                        {kbl + 1, kbr + 1, ktr + 1},
+                        {kbl + 1, kbr + 1, ktr + 1}) );
+            }
         }
     }
 
@@ -251,10 +296,22 @@ RegularVertexGrid::faces()
         int ktr = kbr + phi_.size();
 
         // two faces per square:
-        faces.push_back( WavefrontObjFace(
-                {kbl + 1, ktr + 1, ktl + 1}) );
-        faces.push_back( WavefrontObjFace(
-                {kbl + 1, kbr + 1, ktr + 1}) );
+        if( normals_.empty() )
+        {
+            faces.push_back( WavefrontObjFace(
+                    {kbl + 1, ktr + 1, ktl + 1}) );
+            faces.push_back( WavefrontObjFace(
+                    {kbl + 1, kbr + 1, ktr + 1}) );
+        }
+        else
+        {
+            faces.push_back( WavefrontObjFace(
+                    {kbl + 1, ktr + 1, ktl + 1},
+                    {kbl + 1, ktr + 1, ktl + 1}) );
+            faces.push_back( WavefrontObjFace(
+                    {kbl + 1, kbr + 1, ktr + 1},
+                    {kbl + 1, kbr + 1, ktr + 1}) );
+        }
     }
 
     // return face vector:
@@ -281,8 +338,8 @@ MolecularPathObjExporter::operator()(std::string fileName,
     bool useNormals = true;
     real extrapDist = 0.0;
 
-    int numPhi = 15;
-    int numLen = std::pow(2, 4) + 1;
+    int numPhi = 30;
+    int numLen = std::pow(2, 6) + 1;
 
     std::cout<<"gen grid = "<<numLen<<std::endl;
     // generate a grid of vertices:
@@ -292,6 +349,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
     // obtain vertices, normals, and faces from grid:
     auto vertices = grid.vertices();
+    auto vertexNormals = grid.normals();
     auto faces = grid.faces();
 
     std::cout<<"vertices.size = "<<vertices.size()<<"  "
@@ -308,14 +366,19 @@ MolecularPathObjExporter::operator()(std::string fileName,
                  <<face.vertexIdx_[0]<<"  "
                  <<face.vertexIdx_[1]<<"  "
                  <<face.vertexIdx_[2]<<"  "
+                 <<"hasNormals = "<<face.hasNormals()<<"  "
                  <<std::endl;*/
         surface.addFace(face);
     }
-    
+   
+    std::cout<<"nVert = "<<vertices.size()<<"  "
+             <<"nNorm = "<<vertexNormals.size()<<"  "
+             <<std::endl;
+
     // assemble OBJ object:
     WavefrontObjObject obj("pore");
     obj.addVertices(vertices);
-//    obj.addVertexNormals(vertexNormals);
+    obj.addVertexNormals(vertexNormals);
     obj.addGroup(surface);
 
     // scale object by factor of 10 to convert nm to Ang:
@@ -425,6 +488,7 @@ MolecularPathObjExporter::generateGrid(
 
         // add to grid:
         grid.addVertex(idxLen, k, vertex);
+        grid.addVertexNormal(idxLen, k, rotNormal);
     }
     idxLen = s.size() - 1;
     for(size_t k = 0; k < phi.size(); k++)
@@ -443,6 +507,7 @@ MolecularPathObjExporter::generateGrid(
 
         // add to grid:
         grid.addVertex(idxLen, k, vertex);
+        grid.addVertexNormal(idxLen, k, rotNormal);
     }
 
     // build intermediate vertex rings:
@@ -452,10 +517,9 @@ MolecularPathObjExporter::generateGrid(
         {
             idxLen = j*(numLen - 1)/i;
 
-
-
             // create ring of vertices:
             std::vector<gmx::RVec> vertRing;
+            std::vector<gmx::RVec> vertNormRing;
             for(size_t k = 0; k < phi.size(); k += 1)
             {
                 // rotate normal vector:
@@ -471,6 +535,7 @@ MolecularPathObjExporter::generateGrid(
                 vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
 
                 vertRing.push_back(vertex);
+                vertNormRing.push_back(rotNormal);
             }
  
 
@@ -489,27 +554,28 @@ MolecularPathObjExporter::generateGrid(
 
                 if( cosA < angleThreshold || cosB > -angleThreshold )
                 {
-                    std::cout<<"clash!"<<std::endl;
+//                    std::cout<<"clash!"<<std::endl;
                     
                     clash = true;
                     break;
                 } 
             }
 
-            if( clash )
+            if( clash == true )
             {
                 // adjust tangent and normals:
-                rvec_add(tangents[idxLen - 1], tangents[idxLen + 1], tangents[idxLen]);
-                svmul(0.5, tangents[idxLen], tangents[idxLen]);
-                normals = generateNormals(tangents); // TODO: more efficient jsut recomp one
+              rvec_add(tangents[idxLen - 1], tangents[idxLen + 1], tangents[idxLen]);
+              svmul(0.5, tangents[idxLen], tangents[idxLen]);
+              normals = generateNormals(tangents); // TODO: more efficient jsut recomp one
 
                 // adjust radius:
 //                radii[idxLen] = 0.5*(radii[idxLen - 1] + radii[idxLen + 1]);
-//                radii[idxLen] = std::min(radii[idxLen - 1], radii[idxLen + 1]);                
+//                radii[idxLen] = std::max(radii[idxLen - 1], radii[idxLen + 1]);
             }
 
             // recompute ring of vertices:            
             vertRing.clear();
+            vertNormRing.clear();
             for(size_t k = 0; k < phi.size(); k += 1)
             {
                 // rotate normal vector:
@@ -525,6 +591,7 @@ MolecularPathObjExporter::generateGrid(
                 vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
 
                 vertRing.push_back(vertex);
+                vertNormRing.push_back(rotNormal);
             }
             
             // check for clashes AGAIN:
@@ -540,22 +607,31 @@ MolecularPathObjExporter::generateGrid(
                 real cosA = iprod(tangents[idxLen - 1], vecA);
                 real cosB = iprod(tangents[idxLen + 1], vecB);
 
+
                 if( cosA < angleThreshold || cosB > -angleThreshold )
                 {
-                    std::cout<<"REPEATED clash!"<<std::endl;
+//                    std::cout<<"REPEATED clash!"<<std::endl;
                     
                     clash = true;
                     break;
                 } 
             }
 
-            // add vertices to grid:
-            for(size_t k = 0; k < vertRing.size(); k++)
-            {
-                grid.addVertex(idxLen, k, vertRing[k]);
-            }
- 
 
+            if( clash == false )
+            {            
+                // add vertices to grid:
+                for(size_t k = 0; k < vertRing.size(); k++)
+                {
+                    grid.addVertex(idxLen, k, vertRing[k]);
+                }
+     
+                // add vertex normals to grid:
+                for(size_t k = 0; k < vertNormRing.size(); k++)
+                {
+                    grid.addVertexNormal(idxLen, k, vertNormRing[k]);
+                }
+            }
 
             std::cout<<"i = "<<i<<"  "
                      <<"j = "<<j<<"  "

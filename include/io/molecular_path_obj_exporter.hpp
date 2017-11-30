@@ -22,6 +22,7 @@ class RegularVertexGrid
                 std::vector<real> phi);
 
         void addVertex(size_t i, size_t j, gmx::RVec vertex);
+        void addVertexNormal(size_t i, size_t j, gmx::RVec normal);
 
         void interpolateMissing();
     
@@ -40,8 +41,7 @@ class RegularVertexGrid
         gmx::RVec linearInterp(size_t idxS, size_t idxPhi); 
 
         std::map<std::pair<size_t, size_t>, gmx::RVec> vertices_;
-//        std::vector<gmx::RVec> vertices_;
-        
+        std::map<std::pair<size_t, size_t>, gmx::RVec> normals_;        
 };
 
 

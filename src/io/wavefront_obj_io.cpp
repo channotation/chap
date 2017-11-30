@@ -289,8 +289,8 @@ WavefrontObjExporter::write(std::string fileName,
     // sanity checks:
     if( !object.valid() )
     {
-        throw std::logic_error("WavefrontObjExporter encountered invalid "
-                               "OBJ object.");
+//        throw std::logic_error("WavefrontObjExporter encountered invalid "
+//                               "OBJ object.");
     }
 
     // open file stream:
