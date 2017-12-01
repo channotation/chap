@@ -171,7 +171,7 @@ proc draw_wavefront_obj {obj} {
 
             set switch [expr $switch * -1]
             if { $switch == 1 } {
-                draw color red
+#                draw color red
             } else { 
                 draw color blue
             }
@@ -191,7 +191,7 @@ proc draw_wavefront_obj {obj} {
 
             set switch [expr $switch * -1]
             if { $switch == 1 } {
-                draw color red
+#                draw color red
             } else { 
                 draw color blue
             }

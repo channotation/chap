@@ -64,6 +64,7 @@ class MolecularPathObjExporter
         void operator()(std::string fileName, 
                         MolecularPath &molPath);
 
+
     private:
 
         //
@@ -80,6 +81,12 @@ class MolecularPathObjExporter
                 size_t numLen,
                 size_t numPhi,
                 real extrapDist);
+        RegularVertexGrid generateGrid(
+                MolecularPath &molPath,
+                size_t numLen,
+                size_t numPhi,
+                real extrapDist,
+                gmx::RVec chanDirVec);
 
         // 
         inline std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>> vertexRing(
@@ -93,6 +100,8 @@ class MolecularPathObjExporter
         // 
         gmx::RVec orthogonalVector(gmx::RVec vec);
         gmx::RVec rotateAboutAxis(gmx::RVec vec, gmx::RVec axis, real angle);
+
+        real cosAngle(const gmx::RVec &vecA, const gmx::RVec &vecB);
 };
 
 
