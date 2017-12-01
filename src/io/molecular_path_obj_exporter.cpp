@@ -52,115 +52,8 @@ RegularVertexGrid::addVertexNormal(size_t i, size_t j, gmx::RVec normal)
 }
 
 
-/*
- *
- */
-void
-RegularVertexGrid::interpolateMissing()
-{
-    int nMissing = 0;
-
-    // loop over grid points:
-    for(size_t i = 1; i < s_.size(); i *= 2)
-    {
-        for(size_t j = 1; j < i; j += 2)
-        {
-            int idxLen = j*(s_.size() - 1)/i;
-
-            for(size_t k = 0; k < phi_.size(); k++)
-            {
-                // is value present?
-                std::pair<size_t, size_t> key(idxLen, k);
-                auto it = vertices_.find(key);
-                if( it == vertices_.end() )
-                {
-                    nMissing++;
-
-                    gmx::RVec vert = linearInterp(idxLen, k);
-                    vertices_[key] = vert;
-    /*                std::cout<<"vert_x = "<<vert[XX]<<"  "
-                             <<"vert_y = "<<vert[YY]<<"  "
-                             <<"vert_z = "<<vert[ZZ]<<"  "
-                             <<"vert_x = "<<vertices_[key][XX]<<"  "
-                             <<"vert_y = "<<vertices_[key][YY]<<"  "
-                             <<"vert_z = "<<vertices_[key][ZZ]<<"  "
-                             <<std::endl;*/
-                }
-            }
-        }
-    }
-
-    std::cout<<"nMissing = "<<nMissing<<std::endl;
-}
 
 
-/*
- *
- */
-gmx::RVec
-RegularVertexGrid::linearInterp(size_t idxS, size_t idxPhi)
-{
-    // nearest neighbours and interpolated vertex:
-    gmx::RVec upperVertex;
-    gmx::RVec lowerVertex;
-    gmx::RVec interpVertex(0, 0, 0);
-
-    // position of neighbouring verteices along the centre line:
-    real sHi;
-    real sLo;
-
-    // find nearest present neighbour at higher index:
-    for(size_t i = idxS; i < s_.size(); ++i)
-    {
-
-        // check if this vertex is present:
-        std::pair<size_t, size_t> key(i, idxPhi);
-        auto it = vertices_.find(key);
-        if( it != vertices_.end() )
-        {
-            upperVertex = it -> second;
-            sHi = s_[i];
-            break;
-        }
-    }
-
-    // find nearest present neighbour at lower index:
-    for(int i = idxS; i > 0 ; --i)
-    {
-
-        // check if this vertex is present:
-        std::pair<size_t, size_t> key(i, idxPhi);
-        auto it = vertices_.find(key);        
-        if( it != vertices_.end() )
-        {
-            lowerVertex = it -> second;
-            sLo = s_[i];
-            break;
-        }
-    }
-
-    // linearly interpolate between the two vectors:
-    real gamma = std::fabs((s_[idxS] - sLo)/(sHi - sLo));
-    svmul((1.0 - gamma), upperVertex, upperVertex);
-    svmul(gamma, lowerVertex, lowerVertex);
-    rvec_add(lowerVertex, upperVertex, interpVertex); 
-    std::cout<<"gamma = "<<gamma<<"  "
-             <<"sLo = "<<sLo<<"  "
-             <<"sHi = "<<sHi<<"  "
-             <<"sMi = "<<s_[idxS]<<"  "
-             <<"xl = "<<lowerVertex[XX]<<"  "
-             <<"yl = "<<lowerVertex[YY]<<"  "
-             <<"zl = "<<lowerVertex[ZZ]<<"  "
-             <<"xu = "<<upperVertex[XX]<<"  "
-             <<"yu = "<<upperVertex[YY]<<"  "
-             <<"zu = "<<upperVertex[ZZ]<<"  "
-             <<"xi = "<<interpVertex[XX]<<"  "
-             <<"yi = "<<interpVertex[YY]<<"  "
-             <<"zi = "<<interpVertex[ZZ]<<"  "
-             <<std::endl;
-
-    return interpVertex;
-}
 
 
 
@@ -181,23 +74,107 @@ RegularVertexGrid::vertices()
             if( vertices_.find(key) != vertices_.end() )
             {
                 vert.push_back(vertices_[key]); 
-/*                std::cout<<"i = "<<i<<"  "
-                         <<"j = "<<j<<"  "
-                         <<"x = "<<vertices_[key][0]<<"  "
-                         <<"y = "<<vertices_[key][1]<<"  "
-                         <<"z = "<<vertices_[key][2]<<"  "
-                         <<"key.1 = "<<key.first<<"  "
-                         <<"key.2 = "<<key.second<<"  "
-                         <<std::endl;*/
             }
             else
             {
-//                throw std::logic_error("Invalid vertex reference encountered.");
+                throw std::logic_error("Invalid vertex reference encountered.");
             }
         }
     }
 
     return vert;
+}
+
+
+/*
+ *
+ */
+void
+RegularVertexGrid::normalsFromFaces()
+{
+    // array sizes for index wrap:
+    int mI = s_.size();
+    int mJ = phi_.size();
+
+    for(int i = 0; i < s_.size(); i++)
+    {
+        for(int j = 0; j < phi_.size(); j++)
+        {
+            // index pairs for neighbouring vertices:
+            std::pair<size_t, size_t> crntKey(i, j);
+            std::pair<size_t, size_t> leftKey(i, (j - 1 + mJ) % mJ);
+            std::pair<size_t, size_t> rghtKey(i, (j + 1 + mJ) % mJ);
+            std::pair<size_t, size_t> upprKey((i + 1 + mI) % mI, j);
+            std::pair<size_t, size_t> lowrKey((i - 1 + mI) % mI, j);
+            std::pair<size_t, size_t> dglrKey((i - 1 + mI) % mI, (j + 1 + mJ) % mJ);
+            std::pair<size_t, size_t> dgulKey((i + 1 + mI) % mI, (j - 1 + mJ) % mJ);
+
+            // neighbouring vertices:
+            gmx::RVec crntVert = vertices_.at(crntKey);
+            gmx::RVec leftVert = vertices_.at(leftKey);
+            gmx::RVec rghtVert = vertices_.at(rghtKey);
+            gmx::RVec upprVert = vertices_.at(upprKey);
+            gmx::RVec lowrVert = vertices_.at(lowrKey);
+            gmx::RVec dglrVert = vertices_.at(dglrKey);
+            gmx::RVec dgulVert = vertices_.at(dgulKey);
+
+            // initialise normal as null vector:
+            gmx::RVec norm(0.0, 0.0, 0.0);
+            gmx::RVec sideA;
+            gmx::RVec sideB;
+
+            // North-East triangle:
+            rvec_sub(rghtVert, crntVert, sideA);
+            rvec_sub(upprVert, crntVert, sideB);
+            addTriangleNorm(sideA, sideB, norm);
+            
+            // North-North-West triangle:
+            rvec_sub(upprVert, crntVert, sideA);
+            rvec_sub(dgulVert, crntVert, sideB);
+            addTriangleNorm(sideA, sideB, norm);
+
+            // West-North-West triangle:
+            rvec_sub(dgulVert, crntVert, sideA);
+            rvec_sub(leftVert, crntVert, sideB);
+            addTriangleNorm(sideA, sideB, norm);
+
+            // South-West triangle:
+            rvec_sub(leftVert, crntVert, sideA);
+            rvec_sub(lowrVert, crntVert, sideB);
+            addTriangleNorm(sideA, sideB, norm);
+
+            // South-South-East triangle:
+            rvec_sub(lowrVert, crntVert, sideA);
+            rvec_sub(dglrVert, crntVert, sideB);
+            addTriangleNorm(sideA, sideB, norm);
+            
+            // East-South-East triangle:
+            rvec_sub(dglrVert, crntVert, sideA);
+            rvec_sub(rghtVert, crntVert, sideB);
+            addTriangleNorm(sideA, sideB, norm);
+
+            // normalise normal:
+            unitv(norm, norm);
+            
+            // add to container of normals:
+            normals_[crntKey] = norm;
+        }
+    }
+}
+
+
+/*
+ *
+ */
+void
+RegularVertexGrid::addTriangleNorm(
+        const gmx::RVec &sideA,
+        const gmx::RVec &sideB,
+        gmx::RVec &norm)
+{
+    gmx::RVec tmp;
+    cprod(sideA, sideB, tmp);
+    rvec_add(norm, tmp, norm);
 }
 
 
@@ -227,6 +204,9 @@ RegularVertexGrid::normals()
     }
     return norm;
 }
+
+
+
 
 
 /*
@@ -267,8 +247,9 @@ RegularVertexGrid::faces()
             int ktr = kbr + phi_.size();
 
             // two faces per square:
-            if( normals_.empty() || true ) // TODO
+            if( normals_.empty() )
             {
+                std::cout<<"face without normals"<<std::endl;
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1}) );
                 faces.push_back( WavefrontObjFace(
@@ -276,6 +257,7 @@ RegularVertexGrid::faces()
             }
             else
             {
+            std::cout<<"face with normals"<<std::endl;
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1},
                         {kbl + 1, ktr + 1, ktl + 1}) );
@@ -298,6 +280,7 @@ RegularVertexGrid::faces()
         // two faces per square:
         if( normals_.empty() )
         {
+            std::cout<<"face without normals"<<std::endl;
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1}) );
             faces.push_back( WavefrontObjFace(
@@ -305,6 +288,8 @@ RegularVertexGrid::faces()
         }
         else
         {
+            std::cout<<"face with normals"<<std::endl;
+
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1},
                     {kbl + 1, ktr + 1, ktl + 1}) );
@@ -355,13 +340,17 @@ MolecularPathObjExporter::operator()(std::string fileName,
             chanDirVec);
 
     // obtain vertices, normals, and faces from grid:
+    grid.normalsFromFaces();
     auto vertices = grid.vertices();
-//    auto vertexNormals = grid.normals();
+    auto vertexNormals = grid.normals();
     auto faces = grid.faces();
 
 
 
 
+    std::cout<<"numVert = "<<vertices.size()<<"  "
+             <<"normNorm = "<<vertexNormals.size()<<"  "
+             <<std::endl;
 
     
 
@@ -382,7 +371,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // assemble OBJ object:
     WavefrontObjObject obj("pore");
     obj.addVertices(vertices);
-//    obj.addVertexNormals(vertexNormals);
+    obj.addVertexNormals(vertexNormals);
     obj.addGroup(surface);
 
     // scale object by factor of 10 to convert nm to Ang:
