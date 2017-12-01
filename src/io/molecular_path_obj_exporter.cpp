@@ -101,6 +101,7 @@ RegularVertexGrid::normalsFromFaces()
         for(int j = 0; j < phi_.size(); j++)
         {
             // index pairs for neighbouring vertices:
+            // TODO: not circular in i, cant wrap around
             std::pair<size_t, size_t> crntKey(i, j);
             std::pair<size_t, size_t> leftKey(i, (j - 1 + mJ) % mJ);
             std::pair<size_t, size_t> rghtKey(i, (j + 1 + mJ) % mJ);
@@ -108,6 +109,18 @@ RegularVertexGrid::normalsFromFaces()
             std::pair<size_t, size_t> lowrKey((i - 1 + mI) % mI, j);
             std::pair<size_t, size_t> dglrKey((i - 1 + mI) % mI, (j + 1 + mJ) % mJ);
             std::pair<size_t, size_t> dgulKey((i + 1 + mI) % mI, (j - 1 + mJ) % mJ);
+
+            // handle endpoints in direction along spline:
+            if( i == 0 )
+            {
+                lowrKey = crntKey; 
+                dglrKey = crntKey;
+            }
+            if( i == s_.size() - 1 )
+            {
+                upprKey = crntKey;
+                dgulKey = crntKey;
+            }
 
             // neighbouring vertices:
             gmx::RVec crntVert = vertices_.at(crntKey);
@@ -324,7 +337,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
     real extrapDist = 0.0;
 
     int numPhi = 30;
-    int numLen = std::pow(2, 7) + 1;
+    int numLen = std::pow(2, 8) + 1;
 
     // generate a grid of vertices:
 //    RegularVertexGrid grid = generateGrid(molPath, numLen, numPhi, extrapDist);
