@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -284,7 +285,6 @@ RegularVertexGrid::faces()
             // two faces per square:
             if( normals_.empty() )
             {
-                std::cout<<"face without normals"<<std::endl;
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1}) );
                 faces.push_back( WavefrontObjFace(
@@ -292,7 +292,6 @@ RegularVertexGrid::faces()
             }
             else
             {
-            std::cout<<"face with normals"<<std::endl;
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1},
                         {kbl + 1, ktr + 1, ktl + 1}) );
@@ -315,7 +314,6 @@ RegularVertexGrid::faces()
         // two faces per square:
         if( normals_.empty() )
         {
-            std::cout<<"face without normals"<<std::endl;
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1}) );
             faces.push_back( WavefrontObjFace(
@@ -323,7 +321,6 @@ RegularVertexGrid::faces()
         }
         else
         {
-            std::cout<<"face with normals"<<std::endl;
 
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1},
@@ -481,14 +478,17 @@ MolecularPathObjExporter::generateGrid(
     centres.reserve(numLen);
     std::vector<real> radii;
     radii.reserve(numLen);
+    std::vector<real> prop;
+    prop.reserve(numLen);
     for(auto eval : s)
     {
         centres.push_back( centreLine.evaluate(eval, 0) );
         radii.push_back( radius.evaluate(eval, 0) );
+        prop.push_back( property.evaluate(eval, 0) );
     }
 
     // sample scalar property along the path:
-    std::vector<real> prop(radii.size(), 0.5);
+    shiftAndScale(prop);
 
     // tangents always in direction of channel:
     std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
@@ -1165,5 +1165,32 @@ MolecularPathObjExporter::cosAngle(
         const gmx::RVec &vecB)
 {
     return iprod(vecA, vecB) / ( norm(vecA) * norm(vecB) );
+}
+
+
+/*!
+ * Shift ands scales all values in input vector so that they lie in the unit
+ * interval.
+ */
+void
+MolecularPathObjExporter::shiftAndScale(std::vector<real> &prop)
+{
+    // find data range:
+    real minProp = *std::min_element(prop.begin(), prop.end()); 
+    real maxProp = *std::max_element(prop.begin(), prop.end());
+
+    // mind special case of constant property value:
+    real shift = -minProp + 1.0;
+    real scale = 1.0;
+    if( std::fabs(maxProp - minProp) > std::numeric_limits<real>::epsilon() )
+    {
+        // shift and scaling factor:
+        shift = -minProp;
+        scale = 1.0/(maxProp - minProp); 
+    }
+
+    // shift and scale the property array:
+    std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
+    std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
 }
 

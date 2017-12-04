@@ -112,6 +112,8 @@ class MolecularPathObjExporter
         gmx::RVec rotateAboutAxis(gmx::RVec vec, gmx::RVec axis, real angle);
 
         real cosAngle(const gmx::RVec &vecA, const gmx::RVec &vecB);
+
+        void shiftAndScale(std::vector<real> &prop);
 };
 
 
