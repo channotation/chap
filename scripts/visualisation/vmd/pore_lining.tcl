@@ -161,8 +161,14 @@ source ~/repos/chap/scripts/visualisation/vmd/wobj.tcl
 set filename $FILE_PORE_SURFACE
 set obj [WOBJ::import_wavefront_obj $filename]
 
+# set up color scale:
+set scale_colors [color_scale_blues]
+
+# optionally invert color scale:
+set scale_colors [revert_color_scale $scale_colors]
+
 # draw OBJ mesh:
-WOBJ::draw_wavefront_obj $obj
+WOBJ::draw_wavefront_obj $obj $scale_colors
 
 
 
