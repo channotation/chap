@@ -77,9 +77,14 @@ class WavefrontObjObject
         WavefrontObjObject(std::string name);
 
         // functions to add data:
-        void addVertices(const std::vector<gmx::RVec> &vertices);
-        void addVertexNormals(const std::vector<gmx::RVec> &normals);
-        void addGroup(const WavefrontObjGroup &group);
+        void addVertices(
+                const std::vector<gmx::RVec> &vertices);
+        void addVertices(
+                const std::vector<std::pair<gmx::RVec, real>> &vertices);
+        void addVertexNormals(
+                const std::vector<gmx::RVec> &normals);
+        void addGroup(
+                const WavefrontObjGroup &group);
 
         // returns flag indicating whether object is valid:
         bool valid() const;
@@ -93,7 +98,7 @@ class WavefrontObjObject
 
         // data:
         std::string name_;
-        std::vector<gmx::RVec> vertices_;
+        std::vector<std::pair<gmx::RVec, real>> vertices_;
         std::vector<gmx::RVec> normals_;
         std::vector<WavefrontObjGroup> groups_;
 };
@@ -125,7 +130,7 @@ class WavefrontObjExporter
         // utilities for writing individual lines:
         inline void writeComment(std::string comment);
         inline void writeGroup(std::string group);
-        inline void writeVertex(gmx::RVec vertex);
+        inline void writeVertex(std::pair<gmx::RVec, real> vertex);
         inline void writeVertexNormal(gmx::RVec norm);
         inline void writeFace(const WavefrontObjFace &face);
 };

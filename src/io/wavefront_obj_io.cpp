@@ -131,12 +131,41 @@ WavefrontObjObject::WavefrontObjObject(std::string name)
 
 /*!
  * Add new vertices to the OBJ object. These are appended to the existing list
- * of vertices and there is no check for redundancy.
+ * of vertices and there is no check for redundancy. As only geometric vertex
+ * coordinates are given, the weight is assumed to be one.
  */
 void
 WavefrontObjObject::addVertices(const std::vector<gmx::RVec> &vertices)
 {
-    vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+    for(auto vert : vertices)
+    {
+        // default weight is 1.0:
+        std::pair<gmx::RVec, real> vertex(vert, 1.0);
+        vertices_.push_back(vertex);
+    }
+}
+
+
+/*!
+ * Add new vertices to the OBJ object. These are appended to the existing list
+ * of vertices and there is no check for redundancy.  
+ */
+void
+WavefrontObjObject::addVertices(
+        const std::vector<std::pair<gmx::RVec, real>> &vertices)
+{
+    for(auto vert : vertices)
+    {
+        // sanity check:
+        if( vert.second < 0.0 || vert.second > 1.0 )
+        {
+            throw std::logic_error("Wavefront OBJ vertex weights must be in "
+                                   "unit interval.");
+        }
+
+        // add to vertex storage:
+        vertices_.push_back(vert);
+    }
 }
 
 
@@ -182,12 +211,11 @@ WavefrontObjObject::scale(real fac)
     this -> shift(shift);
 
     // scale all position vectors:
-    std::vector<gmx::RVec>::iterator it;
-    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    for(auto it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        (*it)[XX] *= fac;
-        (*it)[YY] *= fac;
-        (*it)[ZZ] *= fac;
+        (*it).first[XX] *= fac;
+        (*it).first[YY] *= fac;
+        (*it).first[ZZ] *= fac;
     }
 
     // shift vertices back to original centre of geometry:
@@ -203,12 +231,11 @@ WavefrontObjObject::scale(real fac)
  */
 void WavefrontObjObject::shift(gmx::RVec shift)
 {
-    std::vector<gmx::RVec>::iterator it;
-    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    for(auto it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        (*it)[XX] += shift[XX];
-        (*it)[YY] += shift[YY];
-        (*it)[ZZ] += shift[ZZ];
+        (*it).first[XX] += shift[XX];
+        (*it).first[YY] += shift[YY];
+        (*it).first[ZZ] += shift[ZZ];
     }    
 }
 
@@ -221,12 +248,11 @@ WavefrontObjObject::calculateCog()
 {
     gmx::RVec cog(0.0, 0.0, 0.0);
 
-    std::vector<gmx::RVec>::iterator it;
-    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    for(auto it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        cog[XX] += (*it)[XX];
-        cog[YY] += (*it)[YY];
-        cog[ZZ] += (*it)[ZZ];
+        cog[XX] += (*it).first[XX];
+        cog[YY] += (*it).first[YY];
+        cog[ZZ] += (*it).first[ZZ];
     }
 
     cog[XX] /= vertices_.size();
@@ -357,11 +383,12 @@ WavefrontObjExporter::writeGroup(std::string group)
  * Writes a vertex entry to an OBJ file.
  */
 void
-WavefrontObjExporter::writeVertex(gmx::RVec vertex)
+WavefrontObjExporter::writeVertex(std::pair<gmx::RVec, real> vertex)
 {
-    obj_<<"v "<<vertex[XX]<<" "
-              <<vertex[YY]<<" "
-              <<vertex[ZZ]<<std::endl;
+    obj_<<"v "<<vertex.first[XX]<<" "
+              <<vertex.first[YY]<<" "
+              <<vertex.first[ZZ]<<" "
+              <<vertex.second<<std::endl;
 }
 
 

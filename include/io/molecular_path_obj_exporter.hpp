@@ -21,13 +21,14 @@ class RegularVertexGrid
                 std::vector<real> s,
                 std::vector<real> phi);
 
-        void addVertex(size_t i, size_t j, gmx::RVec vertex);
+        void addVertex(size_t i, size_t j, gmx::RVec vertex, real weight);
         void addVertexNormal(size_t i, size_t j, gmx::RVec normal);
 
         void interpolateMissing();
         void normalsFromFaces();
     
         std::vector<gmx::RVec> vertices();
+        std::vector<std::pair<gmx::RVec, real>> weightedVertices();
         std::vector<gmx::RVec> normals();
         std::vector<WavefrontObjFace> faces();
 
@@ -41,6 +42,7 @@ class RegularVertexGrid
 
 
         std::map<std::pair<size_t, size_t>, gmx::RVec> vertices_;
+        std::map<std::pair<size_t, size_t>, real> weights_;
         std::map<std::pair<size_t, size_t>, gmx::RVec> normals_;
 
 

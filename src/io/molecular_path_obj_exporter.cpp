@@ -24,20 +24,11 @@ RegularVertexGrid::RegularVertexGrid(
  *
  */
 void
-RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex)
+RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex, real weight)
 {
     std::pair<size_t, size_t> key(i, j);
     vertices_[key] = vertex;
-
-/*
-    std::cout<<"i = "<<i<<"  "
-             <<"j = "<<j<<"  "
-             <<"x = "<<vertices_[key][0]<<"  "
-             <<"y = "<<vertices_[key][1]<<"  "
-             <<"z = "<<vertices_[key][2]<<"  "
-             <<"key.1 = "<<key.first<<"  "
-             <<"key.2 = "<<key.second<<"  "
-             <<std::endl;*/
+    weights_[key] = weight;
 }
 
 
@@ -74,6 +65,37 @@ RegularVertexGrid::vertices()
             if( vertices_.find(key) != vertices_.end() )
             {
                 vert.push_back(vertices_[key]); 
+            }
+            else
+            {
+                throw std::logic_error("Invalid vertex reference encountered.");
+            }
+        }
+    }
+
+    return vert;
+}
+
+
+/*
+ *
+ */
+std::vector<std::pair<gmx::RVec, real>>
+RegularVertexGrid::weightedVertices()
+{
+    // build linearly indexed vector from dual indexed map:
+    std::vector<std::pair<gmx::RVec, real>> vert;
+    vert.reserve(vertices_.size());
+    for(size_t i = 0; i < s_.size(); i++)
+    {
+        for(size_t j = 0; j < phi_.size(); j++)
+        {
+            std::pair<size_t, size_t> key(i, j);
+            if( vertices_.find(key) != vertices_.end() && 
+                weights_.find(key) != weights_.end() )
+            {
+                std::pair<gmx::RVec, real> vertex(vertices_[key], weights_[key]);
+                vert.push_back(vertex); 
             }
             else
             {
@@ -357,7 +379,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
     // obtain vertices, normals, and faces from grid:
     grid.normalsFromFaces();
-    auto vertices = grid.vertices();
+    auto vertices = grid.weightedVertices();
     auto vertexNormals = grid.normals();
     auto faces = grid.faces();
 
@@ -454,7 +476,7 @@ MolecularPathObjExporter::generateGrid(
     // generate grid from coordinates:
     RegularVertexGrid grid(s, phi);
 
-    // sample centre points radii, and tangents along molecular path:
+    // sample points, radii, and tangents along molecular path:
     std::vector<gmx::RVec> centres;
     centres.reserve(numLen);
     std::vector<real> radii;
@@ -464,6 +486,9 @@ MolecularPathObjExporter::generateGrid(
         centres.push_back( centreLine.evaluate(eval, 0) );
         radii.push_back( radius.evaluate(eval, 0) );
     }
+
+    // sample scalar property along the path:
+    std::vector<real> prop(radii.size(), 0.5);
 
     // tangents always in direction of channel:
     std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
@@ -494,7 +519,7 @@ MolecularPathObjExporter::generateGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, vertex);
+        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
     }
 
     // last vertex ring:
@@ -517,7 +542,7 @@ MolecularPathObjExporter::generateGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, vertex);
+        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
     }
 
     // build intermediate vertex rings:
@@ -551,7 +576,7 @@ MolecularPathObjExporter::generateGrid(
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
-                grid.addVertex(idxLen, k, vertRing[k]);
+                grid.addVertex(idxLen, k, vertRing[k], prop[idxLen]);
             }
         }
     }
@@ -598,7 +623,8 @@ MolecularPathObjExporter::generateGrid(
     std::vector<gmx::RVec> tangents(centres.size(), gmx::RVec(0.0, 0.0, 1.0));
 
     std::vector<real> radii(tangents.size(), 0.025);
-
+    std::vector<real> prop(tangents.size(), 1.0);
+    
     // sample normals along molecular path:
     auto normals = generateNormals(tangents);
     
@@ -628,7 +654,7 @@ MolecularPathObjExporter::generateGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, vertex);
+        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
         grid.addVertexNormal(idxLen, k, rotNormal);
     }
     vertexRings[idxLen] = vertRing;
@@ -653,7 +679,7 @@ MolecularPathObjExporter::generateGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, vertex);
+        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
         grid.addVertexNormal(idxLen, k, rotNormal);
     }
     vertexRings[idxLen] = vertRing;
@@ -900,7 +926,7 @@ MolecularPathObjExporter::generateGrid(
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
-                grid.addVertex(idxLen, k, vertRing[k]);
+                grid.addVertex(idxLen, k, vertRing[k], prop[idxLen]);
             }
  
             // add vertex normals to grid:
