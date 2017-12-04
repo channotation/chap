@@ -331,25 +331,28 @@ void
 MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
 {
-    
-
-    bool useNormals = true;
+    // define evaluation range:   
     real extrapDist = 0.0;
+    std::pair<real, real> range(molPath.sLo() - extrapDist,
+                                molPath.sHi() + extrapDist);
 
+    // define resolution:
     int numPhi = 30;
-    int numLen = std::pow(2, 8) + 1;
+    int numLen = std::pow(2, 7) + 1;
+    std::pair<size_t, size_t> resolution(numLen, numPhi);
+    
+    // spline curves for variuous properties:
+    auto centreLine = molPath.centreLine();
+    auto pathRadius = molPath.pathRadius();
 
-    // generate a grid of vertices:
-//    RegularVertexGrid grid = generateGrid(molPath, numLen, numPhi, extrapDist);
-
- 
     
     gmx::RVec chanDirVec(0.0, 0.0, 1.0);
     RegularVertexGrid grid = generateGrid(
-            molPath, 
-            numLen, 
-            numPhi, 
-            extrapDist,
+            centreLine,
+            pathRadius,
+            pathRadius,
+            resolution,
+            range,
             chanDirVec);
 
     // obtain vertices, normals, and faces from grid:
@@ -412,12 +415,17 @@ MolecularPathObjExporter::operator()(std::string fileName,
  */
 RegularVertexGrid
 MolecularPathObjExporter::generateGrid(
-        MolecularPath &molPath,
-        size_t numLen,
-        size_t numPhi,
-        real extrapDist,
+        SplineCurve3D &centreLine,
+        SplineCurve1D &radius,
+        SplineCurve1D &property,
+        std::pair<size_t, size_t> resolution,
+        std::pair<real, real> range,
         gmx::RVec chanDirVec)
 {    
+    // extract resolution:
+    size_t numLen = resolution.first;
+    size_t numPhi = resolution.second;
+
     // check if number of intervals is power of two:
     int numInt = numLen - 1;
     if( (numInt & (numInt)) == 0 && numInt > 0 )
@@ -426,8 +434,16 @@ MolecularPathObjExporter::generateGrid(
                                "two.");
     }
 
+    // normalise channel direction vector:
+    unitv(chanDirVec, chanDirVec);
+
     // generate grid coordinates:
-    auto s = molPath.sampleArcLength(numLen, extrapDist);
+    std::vector<real> s;
+    s.reserve(numLen);
+    for(int i = 0; i < numLen; i++)
+    {
+        s.push_back(i*(range.second - range.first)/numLen + range.first);
+    }
     std::vector<real> phi;
     phi.reserve(numPhi);
     for(size_t i = 0; i < numPhi; i++)
@@ -439,9 +455,18 @@ MolecularPathObjExporter::generateGrid(
     RegularVertexGrid grid(s, phi);
 
     // sample centre points radii, and tangents along molecular path:
-    auto centres = molPath.samplePoints(s);
-    auto radii  = molPath.sampleRadii(s);
-    std::vector<gmx::RVec> tangents(centres.size(), gmx::RVec(0.0, 0.0, 1.0));
+    std::vector<gmx::RVec> centres;
+    centres.reserve(numLen);
+    std::vector<real> radii;
+    radii.reserve(numLen);
+    for(auto eval : s)
+    {
+        centres.push_back( centreLine.evaluate(eval, 0) );
+        radii.push_back( radius.evaluate(eval, 0) );
+    }
+
+    // tangents always in direction of channel:
+    std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
 
     // sample normals along molecular path:
     auto normals = generateNormals(tangents);

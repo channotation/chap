@@ -89,10 +89,11 @@ class MolecularPathObjExporter
                 size_t numPhi,
                 real extrapDist);
         RegularVertexGrid generateGrid(
-                MolecularPath &molPath,
-                size_t numLen,
-                size_t numPhi,
-                real extrapDist,
+                SplineCurve3D &centreLine,
+                SplineCurve1D &radius,
+                SplineCurve1D &property,
+                std::pair<size_t, size_t> resolution,
+                std::pair<real, real> range,
                 gmx::RVec chanDirVec);
 
         // 
