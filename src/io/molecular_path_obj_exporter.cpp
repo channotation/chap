@@ -28,12 +28,12 @@ void
 RegularVertexGrid::addVertex(
         size_t i, 
         size_t j,
-        size_t p,
+        std::string p,
         gmx::RVec vertex, 
         real weight)
 {
     p_.insert(p);
-    std::tuple<size_t, size_t, size_t> key(i, j, p);
+    std::tuple<size_t, size_t, std::string> key(i, j, p);
     vertices_[key] = vertex;
     weights_[key] = weight;
 }
@@ -46,11 +46,11 @@ void
 RegularVertexGrid::addVertexNormal(
         size_t i, 
         size_t j,
-        size_t p,
+        std::string p,
         gmx::RVec normal)
 {
     p_.insert(p);
-    std::tuple<size_t, size_t, size_t> key(i, j, p);
+    std::tuple<size_t, size_t, std::string> key(i, j, p);
     normals_[key] = normal;
 }
 
@@ -65,7 +65,7 @@ RegularVertexGrid::addVertexNormal(
  */
 std::vector<gmx::RVec>
 RegularVertexGrid::vertices(
-        size_t p)
+        std::string p)
 {
     // build linearly indexed vector from dual indexed map:
     std::vector<gmx::RVec> vert;
@@ -74,7 +74,7 @@ RegularVertexGrid::vertices(
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
-            std::tuple<size_t, size_t, size_t> key(i, j, p);
+            std::tuple<size_t, size_t, std::string> key(i, j, p);
             if( vertices_.find(key) != vertices_.end() )
             {
                 vert.push_back(vertices_[key]); 
@@ -95,7 +95,7 @@ RegularVertexGrid::vertices(
  */
 std::vector<std::pair<gmx::RVec, real>>
 RegularVertexGrid::weightedVertices(
-        size_t p)
+        std::string p)
 {
     // build linearly indexed vector from dual indexed map:
     std::vector<std::pair<gmx::RVec, real>> vert;
@@ -104,7 +104,7 @@ RegularVertexGrid::weightedVertices(
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
-            std::tuple<size_t, size_t, size_t> key(i, j, p);
+            std::tuple<size_t, size_t, std::string> key(i, j, p);
             if( vertices_.find(key) != vertices_.end() && 
                 weights_.find(key) != weights_.end() )
             {
@@ -140,31 +140,31 @@ RegularVertexGrid::normalsFromFaces()
             {
                 // index pairs for neighbouring vertices:
                 // TODO: not circular in i, cant wrap around
-                std::tuple<size_t, size_t, size_t> crntKey(
+                std::tuple<size_t, size_t, std::string> crntKey(
                         i, 
                         j,
                         p);
-                std::tuple<size_t, size_t, size_t> leftKey(
+                std::tuple<size_t, size_t, std::string> leftKey(
                         i, 
                         (j - 1 + mJ) % mJ,
                         p);
-                std::tuple<size_t, size_t, size_t> rghtKey(
+                std::tuple<size_t, size_t, std::string> rghtKey(
                         i, 
                         (j + 1 + mJ) % mJ,
                         p);
-                std::tuple<size_t, size_t, size_t> upprKey(
+                std::tuple<size_t, size_t, std::string> upprKey(
                         (i + 1 + mI) % mI, 
                         j,
                         p);
-                std::tuple<size_t, size_t, size_t> lowrKey((
+                std::tuple<size_t, size_t, std::string> lowrKey((
                         i - 1 + mI) % mI, 
                         j,
                         p);
-                std::tuple<size_t, size_t, size_t> dglrKey(
+                std::tuple<size_t, size_t, std::string> dglrKey(
                         (i - 1 + mI) % mI, 
                         (j + 1 + mJ) % mJ,
                         p);
-                std::tuple<size_t, size_t, size_t> dgulKey(
+                std::tuple<size_t, size_t, std::string> dgulKey(
                         (i + 1 + mI) % mI, 
                         (j - 1 + mJ) % mJ,
                         p);
@@ -256,7 +256,7 @@ RegularVertexGrid::addTriangleNorm(
  */
 std::vector<gmx::RVec>
 RegularVertexGrid::normals(
-        size_t p)
+        std::string p)
 {
     std::vector<gmx::RVec> norm;
     norm.reserve(normals_.size());
@@ -264,7 +264,7 @@ RegularVertexGrid::normals(
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
-            std::tuple<size_t, size_t, size_t> key(i, j, p);
+            std::tuple<size_t, size_t, std::string> key(i, j, p);
             if( normals_.find(key) != normals_.end() )
             {
                 norm.push_back(normals_[key]); 
@@ -286,7 +286,7 @@ RegularVertexGrid::normals(
  */
 std::vector<WavefrontObjFace>
 RegularVertexGrid::faces(
-        size_t p)
+        std::string p)
 {
     // sanity checks:
     if( phi_.size() * s_.size() != vertices_.size() )
@@ -295,6 +295,7 @@ RegularVertexGrid::faces(
                  <<"s.size = "<<s_.size()<<"  "
                  <<"vert.size = "<<vertices_.size()<<"  "
                  <<std::endl;
+                 // TODO keep this?
 //        throw std::logic_error("Cannot generate faces on incomplete grid.");
     }
 
@@ -305,7 +306,8 @@ RegularVertexGrid::faces(
     }
 
     // number of vertices per property grid:
-    size_t vertOffset = s_.size() * phi_.size() * p;
+    size_t propIdx = std::distance(p_.begin(), find(p_.begin(), p_.end(), p));
+    size_t vertOffset = s_.size() * phi_.size() * propIdx;
 
     // preallocate face vector:
     std::vector<WavefrontObjFace> faces;
@@ -403,18 +405,14 @@ MolecularPathObjExporter::operator()(std::string fileName,
     int numLen = std::pow(2, 8) + 1;
     std::pair<size_t, size_t> resolution(numLen, numPhi);
     
-    // spline curves for variuous properties:
+    // pathway geometry:
     auto centreLine = molPath.centreLine();
     auto pathRadius = molPath.pathRadius();
 
-    // vector of scalar properties for which colour should be mapped:
-    std::vector<std::string> propertyNames;
-    propertyNames.push_back(std::string("radius"));
-    propertyNames.push_back(std::string("hydrophobicity"));
-    std::vector<SplineCurve1D> properties;
-    properties.push_back(pathRadius);
-    properties.push_back(pathRadius);
- 
+    // pathway properties:
+    // (radius is added here to ensure that there is always one property)
+    molPath.addScalarProperty("radius", pathRadius);
+    auto properties = molPath.scalarProperties();   
 
     // Build OBJ Object of Coloured Pore Surface
     //-------------------------------------------------------------------------
@@ -432,16 +430,16 @@ MolecularPathObjExporter::operator()(std::string fileName,
             chanDirVec);
 
     // loop over properties:
-    for(size_t p = 0; p < propertyNames.size(); p++)
+    for(auto prop : properties)
     {
         // obtain vertices, normals, and faces from grid:
         grid.normalsFromFaces();
-        auto vertices = grid.weightedVertices(p);
-        auto vertexNormals = grid.normals(p);
-        auto faces = grid.faces(p);
+        auto vertices = grid.weightedVertices(prop.first);
+        auto vertexNormals = grid.normals(prop.first);
+        auto faces = grid.faces(prop.first);
 
         // add faces to surface:
-        WavefrontObjGroup group("pathway_" + propertyNames[p]);
+        WavefrontObjGroup group("pathway_" + prop.first);
         for(auto face : faces)
         {
             group.addFace(face);
@@ -474,7 +472,7 @@ RegularVertexGrid
 MolecularPathObjExporter::generateGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
-        std::vector<SplineCurve1D> &properties,
+        std::map<std::string, SplineCurve1D> &properties,
         std::pair<size_t, size_t> resolution,
         std::pair<real, real> range,
         gmx::RVec chanDirVec)
@@ -512,13 +510,12 @@ MolecularPathObjExporter::generateGrid(
     RegularVertexGrid grid(s, phi);
 
     // loop over properties and add vertices:
-    for(size_t p = 0; p < properties.size(); p++)
+    for(auto &prop : properties)
     {
         generatePropertyGrid(
                 centreLine,
                 radius,
-                properties[p],
-                p,
+                prop,
                 chanDirVec,
                 grid);
     }
@@ -543,8 +540,7 @@ void
 MolecularPathObjExporter::generatePropertyGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
-        SplineCurve1D &property,
-        size_t p,
+        std::pair<std::string, SplineCurve1D> property,
         gmx::RVec chanDirVec,
         RegularVertexGrid &grid)
 {   
@@ -564,7 +560,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     {
         centres.push_back( centreLine.evaluate(eval, 0) );
         radii.push_back( radius.evaluate(eval, 0) );
-        prop.push_back( property.evaluate(eval, 0) );
+        prop.push_back( property.second.evaluate(eval, 0) );
     }
 
     // sample scalar property along the path:
@@ -599,7 +595,7 @@ MolecularPathObjExporter::generatePropertyGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, p, vertex, prop[idxLen]);
+        grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
     }
 
     // last vertex ring:
@@ -622,7 +618,7 @@ MolecularPathObjExporter::generatePropertyGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, p, vertex, prop[idxLen]);
+        grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
     }
 
     // build intermediate vertex rings:
@@ -656,7 +652,12 @@ MolecularPathObjExporter::generatePropertyGrid(
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
-                grid.addVertex(idxLen, k, p, vertRing[k], prop[idxLen]);
+                grid.addVertex(
+                        idxLen, 
+                        k, 
+                        property.first, 
+                        vertRing[k], 
+                        prop[idxLen]);
             }
         }
     }

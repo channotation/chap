@@ -28,26 +28,26 @@ class RegularVertexGrid
         void addVertex(
                 size_t i, 
                 size_t j,
-                size_t p,
+                std::string p,
                 gmx::RVec vertex, 
                 real weight);
         void addVertexNormal(
                 size_t i, 
                 size_t j,
-                size_t p,
+                std::string p,
                 gmx::RVec normal);
 
         void interpolateMissing();
         void normalsFromFaces();
     
         std::vector<gmx::RVec> vertices(
-                size_t p);
+                std::string p);
         std::vector<std::pair<gmx::RVec, real>> weightedVertices(
-                size_t p);
+                std::string p);
         std::vector<gmx::RVec> normals(
-                size_t p);
+                std::string p);
         std::vector<WavefrontObjFace> faces(
-                size_t p);
+                std::string p);
 
     private:
 
@@ -56,12 +56,12 @@ class RegularVertexGrid
 
         const std::vector<real> phi_;
         const std::vector<real> s_;
-        std::unordered_set<size_t> p_;
+        std::unordered_set<std::string> p_;
 
 
-        std::map<std::tuple<size_t, size_t, size_t>, gmx::RVec> vertices_;
-        std::map<std::tuple<size_t, size_t, size_t>, real> weights_;
-        std::map<std::tuple<size_t, size_t, size_t>, gmx::RVec> normals_;
+        std::map<std::tuple<size_t, size_t, std::string>, gmx::RVec> vertices_;
+        std::map<std::tuple<size_t, size_t, std::string>, real> weights_;
+        std::map<std::tuple<size_t, size_t, std::string>, gmx::RVec> normals_;
 
 
 
@@ -106,15 +106,14 @@ class MolecularPathObjExporter
         RegularVertexGrid generateGrid(
                 SplineCurve3D &centreLine,
                 SplineCurve1D &radius,
-                std::vector<SplineCurve1D> &properties,
+                std::map<std::string, SplineCurve1D> &properties,
                 std::pair<size_t, size_t> resolution,
                 std::pair<real, real> range,
                 gmx::RVec chanDirVec);
         void generatePropertyGrid(
                 SplineCurve3D &centreLine,
                 SplineCurve1D &radius,
-                SplineCurve1D &property,
-                size_t p,
+                std::pair<std::string, SplineCurve1D> property,
                 gmx::RVec chanDirVec,
                 RegularVertexGrid &grid);
 
