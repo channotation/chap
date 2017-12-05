@@ -1596,6 +1596,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
 
     MolecularPathObjExporter molPathExp;
     molPathExp(objOutputFileName_.c_str(),
+               "molecular_pathway",
                molPath);
 
 

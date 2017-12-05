@@ -315,8 +315,8 @@ WavefrontObjExporter::write(std::string fileName,
     // sanity checks:
     if( !object.valid() )
     {
-//        throw std::logic_error("WavefrontObjExporter encountered invalid "
-//                               "OBJ object.");
+        throw std::logic_error("WavefrontObjExporter encountered invalid "
+                               "OBJ object.");
     }
 
     // open file stream:
@@ -324,7 +324,10 @@ WavefrontObjExporter::write(std::string fileName,
 
     // writer header comment:
     writeComment("produced by CHAP");
-        
+
+    // write object name:
+    writeObject(object.name_);
+
     // write vertices:
     obj_<<std::endl;
     for(unsigned int i = 0; i < object.vertices_.size(); i++)
@@ -376,6 +379,17 @@ WavefrontObjExporter::writeGroup(std::string group)
 {
     obj_ <<std::endl;
     obj_ <<"g "<<group<<std::endl;
+}
+
+
+/*!
+ * Writes an object line to an OBJ file.
+ */
+void
+WavefrontObjExporter::writeObject(std::string object)
+{
+    obj_ <<std::endl;
+    obj_ <<"o "<<object<<std::endl;
 }
 
 

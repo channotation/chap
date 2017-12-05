@@ -388,13 +388,14 @@ MolecularPathObjExporter::MolecularPathObjExporter()
 }
 
 
+/*
+ *
+ */
 void
 MolecularPathObjExporter::operator()(std::string fileName,
+                                     std::string objectName,
                                      MolecularPath &molPath)
 {
-    gmx::RVec chanDirVec(0.0, 0.0, 1.0);
-
-
     // define evaluation range:   
     real extrapDist = 0.0;
     std::pair<real, real> range(molPath.sLo() - extrapDist,
@@ -418,7 +419,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
     //-------------------------------------------------------------------------
 
     // prepare OBJ object:
-    WavefrontObjObject obj("molecular_pathway");
+    WavefrontObjObject obj(objectName);
   
     // generate the vertex grid:
     RegularVertexGrid grid = generateGrid(
@@ -426,8 +427,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
             pathRadius,
             properties,
             resolution,
-            range,
-            chanDirVec);
+            range);
 
     // loop over properties:
     for(auto prop : properties)
@@ -474,8 +474,7 @@ MolecularPathObjExporter::generateGrid(
         SplineCurve1D &radius,
         std::map<std::string, SplineCurve1D> &properties,
         std::pair<size_t, size_t> resolution,
-        std::pair<real, real> range,
-        gmx::RVec chanDirVec)
+        std::pair<real, real> range)
 {
     // extract resolution:
     size_t numLen = resolution.first;
@@ -488,9 +487,6 @@ MolecularPathObjExporter::generateGrid(
         throw std::logic_error("Number of steps along pore must be power of "
                                "two.");
     }
-
-    // normalise channel direction vector:
-    unitv(chanDirVec, chanDirVec);
 
     // generate grid coordinates:
     std::vector<real> s;
@@ -516,7 +512,6 @@ MolecularPathObjExporter::generateGrid(
                 centreLine,
                 radius,
                 prop,
-                chanDirVec,
                 grid);
     }
 
@@ -541,7 +536,6 @@ MolecularPathObjExporter::generatePropertyGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
         std::pair<std::string, SplineCurve1D> property,
-        gmx::RVec chanDirVec,
         RegularVertexGrid &grid)
 {   
     // extract grid coordinates:
@@ -562,6 +556,11 @@ MolecularPathObjExporter::generatePropertyGrid(
         radii.push_back( radius.evaluate(eval, 0) );
         prop.push_back( property.second.evaluate(eval, 0) );
     }
+
+    // estimate channel direction vector:
+    gmx::RVec chanDirVec;
+    rvec_sub(centres.back(), centres.front(), chanDirVec);
+    unitv(chanDirVec, chanDirVec);
 
     // sample scalar property along the path:
     shiftAndScale(prop);
@@ -1102,7 +1101,7 @@ MolecularPathObjExporter::generateNormals(
 int
 MolecularPathObjExporter::numPlanarVertices(real &d, real &r)
 {
-    return std::max(static_cast<int>(std::ceil(PI_/(2.0*std::acos(1.0 - d*d/(2.0*r*r))))), 4);
+    return std::max(static_cast<int>(std::ceil(M_PI/(2.0*std::acos(1.0 - d*d/(2.0*r*r))))), 4);
 }
 
 

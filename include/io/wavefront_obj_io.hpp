@@ -130,6 +130,7 @@ class WavefrontObjExporter
         // utilities for writing individual lines:
         inline void writeComment(std::string comment);
         inline void writeGroup(std::string group);
+        inline void writeObject(std::string object);
         inline void writeVertex(std::pair<gmx::RVec, real> vertex);
         inline void writeVertexNormal(gmx::RVec norm);
         inline void writeFace(const WavefrontObjFace &face);

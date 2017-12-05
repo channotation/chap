@@ -88,14 +88,12 @@ class MolecularPathObjExporter
         MolecularPathObjExporter();
 
         // interface for exporting:
-        void operator()(std::string fileName, 
+        void operator()(std::string fileName,
+                        std::string objectName,
                         MolecularPath &molPath);
 
 
     private:
-
-        //
-        const real PI_ = std::acos(-1.0);
 
         // 
         inline int numPlanarVertices(real &d, real &r);
@@ -108,13 +106,11 @@ class MolecularPathObjExporter
                 SplineCurve1D &radius,
                 std::map<std::string, SplineCurve1D> &properties,
                 std::pair<size_t, size_t> resolution,
-                std::pair<real, real> range,
-                gmx::RVec chanDirVec);
+                std::pair<real, real> range);
         void generatePropertyGrid(
                 SplineCurve3D &centreLine,
                 SplineCurve1D &radius,
                 std::pair<std::string, SplineCurve1D> property,
-                gmx::RVec chanDirVec,
                 RegularVertexGrid &grid);
 
         // 
