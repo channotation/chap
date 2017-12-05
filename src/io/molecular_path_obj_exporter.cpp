@@ -25,9 +25,15 @@ RegularVertexGrid::RegularVertexGrid(
  *
  */
 void
-RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex, real weight)
+RegularVertexGrid::addVertex(
+        size_t i, 
+        size_t j,
+        size_t p,
+        gmx::RVec vertex, 
+        real weight)
 {
-    std::pair<size_t, size_t> key(i, j);
+    p_.insert(p);
+    std::tuple<size_t, size_t, size_t> key(i, j, p);
     vertices_[key] = vertex;
     weights_[key] = weight;
 }
@@ -37,9 +43,14 @@ RegularVertexGrid::addVertex(size_t i, size_t j, gmx::RVec vertex, real weight)
  *
  */
 void
-RegularVertexGrid::addVertexNormal(size_t i, size_t j, gmx::RVec normal)
+RegularVertexGrid::addVertexNormal(
+        size_t i, 
+        size_t j,
+        size_t p,
+        gmx::RVec normal)
 {
-    std::pair<size_t, size_t> key(i, j);
+    p_.insert(p);
+    std::tuple<size_t, size_t, size_t> key(i, j, p);
     normals_[key] = normal;
 }
 
@@ -53,7 +64,8 @@ RegularVertexGrid::addVertexNormal(size_t i, size_t j, gmx::RVec normal)
  *
  */
 std::vector<gmx::RVec>
-RegularVertexGrid::vertices()
+RegularVertexGrid::vertices(
+        size_t p)
 {
     // build linearly indexed vector from dual indexed map:
     std::vector<gmx::RVec> vert;
@@ -62,7 +74,7 @@ RegularVertexGrid::vertices()
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
-            std::pair<size_t, size_t> key(i, j);
+            std::tuple<size_t, size_t, size_t> key(i, j, p);
             if( vertices_.find(key) != vertices_.end() )
             {
                 vert.push_back(vertices_[key]); 
@@ -82,7 +94,8 @@ RegularVertexGrid::vertices()
  *
  */
 std::vector<std::pair<gmx::RVec, real>>
-RegularVertexGrid::weightedVertices()
+RegularVertexGrid::weightedVertices(
+        size_t p)
 {
     // build linearly indexed vector from dual indexed map:
     std::vector<std::pair<gmx::RVec, real>> vert;
@@ -91,7 +104,7 @@ RegularVertexGrid::weightedVertices()
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
-            std::pair<size_t, size_t> key(i, j);
+            std::tuple<size_t, size_t, size_t> key(i, j, p);
             if( vertices_.find(key) != vertices_.end() && 
                 weights_.find(key) != weights_.end() )
             {
@@ -119,81 +132,105 @@ RegularVertexGrid::normalsFromFaces()
     int mI = s_.size();
     int mJ = phi_.size();
 
-    for(int i = 0; i < s_.size(); i++)
+    for(auto p : p_)
     {
-        for(int j = 0; j < phi_.size(); j++)
+        for(int i = 0; i < s_.size(); i++)
         {
-            // index pairs for neighbouring vertices:
-            // TODO: not circular in i, cant wrap around
-            std::pair<size_t, size_t> crntKey(i, j);
-            std::pair<size_t, size_t> leftKey(i, (j - 1 + mJ) % mJ);
-            std::pair<size_t, size_t> rghtKey(i, (j + 1 + mJ) % mJ);
-            std::pair<size_t, size_t> upprKey((i + 1 + mI) % mI, j);
-            std::pair<size_t, size_t> lowrKey((i - 1 + mI) % mI, j);
-            std::pair<size_t, size_t> dglrKey((i - 1 + mI) % mI, (j + 1 + mJ) % mJ);
-            std::pair<size_t, size_t> dgulKey((i + 1 + mI) % mI, (j - 1 + mJ) % mJ);
-
-            // handle endpoints in direction along spline:
-            if( i == 0 )
+            for(int j = 0; j < phi_.size(); j++)
             {
-                lowrKey = crntKey; 
-                dglrKey = crntKey;
+                // index pairs for neighbouring vertices:
+                // TODO: not circular in i, cant wrap around
+                std::tuple<size_t, size_t, size_t> crntKey(
+                        i, 
+                        j,
+                        p);
+                std::tuple<size_t, size_t, size_t> leftKey(
+                        i, 
+                        (j - 1 + mJ) % mJ,
+                        p);
+                std::tuple<size_t, size_t, size_t> rghtKey(
+                        i, 
+                        (j + 1 + mJ) % mJ,
+                        p);
+                std::tuple<size_t, size_t, size_t> upprKey(
+                        (i + 1 + mI) % mI, 
+                        j,
+                        p);
+                std::tuple<size_t, size_t, size_t> lowrKey((
+                        i - 1 + mI) % mI, 
+                        j,
+                        p);
+                std::tuple<size_t, size_t, size_t> dglrKey(
+                        (i - 1 + mI) % mI, 
+                        (j + 1 + mJ) % mJ,
+                        p);
+                std::tuple<size_t, size_t, size_t> dgulKey(
+                        (i + 1 + mI) % mI, 
+                        (j - 1 + mJ) % mJ,
+                        p);
+
+                // handle endpoints in direction along spline:
+                if( i == 0 )
+                {
+                    lowrKey = crntKey; 
+                    dglrKey = crntKey;
+                }
+                if( i == s_.size() - 1 )
+                {
+                    upprKey = crntKey;
+                    dgulKey = crntKey;
+                }
+
+                // neighbouring vertices:
+                gmx::RVec crntVert = vertices_.at(crntKey);
+                gmx::RVec leftVert = vertices_.at(leftKey);
+                gmx::RVec rghtVert = vertices_.at(rghtKey);
+                gmx::RVec upprVert = vertices_.at(upprKey);
+                gmx::RVec lowrVert = vertices_.at(lowrKey);
+                gmx::RVec dglrVert = vertices_.at(dglrKey);
+                gmx::RVec dgulVert = vertices_.at(dgulKey);
+
+                // initialise normal as null vector:
+                gmx::RVec norm(0.0, 0.0, 0.0);
+                gmx::RVec sideA;
+                gmx::RVec sideB;
+
+                // North-East triangle:
+                rvec_sub(rghtVert, crntVert, sideA);
+                rvec_sub(upprVert, crntVert, sideB);
+                addTriangleNorm(sideA, sideB, norm);
+                
+                // North-North-West triangle:
+                rvec_sub(upprVert, crntVert, sideA);
+                rvec_sub(dgulVert, crntVert, sideB);
+                addTriangleNorm(sideA, sideB, norm);
+
+                // West-North-West triangle:
+                rvec_sub(dgulVert, crntVert, sideA);
+                rvec_sub(leftVert, crntVert, sideB);
+                addTriangleNorm(sideA, sideB, norm);
+
+                // South-West triangle:
+                rvec_sub(leftVert, crntVert, sideA);
+                rvec_sub(lowrVert, crntVert, sideB);
+                addTriangleNorm(sideA, sideB, norm);
+
+                // South-South-East triangle:
+                rvec_sub(lowrVert, crntVert, sideA);
+                rvec_sub(dglrVert, crntVert, sideB);
+                addTriangleNorm(sideA, sideB, norm);
+                
+                // East-South-East triangle:
+                rvec_sub(dglrVert, crntVert, sideA);
+                rvec_sub(rghtVert, crntVert, sideB);
+                addTriangleNorm(sideA, sideB, norm);
+
+                // normalise normal:
+                unitv(norm, norm);
+                
+                // add to container of normals:
+                normals_[crntKey] = norm;
             }
-            if( i == s_.size() - 1 )
-            {
-                upprKey = crntKey;
-                dgulKey = crntKey;
-            }
-
-            // neighbouring vertices:
-            gmx::RVec crntVert = vertices_.at(crntKey);
-            gmx::RVec leftVert = vertices_.at(leftKey);
-            gmx::RVec rghtVert = vertices_.at(rghtKey);
-            gmx::RVec upprVert = vertices_.at(upprKey);
-            gmx::RVec lowrVert = vertices_.at(lowrKey);
-            gmx::RVec dglrVert = vertices_.at(dglrKey);
-            gmx::RVec dgulVert = vertices_.at(dgulKey);
-
-            // initialise normal as null vector:
-            gmx::RVec norm(0.0, 0.0, 0.0);
-            gmx::RVec sideA;
-            gmx::RVec sideB;
-
-            // North-East triangle:
-            rvec_sub(rghtVert, crntVert, sideA);
-            rvec_sub(upprVert, crntVert, sideB);
-            addTriangleNorm(sideA, sideB, norm);
-            
-            // North-North-West triangle:
-            rvec_sub(upprVert, crntVert, sideA);
-            rvec_sub(dgulVert, crntVert, sideB);
-            addTriangleNorm(sideA, sideB, norm);
-
-            // West-North-West triangle:
-            rvec_sub(dgulVert, crntVert, sideA);
-            rvec_sub(leftVert, crntVert, sideB);
-            addTriangleNorm(sideA, sideB, norm);
-
-            // South-West triangle:
-            rvec_sub(leftVert, crntVert, sideA);
-            rvec_sub(lowrVert, crntVert, sideB);
-            addTriangleNorm(sideA, sideB, norm);
-
-            // South-South-East triangle:
-            rvec_sub(lowrVert, crntVert, sideA);
-            rvec_sub(dglrVert, crntVert, sideB);
-            addTriangleNorm(sideA, sideB, norm);
-            
-            // East-South-East triangle:
-            rvec_sub(dglrVert, crntVert, sideA);
-            rvec_sub(rghtVert, crntVert, sideB);
-            addTriangleNorm(sideA, sideB, norm);
-
-            // normalise normal:
-            unitv(norm, norm);
-            
-            // add to container of normals:
-            normals_[crntKey] = norm;
         }
     }
 }
@@ -218,7 +255,8 @@ RegularVertexGrid::addTriangleNorm(
  *
  */
 std::vector<gmx::RVec>
-RegularVertexGrid::normals()
+RegularVertexGrid::normals(
+        size_t p)
 {
     std::vector<gmx::RVec> norm;
     norm.reserve(normals_.size());
@@ -226,30 +264,29 @@ RegularVertexGrid::normals()
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
-            std::pair<size_t, size_t> key(i, j);
+            std::tuple<size_t, size_t, size_t> key(i, j, p);
             if( normals_.find(key) != normals_.end() )
             {
                 norm.push_back(normals_[key]); 
             }
             else
             {
-//                throw std::logic_error("Invalid vertex normal reference "
-//                                       "encountered.");
+                throw std::logic_error("Invalid vertex normal reference "
+                                       "encountered.");
             }
         }
     }
+
     return norm;
 }
-
-
-
 
 
 /*
  *
  */
 std::vector<WavefrontObjFace>
-RegularVertexGrid::faces()
+RegularVertexGrid::faces(
+        size_t p)
 {
     // sanity checks:
     if( phi_.size() * s_.size() != vertices_.size() )
@@ -258,7 +295,7 @@ RegularVertexGrid::faces()
                  <<"s.size = "<<s_.size()<<"  "
                  <<"vert.size = "<<vertices_.size()<<"  "
                  <<std::endl;
-        throw std::logic_error("Cannot generate faces on incomplete grid.");
+//        throw std::logic_error("Cannot generate faces on incomplete grid.");
     }
 
     if( !normals_.empty() && normals_.size() != vertices_.size() )
@@ -266,6 +303,15 @@ RegularVertexGrid::faces()
         throw std::logic_error("Number of vertex normals does not equal "
                                "number of vertices.");
     }
+
+    // number of vertices per property grid:
+    size_t vertOffset = s_.size() * phi_.size() * p;
+
+    std::cout<<"numVert = "<<vertices_.size()<<"  "
+             <<"p = "<<p<<"  "
+             <<"s.size = "<<s_.size()<<"  "
+             <<"phi.size = "<<phi_.size()<<"  "
+             <<std::endl;
 
     // preallocate face vector:
     std::vector<WavefrontObjFace> faces;
@@ -277,7 +323,7 @@ RegularVertexGrid::faces()
         for(size_t j = 0; j < phi_.size() - 1; j++)
         {
             // calculate linear indices:
-            int kbl = i*phi_.size() + j; 
+            int kbl = vertOffset + i * phi_.size() + j; 
             int kbr = kbl + 1;
             int ktl = kbl + phi_.size();
             int ktr = kbr + phi_.size();
@@ -306,8 +352,8 @@ RegularVertexGrid::faces()
     for(size_t i = 0; i < s_.size() - 1; i++)
     {
         // calculate linear indices:
-        int kbl = i*phi_.size() + phi_.size() - 1; 
-        int kbr = i*phi_.size();
+        int kbl = vertOffset + i*phi_.size() + phi_.size() - 1; 
+        int kbr = vertOffset + i*phi_.size();
         int ktl = kbl + phi_.size();
         int ktr = kbr + phi_.size();
 
@@ -350,6 +396,9 @@ void
 MolecularPathObjExporter::operator()(std::string fileName,
                                      MolecularPath &molPath)
 {
+    gmx::RVec chanDirVec(0.0, 0.0, 1.0);
+
+
     // define evaluation range:   
     real extrapDist = 0.0;
     std::pair<real, real> range(molPath.sLo() - extrapDist,
@@ -364,51 +413,56 @@ MolecularPathObjExporter::operator()(std::string fileName,
     auto centreLine = molPath.centreLine();
     auto pathRadius = molPath.pathRadius();
 
-    
-    gmx::RVec chanDirVec(0.0, 0.0, 1.0);
+    // vector of scalar properties for which colour should be mapped:
+    std::vector<std::string> propertyNames;
+    propertyNames.push_back(std::string("radius"));
+    propertyNames.push_back(std::string("hydrophobicity"));
+    std::vector<SplineCurve1D> properties;
+    properties.push_back(pathRadius);
+    properties.push_back(pathRadius);
+ 
+
+    // Build OBJ Object of Coloured Pore Surface
+    //-------------------------------------------------------------------------
+
+    // prepare OBJ object:
+    WavefrontObjObject obj("molecular_pathway");
+  
+    // generate the vertex grid:
     RegularVertexGrid grid = generateGrid(
             centreLine,
             pathRadius,
-            pathRadius,
+            properties,
             resolution,
             range,
             chanDirVec);
 
-    // obtain vertices, normals, and faces from grid:
-    grid.normalsFromFaces();
-    auto vertices = grid.weightedVertices();
-    auto vertexNormals = grid.normals();
-    auto faces = grid.faces();
-
-
-
-
-    std::cout<<"numVert = "<<vertices.size()<<"  "
-             <<"normNorm = "<<vertexNormals.size()<<"  "
-             <<std::endl;
-
-    
-
-    // add faces to surface:
-    WavefrontObjGroup surface("pore_surface");
-    for(auto face : faces)
+    // loop over properties:
+    for(size_t p = 0; p < propertyNames.size(); p++)
     {
-/*        std::cout<<"face = "<<"  "
-                 <<face.vertexIdx_[0]<<"  "
-                 <<face.vertexIdx_[1]<<"  "
-                 <<face.vertexIdx_[2]<<"  "
-                 <<"hasNormals = "<<face.hasNormals()<<"  "
-                 <<std::endl;*/
-        surface.addFace(face);
+        // obtain vertices, normals, and faces from grid:
+        grid.normalsFromFaces();
+        auto vertices = grid.weightedVertices(p);
+        auto vertexNormals = grid.normals(p);
+        auto faces = grid.faces(p);
+
+        // add faces to surface:
+        WavefrontObjGroup group("pathway_coloured_by_" + propertyNames[p]);
+        for(auto face : faces)
+        {
+            group.addFace(face);
+        }
+
+        // add to the overall OBJ object:
+        obj.addVertices(vertices);
+        obj.addVertexNormals(vertexNormals);
+        obj.addGroup(group);
     }
-   
 
-    // assemble OBJ object:
-    WavefrontObjObject obj("pore");
-    obj.addVertices(vertices);
-    obj.addVertexNormals(vertexNormals);
-    obj.addGroup(surface);
 
+    // Serialise OBJ Object
+    //-------------------------------------------------------------------------
+    
     // scale object by factor of 10 to convert nm to Ang:
     obj.scale(10.0);
     obj.calculateCog();
@@ -416,31 +470,21 @@ MolecularPathObjExporter::operator()(std::string fileName,
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
     objExp.write(fileName, obj);
-
-    
 }
 
 
-/*!
- * Generates grid along MolecularPath, but uses a tangent vector equal to the
- * channel direction vector. This does not strictly give the correct surface, 
- * as the tangent may vary along the centre line. However, this method will not
- * create overlapping vertices, so long as the centre line does not change 
- * direction with respect to the channel direction vectors, which is guaranteed
- * for the inplane optimised probe path finder. Moreover, all surface points 
- * generated this way are guaranteed to not lie outside the pore, so long as
- * a probe based method was used (this is true because the free distance around 
- * a centre is free in any direction). 
+/*
+ *
  */
 RegularVertexGrid
 MolecularPathObjExporter::generateGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
-        SplineCurve1D &property,
+        std::vector<SplineCurve1D> &properties,
         std::pair<size_t, size_t> resolution,
         std::pair<real, real> range,
         gmx::RVec chanDirVec)
-{    
+{
     // extract resolution:
     size_t numLen = resolution.first;
     size_t numPhi = resolution.second;
@@ -473,13 +517,55 @@ MolecularPathObjExporter::generateGrid(
     // generate grid from coordinates:
     RegularVertexGrid grid(s, phi);
 
+    // loop over properties and add vertices:
+    for(size_t p = 0; p < properties.size(); p++)
+    {
+        generatePropertyGrid(
+                centreLine,
+                radius,
+                properties[p],
+                p,
+                chanDirVec,
+                grid);
+    }
+
+    // return the overall grid:
+    return grid;
+}
+
+
+/*!
+ * Generates grid along MolecularPath, but uses a tangent vector equal to the
+ * channel direction vector. This does not strictly give the correct surface, 
+ * as the tangent may vary along the centre line. However, this method will not
+ * create overlapping vertices, so long as the centre line does not change 
+ * direction with respect to the channel direction vectors, which is guaranteed
+ * for the inplane optimised probe path finder. Moreover, all surface points 
+ * generated this way are guaranteed to not lie outside the pore, so long as
+ * a probe based method was used (this is true because the free distance around 
+ * a centre is free in any direction). 
+ */
+void
+MolecularPathObjExporter::generatePropertyGrid(
+        SplineCurve3D &centreLine,
+        SplineCurve1D &radius,
+        SplineCurve1D &property,
+        size_t p,
+        gmx::RVec chanDirVec,
+        RegularVertexGrid &grid)
+{   
+    // extract grid coordinates:
+    std::vector<real> s = grid.s_;
+    std::vector<real> phi = grid.phi_;
+    size_t numLen = s.size();
+
     // sample points, radii, and tangents along molecular path:
     std::vector<gmx::RVec> centres;
-    centres.reserve(numLen);
+    centres.reserve(s.size());
     std::vector<real> radii;
-    radii.reserve(numLen);
+    radii.reserve(s.size());
     std::vector<real> prop;
-    prop.reserve(numLen);
+    prop.reserve(s.size());
     for(auto eval : s)
     {
         centres.push_back( centreLine.evaluate(eval, 0) );
@@ -519,7 +605,7 @@ MolecularPathObjExporter::generateGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
+        grid.addVertex(idxLen, k, p, vertex, prop[idxLen]);
     }
 
     // last vertex ring:
@@ -542,7 +628,7 @@ MolecularPathObjExporter::generateGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
+        grid.addVertex(idxLen, k, p, vertex, prop[idxLen]);
     }
 
     // build intermediate vertex rings:
@@ -576,19 +662,17 @@ MolecularPathObjExporter::generateGrid(
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
-                grid.addVertex(idxLen, k, vertRing[k], prop[idxLen]);
+                grid.addVertex(idxLen, k, p, vertRing[k], prop[idxLen]);
             }
         }
     }
-
-    // return grid:
-    return grid;
 }
 
 
 /*
  *
  */
+/*
 RegularVertexGrid
 MolecularPathObjExporter::generateGrid(
         MolecularPath &molPath,
@@ -745,7 +829,7 @@ MolecularPathObjExporter::generateGrid(
                 ///////////////////////////////////////////////////////////////
 
 
-/*
+
                 // distance vector from upper and lower circle centres:
                 gmx::RVec distLower;
                 rvec_sub(vertex, centres[idxLower], distLower);
@@ -842,7 +926,7 @@ MolecularPathObjExporter::generateGrid(
                     // use new vertex:
                     vertRing[k] = vertex;
                 }
-*/
+
 
 
 
@@ -851,7 +935,7 @@ MolecularPathObjExporter::generateGrid(
             }
  
 
-/*
+
             if( hasClashes == true )
             {
                 std::cout<<"has clashes!"<<std::endl;
@@ -879,7 +963,7 @@ MolecularPathObjExporter::generateGrid(
                     vertRing[k] = vertex;
                 }
             }
-*/
+
 
 
 
@@ -973,6 +1057,7 @@ MolecularPathObjExporter::generateGrid(
     // return grid:
     return grid;
 }
+*/
 
 
 
