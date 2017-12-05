@@ -143,16 +143,7 @@ break
 
 
 ###############################################################################
-# PORE SURFACE IMPORT
-###############################################################################
-
-draw color blue
-#draw material Transparent
-# FIXME
-
-
-###############################################################################
-# PORE HOLE RESULT
+# PERMEATION PATHWAY
 ###############################################################################
 
 
@@ -160,6 +151,7 @@ draw color blue
 # -----------------------------------------------------------------------------
 
 # import the custom OBJ library:
+# TODO make sure this is properly linked!
 source ~/repos/chap/scripts/visualisation/vmd/wobj.tcl
 
 # import an OBJ file:
@@ -189,11 +181,19 @@ set scale_colors [color_scale_blues]
 set scale_colors [revert_color_scale $scale_colors]
 
 
+# PLOT GROUP
+# -----------------------------------------------------------------------------
+# TODO comment here
+
+set group_name "pathway_radius" 
+#set group_name "pathway_hydrophobicity" 
+
+
 # Draw Pore
 # -----------------------------------------------------------------------------
 
 # draw OBJ mesh:
-WOBJ::draw_wavefront_obj $obj $scale_colors
+WOBJ::draw_wavefront_obj $obj $group_name $scale_colors
 
 
 

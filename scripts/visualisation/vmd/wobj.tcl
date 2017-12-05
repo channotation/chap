@@ -21,6 +21,10 @@ proc import_wavefront_obj {filename} {
     set vertex_normals_y {}
     set vertex_normals_z {}
 
+	# prepare list of groups:
+	set group_names {}
+	set crnt_group_name "undefined_group"
+
     # prepare list of list of vertex indices:
     set vertex_idx_a {}
     set vertex_idx_b {}
@@ -38,6 +42,12 @@ proc import_wavefront_obj {filename} {
       
         # split line at space:
         set linespl [regexp -all -inline {\S+} $line]
+
+		# check for new group:
+		if { [lindex $linespl {0}] == "g" } {
+			
+			set crnt_group_name [lindex $linespl {1}]
+		}
 
         # check for vertex index:
         if { [lindex $linespl {0}] == "v"} {
@@ -70,6 +80,9 @@ proc import_wavefront_obj {filename} {
                 puts $line
                 break
             }
+
+			# add group label for each face:
+			lappend group_names $crnt_group_name
 
             # have vertex normals?
             if { [string match *//* $linespl] } {
@@ -106,7 +119,8 @@ proc import_wavefront_obj {filename} {
     return [list $vertices_x $vertices_y $vertices_z $vertices_w \
                  $vertex_idx_a $vertex_idx_b $vertex_idx_c \
                  $vertex_normals_x $vertex_normals_y $vertex_normals_z \
-                 $vertex_normal_idx_a $vertex_normal_idx_b $vertex_normal_idx_c]
+                 $vertex_normal_idx_a $vertex_normal_idx_b $vertex_normal_idx_c \
+				 $group_names]
 }
 
 
@@ -206,7 +220,7 @@ proc setup_color_lookup_table { color_rgb } {
 #
 # INPUT:
 # obj - list of lists containing vertices and faces
-proc draw_wavefront_obj {obj scale_colors} {
+proc draw_wavefront_obj {obj group_name scale_colors} {
 
     # extract information from OBJ object:
     set vert_x [lindex $obj 0]
@@ -222,6 +236,7 @@ proc draw_wavefront_obj {obj scale_colors} {
     set vertex_norm_idx_a [lindex $obj 10]
     set vertex_norm_idx_b [lindex $obj 11]
     set vertex_norm_idx_c [lindex $obj 12]
+    set group_names [lindex $obj 13]
 
     # sanity checks:
     if { [llength vertex_idx_a] != [llength vertex_idx_b] || \
@@ -235,8 +250,6 @@ proc draw_wavefront_obj {obj scale_colors} {
         error "Enequal length vertex index lists."
     }
 
-    set switch 1
-
     # prepare the color lookup table:
     set color_lookup_table [setup_color_lookup_table $scale_colors]
     
@@ -246,7 +259,12 @@ proc draw_wavefront_obj {obj scale_colors} {
     if { $num_vert_idx == $num_norm_idx } {
     
         # loop over faces and draw them:
-        foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c {
+        foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c grp $group_names {
+
+			# matching group name?
+			if { $grp != $group_name } {
+				continue
+			}
 
             # get vertex weights:
             set wa [lindex $vert_w $ia]
@@ -273,18 +291,21 @@ proc draw_wavefront_obj {obj scale_colors} {
         # loop over faces and draw them:
         foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c {
 
-            set switch [expr $switch * -1]
-            if { $switch == 1 } {
-#                draw color red
-            } else { 
-                draw color blue
-            }
+            # get vertex weights:
+            set wa [lindex $vert_w $ia]
+            set wb [lindex $vert_w $ib]
+            set wc [lindex $vert_w $ic]
+
+            # calculate face weight:
+            set face_weight [expr ($wa + $wb + $wc)/3.0]
+
+            # change color index accordingly:
+            draw color [color_index_from_scalar $face_weight $color_lookup_table]
             
             draw triangle "[lindex $vert_x $ia] [lindex $vert_y $ia] [lindex $vert_z $ia]" \
                           "[lindex $vert_x $ib] [lindex $vert_y $ib] [lindex $vert_z $ib]" \
                           "[lindex $vert_x $ic] [lindex $vert_y $ic] [lindex $vert_z $ic]" 
         }
-
     }
 }
 
@@ -320,10 +341,6 @@ proc revert_color_scale { color_scale } {
     set col_r [lreverse [lindex $color_scale 0]]
     set col_g [lreverse [lindex $color_scale 1]]
     set col_b [lreverse [lindex $color_scale 2]]
-
-    puts $col_r
-    puts $col_g
-    puts $col_b
 
     return [list $col_r $col_g $col_b]
 }

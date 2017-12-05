@@ -307,12 +307,6 @@ RegularVertexGrid::faces(
     // number of vertices per property grid:
     size_t vertOffset = s_.size() * phi_.size() * p;
 
-    std::cout<<"numVert = "<<vertices_.size()<<"  "
-             <<"p = "<<p<<"  "
-             <<"s.size = "<<s_.size()<<"  "
-             <<"phi.size = "<<phi_.size()<<"  "
-             <<std::endl;
-
     // preallocate face vector:
     std::vector<WavefrontObjFace> faces;
     faces.reserve(phi_.size()*s_.size());
@@ -447,7 +441,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
         auto faces = grid.faces(p);
 
         // add faces to surface:
-        WavefrontObjGroup group("pathway_coloured_by_" + propertyNames[p]);
+        WavefrontObjGroup group("pathway_" + propertyNames[p]);
         for(auto face : faces)
         {
             group.addFace(face);
