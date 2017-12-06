@@ -8,8 +8,9 @@
 
 #include <gtest/gtest.h>
 
-#include "io/wavefront_obj_io.hpp"
 #include "path-finding/molecular_path.hpp"
+#include "io/wavefront_mtl_io.hpp"
+#include "io/wavefront_obj_io.hpp"
 
 
 /*

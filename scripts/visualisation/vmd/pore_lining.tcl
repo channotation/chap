@@ -196,6 +196,9 @@ set scale_colors [revert_color_scale $scale_colors]
 # Draw Pore
 # -----------------------------------------------------------------------------
 
+
+
+
 # draw OBJ mesh:
 WOBJ::draw_wavefront_obj $obj $group_name $scale_colors
 

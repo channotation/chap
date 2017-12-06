@@ -7,8 +7,10 @@
  * Constructs a face from a vector of vertex indices.
  */
 WavefrontObjFace::WavefrontObjFace(
-        const std::vector<int> &vertexIdx)
+        const std::vector<int> &vertexIdx,
+        std::string mtlName)
     : vertexIdx_(vertexIdx)
+    , mtlName_(mtlName)
 {
     // check uniqueness of indices:
     std::vector<int> tmp = vertexIdx_;
@@ -26,7 +28,8 @@ WavefrontObjFace::WavefrontObjFace(
  */
 WavefrontObjFace::WavefrontObjFace(
         const std::vector<int> &vertexIdx,
-        const std::vector<int> &normalIdx)
+        const std::vector<int> &normalIdx,
+        std::string mtlName)
 {
     // sanity check:
     if( normalIdx.size() != vertexIdx.size() )
@@ -38,6 +41,7 @@ WavefrontObjFace::WavefrontObjFace(
     // assign to internal objects:
     vertexIdx_ = vertexIdx;
     normalIdx_ = normalIdx;
+    mtlName_ = mtlName;
 }
 
 
@@ -124,6 +128,7 @@ WavefrontObjGroup::addFace(WavefrontObjFace face)
  */
 WavefrontObjObject::WavefrontObjObject(std::string name)
     : name_(name)
+    , mtllib_("")
 {
     
 }
@@ -190,6 +195,17 @@ void
 WavefrontObjObject::addGroup(const WavefrontObjGroup &group)
 {
     groups_.push_back( group );
+}
+
+
+/*!
+ * Sets the name of the material library to be used. Input argument should 
+ * include the .mtl extension.
+ */
+void
+WavefrontObjObject::setMaterialLibrary(std::string mtl)
+{
+    mtllib_ = mtl;
 }
 
 
@@ -325,6 +341,9 @@ WavefrontObjExporter::write(std::string fileName,
     // writer header comment:
     writeComment("produced by CHAP");
 
+    // write name of material library:
+    writeMaterialLibrary(object.mtllib_);
+
     // write object name:
     writeObject(object.name_);
 
@@ -368,6 +387,20 @@ void
 WavefrontObjExporter::writeComment(std::string comment)
 {
     obj_ <<"# "<<comment<<std::endl;
+}
+
+
+/*!
+ * Writes material library referenct to an OBJ file.
+ */
+void
+WavefrontObjExporter::writeMaterialLibrary(std::string mtl)
+{
+    // library set?
+    if( mtl != "" )
+    {
+        obj_<<"mtllib "<<mtl<<std::endl;
+    }
 }
 
 
@@ -424,6 +457,18 @@ WavefrontObjExporter::writeVertexNormal(gmx::RVec norm)
 void
 WavefrontObjExporter::writeFace(const WavefrontObjFace &face)
 {
+    // need to write material?
+    if( face.mtlName_ != "" )
+    {
+        // different from current material?
+        if( face.mtlName_ != crntMtlName_ )
+        {
+            crntMtlName_ = face.mtlName_;
+            obj_<<"usemtl "<<face.mtlName_<<std::endl;
+        }
+    }
+
+    // write actual face entry:
     obj_<<"f ";
 
     for(size_t i = 0; i < face.numVertices(); i++)

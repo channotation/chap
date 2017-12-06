@@ -324,22 +324,29 @@ RegularVertexGrid::faces(
             int ktl = kbl + phi_.size();
             int ktr = kbr + phi_.size();
 
+            // TODO
+            std::string mtlName("red");
+
             // two faces per square:
             if( normals_.empty() )
             {
                 faces.push_back( WavefrontObjFace(
-                        {kbl + 1, ktr + 1, ktl + 1}) );
+                        {kbl + 1, ktr + 1, ktl + 1},
+                        mtlName) );
                 faces.push_back( WavefrontObjFace(
-                        {kbl + 1, kbr + 1, ktr + 1}) );
+                        {kbl + 1, kbr + 1, ktr + 1},
+                        mtlName) );
             }
             else
             {
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1},
-                        {kbl + 1, ktr + 1, ktl + 1}) );
+                        {kbl + 1, ktr + 1, ktl + 1},
+                        mtlName) );
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, kbr + 1, ktr + 1},
-                        {kbl + 1, kbr + 1, ktr + 1}) );
+                        {kbl + 1, kbr + 1, ktr + 1},
+                        mtlName) );
             }
         }
     }
@@ -353,23 +360,30 @@ RegularVertexGrid::faces(
         int ktl = kbl + phi_.size();
         int ktr = kbr + phi_.size();
 
+        // TODO
+        std::string mtlName("blue");
+
         // two faces per square:
         if( normals_.empty() )
         {
             faces.push_back( WavefrontObjFace(
-                    {kbl + 1, ktr + 1, ktl + 1}) );
+                    {kbl + 1, ktr + 1, ktl + 1},
+                    mtlName) );
             faces.push_back( WavefrontObjFace(
-                    {kbl + 1, kbr + 1, ktr + 1}) );
+                    {kbl + 1, kbr + 1, ktr + 1},
+                    mtlName) );
         }
         else
         {
 
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1},
-                    {kbl + 1, ktr + 1, ktl + 1}) );
+                    {kbl + 1, ktr + 1, ktl + 1},
+                    mtlName) );
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, kbr + 1, ktr + 1},
-                    {kbl + 1, kbr + 1, ktr + 1}) );
+                    {kbl + 1, kbr + 1, ktr + 1},
+                    mtlName) );
         }
     }
 
@@ -415,11 +429,13 @@ MolecularPathObjExporter::operator()(std::string fileName,
     molPath.addScalarProperty("radius", pathRadius);
     auto properties = molPath.scalarProperties();   
 
-    // Build OBJ Object of Coloured Pore Surface
+
+    // Build OBJ & MTL Objects of Coloured Pore Surface
     //-------------------------------------------------------------------------
 
-    // prepare OBJ object:
+    // prepare objects:
     WavefrontObjObject obj(objectName);
+    WavefrontMtlObject mtl;
   
     // generate the vertex grid:
     RegularVertexGrid grid = generateGrid(
@@ -452,16 +468,25 @@ MolecularPathObjExporter::operator()(std::string fileName,
     }
 
 
-    // Serialise OBJ Object
+    // Serialise OBJ & MTL Objects
     //-------------------------------------------------------------------------
     
+    std::string mtlFileName = "output.mtl";
+
     // scale object by factor of 10 to convert nm to Ang:
     obj.scale(10.0);
     obj.calculateCog();
 
+    // add name of material library:
+    obj.setMaterialLibrary(mtlFileName);
+
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
     objExp.write(fileName, obj);
+
+    // create an MTL exporter and write to file:
+    WavefrontMtlExporter mtlExp;
+    mtlExp.write(mtlFileName, mtl);
 }
 
 

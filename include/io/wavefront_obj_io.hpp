@@ -22,10 +22,12 @@ class WavefrontObjFace
 
         // constructors:
         WavefrontObjFace(
-                const std::vector<int> &vertexIdx);
+                const std::vector<int> &vertexIdx,
+                std::string mtlName);
         WavefrontObjFace(
                 const std::vector<int> &vertexIdx, 
-                const std::vector<int> &normalIdx);
+                const std::vector<int> &normalIdx,
+                std::string mtlName);
 
         // getter methods:
         int numVertices() const;
@@ -36,9 +38,13 @@ class WavefrontObjFace
 
 //    private:
 
+
         // data container for indices:
         std::vector<int> vertexIdx_;
         std::vector<int> normalIdx_;
+
+        // further face properties: 
+        std::string mtlName_;
 };
 
 
@@ -85,6 +91,8 @@ class WavefrontObjObject
                 const std::vector<gmx::RVec> &normals);
         void addGroup(
                 const WavefrontObjGroup &group);
+        void setMaterialLibrary(
+                std::string mtl);
 
         // returns flag indicating whether object is valid:
         bool valid() const;
@@ -98,6 +106,7 @@ class WavefrontObjObject
 
         // data:
         std::string name_;
+        std::string mtllib_;
         std::vector<std::pair<gmx::RVec, real>> vertices_;
         std::vector<gmx::RVec> normals_;
         std::vector<WavefrontObjGroup> groups_;
@@ -124,11 +133,15 @@ class WavefrontObjExporter
 
     private:
 
+        // internal temporaries:
+        std::string crntMtlName_ = "";
+
         // file handle:
         std::fstream obj_;
 
         // utilities for writing individual lines:
         inline void writeComment(std::string comment);
+        inline void writeMaterialLibrary(std::string mtl);
         inline void writeGroup(std::string group);
         inline void writeObject(std::string object);
         inline void writeVertex(std::pair<gmx::RVec, real> vertex);

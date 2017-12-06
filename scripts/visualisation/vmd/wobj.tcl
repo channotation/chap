@@ -4,10 +4,86 @@ namespace eval WOBJ {
 set BASENAME obj.obj
 
 
+# Parses Wavefront MTL file and builds a dictionary of material properties.
+#
+# INPUT:
+# filename - name of MTL file to import
+proc import_wavefront_mtl {filename} {
+
+	# handle empty file name:
+	if { $filename == "" } {
+
+		dict set colour_indeces undefined_material [colorinfo max]	
+		return 
+	}
+	
+    # parse MTL line by line:
+    set linenumber 1;
+    set mtlfile [open $filename r]
+    while { [gets $mtlfile line] >= 0 } {
+
+        # split line at space:
+        set linespl [regexp -all -inline {\S+} $line]
+
+		# check for new group:
+		if { [lindex $linespl {0}] == "newmtl" } {
+			
+			set crnt_mtl_name [lindex $linespl {1}]
+			puts $crnt_mtl_name
+		}
+
+		# ambient colour:
+		if { [lindex $linespl {0}] == "Ka" } {
+			
+			dict set materials $crnt_mtl_name ka_r [lindex $linespl {1}]
+			dict set materials $crnt_mtl_name ka_g [lindex $linespl {2}]
+			dict set materials $crnt_mtl_name ka_b  [lindex $linespl {3}]
+		}
+
+		# diffuse colour:
+		if { [lindex $linespl {0}] == "Kd" } {
+			
+			dict set materials $crnt_mtl_name kd_r [lindex $linespl {1}]
+			dict set materials $crnt_mtl_name kd_g [lindex $linespl {2}]
+			dict set materials $crnt_mtl_name kd_b  [lindex $linespl {3}]
+		}
+
+	}
+	close $mtlfile
+
+	# get number of materials:
+	set num_materials [llength [dict keys $materials]]
+	
+	# sanity check:
+	if { $num_materials > [expr [colorinfo max] - [colorinfo num]] } {
+		error "Number of materials exceeds number of available slots!"
+	}
+	
+	# loop over materials:
+	set idx [colorinfo num]
+	dict for {mtl def} $materials {
+
+		# change color definition:
+		dict with def {
+			color change rgb $idx $ka_r $ka_g $ka_b
+		}
+
+	    # add to index dictionary:
+		dict set colour_indeces $mtl $idx
+
+		# increment colour index:
+		incr idx
+	}
+	
+	# return dictionary of colour indeces:
+	return $colour_indeces
+}
+
+
 # Process for importing OBJ file.
 #
 # INPUT:
-# filename - name of obj file to import:
+# filename - name of OBJ file to import
 proc import_wavefront_obj {filename} {
 
     # prepare list of vertex coordinates:
@@ -24,6 +100,11 @@ proc import_wavefront_obj {filename} {
 	# prepare list of groups:
 	set group_names {}
 	set crnt_group_name "undefined_group"
+
+	# prepare list of materials:
+	set mtl_lib ""
+	set mtl_names {}
+	set crnt_mtl_name "undefined_material"
 
     # prepare list of list of vertex indices:
     set vertex_idx_a {}
@@ -43,11 +124,21 @@ proc import_wavefront_obj {filename} {
         # split line at space:
         set linespl [regexp -all -inline {\S+} $line]
 
+		# check for material libraries:
+		if { [lindex $linespl {0}] == "mtllib" } {
+			set mtl_lib [lindex $linespl {1}]
+		}
+
 		# check for new group:
 		if { [lindex $linespl {0}] == "g" } {
 			
 			set crnt_group_name [lindex $linespl {1}]
 			puts $crnt_group_name
+		}
+
+		# check for new material:
+		if { [lindex $linespl {0}] == "usemtl" } {
+			set crnt_mtl_name [lindex $linespl {1}]
 		}
 
         # check for vertex index:
@@ -82,8 +173,9 @@ proc import_wavefront_obj {filename} {
                 break
             }
 
-			# add group label for each face:
+			# add group and material label for each face:
 			lappend group_names $crnt_group_name
+			lappend mtl_names $crnt_mtl_name
 
             # have vertex normals?
             if { [string match *//* $linespl] } {
@@ -121,7 +213,7 @@ proc import_wavefront_obj {filename} {
                  $vertex_idx_a $vertex_idx_b $vertex_idx_c \
                  $vertex_normals_x $vertex_normals_y $vertex_normals_z \
                  $vertex_normal_idx_a $vertex_normal_idx_b $vertex_normal_idx_c \
-				 $group_names]
+				 $group_names $mtl_names $mtl_lib]
 }
 
 
@@ -223,6 +315,8 @@ proc setup_color_lookup_table { color_rgb } {
 # obj - list of lists containing vertices and faces
 proc draw_wavefront_obj {obj group_name scale_colors} {
 
+
+
     # extract information from OBJ object:
     set vert_x [lindex $obj 0]
     set vert_y [lindex $obj 1]
@@ -238,6 +332,8 @@ proc draw_wavefront_obj {obj group_name scale_colors} {
     set vertex_norm_idx_b [lindex $obj 11]
     set vertex_norm_idx_c [lindex $obj 12]
     set group_names [lindex $obj 13]
+    set mtl_names [lindex $obj 14]
+	set mtl_lib [lindex $obj 15]
 
     # sanity checks:
     if { [llength vertex_idx_a] != [llength vertex_idx_b] || \
@@ -251,6 +347,9 @@ proc draw_wavefront_obj {obj group_name scale_colors} {
         error "Enequal length vertex index lists."
     }
 
+	# change colours to match material definitions:
+	set mtl_color_indeces [WOBJ::import_wavefront_mtl $mtl_lib]
+
     # prepare the color lookup table:
     set color_lookup_table [setup_color_lookup_table $scale_colors]
     
@@ -260,23 +359,15 @@ proc draw_wavefront_obj {obj group_name scale_colors} {
     if { $num_vert_idx == $num_norm_idx } {
     
         # loop over faces and draw them:
-        foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c grp $group_names {
+        foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c grp $group_names mtl $mtl_names {
 
 			# matching group name?
 			if { $grp != $group_name } {
 				continue
 			}
 
-            # get vertex weights:
-            set wa [lindex $vert_w $ia]
-            set wb [lindex $vert_w $ib]
-            set wc [lindex $vert_w $ic]
-
-            # calculate face weight:
-            set face_weight [expr ($wa + $wb + $wc)/3.0]
-
-            # change color index accordingly:
-            draw color [color_index_from_scalar $face_weight $color_lookup_table]
+			# change color according to material:
+			draw color [dict get $mtl_color_indeces $mtl]
 
             # draw triangle with normals:
             draw trinorm "[lindex $vert_x $ia] [lindex $vert_y $ia] [lindex $vert_z $ia]" \
@@ -292,16 +383,8 @@ proc draw_wavefront_obj {obj group_name scale_colors} {
         # loop over faces and draw them:
         foreach ia $vertex_idx_a ib $vertex_idx_b ic $vertex_idx_c {
 
-            # get vertex weights:
-            set wa [lindex $vert_w $ia]
-            set wb [lindex $vert_w $ib]
-            set wc [lindex $vert_w $ic]
-
-            # calculate face weight:
-            set face_weight [expr ($wa + $wb + $wc)/3.0]
-
-            # change color index accordingly:
-            draw color [color_index_from_scalar $face_weight $color_lookup_table]
+   			# change color according to material:
+			draw color [dict get $mtl_color_indeces $mtl]
             
             draw triangle "[lindex $vert_x $ia] [lindex $vert_y $ia] [lindex $vert_z $ia]" \
                           "[lindex $vert_x $ib] [lindex $vert_y $ib] [lindex $vert_z $ib]" \
