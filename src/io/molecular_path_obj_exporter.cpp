@@ -8,6 +8,84 @@
 #include "io/molecular_path_obj_exporter.hpp"
 
 
+/*!
+ * Creates a names colour scale.
+ */
+ColourScale::ColourScale(std::string name)
+    : name_(name)
+{
+    
+}
+
+
+/*!
+ * Sets the palette, i.e. the finite set of RGB colours which will be 
+ * interpolated linearly to yield a continuous colour scale.
+ */
+void
+ColourScale::setPalette(std::vector<gmx::RVec> palette)
+{
+    palette_ = palette;
+}
+
+
+/*!
+ * Sets the range of the variable mapped through this colour scale.
+ */
+void
+ColourScale::setRange(real min, real max)
+{
+    rangeMin_ = min;
+    rangeMax_ = max;
+}
+
+
+/*!
+ * Sets the number of distinct colours in this scale.
+ */
+void
+ColourScale::setResolution(size_t res)
+{
+    numColours_ = res;
+}
+
+
+/*!
+ * Returns a map of named colours in the scale. Requires that setRange(), 
+ * setResolution(), and setPalette() have been called previously.
+ */
+std::map<std::string, gmx::RVec>
+ColourScale::getColours()
+{
+    // compute linear range of scalars:
+    std::map<std::string, gmx::RVec> colours;
+    for(int i = 0; i < numColours_; i++)
+    {
+        // scalar of this colour:
+        real scalar = i*(rangeMax_ - rangeMin_)/(numColours_) + rangeMin_;
+
+        // colour name is scale name plus index:
+        std::string colourName = name_ + std::to_string(i);
+
+        // colour from linear interpolation of palette:
+        colours[colourName] = scalarToColour(scalar);
+    }
+
+    return colours;
+}
+
+
+/*
+ *
+ */
+gmx::RVec
+ColourScale::scalarToColour(real scalar)
+{
+    // TODO: solve by interpolation of palette:
+    return gmx::RVec(0.0, 0.0, 0.0);
+}
+
+
 /*
  *
  */

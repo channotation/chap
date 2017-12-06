@@ -9,8 +9,13 @@
 #include <gromacs/utility/real.h>
 
 
-/*
+/*!
+ * \brief Representation of material in MTL format.
  *
+ * This is an abstract container for material specification in the Wavefront
+ * MTL format. 
+ *
+ * \note Currently only a small subset of material properties is supported.
  */
 class WavefrontMtlMaterial
 {
@@ -34,8 +39,11 @@ class WavefrontMtlMaterial
 };
 
 
-/*
+/*!
+ * \brief Abstract representation of an MTL file.
  *
+ * This is essentially a container for WavefrontMtlMaterials that serves to
+ * unify the input to WavefrontMtlExporter.
  */
 class WavefrontMtlObject
 {
@@ -53,8 +61,11 @@ class WavefrontMtlObject
 };
 
 
-/*
+/*!
+ * \brief Serialiser for material specification in Wavefront MTL format.
  *
+ * This class serves to write the material specifications contained in a
+ * WavefrontMtlObject to file.
  */
 class WavefrontMtlExporter
 {

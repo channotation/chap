@@ -16,6 +16,41 @@
 /*
  *
  */
+class ColourScale
+{
+    public:
+
+        // constructor:
+        ColourScale(std::string name);
+
+        // setter functions:
+        void setPalette();
+        void setRange(real min, real max);
+        void setResolution(size_t res);
+
+        // access all colours in scale:
+        std::map<std::string, gmx::RVec> getColours();
+
+        // convert scalar value to colour:
+        gmx::RVec scalarToColour(real scalar);
+
+    private:
+
+        // palette of colours between which to interpolate:
+        std::vector<gmx::RVec> palette_;
+
+        // scale properties:
+        std::string name_;
+        real rangeMin_;
+        real rangeMax_;
+        size_t numColours_;
+
+};
+
+
+/*
+ *
+ */
 class RegularVertexGrid
 {
     friend class MolecularPathObjExporter;
