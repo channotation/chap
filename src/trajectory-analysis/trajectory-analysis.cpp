@@ -991,14 +991,27 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 }
 
 
+/*
+ *
+ */
+void
+trajectoryAnalysis::initAfterFirstFrame(
+        const TrajectoryAnalysisSettings &settings,
+        const t_trxframe &fr)
+{
+
+}
 
 
 /*
  *
  */
 void
-trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
-                                 TrajectoryAnalysisModuleData *pdata)
+trajectoryAnalysis::analyzeFrame(
+        int frnr, 
+        const t_trxframe &fr, 
+        t_pbc *pbc,
+        TrajectoryAnalysisModuleData *pdata)
 {
 	// get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
@@ -1872,6 +1885,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             throw std::runtime_error(error);
         }
 
+        // copy first frame from here for OBJ output:
+        if( linesProcessed == 0 )
+        {
+            molPathAvg_.reset(new MolecularPath(lineDoc));
+        }
+
+
         // create molecular path:
         MolecularPath molPath(lineDoc);
 
@@ -2336,6 +2356,63 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // delete temporary file:
     std::remove(inFileName.c_str());
+
+
+    // EXPORT PATHWAY TO OBJ FILE
+    // ------------------------------------------------------------------------
+
+    // retrieve averaged properties:
+    std::vector<real> avgRadius;
+    std::vector<real> avgSolventDensity;
+    std::vector<real> avgEnergy;
+    std::vector<real> avgPlHydrophobicity;
+    std::vector<real> avgPfHydrophobicity;
+    for(size_t i = 0; i < supportPoints.size(); i++)
+    {
+        avgRadius.push_back(radiusSummary.at(i).mean());
+        avgSolventDensity.push_back(solventDensitySummary.at(i).mean());
+        avgEnergy.push_back(energySummary.at(i).mean());
+        avgPlHydrophobicity.push_back(plHydrophobicitySummary.at(i).mean());
+        avgPfHydrophobicity.push_back(pfHydrophobicitySummary.at(i).mean());
+    }
+
+    // averaged properties as spline curves:
+    CubicSplineInterp1D interp;
+    auto avgRadiusSpl = interp(
+            supportPoints, 
+            avgRadius, 
+            eSplineInterpBoundaryHermite);
+    auto avgSolventDensitySpl = interp(
+            supportPoints, 
+            avgSolventDensity, 
+            eSplineInterpBoundaryHermite);
+    auto avgEnergySpl = interp(
+            supportPoints, 
+            avgEnergy, 
+            eSplineInterpBoundaryHermite);
+    auto avgPlHydrophobicitySpl = interp(
+            supportPoints, 
+            avgPlHydrophobicity, 
+            eSplineInterpBoundaryHermite);
+    auto avgPfHydrophobicitySpl = interp(
+            supportPoints, 
+            avgPfHydrophobicity, 
+            eSplineInterpBoundaryHermite);
+
+
+    // associate properties with pathway:
+    molPathAvg_ -> addScalarProperty("avg_radius", avgRadiusSpl);
+    molPathAvg_ -> addScalarProperty("avg_density", avgSolventDensitySpl);
+    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl);
+    molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl);
+    molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl);
+
+    // export pathway to file:
+    MolecularPathObjExporter mpexp;
+    mpexp(
+        objOutputFileName_, 
+        "time_averaged_molecular_path", 
+        *molPathAvg_);
 }
 
 

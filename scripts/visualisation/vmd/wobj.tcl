@@ -47,6 +47,7 @@ proc import_wavefront_obj {filename} {
 		if { [lindex $linespl {0}] == "g" } {
 			
 			set crnt_group_name [lindex $linespl {1}]
+			puts $crnt_group_name
 		}
 
         # check for vertex index:

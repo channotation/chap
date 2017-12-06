@@ -403,7 +403,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
     // define resolution:
     int numPhi = 30;
-    int numLen = std::pow(2, 8) + 1;
+    int numLen = std::pow(2, 7) + 1;
     std::pair<size_t, size_t> resolution(numLen, numPhi);
     
     // pathway geometry:
