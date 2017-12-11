@@ -78,6 +78,16 @@ ColourScale::getColours()
 /*
  *
  */
+std::string
+ColourScale::scalarToColourName(real scalar)
+{
+    return "red";
+}
+
+
+/*
+ *
+ */
 gmx::RVec
 ColourScale::scalarToColour(real scalar)
 {
@@ -383,6 +393,17 @@ RegularVertexGrid::faces(
                                "number of vertices.");
     }
 
+    std::vector<gmx::RVec> pal = {gmx::RVec(0,0,0), gmx::RVec(1,1,1)};
+
+    // prepare colour scale:
+    ColourScale colScale(p);
+    colScale.setRange(
+            (*std::min_element(weights_.begin(), weights_.end())).second, 
+            (*std::max_element(weights_.begin(), weights_.end())).second);
+    colScale.setResolution(100);
+    colScale.setPalette(pal);
+    colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
+
     // number of vertices per property grid:
     size_t propIdx = std::distance(p_.begin(), find(p_.begin(), p_.end(), p));
     size_t vertOffset = s_.size() * phi_.size() * propIdx;
@@ -402,29 +423,42 @@ RegularVertexGrid::faces(
             int ktl = kbl + phi_.size();
             int ktr = kbr + phi_.size();
 
-            // TODO
-            std::string mtlName("red");
+            // vertex keys: // TODO
+            std::tuple<size_t, size_t, std::string> keyA(i, j, p);
+            std::tuple<size_t, size_t, std::string> keyB(i, j, p);
+            std::tuple<size_t, size_t, std::string> keyC(i, j, p);
+            std::tuple<size_t, size_t, std::string> keyD(i, j, p);
+
+            // face weight is average of vertex weights:
+            real scalarA = weights_[keyA] + weights_[keyB] + weights_[keyC];
+            real scalarB = weights_[keyA] + weights_[keyB] + weights_[keyC];
+            scalarA /= 3.0;
+            scalarB /= 3.0;
+
+            // name of material from colour scale:
+            std::string mtlNameA = colScale.scalarToColourName(scalarA); 
+            std::string mtlNameB = colScale.scalarToColourName(scalarB); 
 
             // two faces per square:
             if( normals_.empty() )
             {
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1},
-                        mtlName) );
+                        mtlNameA) );
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, kbr + 1, ktr + 1},
-                        mtlName) );
+                        mtlNameB) );
             }
             else
             {
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, ktr + 1, ktl + 1},
                         {kbl + 1, ktr + 1, ktl + 1},
-                        mtlName) );
+                        mtlNameA) );
                 faces.push_back( WavefrontObjFace(
                         {kbl + 1, kbr + 1, ktr + 1},
                         {kbl + 1, kbr + 1, ktr + 1},
-                        mtlName) );
+                        mtlNameB) );
             }
         }
     }
@@ -438,18 +472,31 @@ RegularVertexGrid::faces(
         int ktl = kbl + phi_.size();
         int ktr = kbr + phi_.size();
 
-        // TODO
-        std::string mtlName("blue");
+        // vertex keys: // TODO
+        std::tuple<size_t, size_t, std::string> keyA(i, i, p);
+        std::tuple<size_t, size_t, std::string> keyB(i, i, p);
+        std::tuple<size_t, size_t, std::string> keyC(i, i, p);
+        std::tuple<size_t, size_t, std::string> keyD(i, i, p);
+
+        // face weight is average of vertex weights:
+        real scalarA = weights_[keyA] + weights_[keyB] + weights_[keyC];
+        real scalarB = weights_[keyA] + weights_[keyB] + weights_[keyC];
+        scalarA /= 3.0;
+        scalarB /= 3.0;
+
+        // name of material from colour scale:
+        std::string mtlNameA = colScale.scalarToColourName(scalarA); 
+        std::string mtlNameB = colScale.scalarToColourName(scalarB); 
 
         // two faces per square:
         if( normals_.empty() )
         {
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1},
-                    mtlName) );
+                    mtlNameA) );
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, kbr + 1, ktr + 1},
-                    mtlName) );
+                    mtlNameB) );
         }
         else
         {
@@ -457,11 +504,11 @@ RegularVertexGrid::faces(
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, ktr + 1, ktl + 1},
                     {kbl + 1, ktr + 1, ktl + 1},
-                    mtlName) );
+                    mtlNameA) );
             faces.push_back( WavefrontObjFace(
                     {kbl + 1, kbr + 1, ktr + 1},
                     {kbl + 1, kbr + 1, ktr + 1},
-                    mtlName) );
+                    mtlNameB) );
         }
     }
 
@@ -543,6 +590,23 @@ MolecularPathObjExporter::operator()(std::string fileName,
         obj.addVertices(vertices);
         obj.addVertexNormals(vertexNormals);
         obj.addGroup(group);
+
+        // obtain colour scale for this property:
+        auto colScale = grid.colourScale(prop.first);
+        auto colours = colScale.getColours();
+
+        // create material for each colour in this scale:
+        for(auto col : colours)
+        {
+            // create material corresponding to colour:
+            WavefrontMtlMaterial material(col.first);
+            material.setAmbientColour(col.second);
+            material.setDiffuseColour(col.second);
+            material.setSpecularColour(col.second);
+
+            // add to material file:
+            mtl.addMaterial(material);
+        }
     }
 
 

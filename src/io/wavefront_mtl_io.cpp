@@ -2,6 +2,19 @@
 
 
 /*!
+ * Constructs a material with the given name.
+ */
+WavefrontMtlMaterial::WavefrontMtlMaterial(std::string name)
+    : name_(name)
+    , ambientColour_(gmx::RVec(0.5, 0.5, 0.5))
+    , diffuseColour_(gmx::RVec(0.5, 0.5, 0.5))
+    , specularColour_(gmx::RVec(0.5, 0.5, 0.5))
+{
+
+}
+
+
+/*!
  *  Sets the materials ambient colour in RGB coordinates.
  */
 void

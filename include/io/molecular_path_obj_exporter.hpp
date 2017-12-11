@@ -24,7 +24,7 @@ class ColourScale
         ColourScale(std::string name);
 
         // setter functions:
-        void setPalette();
+        void setPalette(std::vector<gmx::RVec> palette);
         void setRange(real min, real max);
         void setResolution(size_t res);
 
@@ -32,6 +32,7 @@ class ColourScale
         std::map<std::string, gmx::RVec> getColours();
 
         // convert scalar value to colour:
+        std::string scalarToColourName(real scalar);
         gmx::RVec scalarToColour(real scalar);
 
     private:
@@ -84,6 +85,8 @@ class RegularVertexGrid
                 std::string p);
         std::vector<WavefrontObjFace> faces(
                 std::string p);
+        ColourScale colourScale(
+                std::string p);
 
     private:
 
@@ -94,6 +97,7 @@ class RegularVertexGrid
         const std::vector<real> s_;
         std::unordered_set<std::string> p_;
 
+        std::map<std::string, ColourScale> colourScales_;
 
         std::map<std::tuple<size_t, size_t, std::string>, gmx::RVec> vertices_;
         std::map<std::tuple<size_t, size_t, std::string>, real> weights_;
