@@ -10,143 +10,6 @@
 #include "io/molecular_path_obj_exporter.hpp"
 
 
-/*!
- * Creates a names colour scale.
- */
-ColourScale::ColourScale(std::string name)
-    : name_(name)
-{
-    
-}
-
-
-/*!
- * Sets the palette, i.e. the finite set of RGB colours which will be 
- * interpolated linearly to yield a continuous colour scale.
- */
-void
-ColourScale::setPalette(std::vector<gmx::RVec> palette)
-{
-    palette_ = palette;
-}
-
-
-/*!
- * Sets the range of the variable mapped through this colour scale.
- */
-void
-ColourScale::setRange(real min, real max)
-{
-    // sanity check:
-    if( min > max )
-    {
-        throw std::logic_error("Lower range limit must be smaller than upper "
-                               "range limit.");
-    }
-
-    rangeMin_ = min;
-    rangeMax_ = max;
-}
-
-
-/*!
- * Sets the number of distinct colours in this scale.
- */
-void
-ColourScale::setResolution(size_t res)
-{
-    numColours_ = res;
-
-    // rebuild colour names:
-    std::stringstream ss;
-    colourNames_.resize(numColours_);
-    for(size_t i = 0; i < numColours_; i++)
-    {
-        ss<<"_"<<std::setw(4)<<std::setfill('0')<<i;
-        colourNames_[i] = name_ + ss.str();
-        ss.str(std::string());
-        ss.clear();
-    }
-}
-
-
-/*!
- * Returns a map of named colours in the scale. Requires that setRange(), 
- * setResolution(), and setPalette() have been called previously.
- */
-std::map<std::string, gmx::RVec>
-ColourScale::getColours()
-{
-    // associate each colour in the palette with a scalar value:
-    std::vector<real> paletteValues;
-    paletteValues.reserve(palette_.size());
-    for(size_t i = 0; i < palette_.size(); i++)
-    {
-        real tmp = i*(rangeMax_ - rangeMin_)/(palette_.size() - 1) + rangeMin_;
-        paletteValues.push_back( tmp );
-    }
-
-    // compute linear range of scalars:
-    std::map<std::string, gmx::RVec> colours;
-    for(int i = 0; i < colourNames_.size(); i++)
-    {
-        // scalar of this colour:
-        real scalar = i*(rangeMax_ - rangeMin_)/(colourNames_.size() - 1);
-        scalar += rangeMin_;
-
-        // get interval boundaries:
-        auto lb = std::lower_bound(
-                paletteValues.begin(),
-                paletteValues.end(),
-                scalar);
-        if( std::next(lb) == paletteValues.end() )
-        {
-            lb--;
-        }
-        size_t idxLo = std::distance(paletteValues.begin(), lb);
-        size_t idxHi = idxLo + 1;
-
-        // scaling factor for linear interpolation:
-        real alpha = (scalar - paletteValues[idxLo]);
-        alpha /= (paletteValues[idxHi] - paletteValues[idxLo]); 
-
-        // interpolate palette colours:
-        gmx::RVec colLo = palette_.at(idxLo);
-        gmx::RVec colHi = palette_.at(idxHi);
-        svmul(1.0 - alpha, colLo, colLo);
-        svmul(alpha, colHi, colHi);
-        gmx::RVec colInterp;
-        rvec_add(colLo, colHi, colInterp);
-
-        // colour from linear interpolation of palette:
-        colours[colourNames_[i]] = colInterp;
-    }
-
-    return colours;
-}
-
-
-/*
- *
- */
-std::string
-ColourScale::scalarToColourName(real scalar)
-{
-    // sanity checks:
-    if( scalar < rangeMin_ || scalar > rangeMax_ )
-    {
-        throw std::logic_error("Value outside scale range encountered.");
-    }
-
-    // determine index of colour name:
-    int idx = (numColours_ - 1)*(scalar - rangeMin_) / (rangeMax_ - rangeMin_);
-
-    // return appropriate colour name:
-    return colourNames_.at(idx);
-}
-
-
-
 /*
  *
  */
@@ -201,33 +64,6 @@ RegularVertexGrid::addVertexNormal(
     std::tuple<size_t, size_t, std::string> key(i, j, p);
     normals_[key] = normal;
 }
-
-
-
-/*
- *
- */
-void
-RegularVertexGrid::addColourScale(
-        std::string p,
-        std::vector<real> prop,
-        std::vector<gmx::RVec> palette)
-{
-    // build named colour scale:
-    ColourScale colScale(p);
-
-    // transfer palette:
-    colScale.setPalette(palette);
-
-    // set range appropriate for property:
-    colScale.setRange(*std::min_element(prop.begin(), prop.end()),
-                      *std::max_element(prop.begin(), prop.end()));
-
-    // add to property storage:
-    colourScales_.emplace(p, colScale);
-}
-
-
 
 
 /*
@@ -485,8 +321,6 @@ RegularVertexGrid::faces(
         throw std::logic_error("Number of vertex normals does not equal "
                                "number of vertices.");
     }
-
-    std::vector<gmx::RVec> pal = {gmx::RVec(1,1,1), gmx::RVec(0,0,1)};
     
     // find scalar property data range:
     real minRange = std::numeric_limits<real>::max();
@@ -507,7 +341,6 @@ RegularVertexGrid::faces(
     ColourScale colScale(p);
     colScale.setRange(minRange, maxRange);
     colScale.setResolution(100);
-    colScale.setPalette(pal);
     colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
 
     // number of vertices per property grid:
@@ -542,14 +375,6 @@ RegularVertexGrid::faces(
             scalarB /= 3.0;
 
             // name of material from colour scale:
-            /*
-            std::cout<<"scalarA = "<<scalarA<<"  "
-                     <<"scalarB = "<<scalarB<<"  "
-                     <<"wA = "<<weights_[keyBl]<<"  "
-                     <<"wB = "<<weights_[keyBr]<<"  "
-                     <<"wC = "<<weights_[keyTl]<<"  "
-                     <<"wC = "<<weights_[keyTr]<<"  "
-                     <<std::endl;*/
             std::string mtlNameA = colScale.scalarToColourName(scalarA); 
             std::string mtlNameB = colScale.scalarToColourName(scalarB); 
 
@@ -586,11 +411,11 @@ RegularVertexGrid::faces(
         int ktl = kbl + phi_.size();
         int ktr = kbr + phi_.size();
 
-        // vertex keys: // TODO
-        std::tuple<size_t, size_t, std::string> keyBl(i, 0, p);
+        // vertex keys:
+        std::tuple<size_t, size_t, std::string> keyBl(i, phi_.size() - 1, p);
         std::tuple<size_t, size_t, std::string> keyBr(i, 0, p);
-        std::tuple<size_t, size_t, std::string> keyTl(i, 0, p);
-        std::tuple<size_t, size_t, std::string> keyTr(i, 0, p);
+        std::tuple<size_t, size_t, std::string> keyTl(i + 1, phi_.size() - 1, p);
+        std::tuple<size_t, size_t, std::string> keyTr(i + 1, 0, p);
 
         // face weight is average of vertex weights:
         real scalarA = weights_[keyBl] + weights_[keyTr] + weights_[keyTl];
@@ -599,15 +424,6 @@ RegularVertexGrid::faces(
         scalarB /= 3.0;
 
         // name of material from colour scale:
-        /*
-            std::cout<<"scalarA = "<<scalarA<<"  "
-                     <<"scalarB = "<<scalarB<<"  "
-                     <<"wA = "<<weights_[keyBl]<<"  "
-                     <<"wB = "<<weights_[keyBr]<<"  "
-                     <<"wC = "<<weights_[keyTl]<<"  "
-                     <<"wC = "<<weights_[keyTr]<<"  "
-                     <<std::endl;
-                     */
         std::string mtlNameA = colScale.scalarToColourName(scalarA); 
         std::string mtlNameB = colScale.scalarToColourName(scalarB); 
 
@@ -654,17 +470,21 @@ MolecularPathObjExporter::MolecularPathObjExporter()
  *
  */
 void
-MolecularPathObjExporter::operator()(std::string fileName,
-                                     std::string objectName,
-                                     MolecularPath &molPath)
+MolecularPathObjExporter::operator()(
+        std::string fileName,
+        std::string objectName,
+        MolecularPath &molPath,
+        std::map<std::string, ColourPalette> palettes)
 {
+    std::cout<<"EXPORT"<<std::endl;
+
     // define evaluation range:   
     real extrapDist = 0.0;
     std::pair<real, real> range(molPath.sLo() - extrapDist,
                                 molPath.sHi() + extrapDist);
 
     // define resolution:
-    int numPhi = 30;
+    int numPhi = 30*2;
     int numLen = std::pow(2, 7) + 1;
     std::pair<size_t, size_t> resolution(numLen, numPhi);
     
@@ -716,6 +536,7 @@ MolecularPathObjExporter::operator()(std::string fileName,
 
         // obtain colour scale for this property:
         auto colScale = grid.colourScale(prop.first);
+        colScale.setPalette(palettes.at(prop.first));
         auto colours = colScale.getColours();
 
         // create material for each colour in this scale:
@@ -884,7 +705,6 @@ MolecularPathObjExporter::generatePropertyGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        std::cout<<"prop = "<<prop.at(idxLen)<<std::endl;
         grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
     }
 
@@ -908,7 +728,6 @@ MolecularPathObjExporter::generatePropertyGrid(
         vertRing[k] = vertex;
 
         // add to grid:
-        std::cout<<"prop = "<<prop.at(idxLen)<<std::endl;
         grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
     }
 
@@ -943,7 +762,6 @@ MolecularPathObjExporter::generatePropertyGrid(
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
-                std::cout<<"prop = "<<prop.at(idxLen)<<std::endl;
                 grid.addVertex(
                         idxLen, 
                         k, 

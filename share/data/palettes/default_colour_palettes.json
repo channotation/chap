@@ -1,0 +1,12 @@
+{
+    "palettes": [
+        {"property": "radius", "palette": {"val":[0.0, 1.0], "r":[0.0, 1.0], "g":[0.0, 1.0], "b":[0.0, 1.0]}},
+        {"property": "avg_radius", "palette": {"val":[0.0, 1.0], "r":[0.0, 0.0], "g":[0.0, 0.0], "b":[0.0, 1.0]}},
+        {"property": "avg_density", "palette": {"val":[0.0, 1.0], "r":[0.0, 0.0], "g":[0.0, 1.0], "b":[0.0, 0.0]}},
+        {"property": "avg_energy", "palette": {"val":[0.0, 1.0], "r":[0.0, 1.0], "g":[0.0, 1.0], "b":[0.0, 1.0]}},
+        {"property": "avg_pl_hydrophobicity", "palette": {"val":[0.0, 1.0], "r":[0.0, 1.0], "g":[0.0, 1.0], "b":[0.0, 1.0]}},
+        {"property": "avg_pf_hydrophobicity", "palette": {"val":[0.0, 1.0], "r":[0.0, 1.0], "g":[0.0, 1.0], "b":[0.0, 1.0]}},
+        {"property": "solid", "palette": {"val":[1.0, 1.0], "r":[1.0, 1.0], "g":[1.0, 1.0], "b":[1.0, 1.0]}},
+        {"property": "default", "palette": {"val":[0.0, 1.0], "r":[0.0, 1.0], "g":[0.0, 1.0], "b":[0.0, 1.0]}}
+    ]
+}

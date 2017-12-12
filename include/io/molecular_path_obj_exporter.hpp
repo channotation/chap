@@ -9,44 +9,9 @@
 #include <gtest/gtest.h>
 
 #include "path-finding/molecular_path.hpp"
+#include "io/colour.hpp"
 #include "io/wavefront_mtl_io.hpp"
 #include "io/wavefront_obj_io.hpp"
-
-
-/*
- *
- */
-class ColourScale
-{
-    public:
-
-        // constructor:
-        ColourScale(std::string name);
-
-        // setter functions:
-        void setPalette(std::vector<gmx::RVec> palette);
-        void setRange(real min, real max);
-        void setResolution(size_t res);
-
-        // access all colours in scale:
-        std::map<std::string, gmx::RVec> getColours();
-
-        // convert scalar value to colour:
-        std::string scalarToColourName(real scalar);
-        gmx::RVec scalarToColour(real scalar);
-
-    private:
-
-        // palette of colours between which to interpolate:
-        std::vector<gmx::RVec> palette_;
-
-        // scale properties:
-        std::string name_;
-        real rangeMin_;
-        real rangeMax_;
-        size_t numColours_;
-        std::vector<std::string> colourNames_;
-};
 
 
 /*
@@ -132,9 +97,11 @@ class MolecularPathObjExporter
         MolecularPathObjExporter();
 
         // interface for exporting:
-        void operator()(std::string fileName,
-                        std::string objectName,
-                        MolecularPath &molPath);
+        void operator()(
+                std::string fileName,
+                std::string objectName,
+                MolecularPath &molPath,
+                std::map<std::string, ColourPalette> palettes);
 
 
     private:

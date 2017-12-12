@@ -1606,12 +1606,12 @@ trajectoryAnalysis::analyzeFrame(
     //-------------------------------------------------------------------------
 
     // TODO: this should be moved to a separate binary!
-
+/*
     MolecularPathObjExporter molPathExp;
     molPathExp(objOutputFileName_.c_str(),
                "molecular_pathway",
                molPath);
-
+*/
 
     // ADD TIMING DATA TO DATA HANDLE
     //-------------------------------------------------------------------------
@@ -2407,12 +2407,19 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl);
     molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl);
 
+
+    auto palettes = ColourPaletteProvider::fromJsonFile("/sansom/s117/scro2967/repos/chap/share/data/palettes/default_colour_palettes.json");
+
+
+    std::cout<<"PALETTES IMPORTED"<<std::endl;
+
     // export pathway to file:
     MolecularPathObjExporter mpexp;
     mpexp(
         objOutputFileName_, 
         "time_averaged_molecular_path", 
-        *molPathAvg_);
+        *molPathAvg_,
+        palettes);
 }
 
 
