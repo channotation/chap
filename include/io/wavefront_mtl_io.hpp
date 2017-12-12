@@ -24,7 +24,7 @@ class WavefrontMtlMaterial
     public:
 
         // constructor::
-        WavefrontMtlMaterial(std::strinf name);
+        WavefrontMtlMaterial(std::string name);
 
         // setter functions for material properties:
         void setAmbientColour(gmx::RVec col);

@@ -21,6 +21,7 @@ class ColourScale
     public:
 
         // constructor:
+        ColourScale();
         ColourScale(std::string name);
 
         // setter functions:
@@ -45,7 +46,7 @@ class ColourScale
         real rangeMin_;
         real rangeMax_;
         size_t numColours_;
-
+        std::vector<std::string> colourNames_;
 };
 
 
@@ -73,6 +74,10 @@ class RegularVertexGrid
                 size_t j,
                 std::string p,
                 gmx::RVec normal);
+        void addColourScale(
+                std::string p,
+                std::vector<real> prop,
+                std::vector<gmx::RVec> palette);
 
         void interpolateMissing();
         void normalsFromFaces();

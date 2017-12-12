@@ -92,7 +92,7 @@ WavefrontMtlExporter::writeMaterialName(std::string name)
 void
 WavefrontMtlExporter::writeAmbientColour(const gmx::RVec &col)
 {
-    file_<<"Ka "<<col[XX]<<" "<<col[YY]<<"  "<<col[ZZ]<<std::endl;
+    file_<<"Ka "<<col[XX]<<" "<<col[YY]<<" "<<col[ZZ]<<std::endl;
 }
 
 
@@ -102,7 +102,7 @@ WavefrontMtlExporter::writeAmbientColour(const gmx::RVec &col)
 void
 WavefrontMtlExporter::writeDiffuseColour(const gmx::RVec &col)
 {
-    file_<<"Kd "<<col[XX]<<" "<<col[YY]<<"  "<<col[ZZ]<<std::endl;
+    file_<<"Kd "<<col[XX]<<" "<<col[YY]<<" "<<col[ZZ]<<std::endl;
 }
 
 
@@ -112,6 +112,6 @@ WavefrontMtlExporter::writeDiffuseColour(const gmx::RVec &col)
 void
 WavefrontMtlExporter::writeSpecularColour(const gmx::RVec &col)
 {
-    file_<<"Ks "<<col[XX]<<" "<<col[YY]<<"  "<<col[ZZ]<<std::endl;
+    file_<<"Ks "<<col[XX]<<" "<<col[YY]<<" "<<col[ZZ]<<std::endl;
 }
 

@@ -2403,7 +2403,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // associate properties with pathway:
     molPathAvg_ -> addScalarProperty("avg_radius", avgRadiusSpl);
     molPathAvg_ -> addScalarProperty("avg_density", avgSolventDensitySpl);
-    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl);
+//    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl);
     molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl);
     molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl);
 

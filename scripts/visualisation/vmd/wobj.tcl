@@ -368,6 +368,7 @@ proc draw_wavefront_obj {obj group_name scale_colors} {
 
 			# change color according to material:
 			draw color [dict get $mtl_color_indeces $mtl]
+#			draw color red
 
             # draw triangle with normals:
             draw trinorm "[lindex $vert_x $ia] [lindex $vert_y $ia] [lindex $vert_z $ia]" \

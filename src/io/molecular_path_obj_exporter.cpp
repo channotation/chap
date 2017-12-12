@@ -35,6 +35,13 @@ ColourScale::setPalette(std::vector<gmx::RVec> palette)
 void
 ColourScale::setRange(real min, real max)
 {
+    // sanity check:
+    if( min > max )
+    {
+        throw std::logic_error("Lower range limit must be smaller than upper "
+                               "range limit.");
+    }
+
     rangeMin_ = min;
     rangeMax_ = max;
 }
@@ -47,6 +54,13 @@ void
 ColourScale::setResolution(size_t res)
 {
     numColours_ = res;
+
+    // rebuild colour names:
+    colourNames_.resize(numColours_);
+    for(size_t i = 0; i < numColours_; i++)
+    {
+        colourNames_[i] = name_ + "_" + std::to_string(i);
+    }
 }
 
 
@@ -57,18 +71,49 @@ ColourScale::setResolution(size_t res)
 std::map<std::string, gmx::RVec>
 ColourScale::getColours()
 {
+    // associate each colour in the palette with a scalar value:
+    std::vector<real> paletteValues;
+    paletteValues.reserve(palette_.size());
+    for(size_t i = 0; i < palette_.size(); i++)
+    {
+        real tmp = i*(rangeMax_ - rangeMin_)/(palette_.size() - 1) + rangeMin_;
+        paletteValues.push_back( tmp );
+    }
+
     // compute linear range of scalars:
     std::map<std::string, gmx::RVec> colours;
-    for(int i = 0; i < numColours_; i++)
+    for(int i = 0; i < colourNames_.size(); i++)
     {
         // scalar of this colour:
-        real scalar = i*(rangeMax_ - rangeMin_)/(numColours_) + rangeMin_;
+        real scalar = i*(rangeMax_ - rangeMin_)/(colourNames_.size() - 1);
+        scalar += rangeMin_;
 
-        // colour name is scale name plus index:
-        std::string colourName = name_ + std::to_string(i);
+        // get interval boundaries:
+        auto lb = std::lower_bound(
+                paletteValues.begin(),
+                paletteValues.end(),
+                scalar);
+        if( std::next(lb) == paletteValues.end() )
+        {
+            lb--;
+        }
+        size_t idxLo = std::distance(paletteValues.begin(), lb);
+        size_t idxHi = idxLo + 1;
+
+        // scaling factor for linear interpolation:
+        real alpha = (scalar - paletteValues[idxLo]);
+        alpha /= (paletteValues[idxHi] - paletteValues[idxLo]); 
+
+        // interpolate palette colours:
+        gmx::RVec colLo = palette_.at(idxLo);
+        gmx::RVec colHi = palette_.at(idxHi);
+        svmul(1.0 - alpha, colLo, colLo);
+        svmul(alpha, colHi, colHi);
+        gmx::RVec colInterp;
+        rvec_add(colLo, colHi, colInterp);
 
         // colour from linear interpolation of palette:
-        colours[colourName] = scalarToColour(scalar);
+        colours[colourNames_[i]] = colInterp;
     }
 
     return colours;
@@ -81,19 +126,19 @@ ColourScale::getColours()
 std::string
 ColourScale::scalarToColourName(real scalar)
 {
-    return "red";
+    // sanity checks:
+    if( scalar < rangeMin_ || scalar > rangeMax_ )
+    {
+        throw std::logic_error("Value outside scale range encountered.");
+    }
+
+    // determine index of colour name:
+    int idx = (numColours_ - 1)*(scalar - rangeMin_) / (rangeMax_ - rangeMin_);
+
+    // return appropriate colour name:
+    return colourNames_.at(idx);
 }
 
-
-/*
- *
- */
-gmx::RVec
-ColourScale::scalarToColour(real scalar)
-{
-    // TODO: solve by interpolation of palette:
-    return gmx::RVec(0.0, 0.0, 0.0);
-}
 
 
 /*
@@ -120,6 +165,15 @@ RegularVertexGrid::addVertex(
         gmx::RVec vertex, 
         real weight)
 {
+    if( std::isnan(weight) )
+    {
+        std::cout<<"i = "<<i<<"  "
+                 <<"j = "<<j<<"  "
+                 <<"p = "<<p<<"  "
+                 <<std::endl;
+        throw std::logic_error("weight is nan");
+    }
+
     p_.insert(p);
     std::tuple<size_t, size_t, std::string> key(i, j, p);
     vertices_[key] = vertex;
@@ -144,6 +198,28 @@ RegularVertexGrid::addVertexNormal(
 
 
 
+/*
+ *
+ */
+void
+RegularVertexGrid::addColourScale(
+        std::string p,
+        std::vector<real> prop,
+        std::vector<gmx::RVec> palette)
+{
+    // build named colour scale:
+    ColourScale colScale(p);
+
+    // transfer palette:
+    colScale.setPalette(palette);
+
+    // set range appropriate for property:
+    colScale.setRange(*std::min_element(prop.begin(), prop.end()),
+                      *std::max_element(prop.begin(), prop.end()));
+
+    // add to property storage:
+    colourScales_.emplace(p, colScale);
+}
 
 
 
@@ -327,6 +403,17 @@ RegularVertexGrid::normalsFromFaces()
 /*
  *
  */
+ColourScale
+RegularVertexGrid::colourScale(std::string p)
+{
+    return colourScales_.at(p);
+}
+
+
+
+/*
+ *
+ */
 void
 RegularVertexGrid::addTriangleNorm(
         const gmx::RVec &sideA,
@@ -393,13 +480,43 @@ RegularVertexGrid::faces(
                                "number of vertices.");
     }
 
-    std::vector<gmx::RVec> pal = {gmx::RVec(0,0,0), gmx::RVec(1,1,1)};
+    std::vector<gmx::RVec> pal = {gmx::RVec(1,1,1), gmx::RVec(0,0,1)};
+
+    // find largest and smallest weight:
+    auto range = std::minmax_element(weights_.begin(),
+                                     weights_.end(),
+                                     [](decltype(weights_)::value_type& l, 
+                                        decltype(weights_)::value_type& r) -> 
+                                        bool { return l.second < r.second; });
+
+    
+    //
+    real minRange = std::numeric_limits<real>::max();
+    real maxRange = std::numeric_limits<real>::min();
+    for(auto it = weights_.begin(); it != weights_.end(); it++)
+    {
+        if( it -> second < minRange )
+        {
+            minRange = it -> second;
+        }
+        if( it -> second > maxRange )
+        {
+            maxRange = it -> second;
+        }
+    }
+
+
+    std::cout<<"min = "<<(*std::min_element(weights_.begin(), weights_.end())).second<<"  "
+             <<"max = "<<(*std::max_element(weights_.begin(), weights_.end())).second<<"  "
+             <<"min = "<<range.first -> second <<"  "
+             <<"max = "<<range.second -> second <<"  "
+             <<"min = "<<minRange<<"  "
+             <<"max = "<<maxRange<<"  "
+             <<std::endl;
 
     // prepare colour scale:
     ColourScale colScale(p);
-    colScale.setRange(
-            (*std::min_element(weights_.begin(), weights_.end())).second, 
-            (*std::max_element(weights_.begin(), weights_.end())).second);
+    colScale.setRange(minRange, maxRange);
     colScale.setResolution(100);
     colScale.setPalette(pal);
     colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
@@ -423,19 +540,27 @@ RegularVertexGrid::faces(
             int ktl = kbl + phi_.size();
             int ktr = kbr + phi_.size();
 
-            // vertex keys: // TODO
-            std::tuple<size_t, size_t, std::string> keyA(i, j, p);
-            std::tuple<size_t, size_t, std::string> keyB(i, j, p);
-            std::tuple<size_t, size_t, std::string> keyC(i, j, p);
-            std::tuple<size_t, size_t, std::string> keyD(i, j, p);
+            // vertex keys:
+            std::tuple<size_t, size_t, std::string> keyBl(i,     j,     p);
+            std::tuple<size_t, size_t, std::string> keyBr(i,     j + 1, p);
+            std::tuple<size_t, size_t, std::string> keyTl(i + 1, j,     p);
+            std::tuple<size_t, size_t, std::string> keyTr(i + 1, j + 1, p);
 
             // face weight is average of vertex weights:
-            real scalarA = weights_[keyA] + weights_[keyB] + weights_[keyC];
-            real scalarB = weights_[keyA] + weights_[keyB] + weights_[keyC];
+            real scalarA = weights_.at(keyBl) + weights_.at(keyTr) + weights_.at(keyTl);
+            real scalarB = weights_.at(keyBl) + weights_.at(keyBr) + weights_.at(keyTr);
             scalarA /= 3.0;
             scalarB /= 3.0;
 
             // name of material from colour scale:
+            /*
+            std::cout<<"scalarA = "<<scalarA<<"  "
+                     <<"scalarB = "<<scalarB<<"  "
+                     <<"wA = "<<weights_[keyBl]<<"  "
+                     <<"wB = "<<weights_[keyBr]<<"  "
+                     <<"wC = "<<weights_[keyTl]<<"  "
+                     <<"wC = "<<weights_[keyTr]<<"  "
+                     <<std::endl;*/
             std::string mtlNameA = colScale.scalarToColourName(scalarA); 
             std::string mtlNameB = colScale.scalarToColourName(scalarB); 
 
@@ -473,18 +598,27 @@ RegularVertexGrid::faces(
         int ktr = kbr + phi_.size();
 
         // vertex keys: // TODO
-        std::tuple<size_t, size_t, std::string> keyA(i, i, p);
-        std::tuple<size_t, size_t, std::string> keyB(i, i, p);
-        std::tuple<size_t, size_t, std::string> keyC(i, i, p);
-        std::tuple<size_t, size_t, std::string> keyD(i, i, p);
+        std::tuple<size_t, size_t, std::string> keyBl(i, 0, p);
+        std::tuple<size_t, size_t, std::string> keyBr(i, 0, p);
+        std::tuple<size_t, size_t, std::string> keyTl(i, 0, p);
+        std::tuple<size_t, size_t, std::string> keyTr(i, 0, p);
 
         // face weight is average of vertex weights:
-        real scalarA = weights_[keyA] + weights_[keyB] + weights_[keyC];
-        real scalarB = weights_[keyA] + weights_[keyB] + weights_[keyC];
+        real scalarA = weights_[keyBl] + weights_[keyTr] + weights_[keyTl];
+        real scalarB = weights_[keyBl] + weights_[keyBr] + weights_[keyTr];
         scalarA /= 3.0;
         scalarB /= 3.0;
 
         // name of material from colour scale:
+        /*
+            std::cout<<"scalarA = "<<scalarA<<"  "
+                     <<"scalarB = "<<scalarB<<"  "
+                     <<"wA = "<<weights_[keyBl]<<"  "
+                     <<"wB = "<<weights_[keyBr]<<"  "
+                     <<"wC = "<<weights_[keyTl]<<"  "
+                     <<"wC = "<<weights_[keyTr]<<"  "
+                     <<std::endl;
+                     */
         std::string mtlNameA = colScale.scalarToColourName(scalarA); 
         std::string mtlNameB = colScale.scalarToColourName(scalarB); 
 
@@ -682,6 +816,10 @@ MolecularPathObjExporter::generateGrid(
                 grid);
     }
 
+    // set colour scale resolution:
+    int maxColours = 1024; // number of free colours in VMD:
+    int numProperties = properties.size();
+
     // return the overall grid:
     return grid;
 }
@@ -730,7 +868,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     unitv(chanDirVec, chanDirVec);
 
     // sample scalar property along the path:
-    shiftAndScale(prop);
+    shiftAndScale(prop); // FIXME keep?
 
     // tangents always in direction of channel:
     std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
@@ -761,6 +899,7 @@ MolecularPathObjExporter::generatePropertyGrid(
         vertRing[k] = vertex;
 
         // add to grid:
+        std::cout<<"prop = "<<prop.at(idxLen)<<std::endl;
         grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
     }
 
@@ -784,6 +923,7 @@ MolecularPathObjExporter::generatePropertyGrid(
         vertRing[k] = vertex;
 
         // add to grid:
+        std::cout<<"prop = "<<prop.at(idxLen)<<std::endl;
         grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
     }
 
@@ -818,6 +958,7 @@ MolecularPathObjExporter::generatePropertyGrid(
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
+                std::cout<<"prop = "<<prop.at(idxLen)<<std::endl;
                 grid.addVertex(
                         idxLen, 
                         k, 
