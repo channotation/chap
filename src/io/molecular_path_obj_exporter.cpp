@@ -536,7 +536,24 @@ MolecularPathObjExporter::operator()(
 
         // obtain colour scale for this property:
         auto colScale = grid.colourScale(prop.first);
-        colScale.setPalette(palettes.at(prop.first));
+
+        // is there a colour palatte for this property?
+        if( palettes.find(prop.first) != palettes.end() )
+        {
+            colScale.setPalette(palettes.at(prop.first));
+        }
+        else if( palettes.find("default") != palettes.end() )
+        {
+            colScale.setPalette(palettes.at("default"));
+        }
+        else
+        {
+            throw std::runtime_error("Could not find colour palette for "
+                                     "property " + prop.first + " and no "
+                                     "default colour palette is available.");
+        }
+
+        // retrieve RGB colours from scale:
         auto colours = colScale.getColours();
 
         // create material for each colour in this scale:
