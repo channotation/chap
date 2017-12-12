@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
 #include <vector>
 
 #include <gromacs/math/vec.h>
@@ -56,10 +58,14 @@ ColourScale::setResolution(size_t res)
     numColours_ = res;
 
     // rebuild colour names:
+    std::stringstream ss;
     colourNames_.resize(numColours_);
     for(size_t i = 0; i < numColours_; i++)
     {
-        colourNames_[i] = name_ + "_" + std::to_string(i);
+        ss<<"_"<<std::setw(4)<<std::setfill('0')<<i;
+        colourNames_[i] = name_ + ss.str();
+        ss.str(std::string());
+        ss.clear();
     }
 }
 
@@ -481,16 +487,8 @@ RegularVertexGrid::faces(
     }
 
     std::vector<gmx::RVec> pal = {gmx::RVec(1,1,1), gmx::RVec(0,0,1)};
-
-    // find largest and smallest weight:
-    auto range = std::minmax_element(weights_.begin(),
-                                     weights_.end(),
-                                     [](decltype(weights_)::value_type& l, 
-                                        decltype(weights_)::value_type& r) -> 
-                                        bool { return l.second < r.second; });
-
     
-    //
+    // find scalar property data range:
     real minRange = std::numeric_limits<real>::max();
     real maxRange = std::numeric_limits<real>::min();
     for(auto it = weights_.begin(); it != weights_.end(); it++)
@@ -504,15 +502,6 @@ RegularVertexGrid::faces(
             maxRange = it -> second;
         }
     }
-
-
-    std::cout<<"min = "<<(*std::min_element(weights_.begin(), weights_.end())).second<<"  "
-             <<"max = "<<(*std::max_element(weights_.begin(), weights_.end())).second<<"  "
-             <<"min = "<<range.first -> second <<"  "
-             <<"max = "<<range.second -> second <<"  "
-             <<"min = "<<minRange<<"  "
-             <<"max = "<<maxRange<<"  "
-             <<std::endl;
 
     // prepare colour scale:
     ColourScale colScale(p);
@@ -815,10 +804,6 @@ MolecularPathObjExporter::generateGrid(
                 prop,
                 grid);
     }
-
-    // set colour scale resolution:
-    int maxColours = 1024; // number of free colours in VMD:
-    int numProperties = properties.size();
 
     // return the overall grid:
     return grid;

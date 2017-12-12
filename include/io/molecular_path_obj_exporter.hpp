@@ -21,7 +21,6 @@ class ColourScale
     public:
 
         // constructor:
-        ColourScale();
         ColourScale(std::string name);
 
         // setter functions:
