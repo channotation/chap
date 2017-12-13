@@ -99,8 +99,9 @@ class MolecularPath
         // centreline-mapped properties:
         void addScalarProperty(
                 std::string name,
-                SplineCurve1D property);
-        std::map<std::string, SplineCurve1D> scalarProperties() const;
+                SplineCurve1D property,
+                bool divergent);
+        std::map<std::string, std::pair<SplineCurve1D, bool>> scalarProperties() const;
 
         // access original points:
         std::vector<gmx::RVec> pathPoints();
@@ -186,7 +187,7 @@ class MolecularPath
         SplineCurve1D poreRadius_;
 
         // properties mapped onto path:
-        std::map<std::string, SplineCurve1D> properties_;
+        std::map<std::string, std::pair<SplineCurve1D, bool>> properties_;
 
         // properties of path:
         real openingLo_;

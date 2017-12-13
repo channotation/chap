@@ -494,7 +494,7 @@ MolecularPathObjExporter::operator()(
 
     // pathway properties:
     // (radius is added here to ensure that there is always one property)
-    molPath.addScalarProperty("radius", pathRadius);
+    molPath.addScalarProperty("radius", pathRadius, false);
     auto properties = molPath.scalarProperties();   
 
 
@@ -600,7 +600,7 @@ RegularVertexGrid
 MolecularPathObjExporter::generateGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
-        std::map<std::string, SplineCurve1D> &properties,
+        std::map<std::string, std::pair<SplineCurve1D, bool>> &properties,
         std::pair<size_t, size_t> resolution,
         std::pair<real, real> range)
 {
@@ -663,7 +663,7 @@ void
 MolecularPathObjExporter::generatePropertyGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
-        std::pair<std::string, SplineCurve1D> property,
+        std::pair<std::string, std::pair<SplineCurve1D, bool>> property,
         RegularVertexGrid &grid)
 {   
     // extract grid coordinates:
@@ -682,7 +682,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     {
         centres.push_back( centreLine.evaluate(eval, 0) );
         radii.push_back( radius.evaluate(eval, 0) );
-        prop.push_back( property.second.evaluate(eval, 0) );
+        prop.push_back( property.second.first.evaluate(eval, 0) );
     }
 
     // estimate channel direction vector:
@@ -691,7 +691,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     unitv(chanDirVec, chanDirVec);
 
     // sample scalar property along the path:
-    shiftAndScale(prop); // FIXME keep?
+    shiftAndScale(prop, property.second.second);
 
     // tangents always in direction of channel:
     std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
@@ -1378,26 +1378,54 @@ MolecularPathObjExporter::cosAngle(
 /*!
  * Shift ands scales all values in input vector so that they lie in the unit
  * interval.
+ *
+ * The divergent flag controls how the data is scaled. For a divergent scale, 
+ * both positive and negative values are scaled by the same factor and then
+ * shifted to the unit interval, in this case the zero of the scale is
+ * precisely 0.5. For a sequential colour scale, all values are first shifted 
+ * to the positive real range and then scaled to the unit interval, this does
+ * obviously not preserve the zero of the original array.
  */
 void
-MolecularPathObjExporter::shiftAndScale(std::vector<real> &prop)
+MolecularPathObjExporter::shiftAndScale(
+        std::vector<real> &prop,
+        bool divergent)
 {
     // find data range:
     real minProp = *std::min_element(prop.begin(), prop.end()); 
     real maxProp = *std::max_element(prop.begin(), prop.end());
-
-    // mind special case of constant property value:
-    real shift = -minProp + 1.0;
-    real scale = 1.0;
-    if( std::fabs(maxProp - minProp) > std::numeric_limits<real>::epsilon() )
+    
+    // scale for divergent colour scale?
+    if( std::fabs(maxProp - minProp) < std::numeric_limits<real>::epsilon() )
     {
-        // shift and scaling factor:
-        shift = -minProp;
-        scale = 1.0/(maxProp - minProp); 
+        // special case of constant [roperty value, shift to middle of scale:
+        real shift = -minProp + 0.5;
+
+        // just shift values in this case:
+        std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
+    }
+    else if( divergent == false )
+    {
+        // for sequential colour scale, shift data to positive real range and
+        // scale by length of data interval:
+        real shift = -minProp;
+        real scale = 1.0/(maxProp - minProp);  
+       
+        // shift and scale the property array:
+        std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
+        std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
+    }
+    else
+    {
+        // for divergent colour scale, scale both positive and negative values
+        // such that data lies in [-0.5, 0.5], then shift by 0.5:
+        real shift = 0.5;
+        real scale = 1.0/std::max(std::fabs(minProp), std::fabs(maxProp))/2.0; 
+
+        // scale and shift:
+        std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
+        std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
     }
 
-    // shift and scale the property array:
-    std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
-    std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
 }
 

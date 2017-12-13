@@ -115,13 +115,13 @@ class MolecularPathObjExporter
         RegularVertexGrid generateGrid(
                 SplineCurve3D &centreLine,
                 SplineCurve1D &radius,
-                std::map<std::string, SplineCurve1D> &properties,
+                std::map<std::string, std::pair<SplineCurve1D, bool>> &properties,
                 std::pair<size_t, size_t> resolution,
                 std::pair<real, real> range);
         void generatePropertyGrid(
                 SplineCurve3D &centreLine,
                 SplineCurve1D &radius,
-                std::pair<std::string, SplineCurve1D> property,
+                std::pair<std::string, std::pair<SplineCurve1D, bool>> property,
                 RegularVertexGrid &grid);
 
         // 
@@ -139,7 +139,7 @@ class MolecularPathObjExporter
 
         real cosAngle(const gmx::RVec &vecA, const gmx::RVec &vecB);
 
-        void shiftAndScale(std::vector<real> &prop);
+        void shiftAndScale(std::vector<real> &prop, bool divergent);
 };
 
 
