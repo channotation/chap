@@ -1,4 +1,6 @@
 #include <iostream>
+#include <stdexcept>
+#include <string>
 
 #include <lapacke.h>
 
@@ -136,9 +138,9 @@ CubicSplineInterp3D::interpolate(std::vector<real> &param,
     // handle solver failure:
     if( status != 0 )
     {
-        std::cerr<<"ERROR: Could not solve tridiagonal system!"<<std::endl;
-        std::cerr<<"LAPACK error code: "<<status<<std::endl;
-        std::abort();
+        throw std::runtime_error("Could not solve tridiagonal system in 3D "
+                                 "interpolation. "
+                                 "LAPACK error code: "+std::to_string(status));
     } 
 
 

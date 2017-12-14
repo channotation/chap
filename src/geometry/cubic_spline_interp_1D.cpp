@@ -1,4 +1,6 @@
 #include <iostream>
+#include <stdexcept>
+#include <string>
 
 #include <lapacke.h>
 
@@ -46,8 +48,8 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     // sanity check:
     if( x.size() != f.size() )
     {
-        std::cerr<<"ERROR: x and f vectors must be of same size!"<<std::endl;
-        std::abort();
+        throw std::logic_error("Interpolation input x and f vectors must be "
+                               "of same size!");
     }
 
     // set boundary condition:
@@ -106,9 +108,9 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
     // handle solver failure:
     if( status != 0 )
     {
-        std::cerr<<"ERROR: Could not solve tridiagonal system!"<<std::endl;
-        std::cerr<<"LAPACK error code: "<<status<<std::endl;
-        std::abort();
+        throw std::runtime_error("Could not solve tridiagonal system in 1D "
+                                 "interpolation. " 
+                                 "LAPACK error code: "+std::to_string(status));
     } 
 
 
