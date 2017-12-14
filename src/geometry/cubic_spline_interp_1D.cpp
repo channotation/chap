@@ -45,6 +45,15 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
                                  std::vector<real> &f,
                                  eSplineInterpBoundaryCondition bc)
 {
+    for(size_t i = 0; i < x.size(); i++)
+    {
+//        std::cout<<"i = "<<i<<"  "
+//                 <<"x = "<<x[i]<<"  "
+//                 <<"f = "<<f[i]<<"  "
+//                 <<std::endl;
+    }
+
+
     // sanity check:
     if( x.size() != f.size() )
     {
