@@ -27,27 +27,26 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
     , orthVecU_(0.0, 0.0, 0.0)
     , orthVecW_(0.0, 0.0, 0.0)
 {
-    // TODO: all these vector operations should be written as testable function!
+    // tolerance threshold for norm of vector (which should be unit vectors):
+    real nonZeroTol = std::numeric_limits<real>::epsilon();
+    if( norm(chanDirVec_) < nonZeroTol )
+    {
+        throw std::runtime_error("Channel direction vector has norm close to "
+                                 "zero. Please provide a finite-length channel "
+                                 "direction vector with -pf-chan-dir-vec.");
+    }
 
     // normalise channel direction vector:
     unitv(chanDirVec_, chanDirVec_);
 
-    // tolerance threshold for norm of vector (which should be unit vectors):
-    real nonZeroTol = 1e-1;
-
-    if( norm(chanDirVec_) < nonZeroTol )
-    {
-        std::cout<<"ERROR: channel direction vector is (almost) zero!"<<std::endl;
-    }
-
     // generate first orthogonal vector:
-    orthVecU_ = gmx::RVec(-chanDirVec_[1], chanDirVec_[0], 0.0);
+    orthVecU_ = gmx::RVec(-chanDirVec_[YY], chanDirVec_[XX], 0.0);
 
     // make sure it is non null vector:
     if( norm(orthVecU_) < nonZeroTol )
     {
         // try different permutation:
-        orthVecU_ = gmx::RVec(-chanDirVec_[2], 0.0, chanDirVec_[0]);
+        orthVecU_ = gmx::RVec(-chanDirVec_[ZZ], 0.0, chanDirVec_[XX]);
 
         // make sure it is not null vector:
         if( norm(orthVecU_) < nonZeroTol )
@@ -58,28 +57,39 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
             // make sure it is not null vector:
             if( norm(orthVecU_) < nonZeroTol )
             {
-                std::cerr<<"ERROR: could not generate orthogonal vector!"<<std::endl;
+                throw std::logic_error("Inplane optimised probe path finder "
+                                       "could not generate an orthogonal "
+                                       "vector.");
             }
         }
     }
 
+    // normalise first orthogonal vector:
+    unitv(orthVecU_, orthVecU_);
+
     // generate second orthogonal vector:
+    // (this will already be normalised)
     cprod(chanDirVec_, orthVecU_, orthVecW_);
 
     // make sure vctors are mutually orthogonal:
-    // TODO: proper error handling!
-    real orthTol = 1e-7;
+    // (not that the vectors are not strictly required to be orthogonal, they 
+    // may just not be colinear, so small numeric deviations should not be a
+    // problem here)
+    real orthTol = std::numeric_limits<real>::epsilon();
     if( iprod(chanDirVec_, orthVecU_) > orthTol )
     {
-        std::cout<<"ERROR: basis vectors not orthogonal!"<<std::endl;
+        throw std::logic_error("Vectors v and u in inplane optimised probe "
+                               "path finder are not orthogonal.");
     }
     if( iprod(chanDirVec_, orthVecW_) > orthTol )
     {
-        std::cout<<"ERROR: basis vectors not orthogonal!"<<std::endl;
+        throw std::logic_error("Vectors v and w in inplane optimised probe "
+                               "path finder are not orthogonal.");
     }
     if( iprod(orthVecU_, orthVecW_) > orthTol )
     {
-        std::cout<<"ERROR: basis vectors not orthogonal!"<<std::endl;
+        throw std::logic_error("Vectors u and w in inplane optimised probe "
+                               "path finder are not orthogonal.");
     }
 }
 
@@ -155,22 +165,6 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
 {
     // set current probe position to initial probe position: 
     crntProbePos_ = initProbePos_;
-/*
-    std::cout<<"crntProbePos = "<<crntProbePos_[0]<<"  "
-                                <<crntProbePos_[1]<<"  "
-                                <<crntProbePos_[2]<<"  "
-             <<"initProbePos = "<<initProbePos_[0]<<"  "
-                                <<initProbePos_[1]<<"  "
-                                <<initProbePos_[2]<<"  "
-             <<"orthVecU = "<<orthVecU_[0]<<"  "
-                            <<orthVecU_[1]<<"  "
-                            <<orthVecU_[2]<<"  "
-             <<"orthVecW = "<<orthVecW_[0]<<"  "
-                            <<orthVecW_[1]<<"  "
-                            <<orthVecW_[2]<<"  "
-              <<std::endl;
-*/
-
 
     // initial state in optimisation space is always null vector:
     std::vector<real> initState = {0.0, 0.0};
@@ -197,26 +191,20 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
     // set initial position to its optimal value:
     initProbePos_ = optimToConfig(nmm.getOptimPoint().first);
 
-
-/*
-    std::cout<<"initProbePos = "<<initProbePos_[0]<<"  "
-                                <<initProbePos_[1]<<"  "
-                                <<initProbePos_[2]<<"  "
-             <<"bestState = "<<sam.getBestState()[0]<<" "
-                             <<sam.getBestState()[1]<<" "
-             <<std::endl;
-    std::cout<<"crntProbePos = "<<crntProbePos_[0]<<"  "
-                                <<crntProbePos_[1]<<"  "
-                                <<crntProbePos_[2]<<"  "
-             <<std::endl; 
-*/
-
+    // handle situation where cutoff radius was too small:
+    // (or otherwise no particle was found within cutoff radius)
+    if( std::isinf( nmm.getOptimPoint().second ) )
+    {
+        throw std::runtime_error("Pore radius at initial probe position is "
+                                 "infinite. Consider increasing the maximum "
+                                 "pore radius with -pf-max-free-dist or set "
+                                 "an appropriate cutoff for neighbourhood "
+                                 "searches explicitly with -pf-cutoff.");
+    }
 
     // add path support point and associated radius to container:
     path_.push_back(initProbePos_);
-    radii_.push_back(nmm.getOptimPoint().second);
-
-   
+    radii_.push_back(nmm.getOptimPoint().second);   
 }
 
 
@@ -262,9 +250,9 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
                  <<std::endl;
 */
         // advance probe position to next plane:
-        crntProbePos_[0] = crntProbePos_[0] + probeStepLength_*direction[0];
-        crntProbePos_[1] = crntProbePos_[1] + probeStepLength_*direction[1];
-        crntProbePos_[2] = crntProbePos_[2] + probeStepLength_*direction[2]; 
+        crntProbePos_[XX] = crntProbePos_[XX] + probeStepLength_*direction[XX];
+        crntProbePos_[YY] = crntProbePos_[YY] + probeStepLength_*direction[YY];
+        crntProbePos_[ZZ] = crntProbePos_[ZZ] + probeStepLength_*direction[ZZ]; 
 
         // optimise in plane through simulated annealing:
         SimulatedAnnealingModule sam;
@@ -326,12 +314,12 @@ InplaneOptimisedProbePathFinder::optimToConfig(std::vector<real> optimSpacePos)
 {
     // get configuration space position via orthogonal vectors:
     gmx::RVec configSpacePos;
-    configSpacePos[0] = crntProbePos_[0] + optimSpacePos[0]*orthVecU_[0]
-                                         + optimSpacePos[1]*orthVecW_[0];
-    configSpacePos[1] = crntProbePos_[1] + optimSpacePos[0]*orthVecU_[1]
-                                         + optimSpacePos[1]*orthVecW_[1];
-    configSpacePos[2] = crntProbePos_[2] + optimSpacePos[0]*orthVecU_[2] 
-                                         + optimSpacePos[1]*orthVecW_[2];
+    configSpacePos[XX] = crntProbePos_[XX] + optimSpacePos[0]*orthVecU_[XX]
+                                           + optimSpacePos[1]*orthVecW_[XX];
+    configSpacePos[YY] = crntProbePos_[YY] + optimSpacePos[0]*orthVecU_[YY]
+                                           + optimSpacePos[1]*orthVecW_[YY];
+    configSpacePos[ZZ] = crntProbePos_[ZZ] + optimSpacePos[0]*orthVecU_[ZZ] 
+                                           + optimSpacePos[1]*orthVecW_[ZZ];
     
     // return configuration space position:
     return(configSpacePos);
