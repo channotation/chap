@@ -1,5 +1,5 @@
 {
-    "remark": "Hydrophobicity scale based on the stability of the single-stranded amphipathic alpha-helix.",
+    "remark": "Hydrophobicity scale based on the stability of the single-stranded amphipathic alpha-helix. Values are scaled to the interval [-1, 1], where +1 is the highest and -1 the lowest hydrophobicity.",
 
     "reference": {
         "link": "http://onlinelibrary.wiley.com/doi/10.1002/psc.310010507/full",
@@ -7,6 +7,29 @@
         },
 
     "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity":  0.41},
+        {"resname": "ARG", "hydrophobicity": -0.14},
+        {"resname": "ASN", "hydrophobicity": -0.28},
+        {"resname": "ASP", "hydrophobicity": -0.55},
+        {"resname": "CYS", "hydrophobicity":  0.49},
+        {"resname": "GLN", "hydrophobicity": -0.10},
+        {"resname": "GLU", "hydrophobicity": -0.31},
+        {"resname": "GLY", "hydrophobicity":  0.00},
+        {"resname": "HIS", "hydrophobicity":  0.80},
+        {"resname": "ILE", "hydrophobicity":  0.99},
+        {"resname": "LEU", "hydrophobicity":  0.97},
+        {"resname": "LYS", "hydrophobicity": -0.23},
+        {"resname": "MET", "hydrophobicity": -0.28},
+        {"resname": "PHE", "hydrophobicity":  1.00},
+        {"resname": "PRO", "hydrophobicity": -0.46},
+        {"resname": "SER", "hydrophobicity": -0.05},
+        {"resname": "THR", "hydrophobicity":  0.13},
+        {"resname": "TRP", "hydrophobicity":  0.97},
+        {"resname": "TYR", "hydrophobicity":  0.63},
+        {"resname": "VAL", "hydrophobicity":  0.76}
+    ],
+
+    "original_hydrophobicity": [
         {"resname": "ALA", "hydrophobicity":  41.0},
         {"resname": "ARG", "hydrophobicity": -14.0},
         {"resname": "ASN", "hydrophobicity": -28.0},

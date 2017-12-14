@@ -74,7 +74,7 @@ ggsave("time_averaged_radius_profile.pdf",
        height = plot.height)
 
 
-# Radius Profile with Residue Positions
+# Hydrophobicity Profile with Residue Positions
 #-------------------------------------------------------------------------------
 
 data <- as.data.frame(dat$residueSummary)

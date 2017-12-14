@@ -187,10 +187,10 @@ set scale_colors [revert_color_scale $scale_colors]
 
 #set group_name "pathway_radius" 
 #set group_name "pathway_avg_radius" 
-#set group_name "pathway_avg_pl_hydrophobicity" 
+set group_name "pathway_avg_pl_hydrophobicity" 
 #set group_name "pathway_avg_pf_hydrophobicity" 
 #set group_name "pathway_avg_energy" 
-set group_name "pathway_avg_density" 
+#set group_name "pathway_avg_density" 
 
 
 # Draw Pore
