@@ -1,6 +1,12 @@
 #include <iomanip>
 
+#include <gromacs/topology/atoms.h>
+
 #include "io/pdb_io.hpp"
+
+
+// FIXME remove:
+#include <iostream>
 
 
 /*!
@@ -37,6 +43,51 @@ PdbAtom::PdbAtom(
     , charge_(charge)
 {
 
+}
+
+
+/*!
+ * Converts trajectory frame into PdbStructure.
+ */
+void
+PdbStructure::fromTrxFrame(
+        const t_trxframe &frame)
+{
+    // loop over all atoms in frame:
+    for(size_t i = 0; i < frame.natoms; i++)
+    {
+
+        if( frame.atoms == NULL )
+        {
+            std::cout<<"its null"<<std::endl;
+        }
+
+        std::cout<<"i = "<<i<<"  "
+                 <<"atoms.nr = "<<frame.atoms<<"  "
+                 <<"frame.natoms = "<<frame.natoms<<"  "
+                 <<"x = "<<frame.x[i][XX]<<"  "
+                 <<"y = "<<frame.x[i][YY]<<"  "
+                 <<"z = "<<frame.x[i][ZZ]<<"  "
+                 <<std::endl;
+
+        // add an atom record with the appropriate properties:  
+        /*
+        addAtom(
+                frame.atoms[i].pdbinfo -> atomnr,
+                std::string(frame.atoms[i].pdbinfo -> atomnm),
+                std::string(1, frame.atoms[i].pdbinfo -> altloc),
+                std::string(*(frame.atoms[i].resinfo -> name)),
+                std::string(1, frame.atoms[i].resinfo -> chainid),
+                frame.atoms[i].resinfo -> nr,
+                std::string(1, frame.atoms[i].resinfo -> ic),
+                frame.x[i][XX],
+                frame.x[i][YY],
+                frame.x[i][ZZ],
+                frame.atoms[i].pdbinfo -> occup,
+                frame.atoms[i].pdbinfo -> bfac,
+                std::string(frame.atoms[i].atom -> elem),
+                std::to_string(frame.atoms[i].atom -> q));*/
+    }
 }
 
 

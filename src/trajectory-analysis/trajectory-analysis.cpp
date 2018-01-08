@@ -37,7 +37,6 @@
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/multiscalar_time_series_json_converter.hpp"
-#include "io/pdb_io.hpp"
 #include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
@@ -992,16 +991,31 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 }
 
 
+/*!
+ *
+ */
+void
+trajectoryAnalysis::initAfterFirstFrame(
+        const TrajectoryAnalysisSettings &settings,
+        const t_trxframe &fr)
+{
+    outputStructure_.fromTrxFrame(fr);     
+
+}
 
 
 /*
  *
  */
 void
-trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
-                                 TrajectoryAnalysisModuleData *pdata)
+trajectoryAnalysis::analyzeFrame(
+        int frnr, 
+        const t_trxframe &fr, 
+        t_pbc *pbc,
+        TrajectoryAnalysisModuleData *pdata)
 {
-	// get thread-local selections:
+
+    // get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
 //    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
@@ -1196,7 +1210,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.finishPointSet();
     }
 
-   
+
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
  

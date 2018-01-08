@@ -13,6 +13,8 @@
 
 #include "analysis-setup/residue_information_provider.hpp"
 
+#include "io/pdb_io.hpp"
+
 #include "path-finding/abstract_path_finder.hpp"
 #include "path-finding/molecular_path.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
@@ -31,16 +33,25 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	trajectoryAnalysis();
 
 	// method for adding all options of the trajectoryAnalysis module:
-	virtual void initOptions(IOptionsContainer *options,
-							 TrajectoryAnalysisSettings *settings);
+	virtual void initOptions(
+            IOptionsContainer *options,
+			TrajectoryAnalysisSettings *settings);
 	
     //
-    virtual void initAnalysis(const TrajectoryAnalysisSettings &settings,
-                              const TopologyInformation &top);
+    virtual void initAnalysis(
+            const TrajectoryAnalysisSettings &settings,
+            const TopologyInformation &top);
 	
+    virtual void initAfterFirstFrame(
+            const TrajectoryAnalysisSettings &settings,
+            const t_trxframe &fr);
+
 	// ??
-	virtual void analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
-                              TrajectoryAnalysisModuleData *pdata);
+	virtual void analyzeFrame(
+            int frnr,
+            const t_trxframe &fr,
+            t_pbc *pbc,
+            TrajectoryAnalysisModuleData *pdata);
 	
 	// ??
 	virtual void finishAnalysis(int nframes);
@@ -50,6 +61,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
     private:
+
+    PdbStructure outputStructure_;
 
     std::string jsonOutputFileName_;
     std::string objOutputFileName_;
@@ -112,7 +125,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
     int nOutPoints_;   // number of points on path sample
-
 
 
     // selection and topology for initial probe position:

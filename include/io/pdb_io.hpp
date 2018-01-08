@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "gromacs/utility/real.h"
+#include <gromacs/trajectory/trajectoryframe.h>
+#include <gromacs/utility/real.h>
+
 
 
 /*!
@@ -81,6 +83,9 @@ class PdbStructure
                 const real tempFactor,
                 std::string element,
                 std::string charge);
+
+        // conversion functions:
+        void fromTrxFrame(const t_trxframe &frame);
 
     private:
 
