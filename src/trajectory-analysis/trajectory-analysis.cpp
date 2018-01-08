@@ -37,6 +37,7 @@
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/multiscalar_time_series_json_converter.hpp"
+#include "io/pdb_io.hpp"
 #include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
@@ -1983,6 +1984,17 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     inFile.close();
 
     
+    // CREATE PDB OUTPUT
+    // ------------------------------------------------------------------------
+
+    PdbStructure structure;
+
+//    structure.addAtom();
+
+
+    PdbIo pdbWriter;
+    pdbWriter.write("output.pdb", structure);
+
 
     // CREATING OUTPUT JSON
     // ------------------------------------------------------------------------
