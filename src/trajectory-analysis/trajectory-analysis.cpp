@@ -28,10 +28,11 @@
 #include "config/config.hpp"
 #include "config/version.hpp"
 
-#include "geometry/spline_curve_1D.hpp"
-#include "geometry/spline_curve_3D.hpp"
 #include "geometry/cubic_spline_interp_1D.hpp"
 #include "geometry/cubic_spline_interp_3D.hpp"
+#include "geometry/linear_spline_interp_1D.hpp"
+#include "geometry/spline_curve_1D.hpp"
+#include "geometry/spline_curve_3D.hpp"
 
 #include "io/analysis_data_json_frame_exporter.hpp"
 #include "io/json_doc_importer.hpp"
@@ -1807,31 +1808,18 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     real supportPointsLo = arcLengthLoSummary.min() - outputExtrapDist_;
     real supportPointsHi = arcLengthHiSummary.max() + outputExtrapDist_;
 
-    // correct support point limits to fill entire channel:
-    if( supportPointsLo > arcLengthLoSummary.min() )
-    {
-        supportPointsLo = arcLengthLoSummary.min();
-    }
-    if( supportPointsHi < arcLengthHiSummary.max() )
-    {
-        supportPointsHi = arcLengthHiSummary.max();
-    }
-//    real supportPointsLo = -5.0;
-//    real supportPointsHi = 5.0;
+    // build support points:
     real supportPointsStep = (supportPointsHi - supportPointsLo) / (numSupportPoints - 1);
     for(size_t i = 0; i < numSupportPoints; i++)
     {
         supportPoints.push_back(supportPointsLo + i*supportPointsStep);
     }
-   
-    /* // old solution:
-    real extrapDist = mappingParams_.extrapDist_;
-    real step = (lengthSummary.max() + 2.0*extrapDist) / (numSupportPoints - 1);
-    for(size_t i = 0; i < numSupportPoints; i++)
-    {
-        supportPoints.push_back(-0.5*lengthSummary.max() - extrapDist + i*step);
-    }
-    */
+
+    // define anchor points at which energy is set to zero:
+    real anchorPointLo = arcLengthLoSummary.min();
+    real anchorPointHi = arcLengthHiSummary.max();
+    SummaryStatistics anchorEnergyLo;
+    SummaryStatistics anchorEnergyHi;
 
     // open JSON data file in read mode:
     inFile.open(inFileName.c_str(), std::fstream::in);
@@ -1936,8 +1924,19 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 energySummary,
                 energySample);
 
+        // also evaluate density and radius at anchor points:
+        real solventDensityAnchorLo = solventDensitySpline.evaluate(
+                anchorPointLo, 0);
+        real solventDensityAnchorHi = solventDensitySpline.evaluate(
+                anchorPointHi, 0);
+        real poreRadiusAnchorLo = molPath.radius(anchorPointLo);
+        real poreRadiusAnchorHi = molPath.radius(anchorPointHi);
 
-
+        // calculate energy at anchor points by linear interpolation:
+        LinearSplineInterp1D interp;
+        auto energySpline = interp(supportPoints, energySample);
+        anchorEnergyLo.update( energySpline.evaluate(anchorPointLo, 0) );
+        anchorEnergyHi.update( energySpline.evaluate(anchorPointHi, 0) );
 
 
         // loop over all pore forming residues:
@@ -1970,7 +1969,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         // increment line counter:
         linesProcessed++;
     }
-    
+  
+    // shift of energy profile so that energy at anchor points is zero:
+    real shift = -0.5*(anchorEnergyLo.mean() + anchorEnergyHi.mean());
+    std::for_each(
+            energySummary.begin(), 
+            energySummary.end(), 
+            [this, shift](SummaryStatistics &s){s.shift(shift);});
+
     // inform user about progress:
     std::cout.precision(3);
     std::cout<<"\rForming time averages, "
