@@ -173,6 +173,16 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue("res_mapping.dat")
                          .description("Residue mapping data (testing)."));
 
+    options -> addOption(IntegerOption("out-num-points")
+	                     .store(&outputNumPoints_)
+                         .defaultValue(1000)
+                         .description("."));
+
+    options -> addOption(RealOption("out-extrap-dist")
+	                     .store(&outputExtrapDist_)
+                         .defaultValue(0.0)
+                         .description("."));
+
 
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
@@ -1792,13 +1802,10 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // ------------------------------------------------------------------------
 
     // define set of support points for profile evaluation:
-    // FIXME this needs more than a heuristic!
-    // FIXME also will not work when alignment = none is selected
-    // TODO number of support points should be use settable
     std::vector<real> supportPoints;
-    size_t numSupportPoints = 1000;
-    real supportPointsLo = solventRangeLoSummary.min() + 2.0*deEvalRangeCutoff_*deBandWidth_;
-    real supportPointsHi = solventRangeHiSummary.max() - 2.0*deEvalRangeCutoff_*deBandWidth_;
+    size_t numSupportPoints = outputNumPoints_;
+    real supportPointsLo = arcLengthLoSummary.min() - outputExtrapDist_;
+    real supportPointsHi = arcLengthHiSummary.max() + outputExtrapDist_;
 
     // correct support point limits to fill entire channel:
     if( supportPointsLo > arcLengthLoSummary.min() )
