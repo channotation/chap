@@ -10,27 +10,38 @@ display depthcue off
 display ambientocclusion on
 display rendermode GLSL
 
-# check that all required variables are set:
-if { [info exists FILE_STRUCTURE] == 0 } {
-
-    # set default name for structure file:
-    set FILE_STRUCTURE "output.pdb"
-}
-if { [info exists FILE_PORE_SURFACE] == 0 } {
+# have file names been passed as arguments?
+if { [llength $argv] == 2 } {
     
-    # set default name for pore surface file:
-    set FILE_PORE_SURFACE "output.obj"
+    # get file names from input arguments:
+    set FILE_STRUCTURE [lindex $argv 0]
+    set FILE_PORE_SURFACE [lindex $argv 1]
+
+} else {
+
+    # have file names been set in console?
+    if { [info exists FILE_STRUCTURE] == 0 } {
+
+        # set default name:
+        set FILE_STRUCTURE "output.pdb"
+    }
+    if { [info exists FILE_PORE_SURFACE] == 0 } {
+
+        # set default name:
+        set FILE_PORE_SURFACE "output.obj"
+    }
 }
 
 # check that required files exist:
 if { [file exists $FILE_STRUCTURE] == 0 } {
     
-    error "Structure file $FILE_STRUCTURE does not exist!"
+    error "ERROR: Structure file $FILE_STRUCTURE does not exist!"
 }
 if { [file exists $FILE_PORE_SURFACE] == 0 } {
     
-    error "Pore surface file $FILE_PORE_SURFACE does not exist!"
+    error "ERROR: Pore surface file $FILE_PORE_SURFACE does not exist!"
 }
+
 
 
 ###############################################################################
