@@ -64,8 +64,12 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     PdbStructure outputStructure_;
 
-    std::string jsonOutputFileName_;
-    std::string objOutputFileName_;
+    // names of output files:
+    std::string outputBaseFileName_;
+    std::string outputJsonFileName_;
+    std::string outputObjFileName_;
+    std::string outputPdbFileName_;
+
     bool poreFile_;
 
 	class ModuleData;

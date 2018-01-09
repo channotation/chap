@@ -153,17 +153,13 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Number of sample points of pore centre "
                                       "line that are written to output."));*/
 
-    // TODO: more exressive or shorter command line flag?
-    options -> addOption(StringOption("json")
-	                     .store(&jsonOutputFileName_)
-                         .defaultValue("output.json")
-                         .description("File name for JSON output."));
-
-    // TODO find better solution for this
-    options -> addOption(StringOption("obj")
-	                     .store(&objOutputFileName_)
-                         .defaultValue("output.obj")
-                         .description("File name for OBJ output (testing)."));
+    options -> addOption(StringOption("out-filename")
+	                     .store(&outputBaseFileName_)
+                         .defaultValue("output")
+                         .description("File name for output files without "
+                                      "file extension. Proper file extensions "
+                                      "(e.g. filename.json) will be added "
+                                      "internally."));
 
 
     // PATH FINDING PARAMETERS
@@ -450,6 +446,13 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
 
+    // ADD PROPER EXTENSIONS TO FILE NAMES
+    //-------------------------------------------------------------------------
+
+    outputJsonFileName_ = outputBaseFileName_ + ".json";
+    outputObjFileName_ = outputBaseFileName_ + ".obj";
+    outputPdbFileName_ = outputBaseFileName_ + ".pdb";
+
 
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
@@ -631,7 +634,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
     jsonFrameExporter -> setDataSetNames(frameStreamDataSetNames);
     jsonFrameExporter -> setColumnNames(frameStreamColumnNames);
-    std::string frameStreamFileName = std::string("stream_") + jsonOutputFileName_;
+    std::string frameStreamFileName = std::string("stream_") + outputJsonFileName_;
     jsonFrameExporter -> setFileName(frameStreamFileName);
     frameStreamData_.addModule(jsonFrameExporter);
 
@@ -1550,7 +1553,7 @@ trajectoryAnalysis::analyzeFrame(
     // TODO: this should be moved to a separate binary!
 
     MolecularPathObjExporter molPathExp;
-    molPathExp(objOutputFileName_.c_str(),
+    molPathExp(outputObjFileName_.c_str(),
                molPath);
 
 
@@ -1581,8 +1584,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::cout<<std::endl;
 
     // transfer file names from user input:
-    std::string inFileName = std::string("stream_") + jsonOutputFileName_;
-    std::string outFileName = jsonOutputFileName_;
+    std::string inFileName = std::string("stream_") + outputJsonFileName_;
+    std::string outFileName = outputJsonFileName_;
     std::fstream inFile;
     std::fstream outFile;
 
@@ -1944,7 +1947,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     outputStructure_.setPoreFacing(residuePlSummary, residuePfSummary);
 
     // write structure to PDB file:
-    PdbIo::write("output.pdb", outputStructure_);
+    PdbIo::write(outputPdbFileName_, outputStructure_);
 
 
     // CREATING OUTPUT JSON
