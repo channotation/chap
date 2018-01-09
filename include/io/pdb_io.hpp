@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <gromacs/trajectoryanalysis/analysissettings.h>
-#include <gromacs/trajectory/trajectoryframe.h>
 #include <gromacs/topology/topology.h>
 #include <gromacs/utility/real.h>
 

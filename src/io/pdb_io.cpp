@@ -7,10 +7,6 @@
 #include "io/pdb_io.hpp"
 
 
-// FIXME remove:
-#include <iostream>
-
-
 /*!
  * Creates a PdbStructure from the coordinates contained in the given 
  * TopologyInformation.
