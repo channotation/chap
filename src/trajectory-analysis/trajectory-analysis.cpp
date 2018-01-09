@@ -128,6 +128,9 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     settings -> setRmPBC(false);
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserRmPBC);
 
+    // will use coordinates from topology:
+    settings -> setFlag(TrajectoryAnalysisSettings::efUseTopX, true);
+
 
     // SELECTION OPTIONS
     //-------------------------------------------------------------------------
@@ -455,6 +458,10 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                  const TopologyInformation &top)
 {
+    // save atom coordinates in topology for writing to output later:
+    outputStructure_.fromTopology(top);
+
+
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
 
@@ -999,7 +1006,6 @@ trajectoryAnalysis::initAfterFirstFrame(
         const TrajectoryAnalysisSettings &settings,
         const t_trxframe &fr)
 {
-    outputStructure_.fromTrxFrame(fr);     
 
 }
 
@@ -2001,13 +2007,9 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // CREATE PDB OUTPUT
     // ------------------------------------------------------------------------
 
-    PdbStructure structure;
-
-//    structure.addAtom();
-
-
+    // write structure to PDB file:
     PdbIo pdbWriter;
-    pdbWriter.write("output.pdb", structure);
+    pdbWriter.write("output.pdb", outputStructure_);
 
 
     // CREATING OUTPUT JSON
