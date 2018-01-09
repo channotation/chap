@@ -170,12 +170,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .defaultValue("output.obj")
                          .description("File name for OBJ output (testing)."));
 
-    // TODO find better solution for this.
-    options -> addOption(StringOption("resm")
-	                     .store(&resMappingOutFileName_)
-                         .defaultValue("res_mapping.dat")
-                         .description("Residue mapping data (testing)."));
-
 
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
@@ -664,23 +658,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     dataResMapping_.setDataSetCount(1);
     dataResMapping_.setColumnCount(0, 6);   // refID s rho phi 
     dataResMapping_.setMultipoint(true);
-
-    // add long format plot module:
-    int j = 1;
-    AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
-    const char *fnResMapping = resMappingOutFileName_.c_str();
-    std::vector<std::string> headerResMapping = {"t", 
-                                                 "mappedId", 
-                                                 "s", 
-                                                 "rho", 
-                                                 "phi", 
-                                                 "poreLining", 
-                                                 "poreFacing"};
-    lfpltResMapping -> setFileName(fnResMapping);
-    lfpltResMapping -> setHeader(headerResMapping);
-    lfpltResMapping -> setPrecision(5);    // TODO: different treatment for integers?
-    dataResMapping_.addModule(lfpltResMapping);
-
 
     // set pdb data set properties:
     dataResMappingPdb_.setDataSetCount(1);

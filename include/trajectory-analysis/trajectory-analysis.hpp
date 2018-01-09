@@ -66,7 +66,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     std::string jsonOutputFileName_;
     std::string objOutputFileName_;
-    std::string resMappingOutFileName_;
     bool poreFile_;
 
 	class ModuleData;
