@@ -10,6 +10,7 @@
 #include <gromacs/topology/topology.h>
 #include <gromacs/utility/real.h>
 
+#include "statistics/summary_statistics.hpp"
 
 
 /*!
@@ -23,6 +24,11 @@ class PdbStructure
 
         // create PDB file from topology:
         void fromTopology(const gmx::TopologyInformation &top);
+
+        // 
+        void setPoreFacing(
+                const std::vector<SummaryStatistics> &poreLining,
+                const std::vector<SummaryStatistics> &poreFacing);
 
 
     private:
@@ -38,16 +44,14 @@ class PdbStructure
 /*!
  * \brief Exports structures to PDB file format.
  *
- * This functionality is of course also part of Gromacs, but not of the public
- * library API. To avoid that Gromacs changes the interface, this is my own 
- * simplistic implementation. 
+ * This wraps around the PDB export utilities of Gromacs.
  */
 class PdbIo
 {
     public:
 
         // public interface for PDB export:
-        void write(
+        static void write(
                 std::string fileName,
                 PdbStructure structure);
 

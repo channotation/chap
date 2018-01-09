@@ -2007,9 +2007,11 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // CREATE PDB OUTPUT
     // ------------------------------------------------------------------------
 
+    // assign residue pore facing and pore lining to occupency and bfac:
+    outputStructure_.setPoreFacing(residuePlSummary, residuePfSummary);
+
     // write structure to PDB file:
-    PdbIo pdbWriter;
-    pdbWriter.write("output.pdb", outputStructure_);
+    PdbIo::write("output.pdb", outputStructure_);
 
 
     // CREATING OUTPUT JSON
