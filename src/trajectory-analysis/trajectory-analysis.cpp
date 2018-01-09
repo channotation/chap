@@ -74,12 +74,7 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saCoolingFactor_(0.99)
     , saStepLengthFactor_(0.01)
     , saUseAdaptiveCandGen_(false)
-{  
-    // register dataset:
-    // TODO: this data set should be made obsolete
-    registerAnalysisDataset(&dataResMapping_, "resMapping");
-
-
+{
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
     frameStreamData_.setMultipoint(true); 
 
@@ -650,25 +645,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     timingData_.setMultipoint(false);
 
 
-    // RESIDUE MAPPING DATA
-    //-------------------------------------------------------------------------
-
-
-    // set dataset properties:
-    dataResMapping_.setDataSetCount(1);
-    dataResMapping_.setColumnCount(0, 6);   // refID s rho phi 
-    dataResMapping_.setMultipoint(true);
-
-    // set pdb data set properties:
-    dataResMappingPdb_.setDataSetCount(1);
-    dataResMappingPdb_.setColumnCount(0, 7);
-
-    // add PDB plot module:
-    AnalysisDataPdbPlotModulePointer plotResMappingPdb(new AnalysisDataPdbPlotModule(3));
-    plotResMappingPdb -> setFileName("res_mapping.pdb");
-    dataResMappingPdb_.addModule(plotResMappingPdb);
-    
-
     // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
@@ -1003,12 +979,10 @@ trajectoryAnalysis::analyzeFrame(
 //    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
     // get data handles for this frame:
-    AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
     AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
 	// get data for frame number frnr into data handle:
-    dhResMapping.startFrame(frnr, fr.time);
     dhFrameStream.startFrame(frnr, fr.time);
     dhTiming.startFrame(frnr, fr.time);
 
@@ -1256,23 +1230,6 @@ trajectoryAnalysis::analyzeFrame(
     }
     tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
     
-
-    // add points inside to data frame:
-    // TODO: this functionality should probably be handled outside the main analysis loop
-    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
-    {
-        SelectionPosition pos = poreMappingSelCog.position(it->first);
-        
-        // add points to dataset:
-        dhResMapping.setPoint(0, pos.mappedId());                      // refId
-        dhResMapping.setPoint(1, it -> second[SS]);                    // s
-        dhResMapping.setPoint(2, std::sqrt(it -> second[RR]));         // rho
-        dhResMapping.setPoint(3, it -> second[PP]);                    // phi
-        dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
-        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
-        dhResMapping.finishPointSet();
-    }
-
 
     // ESTIMATE HYDROPHOBICITY PROFILE
     //-------------------------------------------------------------------------
@@ -1608,7 +1565,6 @@ trajectoryAnalysis::analyzeFrame(
     //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
-    dhResMapping.finishFrame();
     dhFrameStream.finishFrame();
     dhTiming.finishFrame();
 }

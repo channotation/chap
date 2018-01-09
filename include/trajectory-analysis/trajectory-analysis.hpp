@@ -89,7 +89,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
 
     AnalysisData                     frameStreamData_;
-    AnalysisData                     dataResMapping_;
     AnalysisData                     dataResMappingPdb_;
     AnalysisData timingData_;
 
