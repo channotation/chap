@@ -12,10 +12,24 @@ display rendermode GLSL
 
 # check that all required variables are set:
 if { [info exists FILE_STRUCTURE] == 0 } {
-    error "ERROR: Variable FILE_STRUCTURE is not set!"
+
+    # set default name for structure file:
+    set FILE_STRUCTURE "output.pdb"
 }
 if { [info exists FILE_PORE_SURFACE] == 0 } {
-    error "ERROR: Variable FILE_PORE_SURFACE is not set!"
+    
+    # set default name for pore surface file:
+    set FILE_PORE_SURFACE "output.obj"
+}
+
+# check that required files exist:
+if { [file exists $FILE_STRUCTURE] == 0 } {
+    
+    error "Structure file $FILE_STRUCTURE does not exist!"
+}
+if { [file exists $FILE_PORE_SURFACE] == 0 } {
+    
+    error "Pore surface file $FILE_PORE_SURFACE does not exist!"
 }
 
 
