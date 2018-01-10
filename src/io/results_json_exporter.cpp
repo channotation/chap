@@ -208,9 +208,85 @@ ResultsJsonExporter::addPathwayScalarTimeSeries(
         ts.PushBack(val, alloc);
     }
 
-    // add to table (as individual columns:
+    // add to table (as individual columns):
     doc_["pathwayScalarTimeSeries"].AddMember(toVal(name), ts, alloc); 
 
+}
+
+
+/*!
+ * Adds temporal and spatial grid points to the output for a long-format table
+ * of profile data over time and space. Should only be called once.
+ */
+void
+ResultsJsonExporter::addPathwayGridPoints(
+        const std::vector<real> &timeStamps,
+        const std::vector<real> &supportPoints)
+{
+    // obtain an allocator:
+    rapidjson::Document::AllocatorType &alloc = doc_.GetAllocator();
+
+    // create a JSON array to hold long format time stamps and support points:
+    rapidjson::Value time(rapidjson::kArrayType);
+    rapidjson::Value space(rapidjson::kArrayType);
+
+    for(auto t : timeStamps)
+    {
+        for(auto s : supportPoints)
+        {
+            time.PushBack(t, alloc);
+            space.PushBack(s, alloc);
+        }
+    }
+    
+    // add both to output document:
+    doc_["pathwayProfileTimeSeries"].AddMember(toVal("t"), time, alloc);
+    doc_["pathwayProfileTimeSeries"].AddMember(toVal("s"), space, alloc);
+}
+
+
+/*!
+ * Adds a vector-valued time series to the output. Requires that 
+ * addPathwayGrid() has been called before and checks that the number of data
+ * points in the time series is equal to the number of grid points.
+ */
+void
+ResultsJsonExporter::addPathwayProfileTimeSeries(
+        std::string name,
+        const std::vector<std::vector<real>> &timeSeries)
+{
+    // sanity checks:
+    if( !doc_["pathwayProfileTimeSeries"].HasMember("t") ||
+        !doc_["pathwayProfileTimeSeries"].HasMember("s") )
+    {
+        throw std::logic_error("Can not at profile time series data before "
+                               "setting space time grid.");
+    }
+    size_t numDataPoints = timeSeries.size() * timeSeries.back().size();
+    if( numDataPoints != doc_["pathwayProfileTimeSeries"]["t"].Size() )
+    {
+        throw std::logic_error("Time series must have as many data points "
+                               "as grid points.");
+    }
+
+    // obtain an allocator:
+    rapidjson::Document::AllocatorType &alloc = doc_.GetAllocator();
+
+    // create a JSON array to hold time series values as linear array:
+    rapidjson::Value ts(rapidjson::kArrayType);
+
+    // lop over time points:
+    for(auto p : timeSeries)
+    {
+        // loop over spatial support points:
+        for(auto val : p)
+        {
+            ts.PushBack(val, alloc);
+        }
+    }
+
+    // add to long-format table:
+    doc_["pathwayProfileTimeSeries"].AddMember(toVal(name), ts, alloc);
 }
 
 

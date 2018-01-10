@@ -1768,6 +1768,12 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> residueYSummary(numPoreRes);
     std::vector<SummaryStatistics> residueZSummary(numPoreRes);
 
+    // containers for profile valued time series: 
+    std::vector<std::vector<real>> radiusProfileTimeSeries;
+    std::vector<std::vector<real>> solventDensityTimeSeries;
+    std::vector<std::vector<real>> plHydrophobicityTimeSeries;
+    std::vector<std::vector<real>> pfHydrophobicityTimeSeries;
+
     // read file line by line:
     int linesProcessed = 0;
     while( std::getline(inFile, line) )
@@ -1801,7 +1807,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             radiusSummary.at(i).update(radiusSample.at(i));
         }
 
-        
+        // add to time series:
+        radiusProfileTimeSeries.push_back(radiusSample);
 
         
         // sample points from hydrophobicity splines:
@@ -1812,6 +1819,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         SummaryStatistics::updateMultiple(
                 pfHydrophobicitySummary,
                 pfHydrophobicitySample);
+        pfHydrophobicityTimeSeries.push_back(pfHydrophobicitySample);
 
         SplineCurve1D plHydrophobicitySpline = SplineCurve1DJsonConverter::fromJson(
                 lineDoc["plHydrophobicitySpline"], 1);
@@ -1820,6 +1828,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         SummaryStatistics::updateMultiple(
                 plHydrophobicitySummary,
                 plHydrophobicitySample);
+        plHydrophobicityTimeSeries.push_back(plHydrophobicitySample);
 
 
         // sample points from solvent density spline:
@@ -1841,7 +1850,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         SummaryStatistics::updateMultiple(
                 solventDensitySummary,
                 solventDensitySample);
-       
+        solventDensityTimeSeries.push_back(solventDensitySample);
+ 
         // convert to energy and add to summary statistic:
         BoltzmannEnergyCalculator bec;
         std::vector<real> energySample = bec.calculate(solventDensitySample);
@@ -1968,6 +1978,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     results.addPathwayScalarTimeSeries("minSolventDensity", minSolventDensityTimeSeries);
     results.addPathwayScalarTimeSeries("bandWidth", bandWidthTimeSeries);
 
+    // add vector-valued time series data to output:
+    results.addPathwayGridPoints(timeStamps, supportPoints);
+    results.addPathwayProfileTimeSeries("radius", radiusProfileTimeSeries);
+    results.addPathwayProfileTimeSeries("density", solventDensityTimeSeries);
+    results.addPathwayProfileTimeSeries("plHydrophobicity", plHydrophobicityTimeSeries);
+    results.addPathwayProfileTimeSeries("pfHydrophobicity", pfHydrophobicityTimeSeries);
+
     // add per-residue data to output document:
     results.addResidueInformation(poreResIds, resInfo_);
     results.addResidueSummary("s", residueArcSummary);
@@ -1980,6 +1997,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     results.addResidueSummary("x", residueXSummary);
     results.addResidueSummary("y", residueYSummary);
     results.addResidueSummary("z", residueZSummary);
+
 
     // write results to JSON file:
     results.write(outFileName);
