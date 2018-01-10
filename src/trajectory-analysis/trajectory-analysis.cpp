@@ -1618,15 +1618,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics bandWidthSummary;
 
     // containers for scalar time series:
-    std::vector<real> argMinRadiusTS;
-    std::vector<real> minRadiusTS;
-    std::vector<real> lengthTS;
-    std::vector<real> volumeTS;
-    std::vector<real> numPathwayTS;
-    std::vector<real> numSampleTS;
-    std::vector<real> argMinSolventDensityTS;
-    std::vector<real> minSolventDensityTS;
-    std::vector<real> bandWidthTS;
+    std::vector<real> argMinRadiusTimeSeries;
+    std::vector<real> minRadiusTimeSeries;
+    std::vector<real> lengthTimeSeries;
+    std::vector<real> volumeTimeSeries;
+    std::vector<real> numPathwayTimeSeries;
+    std::vector<real> numSampleTimeSeries;
+    std::vector<real> argMinSolventDensityTimeSeries;
+    std::vector<real> minSolventDensityTimeSeries;
+    std::vector<real> bandWidthTimeSeries;
 
     // number of residues in pore forming group:
     size_t numPoreRes = 0;
@@ -1687,15 +1687,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         timeStamps.push_back(timeStamp);
 
         // get scalar time series data:
-        argMinRadiusTS.push_back(lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
-        minRadiusTS.push_back(lineDoc["pathSummary"]["minRadius"][0].GetDouble());
-        lengthTS.push_back(lineDoc["pathSummary"]["length"][0].GetDouble());
-        volumeTS.push_back(lineDoc["pathSummary"]["volume"][0].GetDouble());
-        numPathwayTS.push_back(lineDoc["pathSummary"]["numPath"][0].GetDouble());
-        numSampleTS.push_back(lineDoc["pathSummary"]["numSample"][0].GetDouble());
-        argMinSolventDensityTS.push_back(lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
-        minSolventDensityTS.push_back(lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
-        bandWidthTS.push_back(lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
+        argMinRadiusTimeSeries.push_back(lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
+        minRadiusTimeSeries.push_back(lineDoc["pathSummary"]["minRadius"][0].GetDouble());
+        lengthTimeSeries.push_back(lineDoc["pathSummary"]["length"][0].GetDouble());
+        volumeTimeSeries.push_back(lineDoc["pathSummary"]["volume"][0].GetDouble());
+        numPathwayTimeSeries.push_back(lineDoc["pathSummary"]["numPath"][0].GetDouble());
+        numSampleTimeSeries.push_back(lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        argMinSolventDensityTimeSeries.push_back(lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensityTimeSeries.push_back(lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+        bandWidthTimeSeries.push_back(lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
 
         // in first line, also read number of residues in pore forming group:
         if( linesRead == 0 )
@@ -1956,17 +1956,17 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     results.addPathwayProfile("density", solventDensitySummary);
     results.addPathwayProfile("energy", energySummary);
     
-    // TODO: change TS to TimeSeries once transistion is complete!
+    // add scalar time series data to output:
     results.addTimeStamps(timeStamps);
-    results.addPathwayScalarTimeSeries("argMinRadius", argMinRadiusTS);
-    results.addPathwayScalarTimeSeries("minRadius", minRadiusTS);
-    results.addPathwayScalarTimeSeries("length", lengthTS);
-    results.addPathwayScalarTimeSeries("volume", volumeTS);
-    results.addPathwayScalarTimeSeries("numPathway", numPathwayTS);
-    results.addPathwayScalarTimeSeries("numSample", numSampleTS);
-    results.addPathwayScalarTimeSeries("argMinSolventDensity", argMinSolventDensityTS);
-    results.addPathwayScalarTimeSeries("minSolventDensity", minSolventDensityTS);
-    results.addPathwayScalarTimeSeries("bandWidth", bandWidthTS);
+    results.addPathwayScalarTimeSeries("argMinRadius", argMinRadiusTimeSeries);
+    results.addPathwayScalarTimeSeries("minRadius", minRadiusTimeSeries);
+    results.addPathwayScalarTimeSeries("length", lengthTimeSeries);
+    results.addPathwayScalarTimeSeries("volume", volumeTimeSeries);
+    results.addPathwayScalarTimeSeries("numPathway", numPathwayTimeSeries);
+    results.addPathwayScalarTimeSeries("numSample", numSampleTimeSeries);
+    results.addPathwayScalarTimeSeries("argMinSolventDensity", argMinSolventDensityTimeSeries);
+    results.addPathwayScalarTimeSeries("minSolventDensity", minSolventDensityTimeSeries);
+    results.addPathwayScalarTimeSeries("bandWidth", bandWidthTimeSeries);
 
     // add per-residue data to output document:
     results.addResidueInformation(poreResIds, resInfo_);
