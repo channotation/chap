@@ -74,12 +74,7 @@ trajectoryAnalysis::trajectoryAnalysis()
     , saCoolingFactor_(0.99)
     , saStepLengthFactor_(0.01)
     , saUseAdaptiveCandGen_(false)
-{  
-    // register dataset:
-    // TODO: this data set should be made obsolete
-    registerAnalysisDataset(&dataResMapping_, "resMapping");
-
-
+{
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
     frameStreamData_.setMultipoint(true); 
 
@@ -128,6 +123,9 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     settings -> setRmPBC(false);
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserRmPBC);
 
+    // will use coordinates from topology:
+    settings -> setFlag(TrajectoryAnalysisSettings::efUseTopX, true);
+
 
     // SELECTION OPTIONS
     //-------------------------------------------------------------------------
@@ -155,23 +153,13 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .description("Number of sample points of pore centre "
                                       "line that are written to output."));*/
 
-    // TODO: more exressive or shorter command line flag?
-    options -> addOption(StringOption("json")
-	                     .store(&jsonOutputFileName_)
-                         .defaultValue("output.json")
-                         .description("File name for JSON output."));
-
-    // TODO find better solution for this
-    options -> addOption(StringOption("obj")
-	                     .store(&objOutputFileName_)
-                         .defaultValue("output.obj")
-                         .description("File name for OBJ output (testing)."));
-
-    // TODO find better solution for this.
-    options -> addOption(StringOption("resm")
-	                     .store(&resMappingOutFileName_)
-                         .defaultValue("res_mapping.dat")
-                         .description("Residue mapping data (testing)."));
+    options -> addOption(StringOption("out-filename")
+	                     .store(&outputBaseFileName_)
+                         .defaultValue("output")
+                         .description("File name for output files without "
+                                      "file extension. Proper file extensions "
+                                      "(e.g. filename.json) will be added "
+                                      "internally."));
 
 
     // PATH FINDING PARAMETERS
@@ -455,6 +443,17 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                  const TopologyInformation &top)
 {
+    // save atom coordinates in topology for writing to output later:
+    outputStructure_.fromTopology(top);
+
+    // ADD PROPER EXTENSIONS TO FILE NAMES
+    //-------------------------------------------------------------------------
+
+    outputJsonFileName_ = outputBaseFileName_ + ".json";
+    outputObjFileName_ = outputBaseFileName_ + ".obj";
+    outputPdbFileName_ = outputBaseFileName_ + ".pdb";
+
+
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
 
@@ -635,7 +634,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     AnalysisDataJsonFrameExporterPointer jsonFrameExporter(new AnalysisDataJsonFrameExporter);
     jsonFrameExporter -> setDataSetNames(frameStreamDataSetNames);
     jsonFrameExporter -> setColumnNames(frameStreamColumnNames);
-    std::string frameStreamFileName = std::string("stream_") + jsonOutputFileName_;
+    std::string frameStreamFileName = std::string("stream_") + outputJsonFileName_;
     jsonFrameExporter -> setFileName(frameStreamFileName);
     frameStreamData_.addModule(jsonFrameExporter);
 
@@ -648,42 +647,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     timingData_.setColumnCount(0, 1);
     timingData_.setMultipoint(false);
 
-
-    // RESIDUE MAPPING DATA
-    //-------------------------------------------------------------------------
-
-
-    // set dataset properties:
-    dataResMapping_.setDataSetCount(1);
-    dataResMapping_.setColumnCount(0, 6);   // refID s rho phi 
-    dataResMapping_.setMultipoint(true);
-
-    // add long format plot module:
-    int j = 1;
-    AnalysisDataLongFormatPlotModulePointer lfpltResMapping(new AnalysisDataLongFormatPlotModule(j));
-    const char *fnResMapping = resMappingOutFileName_.c_str();
-    std::vector<std::string> headerResMapping = {"t", 
-                                                 "mappedId", 
-                                                 "s", 
-                                                 "rho", 
-                                                 "phi", 
-                                                 "poreLining", 
-                                                 "poreFacing"};
-    lfpltResMapping -> setFileName(fnResMapping);
-    lfpltResMapping -> setHeader(headerResMapping);
-    lfpltResMapping -> setPrecision(5);    // TODO: different treatment for integers?
-    dataResMapping_.addModule(lfpltResMapping);
-
-
-    // set pdb data set properties:
-    dataResMappingPdb_.setDataSetCount(1);
-    dataResMappingPdb_.setColumnCount(0, 7);
-
-    // add PDB plot module:
-    AnalysisDataPdbPlotModulePointer plotResMappingPdb(new AnalysisDataPdbPlotModule(3));
-    plotResMappingPdb -> setFileName("res_mapping.pdb");
-    dataResMappingPdb_.addModule(plotResMappingPdb);
-    
 
     // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
     //-------------------------------------------------------------------------
@@ -991,26 +954,38 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 }
 
 
+/*!
+ *
+ */
+void
+trajectoryAnalysis::initAfterFirstFrame(
+        const TrajectoryAnalysisSettings &settings,
+        const t_trxframe &fr)
+{
+
+}
 
 
 /*
  *
  */
 void
-trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
-                                 TrajectoryAnalysisModuleData *pdata)
+trajectoryAnalysis::analyzeFrame(
+        int frnr, 
+        const t_trxframe &fr, 
+        t_pbc *pbc,
+        TrajectoryAnalysisModuleData *pdata)
 {
-	// get thread-local selections:
+
+    // get thread-local selections:
 	const Selection &refSelection = pdata -> parallelSelection(refsel_);
 //    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
     // get data handles for this frame:
-    AnalysisDataHandle dhResMapping = pdata -> dataHandle(dataResMapping_);
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
     AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
 	// get data for frame number frnr into data handle:
-    dhResMapping.startFrame(frnr, fr.time);
     dhFrameStream.startFrame(frnr, fr.time);
     dhTiming.startFrame(frnr, fr.time);
 
@@ -1195,7 +1170,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
         dhFrameStream.finishPointSet();
     }
 
-   
+
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
  
@@ -1258,23 +1233,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     }
     tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
     
-
-    // add points inside to data frame:
-    // TODO: this functionality should probably be handled outside the main analysis loop
-    for(auto it = poreCogMappedCoords.begin(); it != poreCogMappedCoords.end(); it++)
-    {
-        SelectionPosition pos = poreMappingSelCog.position(it->first);
-        
-        // add points to dataset:
-        dhResMapping.setPoint(0, pos.mappedId());                      // refId
-        dhResMapping.setPoint(1, it -> second[SS]);                    // s
-        dhResMapping.setPoint(2, std::sqrt(it -> second[RR]));         // rho
-        dhResMapping.setPoint(3, it -> second[PP]);                    // phi
-        dhResMapping.setPoint(4, poreLining[it -> first]);             // poreLining
-        dhResMapping.setPoint(5, poreFacing[it -> first]);             // poreFacing
-        dhResMapping.finishPointSet();
-    }
-
 
     // ESTIMATE HYDROPHOBICITY PROFILE
     //-------------------------------------------------------------------------
@@ -1595,7 +1553,7 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     // TODO: this should be moved to a separate binary!
 
     MolecularPathObjExporter molPathExp;
-    molPathExp(objOutputFileName_.c_str(),
+    molPathExp(outputObjFileName_.c_str(),
                molPath);
 
 
@@ -1610,7 +1568,6 @@ trajectoryAnalysis::analyzeFrame(int frnr, const t_trxframe &fr, t_pbc *pbc,
     //-------------------------------------------------------------------------
 
 	// finish analysis of current frame:
-    dhResMapping.finishFrame();
     dhFrameStream.finishFrame();
     dhTiming.finishFrame();
 }
@@ -1627,8 +1584,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::cout<<std::endl;
 
     // transfer file names from user input:
-    std::string inFileName = std::string("stream_") + jsonOutputFileName_;
-    std::string outFileName = jsonOutputFileName_;
+    std::string inFileName = std::string("stream_") + outputJsonFileName_;
+    std::string outFileName = outputJsonFileName_;
     std::fstream inFile;
     std::fstream outFile;
 
@@ -1983,6 +1940,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     inFile.close();
 
     
+    // CREATE PDB OUTPUT
+    // ------------------------------------------------------------------------
+
+    // assign residue pore facing and pore lining to occupency and bfac:
+    outputStructure_.setPoreFacing(residuePlSummary, residuePfSummary);
+
+    // write structure to PDB file:
+    PdbIo::write(outputPdbFileName_, outputStructure_);
+
 
     // CREATING OUTPUT JSON
     // ------------------------------------------------------------------------
