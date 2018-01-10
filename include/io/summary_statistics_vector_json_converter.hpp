@@ -17,7 +17,7 @@ class SummaryStatisticsVectorJsonConverter
     public:
 
         // conversion functionality:
-        rapidjson::Value convert(
+        static rapidjson::Value convert(
                 const std::vector<SummaryStatistics> &sumStats,
                 rapidjson::Document::AllocatorType &alloc);
 };

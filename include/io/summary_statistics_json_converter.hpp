@@ -15,7 +15,7 @@ class SummaryStatisticsJsonConverter
     public:
 
         // conversion functionality:
-        rapidjson::Value convert(
+        static rapidjson::Value convert(
                 const SummaryStatistics &sumStats,
                 rapidjson::Document::AllocatorType &alloc);
 
