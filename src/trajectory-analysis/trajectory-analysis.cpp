@@ -38,6 +38,7 @@
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/multiscalar_time_series_json_converter.hpp"
+#include "io/results_json_exporter.hpp"
 #include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
@@ -1632,10 +1633,22 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     ScalarTimeSeries minSolventDensityTimeSeries("minSolventDensity");
     ScalarTimeSeries bandWidthTimeSeries("bandWidth");
 
+    std::vector<real> argMinRadiusTS;
+    std::vector<real> minRadiusTS;
+    std::vector<real> lengthTS;
+    std::vector<real> volumeTS;
+    std::vector<real> numPathwayTS;
+    std::vector<real> numSampleTS;
+    std::vector<real> argMinSolventDensityTS;
+    std::vector<real> minSolventDensityTS;
+    std::vector<real> bandWidthTS;
 
     // number of residues in pore forming group:
     size_t numPoreRes = 0;
     std::vector<int> poreResIds;
+
+    // container for time stamps:
+    std::vector<real> timeStamps;
 
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
@@ -1686,6 +1699,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
+        timeStamps.push_back(timeStamp);
 
         // add to time series objects:
         argMinRadiusTimeSeries.addDataPoint(
@@ -1716,6 +1730,16 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
                 timeStamp,
                 lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
 
+
+        argMinRadiusTS.push_back(lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
+        minRadiusTS.push_back(lineDoc["pathSummary"]["minRadius"][0].GetDouble());
+        lengthTS.push_back(lineDoc["pathSummary"]["length"][0].GetDouble());
+        volumeTS.push_back(lineDoc["pathSummary"]["volume"][0].GetDouble());
+        numPathwayTS.push_back(lineDoc["pathSummary"]["numPath"][0].GetDouble());
+        numSampleTS.push_back(lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        argMinSolventDensityTS.push_back(lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensityTS.push_back(lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+        bandWidthTS.push_back(lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
 
         // in first line, also read number of residues in pore forming group:
         if( linesRead == 0 )
@@ -1961,6 +1985,70 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // write structure to PDB file:
     PdbIo::write(outputPdbFileName_, outputStructure_);
+
+
+
+
+
+
+
+    // CREATE OUTPUT JSON
+    // ------------------------------------------------------------------------
+
+    // initialise a JSON results container:
+    ResultsJsonExporter results;
+
+    // add summary statistics for scalr variables describing the pathway:
+    results.addPathwaySummary("argMinRadius", argMinRadiusSummary);
+    results.addPathwaySummary("minRadius", minRadiusSummary);
+    results.addPathwaySummary("length", lengthSummary);
+    results.addPathwaySummary("volume", volumeSummary);
+    results.addPathwaySummary("numPathway", numPathSummary);
+    results.addPathwaySummary("numSample", numSampleSummary);
+    results.addPathwaySummary("argMinSolventDensity", argMinSolventDensitySummary);
+    results.addPathwaySummary("minSolventDensity", minSolventDensitySummary);
+    results.addPathwaySummary("bandWidth", bandWidthSummary);
+
+    // add time-averaged pathway profiles:
+    results.addSupportPoints(supportPoints);
+    results.addPathwayProfile("radius", radiusSummary);
+    results.addPathwayProfile("plHydrophobicity", plHydrophobicitySummary);
+    results.addPathwayProfile("pfHydrophobicity", pfHydrophobicitySummary);
+    results.addPathwayProfile("density", solventDensitySummary);
+    results.addPathwayProfile("energy", energySummary);
+    
+    // TODO: change TS to TimeSeries once transistion is complete!
+    results.addTimeStamps(timeStamps);
+    results.addPathwayScalarTimeSeries("argMinRadius", argMinRadiusTS);
+    results.addPathwayScalarTimeSeries("minRadius", minRadiusTS);
+    results.addPathwayScalarTimeSeries("length", lengthTS);
+    results.addPathwayScalarTimeSeries("volume", volumeTS);
+    results.addPathwayScalarTimeSeries("numPathway", numPathwayTS);
+    results.addPathwayScalarTimeSeries("numSample", numSampleTS);
+    results.addPathwayScalarTimeSeries("argMinSolventDensity", argMinSolventDensityTS);
+    results.addPathwayScalarTimeSeries("minSolventDensity", minSolventDensityTS);
+    results.addPathwayScalarTimeSeries("bandWidth", bandWidthTS);
+
+    // add per-residue data to output document:
+    results.addResidueInformation(poreResIds, resInfo_);
+    results.addResidueSummary("s", residueArcSummary);
+    results.addResidueSummary("rho", residueRhoSummary);
+    results.addResidueSummary("phi", residuePhiSummary);
+    results.addResidueSummary("poreLining", residuePlSummary);
+    results.addResidueSummary("poreFacing", residuePfSummary);
+    results.addResidueSummary("poreRadius", residuePoreRadiusSummary);
+    results.addResidueSummary("solventDensity", residueSolventDensitySummary);
+    results.addResidueSummary("x", residueXSummary);
+    results.addResidueSummary("y", residueYSummary);
+    results.addResidueSummary("z", residueZSummary);
+
+    // write results to JSON file:
+    results.write("new.json");
+
+
+
+
+
 
 
     // CREATING OUTPUT JSON

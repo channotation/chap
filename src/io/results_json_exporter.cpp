@@ -43,12 +43,12 @@ ResultsJsonExporter::ResultsJsonExporter()
     // create a pathway time series object:
     rapidjson::Value pathwayScalarTs;
     pathwayScalarTs.SetObject();
-    doc_.AddMember("pathwayScalarTs", pathwayScalarTs, alloc);
+    doc_.AddMember("pathwayScalarTimeSeries", pathwayScalarTs, alloc);
     
     // create a pathway profile time series object:
     rapidjson::Value pathwayProfileTs;
     pathwayProfileTs.SetObject();
-    doc_.AddMember("pathwayProfileTs", pathwayProfileTs, alloc);
+    doc_.AddMember("pathwayProfileTimeSeries", pathwayProfileTs, alloc);
     
     // create a residue summary object:
     rapidjson::Value residueSummary;
@@ -220,6 +220,7 @@ ResultsJsonExporter::addPathwayScalarTimeSeries(
  */
 void
 ResultsJsonExporter::addResidueInformation(
+        const std::vector<int> &resId,
         const ResidueInformationProvider &resInf)
 {
     // obtain an allocator:
@@ -230,9 +231,6 @@ ResultsJsonExporter::addResidueInformation(
     rapidjson::Value name(rapidjson::kArrayType);
     rapidjson::Value chain(rapidjson::kArrayType);
     rapidjson::Value hydrophobicity(rapidjson::kArrayType);
-
-    // extract residue IDs:
-    auto resId = resInf.ids();
 
     // loop over residues:
     for(auto i : resId)
@@ -245,10 +243,10 @@ ResultsJsonExporter::addResidueInformation(
     }
 
     // add residue information to output document:
-    doc_["residueInformation"].AddMember("id", id, alloc);
-    doc_["residueInformation"].AddMember("name", name, alloc);
-    doc_["residueInformation"].AddMember("chain", chain, alloc);
-    doc_["residueInformation"].AddMember("hydrophobicity", hydrophobicity, alloc);
+    doc_["residueSummary"].AddMember("id", id, alloc);
+    doc_["residueSummary"].AddMember("name", name, alloc);
+    doc_["residueSummary"].AddMember("chain", chain, alloc);
+    doc_["residueSummary"].AddMember("hydrophobicity", hydrophobicity, alloc);
 }
 
 
@@ -263,13 +261,13 @@ ResultsJsonExporter::addResidueSummary(
         const std::vector<SummaryStatistics> &resSummary)
 {
     // sanity checks:
-    if( !doc_["residueInformation"].HasMember("id") )
+    if( !doc_["residueSummary"].HasMember("id") )
     {
         throw std::logic_error("Can not add summary statistics to residue "
                                "summary before residue information has been "
                                "added.");
     }
-    if( resSummary.size() != doc_["residueInformation"]["id"].Size() )
+    if( resSummary.size() != doc_["residueSummary"]["id"].Size() )
     {
         throw std::logic_error("Number of data points in summary statistics "
                                "vector must equal number residues.");

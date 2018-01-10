@@ -34,6 +34,7 @@ class ResultsJsonExporter
                 std::string name,
                 const std::vector<real> &timeSeries);
         void addResidueInformation(
+                const std::vector<int> &resId,
                 const ResidueInformationProvider &resInf);
         void addResidueSummary(
                 std::string name,
