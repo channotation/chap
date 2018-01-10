@@ -126,8 +126,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
 
 
-    int nOutPoints_;   // number of points on path sample
-
+    int outputNumPoints_;   // number of points on path sample
+    real outputExtrapDist_;
 
     // selection and topology for initial probe position:
     gmx::SelectionCollection initProbePosCollection_;

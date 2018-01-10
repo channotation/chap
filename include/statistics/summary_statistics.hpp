@@ -52,6 +52,10 @@ class SummaryStatistics
                 std::vector<SummaryStatistics> &stat,
                 const std::vector<real> &newValues);
 
+        // manipulation methods:
+        void shift(
+                const real shift);
+
     private:
 
         // summary statistics updated by this class:

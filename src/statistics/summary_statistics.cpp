@@ -82,6 +82,22 @@ SummaryStatistics::updateMultiple(
 
 
 /*!
+ * Shifts the value of minimum, maximum, and mean by the given amount. Standard
+ * deviation, variance, and number of samples are unaffacted. This is useful if
+ * SummaryStatistics is used as a data container, but once shift() has been 
+ * called, update() should no longer be called.
+ */
+void
+SummaryStatistics::shift(
+        const real shift)
+{
+    min_ += shift;
+    max_ += shift;
+    mean_ += shift;
+}
+
+
+/*!
  * Getter method for obtaining the minimum value.
  */
 real
