@@ -31,6 +31,10 @@ dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
 # RESIDUE INFORMATION PLOTS
 ################################################################################
 
+# individual plo size:
+plot.height <- unit(plot.height.cm, "cm")
+plot.width <- unit(plot.width.cm, "cm")
+
 
 # Positions of Pore-Facing Residues
 #-------------------------------------------------------------------------------

@@ -42,15 +42,15 @@ plot.height <- unit(plot.height.cm, "cm")
 data <- as.data.frame(dat$residueSummary)
 plt.radius.profile <- ggplot(data = data[dat$residueSummary$poreFacing$mean >= 0.1 &
                                          dat$residueSummary$id < length(dat$residueSummary$id),],) +
-  geom_line(data = as.data.frame(dat$pathProfile), 
+  geom_line(data = as.data.frame(dat$pathwayProfile), 
             aes(x = s, 
                 y = radiusMean)) +
-  geom_ribbon(data = as.data.frame(dat$pathProfile), 
+  geom_ribbon(data = as.data.frame(dat$pathwayProfile), 
               aes(x = s,
                   ymin = radiusMin, 
                   ymax = radiusMax), 
               alpha = 0.1) +
-  geom_ribbon(data = as.data.frame(dat$pathProfile), 
+  geom_ribbon(data = as.data.frame(dat$pathwayProfile), 
               aes(x = s,
                   ymin = radiusMean - radiusSd, 
                   ymax = radiusMean + radiusSd), 
@@ -78,7 +78,7 @@ ggsave("time_averaged_radius_profile.pdf",
 #-------------------------------------------------------------------------------
 
 data <- as.data.frame(dat$residueSummary)
-plt.hydrophobicity <- ggplot(as.data.frame(dat$pathProfile),
+plt.hydrophobicity <- ggplot(as.data.frame(dat$pathwayProfile),
                              aes(x = s,
                                  y = pfHydrophobicityMean)) +
   geom_line() +
@@ -103,7 +103,7 @@ ggsave("time_averaged_hydrophobicity.pdf",
 # Solvent Number Density Profile
 #-------------------------------------------------------------------------------
 
-plt.solvent.number.density <- ggplot(as.data.frame(dat$pathProfile),
+plt.solvent.number.density <- ggplot(as.data.frame(dat$pathwayProfile),
                                      aes(x = s,
                                          y = densityMean)) +
   geom_abline(intercept = 33.3679, 
@@ -131,7 +131,7 @@ ggsave("time_averaged_solvent_number_density_profile.pdf",
 # Solvent Free Energy Profile
 #-------------------------------------------------------------------------------
 
-plt.free.energy <- ggplot(as.data.frame(dat$pathProfile),
+plt.free.energy <- ggplot(as.data.frame(dat$pathwayProfile),
                           aes(x = s,
                               y = energyMean)) +
   geom_line() +

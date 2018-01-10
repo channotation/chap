@@ -37,13 +37,13 @@ plot.height <- unit(plot.height.cm, "cm")
 
 # smoother length:
 t.smooth <- 5000 # time scale of smoother
-span.smooth <- t.smooth/abs(diff(range(as.data.frame(dat$pathSummary$timeSeries)$t)))
+span.smooth <- t.smooth/abs(diff(range(as.data.frame(dat$pathwayScalarTimeSeries)$t)))
 
 
 # Length
 #-------------------------------------------------------------------------------
 
-plt.length <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.length <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                      aes(x = t, 
                          y = length)) +
   geom_line() +
@@ -67,7 +67,7 @@ ggsave("pathway_length_over_time.pdf",
   # Volume
 #-------------------------------------------------------------------------------
 
-plt.volume <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.volume <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                      aes(x = t, 
                          y = volume)) +
   geom_line() +
@@ -91,9 +91,9 @@ ggsave("pathway_volume_over_time.pdf",
 # Number of Solvent Particles in Pathway
 #-------------------------------------------------------------------------------
 
-plt.solvent.number <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.solvent.number <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                              aes(x = t, 
-                                 y = numPath)) +
+                                 y = numPathway)) +
   geom_line() +
   geom_smooth(method = "loess",
               se = FALSE,
@@ -115,9 +115,9 @@ ggsave("avg_solvent_number_density_over_time.pdf",
 # Average Solvent Number Density in Pathway
 #-------------------------------------------------------------------------------
 
-plt.avg.solvent.number.density <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.avg.solvent.number.density <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                          aes(x = t, 
-                                             y = numPath/volume)) +
+                                             y = numPathway/volume)) +
   geom_line() +
   geom_abline(intercept = 33.3679, 
               slope = 0, 
@@ -144,7 +144,7 @@ ggsave("avg_solvent_number_density_over_time.pdf",
 # Minimal Pore Radius
 #-------------------------------------------------------------------------------
 
-plt.min.pore.radius <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.min.pore.radius <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                               aes(x = t, 
                                   y = minRadius)) +
   geom_line() +
@@ -168,7 +168,7 @@ ggsave("min_pore_radius_over_time.pdf",
 # Minimal Solvent Number Density
 #-------------------------------------------------------------------------------
 
-plt.min.solvent.density <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.min.solvent.density <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                   aes(x = t, 
                                       y = minSolventDensity)) +
   geom_line() +
@@ -192,7 +192,7 @@ ggsave("min_solvent_number_density_over_time.pdf",
 # Location of Minimal Pore Radius
 #-------------------------------------------------------------------------------
 
-plt.argmin.pore.radius <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.argmin.pore.radius <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                  aes(x = t, 
                                      y = argMinRadius)) +
   geom_point() +
@@ -210,7 +210,7 @@ ggsave("argmin_pore_radius_over_time.pdf",
 # Location of Minimal Solvent Number Density
 #-------------------------------------------------------------------------------
 
-plt.argmin.solvent.density <- ggplot(data = as.data.frame(dat$pathSummary$timeSeries),
+plt.argmin.solvent.density <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                      aes(x = t, 
                                          y = argMinSolventDensity)) +
   geom_point() +
