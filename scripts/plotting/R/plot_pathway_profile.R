@@ -12,11 +12,21 @@ library(jsonlite)  # parsing JSON files
 filename <- "output.json"
 
 # plot output parameters:
-plot.width.cm <- 21.0/2
-plot.height.cm <- 29.7/4
+plot.width.cm <- 5.8
+plot.height.cm <- plot.width.cm * 0.75
 
 # plot appearance:
-theme_chap <- theme_grey(base_size = 18)
+theme_chap <- theme(text = element_text(size = 13),
+                    axis.text.x = element_text(size = 12,
+                                               colour = "black"),
+                    axis.text.y = element_text(size = 12,
+                                               colour = "black"),
+                    panel.border = element_rect(colour = "black", 
+                                                fill = NA, 
+                                                size=1),
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank(),
+                    panel.background = element_blank()) 
 
 
 ################################################################################
@@ -36,21 +46,21 @@ plot.width <- unit(plot.width.cm, "cm")
 plot.height <- unit(plot.height.cm, "cm")
 
 
-# Radius Profile
+# Radius Profile with Residue Positions
 #-------------------------------------------------------------------------------
 
 data <- as.data.frame(dat$residueSummary)
 plt.radius.profile <- ggplot(data = data[dat$residueSummary$poreFacing$mean >= 0.1 &
                                          dat$residueSummary$id < length(dat$residueSummary$id),],) +
-  geom_line(data = as.data.frame(dat$pathProfile), 
+  geom_line(data = as.data.frame(dat$pathwayProfile), 
             aes(x = s, 
                 y = radiusMean)) +
-  geom_ribbon(data = as.data.frame(dat$pathProfile), 
+  geom_ribbon(data = as.data.frame(dat$pathwayProfile), 
               aes(x = s,
                   ymin = radiusMin, 
                   ymax = radiusMax), 
               alpha = 0.1) +
-  geom_ribbon(data = as.data.frame(dat$pathProfile), 
+  geom_ribbon(data = as.data.frame(dat$pathwayProfile), 
               aes(x = s,
                   ymin = radiusMean - radiusSd, 
                   ymax = radiusMean + radiusSd), 
@@ -58,27 +68,31 @@ plt.radius.profile <- ggplot(data = data[dat$residueSummary$poreFacing$mean >= 0
   geom_point(aes(x = s.mean,
                  y = rho.mean,
                  colour = hydrophobicity),
-             size = 2) +
-  scale_colour_distiller(palette = "RdBu",
-                         name = expression(paste("hydrophobicity")),
+             size = 4) +
+  scale_colour_distiller(palette = "BrBG",
+                         name = expression(paste(H~~bgroup("(",a.u.,")"))),
                          limits = c(-max(abs(data$hydrophobicity)), 
-                                    max(abs(data$hydrophobicity)))) +
-  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
-  ylab(expression(paste(R~~bgroup("(",nm,")")))) +
-  ggtitle("Time-Averaged Pore-Facing Residue Positions") +
+                                    max(abs(data$hydrophobicity))),
+                         guide = guide_colourbar(barheight = 10,
+                                                 barwidth = 1.3)) +
+  scale_x_continuous(expand = c(0, 0),
+                     name = expression(paste(s~~bgroup("(",nm,")")))) +
+  scale_y_continuous(name = expression(paste(R~~bgroup("(",nm,")")))) +
+  ggtitle("Time-Averaged Radius Profile") +
   theme_chap
 
-ggsave("time_averaged_radius_profile.pdf", 
+ggsave("time_averaged_radius_profile.png", 
        plt.radius.profile,
        width = plot.width,
-       height = plot.height)
+       height = plot.height,
+       dpi = 1200)
 
 
-# Radius Profile with Residue Positions
+# Hydrophobicity Profile with Residue Positions
 #-------------------------------------------------------------------------------
 
 data <- as.data.frame(dat$residueSummary)
-plt.hydrophobicity <- ggplot(as.data.frame(dat$pathProfile),
+plt.hydrophobicity <- ggplot(as.data.frame(dat$pathwayProfile),
                              aes(x = s,
                                  y = pfHydrophobicityMean)) +
   geom_line() +
@@ -86,24 +100,31 @@ plt.hydrophobicity <- ggplot(as.data.frame(dat$pathProfile),
              aes(x = s.mean,
                  y = hydrophobicity,
                  colour = name),
-             size = 2) +
-  geom_ribbon(aes(ymin = pfHydrophobicityMin, ymax = pfHydrophobicityMax), alpha = 0.1) +
-  geom_ribbon(aes(ymin = pfHydrophobicityMean - pfHydrophobicitySd, ymax = pfHydrophobicityMean + pfHydrophobicitySd), alpha = 0.2) +
-  ggtitle("Time-Averaged Hydrophobicity due to Pore-Facing Residues") +
-  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
-  ylab(expression(paste("hydrophobicity"))) +
+             size = 4) +
+  geom_ribbon(aes(ymin = pfHydrophobicityMin, 
+                  ymax = pfHydrophobicityMax), 
+              alpha = 0.1) +
+  geom_ribbon(aes(ymin = pfHydrophobicityMean - pfHydrophobicitySd, 
+                  ymax = pfHydrophobicityMean + pfHydrophobicitySd), 
+              alpha = 0.2) +
+  scale_x_continuous(expand = c(0, 0),
+                     name = expression(paste(s~~bgroup("(",nm,")")))) +
+  scale_y_continuous(name = expression(paste(H~~bgroup("(",nm,")")))) +
+  scale_color_discrete(name = "Residue") +
+  ggtitle("Time-Averaged Hydrophobicity") +
   theme_chap
 
-ggsave("time_averaged_hydrophobicity.pdf", 
+ggsave("time_averaged_hydrophobicity.png", 
        plt.hydrophobicity,
        width = plot.width,
-       height = plot.height)
+       height = plot.height,
+       dpi = 1200)
 
 
 # Solvent Number Density Profile
 #-------------------------------------------------------------------------------
 
-plt.solvent.number.density <- ggplot(as.data.frame(dat$pathProfile),
+plt.solvent.number.density <- ggplot(as.data.frame(dat$pathwayProfile),
                                      aes(x = s,
                                          y = densityMean)) +
   geom_abline(intercept = 33.3679, 
@@ -117,39 +138,40 @@ plt.solvent.number.density <- ggplot(as.data.frame(dat$pathProfile),
   geom_ribbon(aes(ymin = densityMean - densitySd, 
                   ymax = densityMean + densitySd), 
               alpha = 0.2) +
-  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
-  ylab(expression(paste(n~~bgroup("(",nm^{-3},")")))) +
+  scale_x_continuous(expand = c(0, 0),
+                     name = expression(paste(s~~bgroup("(",nm,")")))) +
+  scale_y_continuous(name = expression(paste(n~~bgroup("(",nm^{-3},")")))) +
   ggtitle("Time-Averaged Solvent Number Density Profile") +
   theme_chap
 
-ggsave("time_averaged_solvent_number_density_profile.pdf", 
+ggsave("time_averaged_solvent_number_density_profile.png", 
        plt.solvent.number.density,
        width = plot.width,
-       height = plot.height)
+       height = plot.height,
+       dpi = 1200)
 
 
 # Solvent Free Energy Profile
 #-------------------------------------------------------------------------------
 
-plt.free.energy <- ggplot(as.data.frame(dat$pathProfile),
+plt.free.energy <- ggplot(as.data.frame(dat$pathwayProfile),
                           aes(x = s,
                               y = energyMean)) +
   geom_line() +
-  geom_ribbon(aes(ymin = energyMin, 
-                  ymax = energyMax), 
-              alpha = 0.1) +
   geom_ribbon(aes(ymin = energyMean - energySd, 
                   ymax = energyMean + energySd), 
               alpha = 0.2) +
-  xlab(expression(paste(s~~bgroup("(",nm,")")))) +
-  ylab(expression(paste(G~~bgroup("(",kT[B],")")))) +
-  ggtitle("Time-Averaged Solvent Solvent Free Energy Profile") +
+  scale_x_continuous(expand = c(0, 0),
+                     name = expression(paste(s~~bgroup("(",nm,")")))) +
+  scale_y_continuous(name = expression(paste(G~~bgroup("(",k[B]*T,")")))) +
+  ggtitle("Time-Averaged Solvent Free Energy Profile") +
   theme_chap
 
-ggsave("time_averaged_free_energy_profile.pdf", 
+ggsave("time_averaged_free_energy_profile.png", 
        plt.free.energy,
        width = plot.width,
-       height = plot.height)
+       height = plot.height,
+       dpi = 1200)
 
 
 # Combined Plot
@@ -161,8 +183,9 @@ plt.profile <- grid.arrange(plt.radius.profile,
                             plt.free.energy,
                             ncol = 2)
 
-ggsave("pathway_profiles.pdf", 
+ggsave("time_averaged_pathway_profiles.png", 
        plt.profile, 
        width = unit(2*plot.width.cm, "cm"), 
-       height = unit(2*plot.height.cm, "cm"))
+       height = unit(2*plot.height.cm, "cm"),
+       dpi = 400)
 

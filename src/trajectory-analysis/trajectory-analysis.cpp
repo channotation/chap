@@ -13,11 +13,6 @@
 #include <gromacs/fileio/confio.h>
 #include <gromacs/utility/programcontext.h>
 
-#include "rapidjson/document.h"
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-
 #include "trajectory-analysis/trajectory-analysis.hpp"
 
 #include "aggregation/boltzmann_energy_calculator.hpp"
@@ -38,6 +33,7 @@
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
 #include "io/multiscalar_time_series_json_converter.hpp"
+#include "io/results_json_exporter.hpp"
 #include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
 #include "io/summary_statistics_vector_json_converter.hpp"
@@ -1621,21 +1617,23 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     SummaryStatistics arcLengthHiSummary;
     SummaryStatistics bandWidthSummary;
 
-    // prepare scalar time series objects for aggregate properties:
-    ScalarTimeSeries argMinRadiusTimeSeries("argMinRadius");
-    ScalarTimeSeries minRadiusTimeSeries("minRadius");
-    ScalarTimeSeries lengthTimeSeries("length");
-    ScalarTimeSeries volumeTimeSeries("volume");
-    ScalarTimeSeries numPathTimeSeries("numPath");
-    ScalarTimeSeries numSampleTimeSeries("numSample");
-    ScalarTimeSeries argMinSolventDensityTimeSeries("argMinSolventDensity");
-    ScalarTimeSeries minSolventDensityTimeSeries("minSolventDensity");
-    ScalarTimeSeries bandWidthTimeSeries("bandWidth");
-
+    // containers for scalar time series:
+    std::vector<real> argMinRadiusTimeSeries;
+    std::vector<real> minRadiusTimeSeries;
+    std::vector<real> lengthTimeSeries;
+    std::vector<real> volumeTimeSeries;
+    std::vector<real> numPathwayTimeSeries;
+    std::vector<real> numSampleTimeSeries;
+    std::vector<real> argMinSolventDensityTimeSeries;
+    std::vector<real> minSolventDensityTimeSeries;
+    std::vector<real> bandWidthTimeSeries;
 
     // number of residues in pore forming group:
     size_t numPoreRes = 0;
     std::vector<int> poreResIds;
+
+    // container for time stamps:
+    std::vector<real> timeStamps;
 
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
@@ -1686,36 +1684,18 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
+        timeStamps.push_back(timeStamp);
 
-        // add to time series objects:
-        argMinRadiusTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
-        minRadiusTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["minRadius"][0].GetDouble());
-        lengthTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["length"][0].GetDouble());
-        volumeTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["volume"][0].GetDouble());
-        numPathTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["numPath"][0].GetDouble());
-        numSampleTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["numSample"][0].GetDouble());
-        argMinSolventDensityTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
-        minSolventDensityTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
-        bandWidthTimeSeries.addDataPoint(
-                timeStamp,
-                lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
-
+        // get scalar time series data:
+        argMinRadiusTimeSeries.push_back(lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
+        minRadiusTimeSeries.push_back(lineDoc["pathSummary"]["minRadius"][0].GetDouble());
+        lengthTimeSeries.push_back(lineDoc["pathSummary"]["length"][0].GetDouble());
+        volumeTimeSeries.push_back(lineDoc["pathSummary"]["volume"][0].GetDouble());
+        numPathwayTimeSeries.push_back(lineDoc["pathSummary"]["numPath"][0].GetDouble());
+        numSampleTimeSeries.push_back(lineDoc["pathSummary"]["numSample"][0].GetDouble());
+        argMinSolventDensityTimeSeries.push_back(lineDoc["pathSummary"]["argMinSolventDensity"][0].GetDouble());
+        minSolventDensityTimeSeries.push_back(lineDoc["pathSummary"]["minSolventDensity"][0].GetDouble());
+        bandWidthTimeSeries.push_back(lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
 
         // in first line, also read number of residues in pore forming group:
         if( linesRead == 0 )
@@ -1732,18 +1712,6 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         // increment line counter:
         linesRead++;
     }
-
-    // combine individual time scalar time series into one object:
-    MultiscalarTimeSeries pathSummaryTimeSeries;
-    pathSummaryTimeSeries.addScalarTimeSeries(argMinRadiusTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(minRadiusTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(lengthTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(volumeTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(numPathTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(numSampleTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(argMinSolventDensityTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(minSolventDensityTimeSeries);
-    pathSummaryTimeSeries.addScalarTimeSeries(bandWidthTimeSeries);
 
     // close per frame data set:
     inFile.close();
@@ -1800,6 +1768,12 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> residueYSummary(numPoreRes);
     std::vector<SummaryStatistics> residueZSummary(numPoreRes);
 
+    // containers for profile valued time series: 
+    std::vector<std::vector<real>> radiusProfileTimeSeries;
+    std::vector<std::vector<real>> solventDensityTimeSeries;
+    std::vector<std::vector<real>> plHydrophobicityTimeSeries;
+    std::vector<std::vector<real>> pfHydrophobicityTimeSeries;
+
     // read file line by line:
     int linesProcessed = 0;
     while( std::getline(inFile, line) )
@@ -1833,7 +1807,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             radiusSummary.at(i).update(radiusSample.at(i));
         }
 
-        
+        // add to time series:
+        radiusProfileTimeSeries.push_back(radiusSample);
 
         
         // sample points from hydrophobicity splines:
@@ -1844,6 +1819,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         SummaryStatistics::updateMultiple(
                 pfHydrophobicitySummary,
                 pfHydrophobicitySample);
+        pfHydrophobicityTimeSeries.push_back(pfHydrophobicitySample);
 
         SplineCurve1D plHydrophobicitySpline = SplineCurve1DJsonConverter::fromJson(
                 lineDoc["plHydrophobicitySpline"], 1);
@@ -1852,6 +1828,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         SummaryStatistics::updateMultiple(
                 plHydrophobicitySummary,
                 plHydrophobicitySample);
+        plHydrophobicityTimeSeries.push_back(plHydrophobicitySample);
 
 
         // sample points from solvent density spline:
@@ -1873,7 +1850,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
         SummaryStatistics::updateMultiple(
                 solventDensitySummary,
                 solventDensitySample);
-       
+        solventDensityTimeSeries.push_back(solventDensitySample);
+ 
         // convert to energy and add to summary statistic:
         BoltzmannEnergyCalculator bec;
         std::vector<real> energySample = bec.calculate(solventDensitySample);
@@ -1963,323 +1941,66 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     PdbIo::write(outputPdbFileName_, outputStructure_);
 
 
-    // CREATING OUTPUT JSON
+    // CREATE OUTPUT JSON
     // ------------------------------------------------------------------------
 
-    // TODO also need to write density and energy profiles
+    // initialise a JSON results container:
+    ResultsJsonExporter results;
 
-    // prepare JSON document for output:
-    rapidjson::Document outDoc;
-    rapidjson::Document::AllocatorType &alloc = outDoc.GetAllocator();
-    outDoc.SetObject();
+    // add summary statistics for scalr variables describing the pathway:
+    results.addPathwaySummary("argMinRadius", argMinRadiusSummary);
+    results.addPathwaySummary("minRadius", minRadiusSummary);
+    results.addPathwaySummary("length", lengthSummary);
+    results.addPathwaySummary("volume", volumeSummary);
+    results.addPathwaySummary("numPathway", numPathSummary);
+    results.addPathwaySummary("numSample", numSampleSummary);
+    results.addPathwaySummary("argMinSolventDensity", argMinSolventDensitySummary);
+    results.addPathwaySummary("minSolventDensity", minSolventDensitySummary);
+    results.addPathwaySummary("bandWidth", bandWidthSummary);
 
-    // create JSON object for reproducibility information:
-    // TODO this should probably get its own class
-    rapidjson::Value reproInfo;
-
-    rapidjson::Value version;
-    version.SetObject();
-    version.AddMember(
-            "string",
-            chapVersionString(),
-            alloc);
-    version.AddMember(
-            "major",
-            chapVersionMajor(),
-            alloc);
-    version.AddMember(
-            "minor",
-            chapVersionMinor(),
-            alloc);
-    version.AddMember(
-            "patch",
-            chapVersionPatch(),
-            alloc);
-    version.AddMember(
-            "gitHash",
-            chapVersionGitHash(),
-            alloc);
-    reproInfo.SetObject();
-    reproInfo.AddMember(
-            "version",
-            version,
-            alloc);
-    reproInfo.AddMember(
-            "commandLine",
-            chapCommandLine(),
-            alloc);
-
-    // add reproducibility information to output JSON:
-    outDoc.AddMember(
-            "reproducibilityInformation",
-            reproInfo,
-            alloc);
-
-    // create JSON object for pore summary data:
-    rapidjson::Value pathSummary;
-    pathSummary.SetObject();
-
-    SummaryStatisticsJsonConverter ssjc;
-    pathSummary.AddMember(
-            "argMinRadius",
-            ssjc.convert(argMinRadiusSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "minRadius",
-            ssjc.convert(minRadiusSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "length",
-            ssjc.convert(lengthSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "volume",
-            ssjc.convert(volumeSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "numPath",
-            ssjc.convert(numPathSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "numSample",
-            ssjc.convert(numSampleSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "argMinSolventDensity",
-            ssjc.convert(argMinSolventDensitySummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "minSolventDensity",
-            ssjc.convert(minSolventDensitySummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-    pathSummary.AddMember(
-            "bandWidth",
-            ssjc.convert(bandWidthSummary, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-
-    MultiscalarTimeSeriesJsonConverter mtjc;
-    pathSummary.AddMember(
-            "timeSeries",
-            mtjc.convert(pathSummaryTimeSeries, outDoc.GetAllocator()),
-            outDoc.GetAllocator());
-
-    // add summary data to output document:
-    outDoc.AddMember("pathSummary", pathSummary, alloc);
-
-
-    // per residue data:
-    rapidjson::Value residueSummary;
-    residueSummary.SetObject();
-
-    // add all time-constant residue variables:
-    rapidjson::Value poreResidueIds(rapidjson::kArrayType);
-    rapidjson::Value poreResidueName(rapidjson::kArrayType);
-    rapidjson::Value poreResidueChain(rapidjson::kArrayType);
-    rapidjson::Value poreResidueHydrophobicity(rapidjson::kArrayType);
-    for(auto id : poreResIds)
-    {
-        // residue ID:
-        poreResidueIds.PushBack(
-                id, 
-                alloc);
-
-        // residue name:
-        rapidjson::Value name(rapidjson::kStringType);
-        name.SetString(
-                resInfo_.name(id).c_str(), 
-                strlen(resInfo_.name(id).c_str()), 
-                alloc);
-        poreResidueName.PushBack(name, alloc);
-
-        // residue chain ID:
-        rapidjson::Value chain(rapidjson::kStringType);
-        chain.SetString(
-                resInfo_.chain(id).c_str(), 
-                strlen(resInfo_.chain(id).c_str()), 
-                alloc);
-        poreResidueChain.PushBack(chain, alloc);
-
-        // residue hydrophobicity:
-        poreResidueHydrophobicity.PushBack(
-                resInfo_.hydrophobicity(id), 
-                alloc);
-    }
-    residueSummary.AddMember("id", poreResidueIds, alloc);
-    residueSummary.AddMember("name", poreResidueName, alloc);
-    residueSummary.AddMember("chain", poreResidueChain, alloc);
-    residueSummary.AddMember("hydrophobicity", poreResidueHydrophobicity, alloc);
-
-    SummaryStatisticsVectorJsonConverter sumStatsVecConv;
-    residueSummary.AddMember(
-            "s",
-            sumStatsVecConv.convert(residueArcSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "rho",
-            sumStatsVecConv.convert(residueRhoSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "phi",
-            sumStatsVecConv.convert(residuePhiSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "poreLining",
-            sumStatsVecConv.convert(residuePlSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "poreFacing",
-            sumStatsVecConv.convert(residuePfSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "poreRadius",
-            sumStatsVecConv.convert(residuePoreRadiusSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "solventDensity",
-            sumStatsVecConv.convert(residueSolventDensitySummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "x",
-            sumStatsVecConv.convert(residueXSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "y",
-            sumStatsVecConv.convert(residueYSummary, alloc),
-            alloc);
-    residueSummary.AddMember(
-            "z",
-            sumStatsVecConv.convert(residueZSummary, alloc),
-            alloc);
-
-    outDoc.AddMember(
-            "residueSummary",
-            residueSummary,
-            alloc);
-
-
-    // create JSON object for scalar time series:
-    rapidjson::Value pathTimeSeries;
-
-    // create JSON object for pore profile:
-    rapidjson::Value pathProfile;
-    pathProfile.SetObject();
-
-    // create JSON arrays to hold pore profile values:
-    rapidjson::Value supportPts(rapidjson::kArrayType);
-
-    // TODO: this should all get some unifying function to avoid redundancy!
-    rapidjson::Value radiusMin(rapidjson::kArrayType);
-    rapidjson::Value radiusMax(rapidjson::kArrayType);
-    rapidjson::Value radiusMean(rapidjson::kArrayType);
-    rapidjson::Value radiusSd(rapidjson::kArrayType);    
-
-    rapidjson::Value plHydrophobicityMin(rapidjson::kArrayType);
-    rapidjson::Value plHydrophobicityMax(rapidjson::kArrayType);
-    rapidjson::Value plHydrophobicityMean(rapidjson::kArrayType);
-    rapidjson::Value plHydrophobicitySd(rapidjson::kArrayType);    
-
-    rapidjson::Value pfHydrophobicityMin(rapidjson::kArrayType);
-    rapidjson::Value pfHydrophobicityMax(rapidjson::kArrayType);
-    rapidjson::Value pfHydrophobicityMean(rapidjson::kArrayType);
-    rapidjson::Value pfHydrophobicitySd(rapidjson::kArrayType);    
-
-    rapidjson::Value densityMin(rapidjson::kArrayType);
-    rapidjson::Value densityMax(rapidjson::kArrayType);
-    rapidjson::Value densityMean(rapidjson::kArrayType);
-    rapidjson::Value densitySd(rapidjson::kArrayType);    
-
-    rapidjson::Value energyMin(rapidjson::kArrayType);
-    rapidjson::Value energyMax(rapidjson::kArrayType);
-    rapidjson::Value energyMean(rapidjson::kArrayType);
-    rapidjson::Value energySd(rapidjson::kArrayType);    
-
-    // fill JSON arrays with values::
-    for(size_t i = 0; i < supportPoints.size(); i++)
-    {
-        // support points:
-        supportPts.PushBack(supportPoints.at(i), alloc);
-
-        // radius:
-        radiusMin.PushBack(radiusSummary.at(i).min(), alloc);
-        radiusMax.PushBack(radiusSummary.at(i).max(), alloc);
-        radiusMean.PushBack(radiusSummary.at(i).mean(), alloc);
-        radiusSd.PushBack(radiusSummary.at(i).sd(), alloc);
-
-        // hydrophobicity:
-        plHydrophobicityMin.PushBack(plHydrophobicitySummary.at(i).min(), alloc);
-        plHydrophobicityMax.PushBack(plHydrophobicitySummary.at(i).max(), alloc);
-        plHydrophobicityMean.PushBack(plHydrophobicitySummary.at(i).mean(), alloc);
-        plHydrophobicitySd.PushBack(plHydrophobicitySummary.at(i).sd(), alloc);
-
-        pfHydrophobicityMin.PushBack(pfHydrophobicitySummary.at(i).min(), alloc);
-        pfHydrophobicityMax.PushBack(pfHydrophobicitySummary.at(i).max(), alloc);
-        pfHydrophobicityMean.PushBack(pfHydrophobicitySummary.at(i).mean(), alloc);
-        pfHydrophobicitySd.PushBack(pfHydrophobicitySummary.at(i).sd(), alloc);
-
-        // density:
-        densityMin.PushBack(solventDensitySummary.at(i).min(), alloc);
-        densityMax.PushBack(solventDensitySummary.at(i).max(), alloc);
-        densityMean.PushBack(solventDensitySummary.at(i).mean(), alloc);
-        densitySd.PushBack(solventDensitySummary.at(i).sd(), alloc);
-
-        // energy:
-        energyMin.PushBack(energySummary.at(i).min(), alloc);
-        energyMax.PushBack(energySummary.at(i).max(), alloc);
-        energyMean.PushBack(energySummary.at(i).mean(), alloc);
-        energySd.PushBack(energySummary.at(i).sd(), alloc);
-    }
-
-    // add JSON arrays to pore profile object:
-    pathProfile.AddMember("s", supportPts, alloc);
-
-    pathProfile.AddMember("radiusMin", radiusMin, alloc);
-    pathProfile.AddMember("radiusMax", radiusMax, alloc);
-    pathProfile.AddMember("radiusMean", radiusMean, alloc);
-    pathProfile.AddMember("radiusSd", radiusSd, alloc);
-
-    pathProfile.AddMember("plHydrophobicityMin", plHydrophobicityMin, alloc);
-    pathProfile.AddMember("plHydrophobicityMax", plHydrophobicityMax, alloc);
-    pathProfile.AddMember("plHydrophobicityMean", plHydrophobicityMean, alloc);
-    pathProfile.AddMember("plHydrophobicitySd", plHydrophobicitySd, alloc);
-
-    pathProfile.AddMember("pfHydrophobicityMin", pfHydrophobicityMin, alloc);
-    pathProfile.AddMember("pfHydrophobicityMax", pfHydrophobicityMax, alloc);
-    pathProfile.AddMember("pfHydrophobicityMean", pfHydrophobicityMean, alloc);
-    pathProfile.AddMember("pfHydrophobicitySd", pfHydrophobicitySd, alloc);
-
-    pathProfile.AddMember("densityMin", densityMin, alloc);
-    pathProfile.AddMember("densityMax", densityMax, alloc);
-    pathProfile.AddMember("densityMean", densityMean, alloc);
-    pathProfile.AddMember("densitySd", densitySd, alloc);
-
-    pathProfile.AddMember("energyMin", energyMin, alloc);
-    pathProfile.AddMember("energyMax", energyMax, alloc);
-    pathProfile.AddMember("energyMean", energyMean, alloc);
-    pathProfile.AddMember("energySd", energySd, alloc);
+    // add time-averaged pathway profiles:
+    results.addSupportPoints(supportPoints);
+    results.addPathwayProfile("radius", radiusSummary);
+    results.addPathwayProfile("plHydrophobicity", plHydrophobicitySummary);
+    results.addPathwayProfile("pfHydrophobicity", pfHydrophobicitySummary);
+    results.addPathwayProfile("density", solventDensitySummary);
+    results.addPathwayProfile("energy", energySummary);
     
-    // add pore profile to output document:
-    outDoc.AddMember("pathProfile", pathProfile, alloc);
+    // add scalar time series data to output:
+    results.addTimeStamps(timeStamps);
+    results.addPathwayScalarTimeSeries("argMinRadius", argMinRadiusTimeSeries);
+    results.addPathwayScalarTimeSeries("minRadius", minRadiusTimeSeries);
+    results.addPathwayScalarTimeSeries("length", lengthTimeSeries);
+    results.addPathwayScalarTimeSeries("volume", volumeTimeSeries);
+    results.addPathwayScalarTimeSeries("numPathway", numPathwayTimeSeries);
+    results.addPathwayScalarTimeSeries("numSample", numSampleTimeSeries);
+    results.addPathwayScalarTimeSeries("argMinSolventDensity", argMinSolventDensityTimeSeries);
+    results.addPathwayScalarTimeSeries("minSolventDensity", minSolventDensityTimeSeries);
+    results.addPathwayScalarTimeSeries("bandWidth", bandWidthTimeSeries);
+
+    // add vector-valued time series data to output:
+    results.addPathwayGridPoints(timeStamps, supportPoints);
+    results.addPathwayProfileTimeSeries("radius", radiusProfileTimeSeries);
+    results.addPathwayProfileTimeSeries("density", solventDensityTimeSeries);
+    results.addPathwayProfileTimeSeries("plHydrophobicity", plHydrophobicityTimeSeries);
+    results.addPathwayProfileTimeSeries("pfHydrophobicity", pfHydrophobicityTimeSeries);
+
+    // add per-residue data to output document:
+    results.addResidueInformation(poreResIds, resInfo_);
+    results.addResidueSummary("s", residueArcSummary);
+    results.addResidueSummary("rho", residueRhoSummary);
+    results.addResidueSummary("phi", residuePhiSummary);
+    results.addResidueSummary("poreLining", residuePlSummary);
+    results.addResidueSummary("poreFacing", residuePfSummary);
+    results.addResidueSummary("poreRadius", residuePoreRadiusSummary);
+    results.addResidueSummary("solventDensity", residueSolventDensitySummary);
+    results.addResidueSummary("x", residueXSummary);
+    results.addResidueSummary("y", residueYSummary);
+    results.addResidueSummary("z", residueZSummary);
 
 
-
-
-    // WRITING OUTPUT JSON TO FILE
-    // ------------------------------------------------------------------------
-
-    // stringify output document:
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    outDoc.Accept(writer);
-    std::string outLine(buffer.GetString(), buffer.GetSize());
-    
-    // open outgoing file stream:
-    outFile.open(outFileName, std::fstream::out);
-
-    // write JSON output to file:
-    outFile<<outLine<<std::endl;
-
-    // close out file stream:
-    outFile.close();
+    // write results to JSON file:
+    results.write(outFileName);
 
 
     // COPYING PER-FRAME DATA TO FINAL OUTPUT FILE

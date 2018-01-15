@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include <gromacs/topology/atoms.h>
 #include <gromacs/topology/topology.h>
@@ -45,6 +46,7 @@ class ResidueInformationProvider
         void setDefaultHydrophobicity(const real hydrophobicity);
         
         // getter methods:
+        std::vector<int> ids() const;
         std::string name(const int id) const;
         std::string chain(const int id) const;
         real hydrophobicity(const int id) const;

@@ -139,6 +139,25 @@ ResidueInformationProvider::setDefaultHydrophobicity(const real hydrophobicity)
 
 
 /*!
+ * Returns vector of all IDs for which a name is known.
+ */
+std::vector<int>
+ResidueInformationProvider::ids() const
+{
+    // loop over name field and add all keys to vector:
+    std::vector<int> ids;
+    ids.reserve(name_.size());
+    for(auto &pair : name_)
+    {
+        ids.push_back(pair.first);
+    }
+
+    // return vector of IDs:
+    return(ids);
+}
+
+
+/*!
  * Returns name of residue of given ID.
  */
 std::string
