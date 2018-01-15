@@ -9,22 +9,21 @@ library(gridExtra) # plot panel arrangement
 library(jsonlite)  # parsing JSON files
 
 # name of data file:
-setwd("/sansom/s117/scro2967/year-2/misc/faradary-discussion-paper/figures/pore_profiles")
 filename <- "output.json"
 
 # plot output parameters:
-plot.width.cm <- 21.0/2
-plot.height.cm <- 29.7/4
+plot.width.cm <- 5.8
+plot.height.cm <- plot.width.cm * 0.75
 
 # plot appearance:
-theme_chap <- theme_grey(base_size = 18)
 theme_heatmap <- theme(text = element_text(size = 13),
                        axis.text.x = element_text(size = 12,
-                                                  colour = "black",
-                                                  margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+                                                  colour = "black"),
                        axis.text.y = element_text(size = 12,
                                                   colour = "black"),
-                       panel.border = element_rect(colour = "black", fill=NA, size=1)) 
+                       panel.border = element_rect(colour = "black", 
+                                                   fill=NA, 
+                                                   size=1)) 
   
   
 nm.to.ang <- 10
@@ -50,75 +49,96 @@ plot.height <- unit(plot.height.cm, "cm")
 # Radius Profile Time Series
 #-------------------------------------------------------------------------------
 
-ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
-       aes(x = t,
-           y = s,
-           fill = radius)) +
+plt.radius.profile.ts <- ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
+                                aes(x = t,
+                                    y = s,
+                                    fill = radius)) +
   geom_tile() +
-  scale_fill_distiller(palette = "YlOrRd",
+  scale_fill_distiller(palette = "YlOrBr",
                        direction = -1,
-                       name = expression(paste(R~~bgroup("(", nm,")")))) +
+                       name = expression(paste(R~~bgroup("(", nm,")"))),
+                       guide = guide_colourbar(barheight = 10,
+                                               barwidth = 1.3)) +
   scale_x_continuous(expand = c(0, 0),
                      name = expression(paste(t~~bgroup("(", ps,")")))) +
   scale_y_continuous(expand = c(0, 0),
                      name = expression(paste(s~~bgroup("(", nm,")")))) +
+  ggtitle("Radius Profile over Time") +
   theme_heatmap
+
+ggsave("time_series_radius_profile.png", 
+       plt.radius.profile.ts,
+       width = plot.width,
+       height = plot.height,
+       dpi = 1200)
 
 
 # Solvent Density Profile Time Series
 #-------------------------------------------------------------------------------
 
-ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
-       aes(x = t,
-           y = s,
-           fill = density)) +
+plt.density.ts <- ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
+                         aes(x = t,
+                             y = s,
+                             fill = density)) +
   geom_tile() +
   scale_fill_distiller(palette = "Blues",
                        direction = 1,
-                       name = expression(paste(n~~bgroup("(", nm^{-3},")")))) +
+                       name = expression(paste(n~~bgroup("(", nm^{-3},")"))),
+                       guide = guide_colourbar(barheight = 10,
+                                               barwidth = 1.3)) +
   scale_x_continuous(expand = c(0, 0),
                      name = expression(paste(t~~bgroup("(", ps,")")))) +
   scale_y_continuous(expand = c(0, 0),
                      name = expression(paste(s~~bgroup("(", nm,")")))) +
+  ggtitle("Number Density Profile over Time") +
   theme_heatmap
   
-  
-# Pore-lining Hydrophobicity Profile Time Series
-#-------------------------------------------------------------------------------
-
-ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
-       aes(x = t,
-           y = s,
-           fill = plHydrophobicity)) +
-  geom_tile() +
-  scale_fill_distiller(palette = "BrBG", 
-                       direction = -1,
-                       name = expression(paste(H~~bgroup("(", a.u.,")"))),
-                       limits = c(-max(abs(dat$pathwayProfileTimeSeries$plHydrophobicity)),
-                                  max(abs(dat$pathwayProfileTimeSeries$plHydrophobicity)))) +
-  scale_x_continuous(expand = c(0, 0),
-                     name = expression(paste(t~~bgroup("(", ps,")")))) +
-  scale_y_continuous(expand = c(0, 0),
-                     name = expression(paste(s~~bgroup("(", nm,")")))) +
-  theme_heatmap
-
+ggsave("time_series_number_density_profile.png", 
+       plt.density.ts,
+       width = plot.width,
+       height = plot.height,
+       dpi = 1200)
 
 
 # Pore-facing Profile Time Series
 #-------------------------------------------------------------------------------
 
-ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
-       aes(x = t,
-           y = s,
-           fill = pfHydrophobicity)) +
+plt.pf.hydrophobicity.ts <- ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
+                                   aes(x = t,
+                                       y = s,
+                                       fill = pfHydrophobicity)) +
   geom_tile() +
   scale_fill_distiller(palette = "BrBG", 
                        direction = -1,
                        name = expression(paste(H~~bgroup("(", a.u.,")"))),
                        limits = c(-max(abs(dat$pathwayProfileTimeSeries$pfHydrophobicity)),
-                                  max(abs(dat$pathwayProfileTimeSeries$pfHydrophobicity)))) +
+                                  max(abs(dat$pathwayProfileTimeSeries$pfHydrophobicity))),
+                       guide = guide_colourbar(barheight = 10,
+                                               barwidth = 1.3)) +
   scale_x_continuous(expand = c(0, 0),
                      name = expression(paste(t~~bgroup("(", ps,")")))) +
   scale_y_continuous(expand = c(0, 0),
                      name = expression(paste(s~~bgroup("(", nm,")")))) +
+  ggtitle("Hydrophobicity Profile over Time") +
   theme_heatmap
+
+ggsave("time_series_hydrophobicity_profile.png", 
+       plt.pf.hydrophobicity.ts,
+       width = plot.width,
+       height = plot.height,
+       dpi = 1200)
+
+
+# Combined Plot
+#-------------------------------------------------------------------------------
+
+plt.profile.ts <- grid.arrange(plt.radius.profile.ts, 
+                               plt.density.ts,
+                               plt.pf.hydrophobicity.ts,
+                               ncol = 1)
+
+ggsave("time_series_pathway_profiles.png", 
+       plt.profile.ts, 
+       width = unit(1*plot.width.cm, "cm"), 
+       height = unit(3*plot.height.cm, "cm"),
+       dpi = 400)
