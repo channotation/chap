@@ -14,42 +14,50 @@
 #include "io/wavefront_obj_io.hpp"
 
 
-/*
+/*!
+ * \brief Representation of a regular grid on a cylinder surface.
  *
+ * This class is used as a smart container for vertices on the surface of a
+ * cylinder of tube, i.e. a grid in the \f$ s \f$ and \f$ \phi \f$ space. 
+ * As the grid is regular, it is know which vertices neighbour one another,
+ * which can be exploited to generate triangular faces. These faces can be used
+ * to subsequently generate vertex normals. 
+ *
+ * This is all used by MolcularPathObjExporter.
  */
 class RegularVertexGrid
 {
     friend class MolecularPathObjExporter;
 
     public:
-
+        
+        // constructor:
         RegularVertexGrid(
                 std::vector<real> s,
                 std::vector<real> phi);
 
+        // interface for adding vertices to the grid:
         void addVertex(
                 size_t i, 
                 size_t j,
                 std::string p,
                 gmx::RVec vertex, 
                 real weight);
-        void addVertexNormal(
-                size_t i, 
-                size_t j,
-                std::string p,
-                gmx::RVec normal);
+
+
         void addColourScale(
                 std::string p,
                 std::vector<real> prop,
                 std::vector<gmx::RVec> palette);
 
+
+
         void interpolateMissing();
+        
+        // method for determining vertex normals:
         void normalsFromFaces();
-
-
-        gmx::RVec getVertex(size_t i, size_t j, std::string p) const;
     
-
+        // getter methods:
         std::vector<gmx::RVec> vertices(
                 std::string p);
         std::vector<std::pair<gmx::RVec, real>> weightedVertices(
@@ -85,14 +93,23 @@ class RegularVertexGrid
 };
 
 
-/*
+/*!
+ * \brief Writes the surface of a MolecularPathway to an OBJ and MTL file.
  *
+ * The resulting OBJ file contains different groups of faces, each representing
+ * a different scalar property mapped to the pathway surface. The colour 
+ * associated with this property is written to an MTL file, which is referenced
+ * at the beginning of the OBJ file.
  */
 class MolecularPathObjExporter
 {
     friend class MolecularPathObjExporterTest;
-    FRIEND_TEST(MolecularPathObjExporterTest, MolecularPathObjExporterOrthogonalVectorTest);
-    FRIEND_TEST(MolecularPathObjExporterTest, MolecularPathObjExporterAxisRotationTest);
+    FRIEND_TEST(
+            MolecularPathObjExporterTest, 
+            MolecularPathObjExporterOrthogonalVectorTest);
+    FRIEND_TEST(
+            MolecularPathObjExporterTest, 
+            MolecularPathObjExporterAxisRotationTest);
 
 
     public:
@@ -110,10 +127,7 @@ class MolecularPathObjExporter
 
     private:
 
-        // 
-        inline int numPlanarVertices(real &d, real &r);
-
-        // 
+        // functions for generating the pathway surface grid:
         std::vector<gmx::RVec> generateNormals(
                 const std::vector<gmx::RVec> &tangents);
         RegularVertexGrid generateGrid(
@@ -128,21 +142,11 @@ class MolecularPathObjExporter
                 std::pair<std::string, std::pair<SplineCurve1D, bool>> property,
                 RegularVertexGrid &grid);
 
-        // 
-        inline std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>> vertexRing(
-                gmx::RVec base,
-                gmx::RVec tangent,
-                gmx::RVec normal,
-                real radius,
-                real angleIncrement,
-                size_t nIncrements);
-
-        // 
+        // auxiliary geometric functions: 
         gmx::RVec orthogonalVector(gmx::RVec vec);
         gmx::RVec rotateAboutAxis(gmx::RVec vec, gmx::RVec axis, real angle);
 
-        real cosAngle(const gmx::RVec &vecA, const gmx::RVec &vecB);
-
+        // manipulate scalar property:
         void shiftAndScale(std::vector<real> &prop, bool divergent);
 };
 

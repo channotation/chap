@@ -12,8 +12,9 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 
-/*
- *
+/*!
+ * Constructor initialises the \f$ s \f$ and \f$ \phi \f$ coordinates of the 
+ * grid.
  */
 RegularVertexGrid::RegularVertexGrid(
         std::vector<real> s,
@@ -25,8 +26,8 @@ RegularVertexGrid::RegularVertexGrid(
 }
 
 
-/*
- *
+/*!
+ * Adds a vertex at the given coordinates for the given property.
  */
 void
 RegularVertexGrid::addVertex(
@@ -38,11 +39,8 @@ RegularVertexGrid::addVertex(
 {
     if( std::isnan(weight) )
     {
-        std::cout<<"i = "<<i<<"  "
-                 <<"j = "<<j<<"  "
-                 <<"p = "<<p<<"  "
-                 <<std::endl;
-        throw std::logic_error("weight is nan");
+        throw std::logic_error("Regular vertex grid can not handle NaN "
+                               "weights.");
     }
 
     p_.insert(p);
@@ -52,35 +50,8 @@ RegularVertexGrid::addVertex(
 }
 
 
-/*
- *
- */
-void
-RegularVertexGrid::addVertexNormal(
-        size_t i, 
-        size_t j,
-        std::string p,
-        gmx::RVec normal)
-{
-    p_.insert(p);
-    std::tuple<size_t, size_t, std::string> key(i, j, p);
-    normals_[key] = normal;
-}
-
-
-/*
- *
- */
-gmx::RVec
-RegularVertexGrid::getVertex(size_t i, size_t j, std::string p) const
-{
-    std::tuple<size_t, size_t, std::string> key(i, j, p);
-    return vertices_.at(key);
-}
-
-
-/*
- *
+/*!
+ * Returns a vector of all vertices for a given property.
  */
 std::vector<gmx::RVec>
 RegularVertexGrid::vertices(
@@ -109,40 +80,38 @@ RegularVertexGrid::vertices(
 }
 
 
-/*
- *
+/*!
+ * Returns vector of vertex normals for a given property.
  */
-std::vector<std::pair<gmx::RVec, real>>
-RegularVertexGrid::weightedVertices(
+std::vector<gmx::RVec>
+RegularVertexGrid::normals(
         std::string p)
 {
-    // build linearly indexed vector from dual indexed map:
-    std::vector<std::pair<gmx::RVec, real>> vert;
-    vert.reserve(vertices_.size());
+    std::vector<gmx::RVec> norm;
+    norm.reserve(normals_.size());
     for(size_t i = 0; i < s_.size(); i++)
     {
         for(size_t j = 0; j < phi_.size(); j++)
         {
             std::tuple<size_t, size_t, std::string> key(i, j, p);
-            if( vertices_.find(key) != vertices_.end() && 
-                weights_.find(key) != weights_.end() )
+            if( normals_.find(key) != normals_.end() )
             {
-                std::pair<gmx::RVec, real> vertex(vertices_[key], weights_[key]);
-                vert.push_back(vertex); 
+                norm.push_back(normals_[key]); 
             }
             else
             {
-                throw std::logic_error("Invalid vertex reference encountered.");
+                throw std::logic_error("Invalid vertex normal reference "
+                                       "encountered.");
             }
         }
     }
 
-    return vert;
+    return norm;
 }
 
 
-/*
- *
+/*!
+ * Calculates vertex normals from triangular faces.
  */
 void
 RegularVertexGrid::normalsFromFaces()
@@ -158,7 +127,6 @@ RegularVertexGrid::normalsFromFaces()
             for(int j = 0; j < phi_.size(); j++)
             {
                 // index pairs for neighbouring vertices:
-                // TODO: not circular in i, cant wrap around
                 std::tuple<size_t, size_t, std::string> crntKey(
                         i, 
                         j,
@@ -255,8 +223,40 @@ RegularVertexGrid::normalsFromFaces()
 }
 
 
-/*
- *
+/*!
+ * Returns a vector of vertices plus a scalar weight.
+ */
+std::vector<std::pair<gmx::RVec, real>>
+RegularVertexGrid::weightedVertices(
+        std::string p)
+{
+    // build linearly indexed vector from dual indexed map:
+    std::vector<std::pair<gmx::RVec, real>> vert;
+    vert.reserve(vertices_.size());
+    for(size_t i = 0; i < s_.size(); i++)
+    {
+        for(size_t j = 0; j < phi_.size(); j++)
+        {
+            std::tuple<size_t, size_t, std::string> key(i, j, p);
+            if( vertices_.find(key) != vertices_.end() && 
+                weights_.find(key) != weights_.end() )
+            {
+                std::pair<gmx::RVec, real> vertex(vertices_[key], weights_[key]);
+                vert.push_back(vertex); 
+            }
+            else
+            {
+                throw std::logic_error("Invalid vertex reference encountered.");
+            }
+        }
+    }
+
+    return vert;
+}
+
+
+/*!
+ * Returns colour scale for the given property.
  */
 ColourScale
 RegularVertexGrid::colourScale(std::string p)
@@ -265,9 +265,9 @@ RegularVertexGrid::colourScale(std::string p)
 }
 
 
-
-/*
- *
+/*!
+ * Auxiliary method for adding the contribution of two triangle sides to a
+ * vertex normal.
  */
 void
 RegularVertexGrid::addTriangleNorm(
@@ -281,38 +281,8 @@ RegularVertexGrid::addTriangleNorm(
 }
 
 
-/*
- *
- */
-std::vector<gmx::RVec>
-RegularVertexGrid::normals(
-        std::string p)
-{
-    std::vector<gmx::RVec> norm;
-    norm.reserve(normals_.size());
-    for(size_t i = 0; i < s_.size(); i++)
-    {
-        for(size_t j = 0; j < phi_.size(); j++)
-        {
-            std::tuple<size_t, size_t, std::string> key(i, j, p);
-            if( normals_.find(key) != normals_.end() )
-            {
-                norm.push_back(normals_[key]); 
-            }
-            else
-            {
-                throw std::logic_error("Invalid vertex normal reference "
-                                       "encountered.");
-            }
-        }
-    }
-
-    return norm;
-}
-
-
-/*
- *
+/*!
+ * Calculates and returns vector of triangular faces for the given property.
  */
 std::vector<WavefrontObjFace>
 RegularVertexGrid::faces(
@@ -321,19 +291,14 @@ RegularVertexGrid::faces(
     // sanity checks:
     if( phi_.size() * s_.size() * p_.size() != vertices_.size() )
     {
-        std::cout<<"MESH ERROR  "
-                 <<"phi.size = "<<phi_.size()<<"  "
-                 <<"s.size = "<<s_.size()<<"  "
-                 <<"vert.size = "<<vertices_.size()<<"  "
-                 <<std::endl;
-                 // TODO keep this?
-//        throw std::logic_error("Cannot generate faces on incomplete grid.");
+        throw std::logic_error("RegularVertexGrid cannot generate faces "
+                               "on incomplete grid.");
     }
 
     if( !normals_.empty() && normals_.size() != vertices_.size() )
     {
         throw std::logic_error("Number of vertex normals does not equal "
-                               "number of vertices.");
+                               "number of vertices in RegularVertexGrid.");
     }
     
     // find scalar property data range:
@@ -383,8 +348,12 @@ RegularVertexGrid::faces(
             std::tuple<size_t, size_t, std::string> keyTr(i + 1, j + 1, p);
 
             // face weight is average of vertex weights:
-            real scalarA = weights_.at(keyBl) + weights_.at(keyTr) + weights_.at(keyTl);
-            real scalarB = weights_.at(keyBl) + weights_.at(keyBr) + weights_.at(keyTr);
+            real scalarA = weights_.at(keyBl) 
+                         + weights_.at(keyTr) 
+                         + weights_.at(keyTl);
+            real scalarB = weights_.at(keyBl) 
+                         + weights_.at(keyBr) 
+                         + weights_.at(keyTr);
             scalarA /= 3.0;
             scalarB /= 3.0;
 
@@ -472,7 +441,7 @@ RegularVertexGrid::faces(
 
 
 /*
- * Constructor.
+ * Default constructor.
  */
 MolecularPathObjExporter::MolecularPathObjExporter()
 {
@@ -480,8 +449,9 @@ MolecularPathObjExporter::MolecularPathObjExporter()
 }
 
 
-/*
- *
+/*!
+ * High level driver for exporting a MolecularPath object to an OBJ and MTL
+ * file.
  */
 void
 MolecularPathObjExporter::operator()(
@@ -490,10 +460,8 @@ MolecularPathObjExporter::operator()(
         MolecularPath &molPath,
         std::map<std::string, ColourPalette> palettes)
 {
-    std::cout<<"EXPORT"<<std::endl;
-
     // define evaluation range:   
-    real extrapDist = 0.0;
+    real extrapDist = 0.0;  // TODO make parameter
     std::pair<real, real> range(molPath.sLo() - extrapDist,
                                 molPath.sHi() + extrapDist);
 
@@ -527,21 +495,14 @@ MolecularPathObjExporter::operator()(
             resolution,
             range);
 
-    std::cout<<"GRID COMPLETE!"<<std::endl;
-
     // loop over properties:
     for(auto prop : properties)
     {
         // obtain vertices, normals, and faces from grid:
         grid.normalsFromFaces();
-        std::cout<<"normals calculated!"<<std::endl;
         auto vertices = grid.weightedVertices(prop.first);
-        std::cout<<"vertices obtained!"<<std::endl;
         auto vertexNormals = grid.normals(prop.first);
-        std::cout<<"normals obtained!"<<std::endl;
         auto faces = grid.faces(prop.first);
-
-        std::cout<<"faces obtained!"<<std::endl;
 
         // add faces to surface:
         WavefrontObjGroup group("pathway_" + prop.first);
@@ -595,7 +556,9 @@ MolecularPathObjExporter::operator()(
     // Serialise OBJ & MTL Objects
     //-------------------------------------------------------------------------
     
-    std::string mtlFileName = "output.mtl";
+    // add file extensions to base name:
+    std::string objFileName = fileName + ".obj";
+    std::string mtlFileName = fileName + ".mtl";
 
     // scale object by factor of 10 to convert nm to Ang:
     obj.scale(10.0);
@@ -606,7 +569,7 @@ MolecularPathObjExporter::operator()(
 
     // create OBJ exporter and write to file:
     WavefrontObjExporter objExp;
-    objExp.write(fileName, obj);
+    objExp.write(objFileName, obj);
 
     // create an MTL exporter and write to file:
     WavefrontMtlExporter mtlExp;
@@ -614,8 +577,10 @@ MolecularPathObjExporter::operator()(
 }
 
 
-/*
- *
+/*!
+ * Creates a regular vertex grid from a given centre line and radius spline.
+ * This function loops over all given properties and for each property calls
+ * generatePropertyGrid().
  */
 RegularVertexGrid
 MolecularPathObjExporter::generateGrid(
@@ -670,17 +635,9 @@ MolecularPathObjExporter::generateGrid(
 
 
 /*!
- *TODO this comment is outdated
- *
- * Generates grid along MolecularPath, but uses a tangent vector equal to the
- * channel direction vector. This does not strictly give the correct surface, 
- * as the tangent may vary along the centre line. However, this method will not
- * create overlapping vertices, so long as the centre line does not change 
- * direction with respect to the channel direction vectors, which is guaranteed
- * for the inplane optimised probe path finder. Moreover, all surface points 
- * generated this way are guaranteed to not lie outside the pore, so long as
- * a probe based method was used (this is true because the free distance around 
- * a centre is free in any direction). 
+ * This function creates the actual vertices used in the RegularVertexGrid and
+ * calculates the colour property by sampling the given spline curve at the
+ * appropriate location.
  */
 void
 MolecularPathObjExporter::generatePropertyGrid(
@@ -690,9 +647,9 @@ MolecularPathObjExporter::generatePropertyGrid(
         RegularVertexGrid &grid)
 {   
     // extract grid coordinates:
-//    const std::vector<real> s = grid.s_;
+    // TODO: visual tweaking factor / surface refinement
     std::vector<real> s;
-    int num = 50;
+    int num = 100;
     real ds = (grid.s_.back() - grid.s_.front())/(num - 1);
     for(size_t i = 0; i < num; i++)
     {
@@ -708,8 +665,6 @@ MolecularPathObjExporter::generatePropertyGrid(
     tangents.reserve(s.size());
     std::vector<real> radii;
     radii.reserve(s.size());
-//    std::vector<real> prop;
-//    prop.reserve(s.size());
     for(auto eval : s)
     {
         centres.push_back( centreLine.evaluate(eval, 0) );
@@ -717,42 +672,21 @@ MolecularPathObjExporter::generatePropertyGrid(
         unitv(tv, tv);
         tangents.push_back(tv);
         radii.push_back( radius.evaluate(eval, 0) );
-//        radii.push_back( 0.02 );
-//        prop.push_back( property.second.first.evaluate(eval, 0) );
     }
 
-    // estimate channel direction vector:
-    gmx::RVec chanDirVec;
-    rvec_sub(centres.back(), centres.front(), chanDirVec);
-    unitv(chanDirVec, chanDirVec);
-
-    // sample scalar property along the path:
-//    shiftAndScale(prop, property.second.second);
-
-    // tangents always in direction of channel: // FIXME
-//    std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
-
     // sample normals along molecular path:
+    // (this is better then using the standard normal vector of the centre line
+    // curve as it prevents "twisting" the normal vector around the curve)
     auto normals = generateNormals(tangents);
     
-    // store vertex rings:
+
+    // calculate sample points on pathway:
+    // ------------------------------------------------------------------------
+
+    // ring of vertices for each pathway coordinate:
     std::vector<gmx::RVec> vertRing(phi.size());
-
-
-
-
-
-
-
-    // generate support points:
-
-
     std::map<int, std::vector<gmx::RVec>> vertexRings;
     
-    std::cout<<"vertexRings initialised"<<std::endl;
-
-
-
     // first vertex ring:
     int idxLen = 0;
     for(size_t k = 0; k < phi.size(); k++)
@@ -796,8 +730,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     vertexRings[idxLen] = vertRing;
 
 
-    // build intermediate vertex rings:
-    
+    // build intermediate vertex rings:    
     for(int i = 1; i <= numLen; i *= 2)
     {
         for(int j = 1; j < i; j += 2)
@@ -805,8 +738,6 @@ MolecularPathObjExporter::generatePropertyGrid(
             idxLen = j*(numLen - 1)/i;
             int idxLower = (j - 1)*(numLen - 1)/i;
             int idxUpper = (j + 1)*(numLen - 1)/i;
-
-            std::cout<<"idxLen = "<<idxLen<<std::endl;
 
             // create ring of vertices:
             bool hasClashes = false;
@@ -823,7 +754,9 @@ MolecularPathObjExporter::generatePropertyGrid(
                 vertex[XX] += radii[idxLen]*rotNormal[XX];
                 vertex[YY] += radii[idxLen]*rotNormal[YY];
                 vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-  
+
+                // TODO: the below goes in separate function?
+
                 // difference vectors in neighbouring discs:
                 gmx::RVec a;
                 rvec_sub(vertex, centres[idxLower], a);
@@ -837,66 +770,46 @@ MolecularPathObjExporter::generatePropertyGrid(
                 real cosB = iprod(b, tangents[idxUpper]);
 
                 // check overlap:
-                // TODO: this criterion is confirmed to identify clashes, 
-                // just need to fix them now
-                real thres = 0.0;
+                real thres = 0.5; // use this for visual tweaking?
                 if( cosA < thres or cosB > -thres )
                 {
-                    std::cout<<"CLASH  ";
-                    std::cout<<""
-                             <<"idxLen = "<<idxLen<<"  "
-                             <<"k = "<<k<<"  "
-                             <<"p = "<<property.first<<"  "
-                             <<"cosA = "<<cosA<<"  "
-                             <<"cosB = "<<cosB<<"  ";
-                    std::cout<<std::endl;
-
+                    // set crash flag to true and terminate loop:
                     hasClashes = true;
                     break;
                 }
 
-
+                // add to vertex ring:
                 vertRing[k] = vertex;
             }
    
-            // TODO
-//            hasClashes = false;
-            if( !hasClashes )
+            // will ignore all vertex rings with clashes:
+            if( !hasClashes ) // TODO: user parameter for turning this off/on
             {
                 vertexRings[idxLen] = vertRing;
             }
             hasClashes = false;
         }
     }
-    
+
+
+    // interpolate 
+    // ------------------------------------------------------------------------
 
     // interpolate support points on each equal-phi line:
     std::vector<SplineCurve3D> curves;
     for(size_t k = 0; k < phi.size(); k++)
     {
-
-
         // extract support points and parameterisation for interpolation:
         std::vector<real> param;
         std::vector<gmx::RVec> points;
         for(auto vr = vertexRings.begin(); vr != vertexRings.end(); vr++)
         {
-            std::cout<<"   vr.size = "<<vr -> second.size()<<"  "
-                     <<"vr.first = "<<vr -> first<<"  "
-                     <<std::endl;
-
+            // pathway coordinate as curve parameter:
             param.push_back( s[vr -> first] );
-            points.push_back( vr -> second[k] );
-        }
 
-        std::cout<<"INTERPOLATION for "
-                 <<"k = "<<k<<"  "
-                 <<"phi = "<<phi[k]<<"  "
-                 <<"vertexRings.size = "<<vertexRings.size()<<"  "
-                 <<"param.size = "<<param.size()<<"  "
-                 <<"points.size = "<<points.size()<<"  "
-                 <<std::endl;
-        
+            // sample points to interpolate:
+            points.push_back( vr -> second[k] );
+        }       
 
         // interpolate these points:
         CubicSplineInterp3D interp;
@@ -905,602 +818,36 @@ MolecularPathObjExporter::generatePropertyGrid(
 
 
     // build mesh
+    // ------------------------------------------------------------------------
 
-
-
+    // sample scalar property along the path and rescale to unit interval:
     std::vector<real> prop;
+    prop.reserve(grid.s_.size());
     for(size_t i = 0; i < grid.s_.size(); i++)
     {
         prop.push_back( property.second.first.evaluate(grid.s_[i], 0) );
     }
-
-
-    // sample scalar property along the path:
     shiftAndScale(prop, property.second.second);
 
-
-
-    int co = 0;
+    // loop over target grid coordinates and add vertices:
     for(size_t i = 0; i < grid.s_.size(); i++)
     {
         for(size_t k = 0; k < grid.phi_.size(); k++)
         {
-//            real prop = property.second.first.evaluate(grid.s_[i], 0);
-
-
-            std::cout<<"i = "<<i<<"  "<<"s = "<<grid.s_[i]<<"  "
-                     <<"k = "<<k<<"  "<<"phi = "<<grid.phi_[k]<<"  "
-                     <<"p = "<<property.first<<"  "
-                     <<"curves.size = "<<curves.size()<<"  "
-                     <<"s.size = "<<grid.s_.size()<<"  "
-                     <<"prop = "<<prop[i]<<"  "
-                     <<std::endl;
-
             grid.addVertex(
                     i, 
                     k, 
                     property.first, 
                     curves[k].evaluate(grid.s_[i], 0),
                     prop[i]);
-            co++;
         }
     }
-
-    std::cout<<"MESH COMPLETE for property "
-             <<property.first<<"  "
-             <<"co = "<<co<<"  "
-             <<std::endl;
-
-
-
-
-
-
-
-
-
-
-/*
-    // first vertex ring:
-    int idxLen = 0;
-    for(size_t k = 0; k < phi.size(); k++)
-    {
-        // rotate normal vector:
-        gmx::RVec rotNormal = rotateAboutAxis(
-                normals[idxLen], 
-                tangents[idxLen],
-                phi[k]);
-
-        // generate vertex:
-        gmx::RVec vertex = centres[idxLen];
-        vertex[XX] += radii[idxLen]*rotNormal[XX];
-        vertex[YY] += radii[idxLen]*rotNormal[YY];
-        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-        // add to vertex ring:
-        vertRing[k] = vertex;
-
-        // add to grid:
-        grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
-    }
-
-    // last vertex ring:
-    idxLen = s.size() - 1;
-    for(size_t k = 0; k < phi.size(); k++)
-    {
-        // rotate normal vector:
-        gmx::RVec rotNormal = rotateAboutAxis(
-                normals[idxLen], 
-                tangents[idxLen],
-                phi[k]);
-
-        // generate vertex:
-        gmx::RVec vertex = centres[idxLen];
-        vertex[XX] += radii[idxLen]*rotNormal[XX];
-        vertex[YY] += radii[idxLen]*rotNormal[YY];
-        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-        // add to vertex ring:
-        vertRing[k] = vertex;
-
-        // add to grid:
-        grid.addVertex(idxLen, k, property.first, vertex, prop[idxLen]);
-    }
-
-    // build intermediate vertex rings:
-    for(int i = 1; i <= numLen; i *= 2)
-    {
-        for(int j = 1; j < i; j += 2)
-        {
-            idxLen = j*(numLen - 1)/i;
-            int idxLower = (j - 1)*(numLen - 1)/i;
-            int idxUpper = (j + 1)*(numLen - 1)/i;
-
-            // create ring of vertices:
-            bool hasClashes = false;
-            for(size_t k = 0; k < phi.size(); k ++)
-            {
-                // rotate normal vector:
-                gmx::RVec rotNormal = rotateAboutAxis(
-                        normals[idxLen], 
-                        tangents[idxLen],
-                        phi[k]);
-
-                // generate vertex:
-                gmx::RVec vertex = centres[idxLen];
-                vertex[XX] += radii[idxLen]*rotNormal[XX];
-                vertex[YY] += radii[idxLen]*rotNormal[YY];
-                vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-
-                // TODO check vertex!
-                auto vertLo = grid.getVertex(idxLower, k, property.first);
-                auto vertHi = grid.getVertex(idxUpper, k, property.first);
-  
-                // difference vectors in neighbouring discs:
-                gmx::RVec a;
-                rvec_sub(vertex, centres[idxLower], a);
-                unitv(a, a);
-                gmx::RVec b;
-                rvec_sub(vertex, centres[idxUpper], b);
-                unitv(b, b);
-
-                // cosine of angles between difference vectors:
-                real cosA = iprod(a, tangents[idxLower]);
-                real cosB = iprod(b, tangents[idxUpper]);
-
-                // check overlap:
-                // TODO: this criterion is confirmed to identify clashes, 
-                // just need to fix them now
-                real thres = 0.0;
-                if( cosA < thres or cosB > -thres )
-                {
-                    std::cout<<"CLASH  ";
-                    std::cout<<""
-                             <<"idxLen = "<<idxLen<<"  "
-                             <<"k = "<<k<<"  "
-                             <<"p = "<<property.first<<"  "
-                             <<"cosA = "<<cosA<<"  "
-                             <<"cosB = "<<cosB<<"  ";
-                    std::cout<<std::endl;
-
-                    hasClashes = true;
-                    break;
-                    // fix by interpolation:
-//                    rvec_add(vertLo, vertHi, vertex);
-//                    svmul(0.5, vertex, vertex);
-                }
-
-
-                vertRing[k] = vertex;
-            }
-           
-            if( hasClashes )
-            {
-                for(int k = 0; k < vertRing.size(); k++)
-                {
-                    auto vertLo = grid.getVertex(idxLower, k, property.first);
-                    auto vertHi = grid.getVertex(idxUpper, k, property.first);
-                    rvec_add(vertLo, vertHi, vertRing[k]);
-                    svmul(0.5, vertRing[k], vertRing[k]);
-
-                    // also correct tangent:
-                    rvec_add(tangents[idxLower], tangents[idxUpper], tangents[idxLen]);
-                    svmul(0.5, tangents[idxLen], tangents[idxLen]);
-                }
-            }
-            hasClashes = false;
-
-            // add vertices to grid:
-            for(size_t k = 0; k < vertRing.size(); k++)
-            {
-                grid.addVertex(
-                        idxLen, 
-                        k, 
-                        property.first, 
-                        vertRing[k], 
-                        prop[idxLen]);
-            }
-        }
-    }
-    */
 }
 
 
-/*
- *
- */
-/*
-RegularVertexGrid
-MolecularPathObjExporter::generateGrid(
-        MolecularPath &molPath,
-        size_t numLen,
-        size_t numPhi,
-        real extrapDist)
-{    
-    // check if number of intervals is power of two:
-    int numInt = numLen - 1;
-    if( (numInt & (numInt)) == 0 && numInt > 0 )
-    {
-        throw std::logic_error("Number of steps along pore must be power of "
-                               "two.");
-    }
-
-    // generate grid coordinates:
-    auto s = molPath.sampleArcLength(numLen, extrapDist);
-    std::vector<real> phi;
-    phi.reserve(numPhi);
-    for(size_t i = 0; i < numPhi; i++)
-    {
-        phi.push_back(i*2.0*M_PI/numPhi);
-    }
-
-    // generate grid from coordinates:
-    RegularVertexGrid grid(s, phi);
-
-    // sample centre points radii, and tangents along molecular path:
-    auto centres = molPath.samplePoints(s);
-//    auto radii  = molPath.sampleRadii(s);
-//    auto tangents = molPath.sampleNormTangents(s);
-    std::vector<gmx::RVec> tangents(centres.size(), gmx::RVec(0.0, 0.0, 1.0));
-
-    std::vector<real> radii(tangents.size(), 0.025);
-    std::vector<real> prop(tangents.size(), 1.0);
-    
-    // sample normals along molecular path:
-    auto normals = generateNormals(tangents);
-    
-
-    // store vertex rings:
-    std::vector<gmx::RVec> vertRing(phi.size());
-    std::vector<std::vector<gmx::RVec>> vertexRings(tangents.size());
-
-
-    // first vertex ring:
-    int idxLen = 0;
-    for(size_t k = 0; k < phi.size(); k++)
-    {
-        // rotate normal vector:
-        gmx::RVec rotNormal = rotateAboutAxis(
-                normals[idxLen], 
-                tangents[idxLen],
-                phi[k]);
-
-        // generate vertex:
-        gmx::RVec vertex = centres[idxLen];
-        vertex[XX] += radii[idxLen]*rotNormal[XX];
-        vertex[YY] += radii[idxLen]*rotNormal[YY];
-        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-        // add to vertex ring:
-        vertRing[k] = vertex;
-
-        // add to grid:
-        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
-        grid.addVertexNormal(idxLen, k, rotNormal);
-    }
-    vertexRings[idxLen] = vertRing;
-
-    // last vertex ring:
-    idxLen = s.size() - 1;
-    for(size_t k = 0; k < phi.size(); k++)
-    {
-        // rotate normal vector:
-        gmx::RVec rotNormal = rotateAboutAxis(
-                normals[idxLen], 
-                tangents[idxLen],
-                phi[k]);
-
-        // generate vertex:
-        gmx::RVec vertex = centres[idxLen];
-        vertex[XX] += radii[idxLen]*rotNormal[XX];
-        vertex[YY] += radii[idxLen]*rotNormal[YY];
-        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-        // add to vertex ring:
-        vertRing[k] = vertex;
-
-        // add to grid:
-        grid.addVertex(idxLen, k, vertex, prop[idxLen]);
-        grid.addVertexNormal(idxLen, k, rotNormal);
-    }
-    vertexRings[idxLen] = vertRing;
-
-    // build intermediate vertex rings:
-    int numClash = 0;
-    int clashLower = 0;
-    int clashUpper = 0;
-    int numVert = 0;
-    int numSpecial = 0;
-    int numPers = 0;
-    for(int i = 1; i <= numLen; i *= 2)
-    {
-        for(int j = 1; j < i; j += 2)
-        {
-            idxLen = j*(numLen - 1)/i;
-            int idxLower = (j - 1)*(numLen - 1)/i;
-            int idxUpper = (j + 1)*(numLen - 1)/i;
-
-            // FIXME
-            tangents[idxLen] = gmx::RVec(0, 0, 1);
-            tangents[idxLower] = gmx::RVec(0, 0, 1);
-            tangents[idxUpper] = gmx::RVec(0, 0, 1);
-
-            // create ring of vertices:
-            bool hasClashes = false;
-            std::vector<gmx::RVec> vertNormRing;
-            for(size_t k = 0; k < phi.size(); k ++)
-            {
-                // rotate normal vector:
-                gmx::RVec rotNormal = rotateAboutAxis(
-                        normals[idxLen], 
-                        tangents[idxLen],
-                        phi[k]);
-
-                // generate vertex:
-                gmx::RVec vertex = centres[idxLen];
-                vertex[XX] += radii[idxLen]*rotNormal[XX];
-                vertex[YY] += radii[idxLen]*rotNormal[YY];
-                vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-                // distance vector from upper and lower circle centres:
-                gmx::RVec distLower;
-                rvec_sub(vertex, centres[idxLower], distLower);
-                gmx::RVec distUpper;
-                rvec_sub(vertex, centres[idxUpper], distUpper);
-
-                // project distance vector onto tangent:
-                real cosLower = iprod(tangents[idxLower], distLower);                
-                real cosUpper = iprod(tangents[idxUpper], distUpper);                
-
-
-                real angleThreshold = 0.5;
-                if( cosUpper > angleThreshold || cosLower < angleThreshold )
-                {
-                    hasClashes = true;
-                }
-
-                vertRing[k] = vertex;
-
-
-                // BELOW: second attempt to fix
-                ///////////////////////////////////////////////////////////////
-
-
-
-                // distance vector from upper and lower circle centres:
-                gmx::RVec distLower;
-                rvec_sub(vertex, centres[idxLower], distLower);
-                gmx::RVec distUpper;
-                rvec_sub(vertex, centres[idxUpper], distUpper);
-
-                // project distance vector onto tangent:
-                real cosLower = iprod(tangents[idxLower], distLower);                
-                real cosUpper = iprod(tangents[idxUpper], distUpper);                
-                numVert++;
-
-                real angleThreshold = 0.0;
-
-
-                if( cosLower < angleThreshold && cosUpper > angleThreshold )
-                {
-                    numSpecial++;
-                    std::cout<<"SPECIAL CASE"<<std::endl;
-//                    std::abort();
-                }
-
-                real test = iprod(tangents[idxLower], tangents[idxUpper]);
-
- 
-                // check for clashes:
-                if( cosLower < angleThreshold )
-                {
-               std::cout<<"LOWER clash"
-                        <<"numRings = "<<vertexRings.size()<<"  "
-                         <<"idxLen = "<<idxLen<<"  "
-                         <<"idxLower = "<<idxLower<<"  "
-                         <<"idxUpper = "<<idxUpper<<"  "
-//                         <<"lower.size = "<<vertexRings[idxLower].size()<<"  "
-//                         <<"upper.size = "<<vertexRings[idxUpper].size()<<"  "
-                         <<"cosLower = "<<cosLower<<"  "
-                         <<"cosUpper = "<<cosUpper<<"  "
-                         <<"dLo = "<<norm(distLower)<<"  "
-                         <<"dUp = "<<norm(distUpper)<<"  "
-                         <<"test = "<<test<<"  "
-//                         <<"cux = "<<centres[idxUpper][XX]<<"  "
-//                         <<"cuy = "<<centres[idxUpper][YY]<<"  "
-//                         <<"cuz = "<<centres[idxUpper][ZZ]<<"  "
-//                         <<"vx = "<<vertex[XX]<<"  "
-//                         <<"vy = "<<vertex[YY]<<"  "
-//                         <<"vz = "<<vertex[ZZ]<<"  "
-                         <<std::endl;
-                    clashLower++;
-                    // reuse lower vertex:
-                    gmx::RVec vert;
-                    rvec_add(
-                            vertexRings.at(idxLower).at(k), 
-                            vertexRings.at(idxUpper).at(k), 
-                            vert);
-                    svmul(0.5, vert, vert);
-
-//                    vertRing[k] = vertexRings.at(idxLower).at(k);
-                    vertRing[k] = vertex;
-                }
-                else if( cosUpper > angleThreshold )
-                {
-               std::cout<<"UPPER clash"
-                        <<"numRings = "<<vertexRings.size()<<"  "
-                         <<"idxLen = "<<idxLen<<"  "
-                         <<"idxLower = "<<idxLower<<"  "
-                         <<"idxUpper = "<<idxUpper<<"  "
-//                         <<"lower.size = "<<vertexRings[idxLower].size()<<"  "
-//                         <<"upper.size = "<<vertexRings[idxUpper].size()<<"  "
-                         <<"cosLower = "<<cosLower<<"  "
-                         <<"cosUpper = "<<cosUpper<<"  "
-                         <<"dLo = "<<norm(distLower)<<"  "
-                         <<"dUp = "<<norm(distUpper)<<"  "
-                         <<"test = "<<test<<"  "
-//                         <<"cux = "<<centres[idxUpper][XX]<<"  "
-//                         <<"cuy = "<<centres[idxUpper][YY]<<"  "
-//                         <<"cuz = "<<centres[idxUpper][ZZ]<<"  "
-//                         <<"vx = "<<vertex[XX]<<"  "
-//                         <<"vy = "<<vertex[YY]<<"  "
-//                         <<"vz = "<<vertex[ZZ]<<"  "
-                         <<std::endl;
-                    clashUpper++;
-                    gmx::RVec vert;
-                    rvec_add(
-                            vertexRings.at(idxLower).at(k), 
-                            vertexRings.at(idxUpper).at(k), 
-                            vert);
-                    svmul(0.5, vert, vert);
-                    // reuse upper vertex:
-//                    vertRing[k] = vertexRings.at(idxUpper).at(k);
-                    vertRing[k] = vertex;
-                     
-                }
-                else
-                {
-                    // use new vertex:
-                    vertRing[k] = vertex;
-                }
-
-
-
-
-
-                vertNormRing.push_back(rotNormal);
-            }
- 
-
-
-            if( hasClashes == true )
-            {
-                std::cout<<"has clashes!"<<std::endl;
-
-                // form averaged tangent:
-                rvec_add(tangents[idxLower], tangents[idxUpper], tangents[idxLen]);
-                svmul(0.5, tangents[idxLen], tangents[idxLen]);
-                unitv(tangents[idxLen], tangents[idxLen]);
-
-                // recompute vertices:
-                for(size_t k = 0; k < phi.size(); k ++)
-                {
-                    // rotate normal vector:
-                    gmx::RVec rotNormal = rotateAboutAxis(
-                            normals[idxLen], 
-                            tangents[idxLen],
-                            phi[k]);
-
-                    // generate vertex:
-                    gmx::RVec vertex = centres[idxLen];
-                    vertex[XX] += radii[idxLen]*rotNormal[XX];
-                    vertex[YY] += radii[idxLen]*rotNormal[YY];
-                    vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
-
-                    vertRing[k] = vertex;
-                }
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            for(auto vert : vertRing)
-            {
-                // distance vector from upper and lower circle centres:
-                gmx::RVec distLower;
-                rvec_sub(vert, centres[idxLower], distLower);
-                gmx::RVec distUpper;
-                rvec_sub(vert, centres[idxUpper], distUpper);
-
-                // project distance vector onto tangent:
-                real cosLower = iprod(tangents[idxLower], distLower);                
-                real cosUpper = iprod(tangents[idxUpper], distUpper);                
-
-                real angleThreshold = 0.0;
-                if( cosLower < angleThreshold )
-                {
-                    std::cout<<"PERSISTENT LOWER CLASH"<<std::endl;
-                    numPers++;
-                }
-                if( cosUpper > angleThreshold )
-                {
-                    std::cout<<"PERSISTENT Upper CLASH"<<std::endl;
-                    numPers++;
-                }
-            }
-
-
-            
-
-
-            // add vertices to grid:
-            for(size_t k = 0; k < vertRing.size(); k++)
-            {
-                grid.addVertex(idxLen, k, vertRing[k], prop[idxLen]);
-            }
- 
-            // add vertex normals to grid:
-            for(size_t k = 0; k < vertNormRing.size(); k++)
-            {
-                grid.addVertexNormal(idxLen, k, vertNormRing[k]);
-            }
-
-            // add vertices to ring storage:
-            vertexRings[idxLen] = vertRing;
-
-
-            // store 
-
-
-            std::cout<<"i = "<<i<<"  "
-                     <<"j = "<<j<<"  "
-                     <<"numLen = "<<numLen<<"  "
-                     <<"crnt = "<<idxLen<<"  "
-                     <<"s.size = "<<s.size()<<"  "
-                     <<"lo = "<<(j-1)*(numLen - 1)/i<<"  "
-                     <<"hi = "<<(j+1)*(numLen - 1)/i<<"  "
-                     <<std::endl;
-        }
-    }
-
-    std::cout<<"numClash = "<<numClash<<std::endl;
-
-
-    std::cout<<"clashUpper = "<<clashUpper<<"  "
-             <<"clashLower = "<<clashLower<<"  "
-             <<"numVert = "<<numVert<<"  "
-             <<"numSpecial = "<<numSpecial<<"  "
-             <<"numPers = "<<numPers<<"  "
-             <<std::endl;
-
-    // correct mesh:
-    
-    // FIXME I think the porblem is that interpolation in XYZ does also shift
-    // the vertex in S direction. Might be better to interpolate R if a con-
-    // flict is found...
-//    grid.interpolateMissing();
-
-    // return grid:
-    return grid;
-}
-*/
-
-
-
-/*
- *
+/*!
+ * generates a set of normal vectors by determining a normal vector at one end
+ * of the surface tube and moving it along the sline curve.
  */
 std::vector<gmx::RVec>
 MolecularPathObjExporter::generateNormals(
@@ -1538,73 +885,8 @@ MolecularPathObjExporter::generateNormals(
 }
 
 
-
-/*
- *
- */
-int
-MolecularPathObjExporter::numPlanarVertices(real &d, real &r)
-{
-    return std::max(static_cast<int>(std::ceil(M_PI/(2.0*std::acos(1.0 - d*d/(2.0*r*r))))), 4);
-}
-
-
-/*
- *
- */
-std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>>
-MolecularPathObjExporter::vertexRing(gmx::RVec base,
-                                     gmx::RVec tangent,
-                                     gmx::RVec normal,
-                                     real radius,
-                                     real angleIncrement,
-                                     size_t nIncrements)
-{
-    // make sure input normal vector is normalised:
-    unitv(normal, normal);
-
-    // preallocate vertex and normal vectors:
-    std::vector<gmx::RVec> vertices;
-    vertices.reserve(nIncrements);
-    std::vector<gmx::RVec> normals;
-    vertices.reserve(nIncrements);
-
-    // sample vertices in a ring around the base point: 
-    for(size_t j = 0; j < nIncrements; j++)
-    {
-        // rotate normal vector:
-        gmx::RVec rotNormal = rotateAboutAxis(normal, tangent, j*angleIncrement);
-        normals.push_back(rotNormal);
-
-        // generate vertex:
-        gmx::RVec vertex = base;
-        vertex[XX] += radius*rotNormal[XX];
-        vertex[YY] += radius*rotNormal[YY];
-        vertex[ZZ] += radius*rotNormal[ZZ];
-            std::cout<<"vex = "<<vertex[XX]<<"  "
-                     <<"vey = "<<vertex[YY]<<"  "
-                     <<"vez = "<<vertex[ZZ]<<"  "
-                     <<"bx = "<<base[XX]<<"  "
-                     <<"by = "<<base[YY]<<"  "
-                     <<"bz = "<<base[ZZ]<<"  "
-                     <<"rx = "<<rotNormal[XX]<<"  "
-                     <<"ry = "<<rotNormal[YY]<<"  "
-                     <<"rz = "<<rotNormal[ZZ]<<"  "
-                     <<"radius = "<<radius<<"  "
-                     <<std::endl;
-        vertices.push_back(vertex);
-    }
-
-    // return ring of vertices:
-    std::pair<std::vector<gmx::RVec>, std::vector<gmx::RVec>> ret;
-    ret.first = vertices;
-    ret.second = normals;
-    return ret;
-}
-
-
-/*
- *
+/*!
+ * Returns a vector that is orthogonal to the given input vector.
  */
 gmx::RVec
 MolecularPathObjExporter::orthogonalVector(gmx::RVec vec)
@@ -1623,9 +905,7 @@ MolecularPathObjExporter::orthogonalVector(gmx::RVec vec)
     // sanity check:
     if( idxNonZero == -1 )
     {
-        std::cerr<<"ERROR: Can not find orthogonal to null vector!"<<std::endl;
-        std::cerr<<"vec = "<<vec[0]<<" "<<vec[1]<<" "<<vec[2]<<std::endl;
-        std::abort();
+        throw std::runtime_error("Can not find orthogonal to null vector.");
     }
 
     // find index for switching:
@@ -1645,8 +925,9 @@ MolecularPathObjExporter::orthogonalVector(gmx::RVec vec)
 }
 
 
-/*
- *
+/*!
+ * Returns a vector that is rotated about the given axis by a given number of
+ * degrees.
  */
 gmx::RVec
 MolecularPathObjExporter::rotateAboutAxis(gmx::RVec vec, 
@@ -1677,18 +958,6 @@ MolecularPathObjExporter::rotateAboutAxis(gmx::RVec vec,
     return rotVec;
 }
 
-
-/*
- *
- *
- */
-real
-MolecularPathObjExporter::cosAngle(
-        const gmx::RVec &vecA,
-        const gmx::RVec &vecB)
-{
-    return iprod(vecA, vecB) / ( norm(vecA) * norm(vecB) );
-}
 
 
 /*!
@@ -1742,6 +1011,5 @@ MolecularPathObjExporter::shiftAndScale(
         std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
         std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
     }
-
 }
 
