@@ -9,6 +9,8 @@
 
 #include "io/molecular_path_obj_exporter.hpp"
 
+#include "geometry/cubic_spline_interp_3D.hpp"
+
 
 /*
  *
@@ -63,6 +65,17 @@ RegularVertexGrid::addVertexNormal(
     p_.insert(p);
     std::tuple<size_t, size_t, std::string> key(i, j, p);
     normals_[key] = normal;
+}
+
+
+/*
+ *
+ */
+gmx::RVec
+RegularVertexGrid::getVertex(size_t i, size_t j, std::string p) const
+{
+    std::tuple<size_t, size_t, std::string> key(i, j, p);
+    return vertices_.at(key);
 }
 
 
@@ -306,9 +319,10 @@ RegularVertexGrid::faces(
         std::string p)
 {
     // sanity checks:
-    if( phi_.size() * s_.size() != vertices_.size() )
+    if( phi_.size() * s_.size() * p_.size() != vertices_.size() )
     {
-        std::cout<<"phi.size = "<<phi_.size()<<"  "
+        std::cout<<"MESH ERROR  "
+                 <<"phi.size = "<<phi_.size()<<"  "
                  <<"s.size = "<<s_.size()<<"  "
                  <<"vert.size = "<<vertices_.size()<<"  "
                  <<std::endl;
@@ -484,8 +498,8 @@ MolecularPathObjExporter::operator()(
                                 molPath.sHi() + extrapDist);
 
     // define resolution:
-    int numPhi = 30*2;
-    int numLen = std::pow(2, 7) + 1;
+    int numPhi = 50;
+    int numLen = std::pow(2, 8) + 1;
     std::pair<size_t, size_t> resolution(numLen, numPhi);
     
     // pathway geometry:
@@ -513,14 +527,21 @@ MolecularPathObjExporter::operator()(
             resolution,
             range);
 
+    std::cout<<"GRID COMPLETE!"<<std::endl;
+
     // loop over properties:
     for(auto prop : properties)
     {
         // obtain vertices, normals, and faces from grid:
         grid.normalsFromFaces();
+        std::cout<<"normals calculated!"<<std::endl;
         auto vertices = grid.weightedVertices(prop.first);
+        std::cout<<"vertices obtained!"<<std::endl;
         auto vertexNormals = grid.normals(prop.first);
+        std::cout<<"normals obtained!"<<std::endl;
         auto faces = grid.faces(prop.first);
+
+        std::cout<<"faces obtained!"<<std::endl;
 
         // add faces to surface:
         WavefrontObjGroup group("pathway_" + prop.first);
@@ -649,6 +670,8 @@ MolecularPathObjExporter::generateGrid(
 
 
 /*!
+ *TODO this comment is outdated
+ *
  * Generates grid along MolecularPath, but uses a tangent vector equal to the
  * channel direction vector. This does not strictly give the correct surface, 
  * as the tangent may vary along the centre line. However, this method will not
@@ -667,22 +690,35 @@ MolecularPathObjExporter::generatePropertyGrid(
         RegularVertexGrid &grid)
 {   
     // extract grid coordinates:
-    std::vector<real> s = grid.s_;
+//    const std::vector<real> s = grid.s_;
+    std::vector<real> s;
+    int num = 50;
+    real ds = (grid.s_.back() - grid.s_.front())/(num - 1);
+    for(size_t i = 0; i < num; i++)
+    {
+        s.push_back(grid.s_.front() + i*ds);
+    }
     std::vector<real> phi = grid.phi_;
     size_t numLen = s.size();
 
     // sample points, radii, and tangents along molecular path:
     std::vector<gmx::RVec> centres;
     centres.reserve(s.size());
+    std::vector<gmx::RVec> tangents;
+    tangents.reserve(s.size());
     std::vector<real> radii;
     radii.reserve(s.size());
-    std::vector<real> prop;
-    prop.reserve(s.size());
+//    std::vector<real> prop;
+//    prop.reserve(s.size());
     for(auto eval : s)
     {
         centres.push_back( centreLine.evaluate(eval, 0) );
+        gmx::RVec tv = centreLine.tangentVec(eval);
+        unitv(tv, tv);
+        tangents.push_back(tv);
         radii.push_back( radius.evaluate(eval, 0) );
-        prop.push_back( property.second.first.evaluate(eval, 0) );
+//        radii.push_back( 0.02 );
+//        prop.push_back( property.second.first.evaluate(eval, 0) );
     }
 
     // estimate channel direction vector:
@@ -691,10 +727,10 @@ MolecularPathObjExporter::generatePropertyGrid(
     unitv(chanDirVec, chanDirVec);
 
     // sample scalar property along the path:
-    shiftAndScale(prop, property.second.second);
+//    shiftAndScale(prop, property.second.second);
 
-    // tangents always in direction of channel:
-    std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
+    // tangents always in direction of channel: // FIXME
+//    std::vector<gmx::RVec> tangents(centres.size(), chanDirVec);
 
     // sample normals along molecular path:
     auto normals = generateNormals(tangents);
@@ -702,6 +738,229 @@ MolecularPathObjExporter::generatePropertyGrid(
     // store vertex rings:
     std::vector<gmx::RVec> vertRing(phi.size());
 
+
+
+
+
+
+
+    // generate support points:
+
+
+    std::map<int, std::vector<gmx::RVec>> vertexRings;
+    
+    std::cout<<"vertexRings initialised"<<std::endl;
+
+
+
+    // first vertex ring:
+    int idxLen = 0;
+    for(size_t k = 0; k < phi.size(); k++)
+    {
+        // rotate normal vector:
+        gmx::RVec rotNormal = rotateAboutAxis(
+                normals[idxLen], 
+                tangents[idxLen],
+                phi[k]);
+
+        // generate vertex:
+        gmx::RVec vertex = centres[idxLen];
+        vertex[XX] += radii[idxLen]*rotNormal[XX];
+        vertex[YY] += radii[idxLen]*rotNormal[YY];
+        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+
+        // add to vertex ring:
+        vertRing[k] = vertex;
+    }
+    vertexRings[idxLen] = vertRing;
+
+    // last vertex ring:
+    idxLen = s.size() - 1;
+    for(size_t k = 0; k < phi.size(); k++)
+    {
+        // rotate normal vector:
+        gmx::RVec rotNormal = rotateAboutAxis(
+                normals[idxLen], 
+                tangents[idxLen],
+                phi[k]);
+
+        // generate vertex:
+        gmx::RVec vertex = centres[idxLen];
+        vertex[XX] += radii[idxLen]*rotNormal[XX];
+        vertex[YY] += radii[idxLen]*rotNormal[YY];
+        vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+
+        // add to vertex ring:
+        vertRing[k] = vertex;
+    }
+    vertexRings[idxLen] = vertRing;
+
+
+    // build intermediate vertex rings:
+    
+    for(int i = 1; i <= numLen; i *= 2)
+    {
+        for(int j = 1; j < i; j += 2)
+        {
+            idxLen = j*(numLen - 1)/i;
+            int idxLower = (j - 1)*(numLen - 1)/i;
+            int idxUpper = (j + 1)*(numLen - 1)/i;
+
+            std::cout<<"idxLen = "<<idxLen<<std::endl;
+
+            // create ring of vertices:
+            bool hasClashes = false;
+            for(size_t k = 0; k < phi.size(); k ++)
+            {
+                // rotate normal vector:
+                gmx::RVec rotNormal = rotateAboutAxis(
+                        normals[idxLen], 
+                        tangents[idxLen],
+                        phi[k]);
+
+                // generate vertex:
+                gmx::RVec vertex = centres[idxLen];
+                vertex[XX] += radii[idxLen]*rotNormal[XX];
+                vertex[YY] += radii[idxLen]*rotNormal[YY];
+                vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
+  
+                // difference vectors in neighbouring discs:
+                gmx::RVec a;
+                rvec_sub(vertex, centres[idxLower], a);
+                unitv(a, a);
+                gmx::RVec b;
+                rvec_sub(vertex, centres[idxUpper], b);
+                unitv(b, b);
+
+                // cosine of angles between difference vectors:
+                real cosA = iprod(a, tangents[idxLower]);
+                real cosB = iprod(b, tangents[idxUpper]);
+
+                // check overlap:
+                // TODO: this criterion is confirmed to identify clashes, 
+                // just need to fix them now
+                real thres = 0.0;
+                if( cosA < thres or cosB > -thres )
+                {
+                    std::cout<<"CLASH  ";
+                    std::cout<<""
+                             <<"idxLen = "<<idxLen<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"p = "<<property.first<<"  "
+                             <<"cosA = "<<cosA<<"  "
+                             <<"cosB = "<<cosB<<"  ";
+                    std::cout<<std::endl;
+
+                    hasClashes = true;
+                    break;
+                }
+
+
+                vertRing[k] = vertex;
+            }
+   
+            // TODO
+//            hasClashes = false;
+            if( !hasClashes )
+            {
+                vertexRings[idxLen] = vertRing;
+            }
+            hasClashes = false;
+        }
+    }
+    
+
+    // interpolate support points on each equal-phi line:
+    std::vector<SplineCurve3D> curves;
+    for(size_t k = 0; k < phi.size(); k++)
+    {
+
+
+        // extract support points and parameterisation for interpolation:
+        std::vector<real> param;
+        std::vector<gmx::RVec> points;
+        for(auto vr = vertexRings.begin(); vr != vertexRings.end(); vr++)
+        {
+            std::cout<<"   vr.size = "<<vr -> second.size()<<"  "
+                     <<"vr.first = "<<vr -> first<<"  "
+                     <<std::endl;
+
+            param.push_back( s[vr -> first] );
+            points.push_back( vr -> second[k] );
+        }
+
+        std::cout<<"INTERPOLATION for "
+                 <<"k = "<<k<<"  "
+                 <<"phi = "<<phi[k]<<"  "
+                 <<"vertexRings.size = "<<vertexRings.size()<<"  "
+                 <<"param.size = "<<param.size()<<"  "
+                 <<"points.size = "<<points.size()<<"  "
+                 <<std::endl;
+        
+
+        // interpolate these points:
+        CubicSplineInterp3D interp;
+        curves.push_back( interp(param, points, eSplineInterpBoundaryHermite) );
+    }
+
+
+    // build mesh
+
+
+
+    std::vector<real> prop;
+    for(size_t i = 0; i < grid.s_.size(); i++)
+    {
+        prop.push_back( property.second.first.evaluate(grid.s_[i], 0) );
+    }
+
+
+    // sample scalar property along the path:
+    shiftAndScale(prop, property.second.second);
+
+
+
+    int co = 0;
+    for(size_t i = 0; i < grid.s_.size(); i++)
+    {
+        for(size_t k = 0; k < grid.phi_.size(); k++)
+        {
+//            real prop = property.second.first.evaluate(grid.s_[i], 0);
+
+
+            std::cout<<"i = "<<i<<"  "<<"s = "<<grid.s_[i]<<"  "
+                     <<"k = "<<k<<"  "<<"phi = "<<grid.phi_[k]<<"  "
+                     <<"p = "<<property.first<<"  "
+                     <<"curves.size = "<<curves.size()<<"  "
+                     <<"s.size = "<<grid.s_.size()<<"  "
+                     <<"prop = "<<prop[i]<<"  "
+                     <<std::endl;
+
+            grid.addVertex(
+                    i, 
+                    k, 
+                    property.first, 
+                    curves[k].evaluate(grid.s_[i], 0),
+                    prop[i]);
+            co++;
+        }
+    }
+
+    std::cout<<"MESH COMPLETE for property "
+             <<property.first<<"  "
+             <<"co = "<<co<<"  "
+             <<std::endl;
+
+
+
+
+
+
+
+
+
+
+/*
     // first vertex ring:
     int idxLen = 0;
     for(size_t k = 0; k < phi.size(); k++)
@@ -773,9 +1032,65 @@ MolecularPathObjExporter::generatePropertyGrid(
                 vertex[YY] += radii[idxLen]*rotNormal[YY];
                 vertex[ZZ] += radii[idxLen]*rotNormal[ZZ];
 
+
+                // TODO check vertex!
+                auto vertLo = grid.getVertex(idxLower, k, property.first);
+                auto vertHi = grid.getVertex(idxUpper, k, property.first);
+  
+                // difference vectors in neighbouring discs:
+                gmx::RVec a;
+                rvec_sub(vertex, centres[idxLower], a);
+                unitv(a, a);
+                gmx::RVec b;
+                rvec_sub(vertex, centres[idxUpper], b);
+                unitv(b, b);
+
+                // cosine of angles between difference vectors:
+                real cosA = iprod(a, tangents[idxLower]);
+                real cosB = iprod(b, tangents[idxUpper]);
+
+                // check overlap:
+                // TODO: this criterion is confirmed to identify clashes, 
+                // just need to fix them now
+                real thres = 0.0;
+                if( cosA < thres or cosB > -thres )
+                {
+                    std::cout<<"CLASH  ";
+                    std::cout<<""
+                             <<"idxLen = "<<idxLen<<"  "
+                             <<"k = "<<k<<"  "
+                             <<"p = "<<property.first<<"  "
+                             <<"cosA = "<<cosA<<"  "
+                             <<"cosB = "<<cosB<<"  ";
+                    std::cout<<std::endl;
+
+                    hasClashes = true;
+                    break;
+                    // fix by interpolation:
+//                    rvec_add(vertLo, vertHi, vertex);
+//                    svmul(0.5, vertex, vertex);
+                }
+
+
                 vertRing[k] = vertex;
             }
- 
+           
+            if( hasClashes )
+            {
+                for(int k = 0; k < vertRing.size(); k++)
+                {
+                    auto vertLo = grid.getVertex(idxLower, k, property.first);
+                    auto vertHi = grid.getVertex(idxUpper, k, property.first);
+                    rvec_add(vertLo, vertHi, vertRing[k]);
+                    svmul(0.5, vertRing[k], vertRing[k]);
+
+                    // also correct tangent:
+                    rvec_add(tangents[idxLower], tangents[idxUpper], tangents[idxLen]);
+                    svmul(0.5, tangents[idxLen], tangents[idxLen]);
+                }
+            }
+            hasClashes = false;
+
             // add vertices to grid:
             for(size_t k = 0; k < vertRing.size(); k++)
             {
@@ -788,6 +1103,7 @@ MolecularPathObjExporter::generatePropertyGrid(
             }
         }
     }
+    */
 }
 
 

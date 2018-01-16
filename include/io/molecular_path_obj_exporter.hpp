@@ -45,7 +45,11 @@ class RegularVertexGrid
 
         void interpolateMissing();
         void normalsFromFaces();
+
+
+        gmx::RVec getVertex(size_t i, size_t j, std::string p) const;
     
+
         std::vector<gmx::RVec> vertices(
                 std::string p);
         std::vector<std::pair<gmx::RVec, real>> weightedVertices(
