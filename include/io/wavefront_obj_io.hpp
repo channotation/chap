@@ -5,10 +5,47 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <gromacs/math/vec.h>
 #include <gromacs/utility/real.h>   
+
+
+/*!
+ * Abstract data type for faces in Wavefront OBJ objects. Faces are sets of 
+ * vertex indices and (optionally) vertex normal indices.
+ */
+class WavefrontObjFace
+{
+    public:
+
+        // constructors:
+        WavefrontObjFace(
+                const std::vector<int> &vertexIdx,
+                std::string mtlName);
+        WavefrontObjFace(
+                const std::vector<int> &vertexIdx, 
+                const std::vector<int> &normalIdx,
+                std::string mtlName);
+
+        // getter methods:
+        int numVertices() const;
+        int vertexIdx(int i) const;
+        int normalIdx(int i) const;
+        bool hasNormals() const;
+
+
+//    private:
+
+
+        // data container for indices:
+        std::vector<int> vertexIdx_;
+        std::vector<int> normalIdx_;
+
+        // further face properties: 
+        std::string mtlName_;
+};
 
 
 /*!
@@ -21,13 +58,15 @@ class WavefrontObjGroup
     public:
 
         // constructor:
-        WavefrontObjGroup(std::string name,
-                          std::vector<std::vector<int>> faces);
+        WavefrontObjGroup(std::string name);
         WavefrontObjGroup(const WavefrontObjGroup &other);
+
+        // add face to group:
+        void addFace(WavefrontObjFace face);
 
         // data:
         std::string groupname_;
-        std::vector<std::vector<int>> faces_;
+        std::vector<WavefrontObjFace> faces_;
 };
 
 
@@ -44,8 +83,19 @@ class WavefrontObjObject
         WavefrontObjObject(std::string name);
 
         // functions to add data:
-        void addVertices(std::vector<gmx::RVec> vertices);
-        void addGroup(std::string name, std::vector<std::vector<int>> faces);
+        void addVertices(
+                const std::vector<gmx::RVec> &vertices);
+        void addVertices(
+                const std::vector<std::pair<gmx::RVec, real>> &vertices);
+        void addVertexNormals(
+                const std::vector<gmx::RVec> &normals);
+        void addGroup(
+                const WavefrontObjGroup &group);
+        void setMaterialLibrary(
+                std::string mtl);
+
+        // returns flag indicating whether object is valid:
+        bool valid() const;
 
         // functions to manipulate data:
         void scale(real fac);
@@ -56,7 +106,9 @@ class WavefrontObjObject
 
         // data:
         std::string name_;
-        std::vector<gmx::RVec> vertices_;
+        std::string mtllib_;
+        std::vector<std::pair<gmx::RVec, real>> vertices_;
+        std::vector<gmx::RVec> normals_;
         std::vector<WavefrontObjGroup> groups_;
 };
 
@@ -81,14 +133,20 @@ class WavefrontObjExporter
 
     private:
 
+        // internal temporaries:
+        std::string crntMtlName_ = "";
+
         // file handle:
         std::fstream obj_;
 
         // utilities for writing individual lines:
         inline void writeComment(std::string comment);
+        inline void writeMaterialLibrary(std::string mtl);
         inline void writeGroup(std::string group);
-        inline void writeVertex(gmx::RVec vertex);
-        inline void writeFace(std::vector<int> face);
+        inline void writeObject(std::string object);
+        inline void writeVertex(std::pair<gmx::RVec, real> vertex);
+        inline void writeVertexNormal(gmx::RVec norm);
+        inline void writeFace(const WavefrontObjFace &face);
 };
 
 #endif

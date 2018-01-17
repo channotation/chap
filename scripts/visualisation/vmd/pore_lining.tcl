@@ -83,19 +83,62 @@ mol modmaterial 2 top AOEdgy
 # ADD PORE SURFACE
 ###############################################################################
 
-draw color blue
-#draw material Transparent
-source wobj.tcl
+
+# Import OBJ Data:
+# -----------------------------------------------------------------------------
 
 
-# import OBJ data:
+source ~/repos/chap/scripts/visualisation/vmd/wobj.tcl
+
+# import an OBJ file:
 set filename $FILE_PORE_SURFACE
 set obj [WOBJ::import_wavefront_obj $filename]
 
+
+# Color Scale:
+# -----------------------------------------------------------------------------
+# Uncomment whichever color scale you prefer, rdbu, puor, and brbg are 
+# divergent color scales, the others map between white and their respective
+# saturated hue. Your can also create your own color scale by creating a list
+# of three equal langth lists, where each of these lists contains the R, G, and
+# B values of your colour table (these should be in [0,1] rather than [0, 255].
+
+#set scale_colors [color_scale_greys]
+set scale_colors [color_scale_reds]
+#set scale_colors [color_scale_greens]
+set scale_colors [color_scale_blues]
+#set scale_colors [color_scale_oranges]
+#set scale_colors [color_scale_purples]
+#set scale_colors [color_scale_rdbu]
+#set scale_colors [color_scale_puor]
+#set scale_colors [color_scale_brbg]
+
+# optionally invert color scale:
+set scale_colors [revert_color_scale $scale_colors]
+
+
+# PLOT GROUP
+# -----------------------------------------------------------------------------
+# TODO comment here
+
+#set group_name "pathway_radius" 
+#set group_name "pathway_avg_radius" 
+#set group_name "pathway_avg_pl_hydrophobicity" 
+set group_name "pathway_avg_pf_hydrophobicity" 
+#set group_name "pathway_avg_energy" 
+#set group_name "pathway_avg_density" 
+
+
+# Draw Pore
+# -----------------------------------------------------------------------------
+
+
+
+
 # draw OBJ mesh:
-WOBJ::draw_wavefront_obj $obj
+WOBJ::draw_wavefront_obj $obj $group_name $scale_colors
 
-
+rotate x by 90
 
 
 

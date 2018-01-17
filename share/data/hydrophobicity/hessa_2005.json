@@ -1,5 +1,5 @@
 {
-    "remark": "Hydropathy scale for amino acid side chains based on endoplasmic reticulum translocon recognition of transmembrane helices.",
+    "remark": "Hydropathy scale for amino acid side chains based on endoplasmic reticulum translocon recognition of transmembrane helices. Values are scaled to the interval [-1, 1], where +1 is the highest and -1 the lowest hydrophobicity.",
 
     "reference": {
         "link": "https://www.nature.com/nature/journal/v433/n7024/full/nature03216.html",
@@ -7,6 +7,29 @@
         },
 
     "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity": -0.03151862},
+        {"resname": "ARG", "hydrophobicity": -0.73925501},
+        {"resname": "ASN", "hydrophobicity": -0.58739255},
+        {"resname": "ASP", "hydrophobicity": -1.00000000},
+        {"resname": "CYS", "hydrophobicity":  0.03724928},
+        {"resname": "GLN", "hydrophobicity": -0.67621777},
+        {"resname": "GLU", "hydrophobicity": -0.76790831},
+        {"resname": "GLY", "hydrophobicity": -0.21203438},
+        {"resname": "HIS", "hydrophobicity": -0.59025788},
+        {"resname": "ILE", "hydrophobicity":  0.17191977},
+        {"resname": "LEU", "hydrophobicity":  0.15759312},
+        {"resname": "LYS", "hydrophobicity": -0.77650430},
+        {"resname": "MET", "hydrophobicity":  0.02865330},
+        {"resname": "PHE", "hydrophobicity":  0.02865330},
+        {"resname": "PRO", "hydrophobicity": -0.63896848},
+        {"resname": "SER", "hydrophobicity": -0.24068768},
+        {"resname": "THR", "hydrophobicity": -0.14899713},
+        {"resname": "TRP", "hydrophobicity": -0.08595989},
+        {"resname": "TYR", "hydrophobicity": -0.19484241},
+        {"resname": "VAL", "hydrophobicity":  0.08882521}
+    ],
+
+    "original_hydrophobicity": [
         {"resname": "ALA", "hydrophobicity":  0.11},
         {"resname": "ARG", "hydrophobicity":  2.58},
         {"resname": "ASN", "hydrophobicity":  2.05},

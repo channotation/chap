@@ -312,9 +312,9 @@ SplineCurve3D::tangentVec(const real &eval)
  * \todo This is not yet implemented!
  */
 gmx::RVec
-SplineCurve3D::normalVec(const real /*&evalPoint*/)
+SplineCurve3D::normalVec(const real &eval)
 {
-    return gmx::RVec(0.0, 0.0, 0.0);
+    return evaluate(eval, 2);
 }
 
 

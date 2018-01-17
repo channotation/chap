@@ -1,11 +1,34 @@
 {
-    "remark": "Wimley-White whole-residue hydrophobicity scale.",
+    "remark": "Wimley-White whole-residue hydrophobicity scale. Values are scaled to lie in the interval [-1, 1] with +1 being the highest and -1 the lowest hydrophobicity.",
 
     "reference": {
         "citation": "http://blanco.biomol.uci.edu/hydrophobicity_scales.html"
         },
 
     "hydrophobicity": [
+        {"resname": "ALA", "hydrophobicity": -0.13692946},
+        {"resname": "ARG", "hydrophobicity": -0.41493776},
+        {"resname": "ASN", "hydrophobicity": -0.17842324},
+        {"resname": "ASP", "hydrophobicity": -1.00000000},
+        {"resname": "CYS", "hydrophobicity": -0.09128631},
+        {"resname": "GLN", "hydrophobicity": -0.07883817},
+        {"resname": "GLU", "hydrophobicity": -0.66804979},
+        {"resname": "GLY", "hydrophobicity": -0.47302905},
+        {"resname": "HIS", "hydrophobicity": -0.56846473},
+        {"resname": "ILE", "hydrophobicity":  0.33609959},
+        {"resname": "LEU", "hydrophobicity":  0.33609959},
+        {"resname": "LYS", "hydrophobicity": -0.75103734},
+        {"resname": "MET", "hydrophobicity":  0.18257261},
+        {"resname": "PHE", "hydrophobicity":  0.24066390},
+        {"resname": "PRO", "hydrophobicity":  0.12863071},
+        {"resname": "SER", "hydrophobicity": -0.13692946},
+        {"resname": "THR", "hydrophobicity": -0.04564315},
+        {"resname": "TRP", "hydrophobicity":  0.09958506},
+        {"resname": "TYR", "hydrophobicity": -0.09543568},
+        {"resname": "VAL", "hydrophobicity":  0.21991701}
+    ],
+
+    "original_hydrophobicity": [
         {"resname": "ALA", "hydrophobicity":  0.33},
         {"resname": "ARG", "hydrophobicity":  1.00},
         {"resname": "ASN", "hydrophobicity":  0.43},

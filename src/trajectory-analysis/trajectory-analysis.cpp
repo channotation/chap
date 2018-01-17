@@ -1558,11 +1558,12 @@ trajectoryAnalysis::analyzeFrame(
     //-------------------------------------------------------------------------
 
     // TODO: this should be moved to a separate binary!
-
+/*
     MolecularPathObjExporter molPathExp;
-    molPathExp(outputObjFileName_.c_str(),
+    molPathExp(objOutputFileName_.c_str(),
+               "molecular_pathway",
                molPath);
-
+*/
 
     // ADD TIMING DATA TO DATA HANDLE
     //-------------------------------------------------------------------------
@@ -1796,6 +1797,13 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
             " read from" + inFileName + " is not valid JSON object.";
             throw std::runtime_error(error);
         }
+
+        // copy first frame from here for OBJ output:
+        if( linesProcessed == 0 )
+        {
+            molPathAvg_.reset(new MolecularPath(lineDoc));
+        }
+
 
         // create molecular path:
         MolecularPath molPath(lineDoc);
@@ -2035,6 +2043,67 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // delete temporary file:
     std::remove(inFileName.c_str());
+
+
+    // EXPORT PATHWAY TO OBJ FILE
+    // ------------------------------------------------------------------------
+
+    // retrieve averaged properties:
+    std::vector<real> avgRadius;
+    std::vector<real> avgSolventDensity;
+    std::vector<real> avgEnergy;
+    std::vector<real> avgPlHydrophobicity;
+    std::vector<real> avgPfHydrophobicity;
+    for(size_t i = 0; i < supportPoints.size(); i++)
+    {
+        avgRadius.push_back(radiusSummary.at(i).mean());
+        avgSolventDensity.push_back(solventDensitySummary.at(i).mean());
+        avgEnergy.push_back(energySummary.at(i).mean());
+        avgPlHydrophobicity.push_back(plHydrophobicitySummary.at(i).mean());
+        avgPfHydrophobicity.push_back(pfHydrophobicitySummary.at(i).mean());
+    }
+
+    // averaged properties as spline curves:
+    CubicSplineInterp1D interp;
+    auto avgRadiusSpl = interp(
+            supportPoints, 
+            avgRadius, 
+            eSplineInterpBoundaryHermite);
+    auto avgSolventDensitySpl = interp(
+            supportPoints, 
+            avgSolventDensity, 
+            eSplineInterpBoundaryHermite);
+    auto avgEnergySpl = interp(
+            supportPoints, 
+            avgEnergy, 
+            eSplineInterpBoundaryHermite);
+    auto avgPlHydrophobicitySpl = interp(
+            supportPoints, 
+            avgPlHydrophobicity, 
+            eSplineInterpBoundaryHermite);
+    auto avgPfHydrophobicitySpl = interp(
+            supportPoints, 
+            avgPfHydrophobicity, 
+            eSplineInterpBoundaryHermite);
+
+
+    // associate properties with pathway:
+    molPathAvg_ -> addScalarProperty("avg_radius", avgRadiusSpl, false);
+    molPathAvg_ -> addScalarProperty("avg_density", avgSolventDensitySpl, false);
+//    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl, false);
+    molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl, true);
+    molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl, true);
+
+    // TODO file path
+    auto palettes = ColourPaletteProvider::fromJsonFile("/sansom/s117/scro2967/repos/chap/share/data/palettes/default_colour_palettes.json");
+
+    // export pathway to file:
+    MolecularPathObjExporter mpexp;
+    mpexp(
+        "output", 
+        "time_averaged_molecular_path", 
+        *molPathAvg_,
+        palettes);
 }
 
 

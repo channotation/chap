@@ -35,21 +35,23 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 	// method for adding all options of the trajectoryAnalysis module:
 	virtual void initOptions(
             IOptionsContainer *options,
-			TrajectoryAnalysisSettings *settings);
+            TrajectoryAnalysisSettings *settings);
 	
     //
     virtual void initAnalysis(
             const TrajectoryAnalysisSettings &settings,
             const TopologyInformation &top);
-	
+
+    //
     virtual void initAfterFirstFrame(
             const TrajectoryAnalysisSettings &settings,
             const t_trxframe &fr);
 
-	// ??
-	virtual void analyzeFrame(
-            int frnr,
-            const t_trxframe &fr,
+
+    //
+    virtual void analyzeFrame(
+            int frnr, 
+            const t_trxframe &fr, 
             t_pbc *pbc,
             TrajectoryAnalysisModuleData *pdata);
 	
@@ -177,6 +179,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     real deBandWidth_;
     real deBandWidthScale_;
     real deEvalRangeCutoff_;
+
+    // molecular pathway for first frame:
+    std::unique_ptr<MolecularPath> molPathAvg_;
 
 
     bool debug_output_;

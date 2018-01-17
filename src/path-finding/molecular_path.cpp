@@ -379,6 +379,30 @@ MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
 }
 
 
+/*!
+ * Adds a scalar property to the MolecularPath. Note that property names must
+ * be unique and already existing properties will be overwritten.
+ */
+void
+MolecularPath::addScalarProperty(
+        std::string name,
+        SplineCurve1D property,
+        bool divergent)
+{
+    properties_[name] = std::pair<SplineCurve1D, bool>(property, divergent);
+}
+
+
+/*!
+ * Returns map of scalar properties associated with the MolecularPath.
+ */
+std::map<std::string, std::pair<SplineCurve1D, bool>>
+MolecularPath::scalarProperties() const
+{
+    return properties_;
+}
+
+
 /*! 
  * Simple getter function for access to original path points used to construct
  * the path.

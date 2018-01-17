@@ -1,8 +1,9 @@
 #ifndef MOLECULAR_PATH_HPP
 #define MOLECULAR_PATH_HPP
 
-#include <vector>
 #include <map>
+#include <string>
+#include <vector>
 
 #include <gromacs/math/vec.h>
 #include <gromacs/pbcutil/pbc.h>
@@ -95,6 +96,13 @@ class MolecularPath
                 real sLo,
                 real sHi);
 
+        // centreline-mapped properties:
+        void addScalarProperty(
+                std::string name,
+                SplineCurve1D property,
+                bool divergent);
+        std::map<std::string, std::pair<SplineCurve1D, bool>> scalarProperties() const;
+
         // access original points:
         std::vector<gmx::RVec> pathPoints();
         std::vector<real> pathRadii();
@@ -120,17 +128,33 @@ class MolecularPath
         std::vector<gmx::RVec> centreLineCtrlPoints() const;
 
         // sample points from centreline:
-        std::vector<real> sampleArcLength(size_t nPoints, real extrapDist) const;
-        std::vector<gmx::RVec> samplePoints(size_t nPoints, real extrapDist);
-        std::vector<gmx::RVec> samplePoints(std::vector<real> arcLengthSample);
-        std::vector<gmx::RVec> sampleTangents(size_t nPoints, real extrapDist);
-        std::vector<gmx::RVec> sampleTangents(std::vector<real> arcLengthSample);
-        std::vector<gmx::RVec> sampleNormTangents(size_t nPoints, real extrapDist);
-        std::vector<gmx::RVec> sampleNormTangents(std::vector<real> arcLengthSample);
-        std::vector<gmx::RVec> sampleNormals(size_t nPoints, real extrapDist);
-        std::vector<gmx::RVec> sampleNormals(std::vector<real> arcLengthSample);
-        std::vector<real> sampleRadii(size_t nPoints, real extrapDist);
-        std::vector<real> sampleRadii(std::vector<real> arcLengthSample);
+        std::vector<real> sampleArcLength(
+                size_t nPoints, 
+                real extrapDist) const;
+        std::vector<gmx::RVec> samplePoints(
+                size_t nPoints, 
+                real extrapDist);
+        std::vector<gmx::RVec> samplePoints(
+                std::vector<real> arcLengthSample);
+        std::vector<gmx::RVec> sampleTangents(
+                size_t nPoints, real extrapDist);
+        std::vector<gmx::RVec> sampleTangents(
+                std::vector<real> arcLengthSample);
+        std::vector<gmx::RVec> sampleNormTangents(
+                size_t nPoints, 
+                real extrapDist);
+        std::vector<gmx::RVec> sampleNormTangents(
+                std::vector<real> arcLengthSample);
+        std::vector<gmx::RVec> sampleNormals(
+                size_t nPoints, 
+                real extrapDist);
+        std::vector<gmx::RVec> sampleNormals(
+                std::vector<real> arcLengthSample);
+        std::vector<real> sampleRadii(
+                size_t nPoints, 
+                real extrapDist);
+        std::vector<real> sampleRadii(
+                std::vector<real> arcLengthSample);
 
         // change internal coordinate representation of path:
         void shift(const gmx::RVec &shift);
@@ -142,7 +166,9 @@ class MolecularPath
         const real PI_ = std::acos(-1.0);
 
         // utilities for sampling functions:
-        inline real sampleArcLenStep(size_t nPoints, real extrapDist) const; 
+        inline real sampleArcLenStep(
+                size_t nPoints, 
+                real extrapDist) const; 
 
         // utilities for path mapping:
         inline gmx::RVec mapPosition(
@@ -159,6 +185,9 @@ class MolecularPath
         // pore centre line and corresponding radius:
         SplineCurve3D centreLine_;
         SplineCurve1D poreRadius_;
+
+        // properties mapped onto path:
+        std::map<std::string, std::pair<SplineCurve1D, bool>> properties_;
 
         // properties of path:
         real openingLo_;

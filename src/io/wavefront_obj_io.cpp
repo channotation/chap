@@ -1,13 +1,102 @@
+#include <algorithm>
+
 #include "io/wavefront_obj_io.hpp"
 
 
 /*!
- * Construct a new group with given name and list of faces.
+ * Constructs a face from a vector of vertex indices.
  */
-WavefrontObjGroup::WavefrontObjGroup(std::string name, 
-                                     std::vector<std::vector<int>> faces)
+WavefrontObjFace::WavefrontObjFace(
+        const std::vector<int> &vertexIdx,
+        std::string mtlName)
+    : vertexIdx_(vertexIdx)
+    , mtlName_(mtlName)
+{
+    // check uniqueness of indices:
+    std::vector<int> tmp = vertexIdx_;
+    std::sort(tmp.begin(), tmp.end());
+    if( std::adjacent_find(tmp.begin(), tmp.end()) != tmp.end() )
+    {
+        throw std::logic_error("Vertex indices must be unique.");
+    }
+}
+
+
+/*!
+ * Constructs a face from vectors of vertex indices and normal indeces. These
+ * should be of the same size.
+ */
+WavefrontObjFace::WavefrontObjFace(
+        const std::vector<int> &vertexIdx,
+        const std::vector<int> &normalIdx,
+        std::string mtlName)
+{
+    // sanity check:
+    if( normalIdx.size() != vertexIdx.size() )
+    {
+        throw std::logic_error("Number of vertex normals must equal number "
+                               "of vertices.");
+    }
+
+    // assign to internal objects:
+    vertexIdx_ = vertexIdx;
+    normalIdx_ = normalIdx;
+    mtlName_ = mtlName;
+}
+
+
+/*!
+ * Returns number of vertices associated with this face.
+ */
+int
+WavefrontObjFace::numVertices() const
+{
+    return vertexIdx_.size();
+}
+
+
+/*!
+ * Returns the i-th vertex index.
+ */
+int
+WavefrontObjFace::vertexIdx(int i) const
+{
+    return vertexIdx_[i];
+}
+
+
+/*!
+ * Returns the i-th normal index.
+ */
+int
+WavefrontObjFace::normalIdx(int i) const
+{
+    return normalIdx_[i];
+}
+
+
+/*!
+ * Returns a flag indicating whether this face has vertex normals.
+ */
+bool
+WavefrontObjFace::hasNormals() const
+{
+    if( normalIdx_.size() == vertexIdx_.size() )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+
+/*!
+ * Construct a new group with given name. Faces can be added using addFace().
+ */
+WavefrontObjGroup::WavefrontObjGroup(std::string name)
     : groupname_(name)
-    , faces_(faces)
 {
     
 }
@@ -25,10 +114,21 @@ WavefrontObjGroup::WavefrontObjGroup(const WavefrontObjGroup &other)
 
 
 /*!
+ * Adds face to internal list of faces. 
+ */
+void
+WavefrontObjGroup::addFace(WavefrontObjFace face)
+{
+    faces_.push_back(face);
+}
+
+
+/*!
  * Constructs and empty OBJ object with a given name.
  */
 WavefrontObjObject::WavefrontObjObject(std::string name)
     : name_(name)
+    , mtllib_("")
 {
     
 }
@@ -36,12 +136,55 @@ WavefrontObjObject::WavefrontObjObject(std::string name)
 
 /*!
  * Add new vertices to the OBJ object. These are appended to the existing list
- * of vertices and there is no check for redundancy.
+ * of vertices and there is no check for redundancy. As only geometric vertex
+ * coordinates are given, the weight is assumed to be one.
  */
 void
-WavefrontObjObject::addVertices(std::vector<gmx::RVec> vertices)
+WavefrontObjObject::addVertices(const std::vector<gmx::RVec> &vertices)
 {
-    vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+    for(auto vert : vertices)
+    {
+        // default weight is 1.0:
+        std::pair<gmx::RVec, real> vertex(vert, 1.0);
+        vertices_.push_back(vertex);
+    }
+}
+
+
+/*!
+ * Add new vertices to the OBJ object. These are appended to the existing list
+ * of vertices and there is no check for redundancy.  
+ */
+void
+WavefrontObjObject::addVertices(
+        const std::vector<std::pair<gmx::RVec, real>> &vertices)
+{
+    for(auto vert : vertices)
+    {
+        // sanity check:
+        if( vert.second < 0.0 || vert.second > 1.0 )
+        {
+            throw std::logic_error("Wavefront OBJ vertex weights must be in "
+                                   "unit interval.");
+        }
+
+        // add to vertex storage:
+        vertices_.push_back(vert);
+    }
+}
+
+
+/*!
+ * Add new vertex normals to the OBJ object. These are appended to the existing
+ * list of vertex normals and the user is responsible for ensuring that the 
+ * final number of vertex normals is either equal to the number of vertices or
+ * zero.
+ */
+void
+WavefrontObjObject::addVertexNormals(const std::vector<gmx::RVec> &normals)
+{
+    // accept normals:
+    normals_.insert(normals_.end(), normals.begin(), normals.end());
 }
 
 
@@ -49,9 +192,20 @@ WavefrontObjObject::addVertices(std::vector<gmx::RVec> vertices)
  * Adds a new named group to the OBJ object.
  */
 void
-WavefrontObjObject::addGroup(std::string name, std::vector<std::vector<int>> faces)
+WavefrontObjObject::addGroup(const WavefrontObjGroup &group)
 {
-    groups_.push_back( WavefrontObjGroup(name, faces) );
+    groups_.push_back( group );
+}
+
+
+/*!
+ * Sets the name of the material library to be used. Input argument should 
+ * include the .mtl extension.
+ */
+void
+WavefrontObjObject::setMaterialLibrary(std::string mtl)
+{
+    mtllib_ = mtl;
 }
 
 
@@ -67,24 +221,23 @@ WavefrontObjObject::scale(real fac)
 {
     // shift vertices to be centred around origin:
     gmx::RVec shift = calculateCog();
-    shift[0] = -shift[0];
-    shift[1] = -shift[1];
-    shift[2] = -shift[2];
+    shift[XX] = -shift[XX];
+    shift[YY] = -shift[YY];
+    shift[ZZ] = -shift[ZZ];
     this -> shift(shift);
 
     // scale all position vectors:
-    std::vector<gmx::RVec>::iterator it;
-    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    for(auto it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        (*it)[0] *= fac;
-        (*it)[1] *= fac;
-        (*it)[2] *= fac;
+        (*it).first[XX] *= fac;
+        (*it).first[YY] *= fac;
+        (*it).first[ZZ] *= fac;
     }
 
     // shift vertices back to original centre of geometry:
-    shift[0] *= -fac;
-    shift[1] *= -fac;
-    shift[2] *= -fac;
+    shift[XX] *= -fac;
+    shift[YY] *= -fac;
+    shift[ZZ] *= -fac;
     this -> shift(shift);
 }
 
@@ -94,12 +247,11 @@ WavefrontObjObject::scale(real fac)
  */
 void WavefrontObjObject::shift(gmx::RVec shift)
 {
-    std::vector<gmx::RVec>::iterator it;
-    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    for(auto it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        (*it)[0] += shift[0];
-        (*it)[1] += shift[1];
-        (*it)[2] += shift[2];
+        (*it).first[XX] += shift[XX];
+        (*it).first[YY] += shift[YY];
+        (*it).first[ZZ] += shift[ZZ];
     }    
 }
 
@@ -112,19 +264,60 @@ WavefrontObjObject::calculateCog()
 {
     gmx::RVec cog(0.0, 0.0, 0.0);
 
-    std::vector<gmx::RVec>::iterator it;
-    for(it = vertices_.begin(); it != vertices_.end(); it++)
+    for(auto it = vertices_.begin(); it != vertices_.end(); it++)
     {
-        cog[0] += (*it)[0];
-        cog[1] += (*it)[1];
-        cog[2] += (*it)[2];
+        cog[XX] += (*it).first[XX];
+        cog[YY] += (*it).first[YY];
+        cog[ZZ] += (*it).first[ZZ];
     }
 
-    cog[0] /= vertices_.size();
-    cog[1] /= vertices_.size();
-    cog[2] /= vertices_.size();
+    cog[XX] /= vertices_.size();
+    cog[YY] /= vertices_.size();
+    cog[ZZ] /= vertices_.size();
 
     return cog;
+}
+
+
+/*!
+ * Returns a flag indicating if the Wavefront object is valid. In particular,
+ * it check that each vertex or vertex normal referenced by the faces is 
+ * present in the vertex or vertex normal set.
+ */
+bool
+WavefrontObjObject::valid() const
+{
+    // loop over groups:
+    for( auto& group : groups_ )
+    {
+        // loop over faces:
+        for( auto& face : group.faces_ )
+        {
+            // loop over vertices:
+            for( size_t i = 0; i < face.numVertices(); i++ )
+            {
+                // are all referenced vertices present?
+                if( face.vertexIdx(i) > vertices_.size() ||
+                    face.vertexIdx(i) < 1 )
+                {
+                    return false;
+                }
+
+                // are all referenced normals present?
+                if( face.hasNormals() )
+                {
+                    if( face.normalIdx(i) > normals_.size() ||
+                        face.normalIdx(i) < 1 )
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    // if nothing failed, return true:
+    return true;
 }
 
 
@@ -135,17 +328,37 @@ void
 WavefrontObjExporter::write(std::string fileName,
                             WavefrontObjObject object)
 {
+    // sanity checks:
+    if( !object.valid() )
+    {
+        throw std::logic_error("WavefrontObjExporter encountered invalid "
+                               "OBJ object.");
+    }
+
     // open file stream:
     obj_.open(fileName.c_str(), std::fstream::out);
 
     // writer header comment:
     writeComment("produced by CHAP");
-        
+
+    // write name of material library:
+    writeMaterialLibrary(object.mtllib_);
+
+    // write object name:
+    writeObject(object.name_);
+
     // write vertices:
     obj_<<std::endl;
     for(unsigned int i = 0; i < object.vertices_.size(); i++)
     {
         writeVertex(object.vertices_[i]);
+    }
+
+    // write vertex normals:
+    obj_<<std::endl;
+    for(unsigned int i = 0; i < object.normals_.size(); i++)
+    {
+        writeVertexNormal(object.normals_[i]);
     }
 
     // write groups:
@@ -176,6 +389,21 @@ WavefrontObjExporter::writeComment(std::string comment)
     obj_ <<"# "<<comment<<std::endl;
 }
 
+
+/*!
+ * Writes material library referenct to an OBJ file.
+ */
+void
+WavefrontObjExporter::writeMaterialLibrary(std::string mtl)
+{
+    // library set?
+    if( mtl != "" )
+    {
+        obj_<<"mtllib "<<mtl<<std::endl;
+    }
+}
+
+
 /*!
  * Writes a group line to an OBJ file.
  */
@@ -186,28 +414,73 @@ WavefrontObjExporter::writeGroup(std::string group)
     obj_ <<"g "<<group<<std::endl;
 }
 
+
+/*!
+ * Writes an object line to an OBJ file.
+ */
+void
+WavefrontObjExporter::writeObject(std::string object)
+{
+    obj_ <<std::endl;
+    obj_ <<"o "<<object<<std::endl;
+}
+
+
 /*!
  * Writes a vertex entry to an OBJ file.
  */
 void
-WavefrontObjExporter::writeVertex(gmx::RVec vertex)
+WavefrontObjExporter::writeVertex(std::pair<gmx::RVec, real> vertex)
 {
-    obj_<<"v "<<vertex[0]<<" "
-              <<vertex[1]<<" "
-              <<vertex[2]<<std::endl;
+    obj_<<"v "<<vertex.first[XX]<<" "
+              <<vertex.first[YY]<<" "
+              <<vertex.first[ZZ]<<" "
+              <<vertex.second<<std::endl;
 }
 
+
 /*!
- * Writes a face entry to OBJ file.
+ * Writes a vertex normal to an OBJ file.
  */
 void
-WavefrontObjExporter::writeFace(std::vector<int> face)
+WavefrontObjExporter::writeVertexNormal(gmx::RVec norm)
 {
+    obj_<<"vn "<<norm[XX]<<" "
+               <<norm[YY]<<" "
+               <<norm[ZZ]<<std::endl;
+}
+
+
+/*
+ *
+ */
+void
+WavefrontObjExporter::writeFace(const WavefrontObjFace &face)
+{
+    // need to write material?
+    if( face.mtlName_ != "" )
+    {
+        // different from current material?
+        if( face.mtlName_ != crntMtlName_ )
+        {
+            crntMtlName_ = face.mtlName_;
+            obj_<<"usemtl "<<face.mtlName_<<std::endl;
+        }
+    }
+
+    // write actual face entry:
     obj_<<"f ";
 
-    for(unsigned int i = 0; i < face.size(); i++)
+    for(size_t i = 0; i < face.numVertices(); i++)
     {
-        obj_<<face[i]<<"  ";
+        obj_<<face.vertexIdx(i);
+
+        if( face.hasNormals() )
+        {
+            obj_<<"//"<<face.normalIdx(i);
+        }
+
+        obj_<<" ";
     }
 
     obj_<<std::endl;
