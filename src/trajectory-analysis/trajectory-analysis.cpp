@@ -358,7 +358,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     options -> addOption(RealOption("pm-pl-margin")
 	                     .store(&poreMappingMargin_)
-                         .defaultValue(0.5)
+                         .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
                                       "be pathway lining if it is no further "
