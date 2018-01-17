@@ -240,8 +240,8 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
 
     // prepare path finder:
     gmx::RVec initProbePos(poreCentre[XX] + 0.1*poreCentreRadius, 
-                           poreCentre[YY] - 0.5*poreCentreRadius, 
-                           poreCentre[ZZ] + 0.5*poreCentreRadius);
+                           poreCentre[YY] - 0.3*poreCentreRadius, 
+                           poreCentre[ZZ] + 0.3*poreCentreRadius);
     gmx::RVec chanDirVec(1.0, 0.05, 0.5);
 
     // create path finder:
