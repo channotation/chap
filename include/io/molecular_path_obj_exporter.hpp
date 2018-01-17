@@ -117,6 +117,12 @@ class MolecularPathObjExporter
         // constructor:
         MolecularPathObjExporter();
 
+        // setter functions:
+        void setExtrapDist(real extrapDist);
+        void setGridSampleDist(real gridSampleDist);
+        void setCorrectionThreshold(real correctionThreshold);
+        void setPermitClashes(bool permitClashes);
+
         // interface for exporting:
         void operator()(
                 std::string fileName,
@@ -126,6 +132,11 @@ class MolecularPathObjExporter
 
 
     private:
+
+        // parameters:
+        real extrapDist_;
+        real gridSampleDist_;
+        real correctionThreshold_;
 
         // functions for generating the pathway surface grid:
         std::vector<gmx::RVec> generateNormals(

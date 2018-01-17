@@ -142,14 +142,6 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // OUTPUT OPTIONS
     // ------------------------------------------------------------------------
 
-    // TODO:not currently used, but potentially useful in future
-    /*
-    options -> addOption(IntegerOption("num-out-pts")
-                         .store(&nOutPoints_)
-                         .defaultValue(1000)
-                         .description("Number of sample points of pore centre "
-                                      "line that are written to output."));*/
-
     options -> addOption(StringOption("out-filename")
 	                     .store(&outputBaseFileName_)
                          .defaultValue("output")
@@ -161,12 +153,39 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(IntegerOption("out-num-points")
 	                     .store(&outputNumPoints_)
                          .defaultValue(1000)
-                         .description("."));
+                         .description("Number of spatial sample points that "
+                                      "are written to the JSON output file. "
+                                      "This determines the resolution of the "
+                                      "pathway profile plots."));
 
     options -> addOption(RealOption("out-extrap-dist")
 	                     .store(&outputExtrapDist_)
                          .defaultValue(0.0)
-                         .description("."));
+                         .description("Distance along the arc of the pathway "
+                                      "centre line for which profile data is "
+                                      "written to the JSON output file. Also "
+                                      "determines how far the 3D pathway "
+                                      "surface extends in the OBJ output."));
+
+    options -> addOption(RealOption("out-grid-dist")
+	                     .store(&outputGridSampleDist_)
+                         .defaultValue(0.15)
+                         .description("Controls the sampling distance of "
+                                      "vertices on the pathway surface which "
+                                      "are subsequently interpolated to yield "
+                                      "a smooth surface. Very small values "
+                                      "may yield visual artifacts."));
+
+    options -> addOption(RealOption("out-vis-tweak")
+	                     .store(&outputCorrectionThreshold_)
+                         .defaultValue(0.1)
+                         .description("Visual tweaking factor that controls "
+                                      "the smoothness of the pathway surface "
+                                      "in the OBJ output. Varies between -1 "
+                                      "and 1 (exculisvely), where larger "
+                                      "values result in a smoother surface. "
+                                      "Negative values may result in "
+                                      "visualisation artifacts."));
 
 
     // PATH FINDING PARAMETERS
@@ -232,7 +251,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 
     options -> addOption(RealOption("pf-probe-step")
                          .store(&pfProbeStepLength_)
-                         .defaultValue(0.025)
+                         .defaultValue(0.1)
                          .description("Step length for probe movement."));
 
     options -> addOption(RealOption("pf-max-free-dist")
@@ -453,12 +472,31 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
 
-    // ADD PROPER EXTENSIONS TO FILE NAMES
+    // OUTPUT PARAMETERS
     //-------------------------------------------------------------------------
 
+    // add proper extensions to file names:
+    // TODO: better in exporter code?
     outputJsonFileName_ = outputBaseFileName_ + ".json";
-    outputObjFileName_ = outputBaseFileName_ + ".obj";
     outputPdbFileName_ = outputBaseFileName_ + ".pdb";
+
+    // sanity checks;
+    if( outputExtrapDist_ < 0.0 )
+    {
+        throw std::runtime_error("Parameter -out-extrap-dist may not be "
+                                 "negative.");
+    }
+    if( outputGridSampleDist_ <= 0.0 )
+    {
+        throw std::runtime_error("Parameter -out-grid-dist must be strictly "
+                                 "positive.");
+    }
+    if( outputCorrectionThreshold_ >= 1.0 or 
+        outputCorrectionThreshold_ <= -1.0)
+    {
+        throw std::runtime_error("Parameter -out-vis-teak must be in interval "
+                                 "(-1, 1).");
+    }
 
 
     // PATH FINDING PARAMETERS
@@ -2090,7 +2128,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // associate properties with pathway:
     molPathAvg_ -> addScalarProperty("avg_radius", avgRadiusSpl, false);
     molPathAvg_ -> addScalarProperty("avg_density", avgSolventDensitySpl, false);
-    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl, false);
+    // TODO: NaN energy values can not be exported to OBJ!
+    //    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl, false);
     molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl, true);
     molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl, true);
 
@@ -2102,6 +2141,9 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // export pathway to file:
     MolecularPathObjExporter mpexp;
+    mpexp.setExtrapDist(outputExtrapDist_);
+    mpexp.setGridSampleDist(outputGridSampleDist_);
+    mpexp.setCorrectionThreshold(outputCorrectionThreshold_);
     mpexp(
         outputBaseFileName_, 
         "time_averaged_molecular_path", 

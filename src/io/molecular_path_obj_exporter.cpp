@@ -39,6 +39,9 @@ RegularVertexGrid::addVertex(
 {
     if( std::isnan(weight) )
     {
+        std::cout<<"p = "<<p<<"  "
+                 <<"w = "<<weight<<"  "
+                 <<std::endl;
         throw std::logic_error("Regular vertex grid can not handle NaN "
                                "weights.");
     }
@@ -441,11 +444,58 @@ RegularVertexGrid::faces(
 
 
 /*
- * Default constructor.
+ * Constructor sets default values for parameters.
  */
 MolecularPathObjExporter::MolecularPathObjExporter()
+    : extrapDist_(0.0)
+    , gridSampleDist_(-1.0)
+    , correctionThreshold_(0.1)
 {
     
+}
+
+
+/*!
+ * Sets the extrapolation distance, i.e. the distance beyond the pathway 
+ * endpoints for which the surface is rendered.
+ */
+void
+MolecularPathObjExporter::setExtrapDist(real extrapDist)
+{
+    extrapDist_ = extrapDist;
+}
+
+
+/*!
+ * Sets the distance step along the along the arc of the centreline for
+ * sampling surface points which are subsequently interpolated to a smooth 
+ * surface.
+ */
+void
+MolecularPathObjExporter::setGridSampleDist(real gridSampleDist)
+{
+    gridSampleDist_ = gridSampleDist;
+}
+
+
+/*!
+ * Sets the threshold for identifying clashes. Is checked to lie in the 
+ * interval between -1 and +1 (exclusively!), but should really be positive 
+ * to identify clashes.
+ */
+void
+MolecularPathObjExporter::setCorrectionThreshold(real correctionThreshold)
+{
+    // sanity check:
+    if( correctionThreshold <= -1.0 + std::numeric_limits<real>::epsilon() or 
+        correctionThreshold_ >= 1.0 - std::numeric_limits<real>::epsilon() )
+    {
+        throw std::runtime_error("Corrrection threshold for "
+                                 "MolecularPathObjExporter must be between "
+                                 "-1 and +1 (exclusive)!");
+    }
+
+    correctionThreshold_ = correctionThreshold;
 }
 
 
@@ -461,11 +511,11 @@ MolecularPathObjExporter::operator()(
         std::map<std::string, ColourPalette> palettes)
 {
     // define evaluation range:   
-    real extrapDist = 0.0;  // TODO make parameter
-    std::pair<real, real> range(molPath.sLo() - extrapDist,
-                                molPath.sHi() + extrapDist);
+    std::pair<real, real> range(molPath.sLo() - extrapDist_,
+                                molPath.sHi() + extrapDist_);
 
     // define resolution:
+    // TODO: make this a parameter?
     int numPhi = 50;
     int numLen = std::pow(2, 8) + 1;
     std::pair<size_t, size_t> resolution(numLen, numPhi);
@@ -647,9 +697,8 @@ MolecularPathObjExporter::generatePropertyGrid(
         RegularVertexGrid &grid)
 {   
     // extract grid coordinates:
-    // TODO: visual tweaking factor / surface refinement
     std::vector<real> s;
-    int num = 100;
+    int num = std::floor((grid.s_.back() - grid.s_.front()) / gridSampleDist_);
     real ds = (grid.s_.back() - grid.s_.front())/(num - 1);
     for(size_t i = 0; i < num; i++)
     {
@@ -770,8 +819,8 @@ MolecularPathObjExporter::generatePropertyGrid(
                 real cosB = iprod(b, tangents[idxUpper]);
 
                 // check overlap:
-                real thres = 0.5; // use this for visual tweaking?
-                if( cosA < thres or cosB > -thres )
+                if( cosA < correctionThreshold_ or 
+                    cosB > -correctionThreshold_ )
                 {
                     // set crash flag to true and terminate loop:
                     hasClashes = true;
@@ -783,7 +832,7 @@ MolecularPathObjExporter::generatePropertyGrid(
             }
    
             // will ignore all vertex rings with clashes:
-            if( !hasClashes ) // TODO: user parameter for turning this off/on
+            if( !hasClashes )
             {
                 vertexRings[idxLen] = vertRing;
             }

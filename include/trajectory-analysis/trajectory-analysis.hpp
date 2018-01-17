@@ -69,7 +69,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     // names of output files:
     std::string outputBaseFileName_;
     std::string outputJsonFileName_;
-    std::string outputObjFileName_;
     std::string outputPdbFileName_;
 
     bool poreFile_;
@@ -130,6 +129,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     int outputNumPoints_;   // number of points on path sample
     real outputExtrapDist_;
+
+    real outputGridSampleDist_;
+    real outputCorrectionThreshold_;
 
     // selection and topology for initial probe position:
     gmx::SelectionCollection initProbePosCollection_;
