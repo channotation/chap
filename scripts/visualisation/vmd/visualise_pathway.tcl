@@ -2,6 +2,14 @@
 # SETUP
 ###############################################################################
 
+# check for existence of WOBJ library:
+if { [file exists "wobj.tcl"] == 0 } {
+    error "ERROR: File wobj.tcl does not exist in working directory!"
+}
+
+# source library with Wavefront OBJ parser:
+source wobj.tcl
+
 # global settings:
 axes location Off
 color Display Background white
@@ -89,31 +97,8 @@ mol modmaterial 2 top AOEdgy
 # ADD PORE SURFACE
 ###############################################################################
 
-
-# Import OBJ Data:
-# -----------------------------------------------------------------------------
-
-
-source ~/repos/chap/scripts/visualisation/vmd/wobj.tcl
-
 # import an OBJ file:
 set obj [WOBJ::import_wavefront_obj $FILE_PORE_SURFACE]
-
-
-# PLOT GROUP
-# -----------------------------------------------------------------------------
-# TODO comment here
-
-#set group_name "radius" 
-#set group_name "avg_radius" 
-#set group_name "avg_pl_hydrophobicity" 
-#set group_name "avg_pf_hydrophobicity" 
-#set group_name "avg_energy" 
-#set group_name "avg_density" 
-
-
-# Draw Pore
-# -----------------------------------------------------------------------------
 
 # draw OBJ mesh:
 WOBJ::draw_wavefront_obj $obj $PROPERTY
