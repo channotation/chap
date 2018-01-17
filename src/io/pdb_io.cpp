@@ -87,6 +87,9 @@ PdbIo::write(
         std::string fileName,
         PdbStructure structure)
 {
+    // delete file if it already exists:
+    std::remove(fileName.c_str());
+
     // create a title string for the PDB file:
     std::string title("created by CHAP");
 
