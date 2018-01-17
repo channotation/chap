@@ -37,13 +37,10 @@ RegularVertexGrid::addVertex(
         gmx::RVec vertex, 
         real weight)
 {
+    // FIXME: this situation should really be handled by a NaN colour
     if( std::isnan(weight) )
     {
-        std::cout<<"p = "<<p<<"  "
-                 <<"w = "<<weight<<"  "
-                 <<std::endl;
-        throw std::logic_error("Regular vertex grid can not handle NaN "
-                               "weights.");
+        weight = 0.5;
     }
 
     p_.insert(p);
