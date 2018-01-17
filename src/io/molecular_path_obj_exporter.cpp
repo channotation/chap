@@ -322,7 +322,7 @@ RegularVertexGrid::faces(
     // prepare colour scale:
     ColourScale colScale(p);
     colScale.setRange(minRange, maxRange);
-    colScale.setResolution(100);
+    colScale.setResolution(100);   // NOTE: limited by number of MTL materials
     colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
 
     // number of vertices per property grid:
@@ -555,7 +555,7 @@ MolecularPathObjExporter::operator()(
         auto faces = grid.faces(prop.first);
 
         // add faces to surface:
-        WavefrontObjGroup group("pathway_" + prop.first);
+        WavefrontObjGroup group(prop.first);
         for(auto face : faces)
         {
             group.addFace(face);

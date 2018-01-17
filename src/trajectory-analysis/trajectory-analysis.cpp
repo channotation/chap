@@ -2128,8 +2128,8 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     // associate properties with pathway:
     molPathAvg_ -> addScalarProperty("avg_radius", avgRadiusSpl, false);
     molPathAvg_ -> addScalarProperty("avg_density", avgSolventDensitySpl, false);
-    // TODO: NaN energy values can not be exported to OBJ!
-    //    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl, false);
+    // FIXME: NaN energy values can not be exported to OBJ!
+    molPathAvg_ -> addScalarProperty("avg_energy", avgEnergySpl, false);
     molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl, true);
     molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl, true);
 
