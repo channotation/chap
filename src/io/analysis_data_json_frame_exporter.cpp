@@ -1,7 +1,7 @@
 #include "gromacs/analysisdata/dataframe.h"
 
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "external/rapidjson/stringbuffer.h"
+#include "external/rapidjson/writer.h"
 
 #include "io/analysis_data_json_frame_exporter.hpp"
 

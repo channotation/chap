@@ -1,8 +1,8 @@
 #include <fstream>
 #include <exception>
 
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "external/rapidjson/stringbuffer.h"
+#include "external/rapidjson/writer.h"
 
 #include "config/config.hpp"
 #include "config/version.hpp"

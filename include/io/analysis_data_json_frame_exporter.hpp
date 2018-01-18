@@ -7,7 +7,7 @@
 
 #include "gromacs/analysisdata/datamodule.h"
 
-#include "rapidjson/document.h"
+#include "external/rapidjson/document.h"
 
 
 /*!

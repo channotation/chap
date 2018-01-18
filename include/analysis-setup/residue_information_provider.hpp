@@ -10,7 +10,7 @@
 #include <gromacs/trajectoryanalysis/analysissettings.h>
 #include <gromacs/utility/real.h>
 
-#include "rapidjson/document.h"
+#include "external/rapidjson/document.h"
 
 
 /*!
