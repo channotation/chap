@@ -44,7 +44,7 @@ set(LAPACKE_SEARCH_PATHS
   /usr/local/opt/lapack  ## Mac Homebrew install path
   /opt/LAPACKE
 )
-message(STATUS "LAPACKE_SEARCH_PATHS: ${LAPACKE_SEARCH_PATHS}")
+#message(STATUS "LAPACKE_SEARCH_PATHS: ${LAPACKE_SEARCH_PATHS}")
 
 set(CMAKE_PREFIX_PATH ${LAPACKE_SEARCH_PATHS})
 list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
@@ -181,11 +181,11 @@ mark_as_advanced(
 )
 
 ## For debugging
-message(STATUS "LAPACKE_FOUND                  :${LAPACKE_FOUND}:  - set to true if the library is found")
-message(STATUS "LAPACKE_INCLUDE_DIRS           :${LAPACKE_INCLUDE_DIRS}: - list of required include directories")
-message(STATUS "LAPACKE_LIBRARIES              :${LAPACKE_LIBRARIES}: - list of libraries to be linked")
-message(STATUS "LAPACKE_VERSION_MAJOR          :${LAPACKE_VERSION_MAJOR}: - major version number")
-message(STATUS "LAPACKE_VERSION_MINOR          :${LAPACKE_VERSION_MINOR}: - minor version number")
-message(STATUS "LAPACKE_VERSION_PATCH          :${LAPACKE_VERSION_PATCH}: - patch version number")
-message(STATUS "LAPACKE_VERSION_STRING         :${LAPACKE_VERSION_STRING}: - version number as a string")
+#message(STATUS "LAPACKE_FOUND                  :${LAPACKE_FOUND}:  - set to true if the library is found")
+#message(STATUS "LAPACKE_INCLUDE_DIRS           :${LAPACKE_INCLUDE_DIRS}: - list of required include directories")
+#message(STATUS "LAPACKE_LIBRARIES              :${LAPACKE_LIBRARIES}: - list of libraries to be linked")
+#message(STATUS "LAPACKE_VERSION_MAJOR          :${LAPACKE_VERSION_MAJOR}: - major version number")
+#message(STATUS "LAPACKE_VERSION_MINOR          :${LAPACKE_VERSION_MINOR}: - minor version number")
+#message(STATUS "LAPACKE_VERSION_PATCH          :${LAPACKE_VERSION_PATCH}: - patch version number")
+#message(STATUS "LAPACKE_VERSION_STRING         :${LAPACKE_VERSION_STRING}: - version number as a string")
 
