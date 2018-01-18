@@ -10,7 +10,7 @@
 #include <gromacs/utility/real.h>
 #include <gromacs/selection/selection.h>
 
-#include "rapidjson/document.h"
+#include "external/rapidjson/document.h"
 
 #include "geometry/spline_curve_1D.hpp"
 #include "geometry/spline_curve_3D.hpp"

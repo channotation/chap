@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "rapidjson/allocators.h"
-#include "rapidjson/document.h"
+#include "external/rapidjson/allocators.h"
+#include "external/rapidjson/document.h"
 
 #include "statistics/summary_statistics.hpp"
 

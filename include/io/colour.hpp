@@ -7,7 +7,7 @@
 
 #include <gromacs/math/vec.h> 
 
-#include "rapidjson/document.h"
+#include "external/rapidjson/document.h"
 
 
 /*!

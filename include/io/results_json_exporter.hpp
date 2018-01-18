@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "rapidjson/document.h"
+#include "external/rapidjson/document.h"
 
 #include "analysis-setup/residue_information_provider.hpp"
 #include "statistics/summary_statistics.hpp"
