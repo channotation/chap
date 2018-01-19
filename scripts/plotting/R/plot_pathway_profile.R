@@ -2,18 +2,27 @@
 # SETTINGS (CHANGE FILENAME HERE)
 ################################################################################
 
-# libraries:
-library(ggplot2)   # plotting
-library(ggrepel)   # improved labels
-library(gridExtra) # plot panel arrangement
-library(jsonlite)  # parsing JSON files
-
 # name of data file:
 filename <- "output.json"
 
 # plot output parameters:
 plot.width.cm <- 5.8
 plot.height.cm <- plot.width.cm * 0.75
+
+
+################################################################################
+# CONFIGURATION
+################################################################################
+
+# libraries:
+library(ggplot2)   # plotting
+library(ggrepel)   # improved labels
+library(gridExtra) # plot panel arrangement
+library(jsonlite)  # parsing JSON files
+
+# plot size as units:
+plot.width <- unit(plot.width.cm, "cm")
+plot.height <- unit(plot.height.cm, "cm")
 
 # plot appearance:
 theme_chap <- theme(text = element_text(size = 13),
@@ -41,9 +50,6 @@ dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
 # PATHWAY PROFILE PLOTS
 ################################################################################
 
-# individual plot size:
-plot.width <- unit(plot.width.cm, "cm")
-plot.height <- unit(plot.height.cm, "cm")
 
 
 # Radius Profile with Residue Positions
@@ -96,10 +102,10 @@ plt.hydrophobicity <- ggplot(as.data.frame(dat$pathwayProfile),
                              aes(x = s,
                                  y = pfHydrophobicityMean)) +
   geom_line() +
-  geom_point(data = data[data$poreFacing.mean > 0.1,],
+  geom_point(data = data[data$poreFacing.mean > 0.5,],
              aes(x = s.mean,
                  y = hydrophobicity,
-                 colour = name),
+                 colour = hydrophobicity),
              size = 4) +
   geom_ribbon(aes(ymin = pfHydrophobicityMin, 
                   ymax = pfHydrophobicityMax), 
@@ -110,11 +116,16 @@ plt.hydrophobicity <- ggplot(as.data.frame(dat$pathwayProfile),
   scale_x_continuous(expand = c(0, 0),
                      name = expression(paste(s~~bgroup("(",nm,")")))) +
   scale_y_continuous(name = expression(paste(H~~bgroup("(",nm,")")))) +
-  scale_color_discrete(name = "Residue") +
+  scale_colour_distiller(palette = "BrBG",
+                         name = expression(paste(H~~bgroup("(",a.u.,")"))),
+                         limits = c(-max(abs(data$hydrophobicity)), 
+                                    max(abs(data$hydrophobicity))),
+                         guide = guide_colourbar(barheight = 10,
+                                                 barwidth = 1.3)) +
   ggtitle("Time-Averaged Hydrophobicity") +
   theme_chap
 
-ggsave("time_averaged_hydrophobicity.png", 
+ggsave("time_averaged_hydrophobicity_profile.png", 
        plt.hydrophobicity,
        width = plot.width,
        height = plot.height,
