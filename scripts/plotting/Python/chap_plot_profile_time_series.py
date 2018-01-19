@@ -1,24 +1,29 @@
 #!/usr/bin/env python2
 
-################################################################################
-# SETTINGS (CHANGE FILENAME HERE)
-################################################################################
-
-# name of data file:
-filename = "output.json"
-
-# plot output parameters:
-plot_dpi = 300
-
 
 ################################################################################
 # CONFIGURATION
 ################################################################################
 
 # load libraries:
-import json
-import numpy as np
-from matplotlib import pyplot as pl
+import json                             # read in JSON files
+import numpy as np                      # manipulate numeric vectors
+from matplotlib import pyplot as pl     # plotting facilities
+import argparse                         # parse command line arguments
+
+# get parameters from user input:
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-filename",
+    nargs = "?",
+    const = "output.json",
+    default = "output.json")
+parser.add_argument("-dpi",
+    nargs = "?",
+    const = 1200,
+    default = 1200,
+    type = int)
+args = parser.parse_args()
 
 
 ################################################################################
@@ -26,7 +31,7 @@ from matplotlib import pyplot as pl
 ################################################################################
 
 # load output data from JSON file:
-with open(filename) as data_file:
+with open(args.filename) as data_file:
     data = json.load(data_file)
 
 
@@ -66,7 +71,7 @@ pl.ylabel("s (nm)")
 
 pl.savefig(
     "time_series_radius_profile.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("radius_profile")
 
@@ -102,7 +107,7 @@ pl.ylabel("s (nm)")
 
 pl.savefig(
     "time_series_number_density_profile.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("density_profile")
 
@@ -141,7 +146,7 @@ pl.ylabel("s (nm)")
 
 pl.savefig(
     "time_series_hydrophobicity_profile.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("pf_hydrophobicity_profile")
 

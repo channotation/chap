@@ -1,24 +1,29 @@
 #!/usr/bin/env python2
 
-################################################################################
-# SETTINGS (CHANGE FILENAME HERE)
-################################################################################
-
-# name of data file:
-filename = "output.json"
-
-# plot output parameters:
-plot_dpi = 1200
-
 
 ################################################################################
 # CONFIGURATION
 ################################################################################
 
 # load libraries:
-import json
-import numpy as np
-from matplotlib import pyplot as pl
+import json                             # read in JSON files
+import numpy as np                      # manipulate numeric vectors
+from matplotlib import pyplot as pl     # plotting facilities
+import argparse                         # parse command line arguments
+
+# get parameters from user input:
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-filename",
+    nargs = "?",
+    const = "output.json",
+    default = "output.json")
+parser.add_argument("-dpi",
+    nargs = "?",
+    const = 1200,
+    default = 1200,
+    type = int)
+args = parser.parse_args()
 
 
 ################################################################################
@@ -26,7 +31,7 @@ from matplotlib import pyplot as pl
 ################################################################################
 
 # load output data from JSON file:
-with open(filename) as data_file:
+with open(args.filename) as data_file:
     data = json.load(data_file)
 
 
@@ -52,7 +57,7 @@ pl.ylabel("L (nm)")
 
 pl.savefig(
     "time_series_pathway_length.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("length")
 
@@ -74,7 +79,7 @@ pl.ylabel(r"V $\left(\mathrm{nm}^3\right)$")
 
 pl.savefig(
     "time_series_pathway_volume.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("volume")
 
@@ -96,7 +101,7 @@ pl.ylabel(r"N")
 
 pl.savefig(
     "time_series_solvent_number_in_pathway.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("number")
 
@@ -123,7 +128,7 @@ pl.ylabel(r"N/V $(\mathrm{nm}^{-3})$")
 
 pl.savefig(
     "time_series_avg_solvent_number_density.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("density")
 
@@ -145,7 +150,7 @@ pl.ylabel(r"$\min_s$ R $(\mathrm{nm})$")
 
 pl.savefig(
     "time_series_min_pore_radius.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("min_radius")
 
@@ -167,7 +172,7 @@ pl.ylabel(r"$\min_s$ n $(\mathrm{nm}^{-3})$")
 
 pl.savefig(
     "time_series_min_solvent_number_density.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("min_density")
 
@@ -189,7 +194,7 @@ pl.ylabel(r"$\arg\min_s$ R $(\mathrm{nm})$")
 
 pl.savefig(
     "time_series_argmin_pore_radius.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("argmin_radius")
 
@@ -211,7 +216,7 @@ pl.ylabel(r"$\arg\min_s$ n $(\mathrm{nm})$")
 
 pl.savefig(
     "time_series_argmin_solvent_number_density.png",
-	dpi = plot_dpi)
+	dpi = args.dpi)
 
 pl.close("argmin_density")
 
