@@ -100,7 +100,7 @@ ggsave("time_series_number_density_profile.png",
        dpi = 1200)
 
 
-# Pore-facing Profile Time Series
+# Pore-facing Hydrophobicity Profile Time Series
 #-------------------------------------------------------------------------------
 
 plt.pf.hydrophobicity.ts <- ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),

@@ -2,18 +2,24 @@
 # SETTINGS (CHANGE FILENAME HERE)
 ################################################################################
 
-# libraries:
-library(ggplot2)   # plotting
-library(ggrepel)   # improved labels
-library(gridExtra) # plot panel arrangement
-library(jsonlite)  # parsing JSON files
-
 # name of data file:
 filename <- "output.json"
 
 # plot output parameters:
 plot.width.cm <- 5.8
 plot.height.cm <- plot.width.cm * 0.75
+
+
+
+################################################################################
+# CONFIGURATION
+################################################################################
+
+# libraries:
+library(ggplot2)   # plotting
+library(ggrepel)   # improved labels
+library(gridExtra) # plot panel arrangement
+library(jsonlite)  # parsing JSON files
 
 # plot appearance:
 theme_chap <- theme(text = element_text(size = 13),
@@ -69,14 +75,14 @@ plt.length <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
   ggtitle("Permeation Pathway Length over Time") +
   theme_chap
 
-ggsave("time_series_pathway_length_over_time.png", 
+ggsave("time_series_pathway_length.png", 
        plt.length,
        width = plot.width,
        height = plot.height,
        dpi = 1200)
 
 
-  # Volume
+# Volume
 #-------------------------------------------------------------------------------
 
 plt.volume <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
@@ -121,7 +127,7 @@ plt.solvent.number <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
   ggtitle("Number of Solvent Particles in Pathway over Time") +
   theme_chap
 
-ggsave("time_series_avg_solvent_number_density.png", 
+ggsave("time_series_solvent_number_in_pathway.png", 
        plt.solvent.number,
        width = plot.width,
        height = plot.height,
