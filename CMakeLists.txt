@@ -149,8 +149,9 @@ add_subdirectory(test)
 #------------------------------------------------------------------------------
 
 # where to install executable on the system:
-install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/chap/bin)
 
-# also install data:
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share DESTINATION ${CMAKE_INSTALL_PREFIX})
+# also install data and scripts:
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share DESTINATION ${CMAKE_INSTALL_PREFIX}/chap)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts DESTINATION ${CMAKE_INSTALL_PREFIX}/chap USE_SOURCE_PERMISSIONS)
 
