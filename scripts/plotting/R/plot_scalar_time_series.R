@@ -1,25 +1,51 @@
-################################################################################
-# SETTINGS (CHANGE FILENAME HERE)
-################################################################################
-
-# name of data file:
-filename <- "output.json"
-
-# plot output parameters:
-plot.width.cm <- 5.8
-plot.height.cm <- plot.width.cm * 0.75
-
-
+#!/usr/bin/env Rscript
 
 ################################################################################
 # CONFIGURATION
 ################################################################################
 
-# libraries:
-library(ggplot2)   # plotting
-library(ggrepel)   # improved labels
-library(gridExtra) # plot panel arrangement
-library(jsonlite)  # parsing JSON files
+# load libraries:
+if( !require(optparse) )
+{
+  install.packages("optparse", repos = "http://cran.us.r-project.org")
+  library(optparse)
+}
+if( !require(jsonlite) )
+{
+  install.packages("jsonlite", repos = "http://cran.us.r-project.org")
+  library(jsonlite)
+}
+if( !require(ggplot2) )
+{
+  install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+  library(ggplot2)
+}
+
+# get command line options:
+option_list = list(
+  make_option(c("--filename"),
+              action = "store",
+              default = "output.json",
+              type = "character",
+              help = "Name of the input file."),
+  make_option(c("--dpi"),
+              action = "store",
+              default = 300,
+              type = "numeric",
+              help = "Resolution of plot in dots per inch.")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+
+
+################################################################################
+# PLOT APPEARANCE
+################################################################################
+
+# plot output size:
+plot.width.cm <- 5.8
+plot.height.cm <- plot.width.cm * 0.75
+plot.width <- unit(plot.width.cm, "cm")
+plot.height <- unit(plot.height.cm, "cm")
 
 # plot appearance:
 theme_chap <- theme(text = element_text(size = 13),
@@ -34,22 +60,21 @@ theme_chap <- theme(text = element_text(size = 13),
                     panel.grid.minor = element_blank(),
                     panel.background = element_blank()) 
 
+# colour:
+line.colour <- "#737373"
+
 
 ################################################################################
 # DATA READ-IN
 ################################################################################
 
 # load first line from JSON file:
-dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
+dat <- fromJSON(readLines(opt$filename, n = 1), flatten = FALSE)
 
 
 ################################################################################
 # TIME SERIES PLOTS
 ################################################################################
-
-# individual plot size:
-plot.width <- unit(plot.width.cm, "cm")
-plot.height <- unit(plot.height.cm, "cm")
 
 # smoother length:
 t.smooth <- 5000 # time scale of smoother
@@ -62,7 +87,7 @@ span.smooth <- t.smooth/abs(diff(range(as.data.frame(dat$pathwayScalarTimeSeries
 plt.length <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                      aes(x = t, 
                          y = length)) +
-  geom_line(colour = brewer.pal(9, "Greys")[6]) +
+  geom_line(colour = line.colour) +
   geom_smooth(method = "loess",
               se = FALSE,
               colour = "gold",
@@ -79,7 +104,7 @@ ggsave("time_series_pathway_length.png",
        plt.length,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Volume
@@ -88,7 +113,7 @@ ggsave("time_series_pathway_length.png",
 plt.volume <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                      aes(x = t, 
                          y = volume)) +
-  geom_line(colour = brewer.pal(9, "Greys")[6]) +
+  geom_line(colour = line.colour) +
   geom_smooth(method = "loess",
               se = FALSE,
               colour = "gold",
@@ -105,7 +130,7 @@ ggsave("time_series_pathway_volume.png",
        plt.volume,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Number of Solvent Particles in Pathway
@@ -114,7 +139,7 @@ ggsave("time_series_pathway_volume.png",
 plt.solvent.number <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                              aes(x = t, 
                                  y = numPathway)) +
-  geom_line(colour = brewer.pal(9, "Greys")[6]) +
+  geom_line(colour = line.colour) +
   geom_smooth(method = "loess",
               se = FALSE,
               colour = "gold",
@@ -131,7 +156,7 @@ ggsave("time_series_solvent_number_in_pathway.png",
        plt.solvent.number,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Average Solvent Number Density in Pathway
@@ -140,7 +165,7 @@ ggsave("time_series_solvent_number_in_pathway.png",
 plt.avg.solvent.number.density <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                          aes(x = t, 
                                              y = numPathway/volume)) +
-  geom_line(colour = brewer.pal(9, "Greys")[6]) +
+  geom_line(colour = line.colour) +
   geom_abline(intercept = 33.3679, 
               slope = 0, 
               linetype = 2, 
@@ -162,7 +187,7 @@ ggsave("time_series_avg_solvent_number_density.png",
        plt.avg.solvent.number.density,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Minimal Pore Radius
@@ -171,7 +196,7 @@ ggsave("time_series_avg_solvent_number_density.png",
 plt.min.pore.radius <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                               aes(x = t, 
                                   y = minRadius)) +
-  geom_line(colour = brewer.pal(9, "Greys")[6]) +
+  geom_line(colour = line.colour) +
   geom_smooth(method = "loess",
               se = FALSE,
               colour = "gold",
@@ -188,7 +213,7 @@ ggsave("time_series_min_pore_radius.png",
        plt.min.pore.radius,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Minimal Solvent Number Density
@@ -197,7 +222,7 @@ ggsave("time_series_min_pore_radius.png",
 plt.min.solvent.density <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                   aes(x = t, 
                                       y = minSolventDensity)) +
-  geom_line(colour = brewer.pal(9, "Greys")[6]) +
+  geom_line(colour = line.colour) +
   geom_smooth(method = "loess",
               se = FALSE,
               colour = "gold",
@@ -214,7 +239,7 @@ ggsave("time_series_min_solvent_number_density.png",
        plt.min.solvent.density,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Location of Minimal Pore Radius
@@ -223,7 +248,7 @@ ggsave("time_series_min_solvent_number_density.png",
 plt.argmin.pore.radius <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                  aes(x = t, 
                                      y = argMinRadius)) +
-  geom_point(colour = brewer.pal(9, "Greys")[6]) +
+  geom_point(colour = line.colour) +
   scale_x_continuous(expand = c(0,0)) + 
   xlab(expression(paste(t~~bgroup("(", ps,")")))) +
   ylab(expression(paste(arg*min(R, s)~~bgroup("(", nm,")")))) +
@@ -234,7 +259,7 @@ ggsave("time_series_argmin_pore_radius.png",
        plt.argmin.pore.radius,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Location of Minimal Solvent Number Density
@@ -243,7 +268,7 @@ ggsave("time_series_argmin_pore_radius.png",
 plt.argmin.solvent.density <- ggplot(data = as.data.frame(dat$pathwayScalarTimeSeries),
                                      aes(x = t, 
                                          y = argMinSolventDensity)) +
-  geom_point(colour = brewer.pal(9, "Greys")[6]) +
+  geom_point(colour = line.colour) +
   scale_x_continuous(expand = c(0,0)) + 
   xlab(expression(paste(t~~bgroup("(", ps,")")))) +
   ylab(expression(paste(arg*min(n, s)~~bgroup("(", nm^{-3},")")))) +
@@ -254,26 +279,4 @@ ggsave("time_series_argmin_solvent_number_density.png",
        plt.argmin.solvent.density,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
-
-
-# Combined Plot
-#-------------------------------------------------------------------------------
-
-plt.timeseries <- grid.arrange(plt.length, 
-                               plt.volume,
-                               plt.solvent.number,
-                               plt.avg.solvent.number.density,
-                               plt.min.pore.radius,
-                               plt.min.solvent.density,
-                               plt.argmin.pore.radius,
-                               plt.argmin.solvent.density,
-                               ncol = 2)
-
-ggsave("time_series_scalar.png", 
-       plt.timeseries, 
-       width = unit(2*plot.width.cm, "cm"), 
-       height = unit(4*plot.height.cm, "cm"),
-       dpi = 300)
-
-
+       dpi = opt$dpi)
