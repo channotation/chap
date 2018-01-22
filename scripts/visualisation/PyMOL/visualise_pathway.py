@@ -3,9 +3,13 @@
 ###############################################################################
 
 # load libraries:
-import argparse             # command line argument parsing
-from pymol import cmd       # execute PyMOL visualisation command
-import wobj as wobj         # import and draw OBJ meshes
+from pymol import cmd                       # PyMOL visualisation commands
+from pymol import __script__                # location of this script
+from os import path                         # ability to find pathname
+import sys                                  # ability to append to import path
+sys.path.append(path.dirname(__script__))   # find wobj.py in script directory
+import argparse                             # command line argument parsing
+import wobj as wobj                         # import and draw OBJ meshes
 
 # parse command line arguments: 
 parser = argparse.ArgumentParser()
