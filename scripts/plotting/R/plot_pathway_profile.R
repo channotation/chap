@@ -1,26 +1,49 @@
-################################################################################
-# SETTINGS (CHANGE FILENAME HERE)
-################################################################################
-
-# name of data file:
-filename <- "output.json"
-
-# plot output parameters:
-plot.width.cm <- 5.8
-plot.height.cm <- plot.width.cm * 0.75
-
+#!/usr/bin/env Rscript
 
 ################################################################################
 # CONFIGURATION
 ################################################################################
 
-# libraries:
-library(ggplot2)   # plotting
-library(ggrepel)   # improved labels
-library(gridExtra) # plot panel arrangement
-library(jsonlite)  # parsing JSON files
+# load libraries:
+if( !require(optparse) )
+{
+  install.packages("optparse", repos = "http://cran.us.r-project.org")
+  library(optparse)
+}
+if( !require(jsonlite) )
+{
+  install.packages("jsonlite", repos = "http://cran.us.r-project.org")
+  library(jsonlite)
+}
+if( !require(ggplot2) )
+{
+  install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+  library(ggplot2)
+}
 
-# plot size as units:
+# get command line options:
+option_list = list(
+  make_option(c("--filename"),
+              action = "store",
+              default = "output.json",
+              type = "character",
+              help = "Name of the input file."),
+  make_option(c("--dpi"),
+              action = "store",
+              default = 300,
+              type = "numeric",
+              help = "Resolution of plot in dots per inch.")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+
+
+################################################################################
+# PLOT APPEARANCE
+################################################################################
+
+# plot output parameters:
+plot.width.cm <- 5.8
+plot.height.cm <- plot.width.cm * 0.75
 plot.width <- unit(plot.width.cm, "cm")
 plot.height <- unit(plot.height.cm, "cm")
 
@@ -43,13 +66,12 @@ theme_chap <- theme(text = element_text(size = 13),
 ################################################################################
 
 # load first line from JSON file:
-dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
+dat <- fromJSON(readLines(opt$filename, n = 1), flatten = FALSE)
 
 
 ################################################################################
 # PATHWAY PROFILE PLOTS
 ################################################################################
-
 
 
 # Radius Profile with Residue Positions
@@ -91,7 +113,7 @@ ggsave("time_averaged_radius_profile.png",
        plt.radius.profile,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Hydrophobicity Profile with Residue Positions
@@ -129,7 +151,7 @@ ggsave("time_averaged_hydrophobicity_profile.png",
        plt.hydrophobicity,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Solvent Number Density Profile
@@ -159,7 +181,7 @@ ggsave("time_averaged_solvent_number_density_profile.png",
        plt.solvent.number.density,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Solvent Free Energy Profile
@@ -182,21 +204,4 @@ ggsave("time_averaged_free_energy_profile.png",
        plt.free.energy,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
-
-
-# Combined Plot
-#-------------------------------------------------------------------------------
-
-plt.profile <- grid.arrange(plt.radius.profile, 
-                            plt.hydrophobicity,
-                            plt.solvent.number.density,
-                            plt.free.energy,
-                            ncol = 2)
-
-ggsave("time_averaged_pathway_profiles.png", 
-       plt.profile, 
-       width = unit(2*plot.width.cm, "cm"), 
-       height = unit(2*plot.height.cm, "cm"),
-       dpi = 400)
-
+       dpi = opt$dpi)
