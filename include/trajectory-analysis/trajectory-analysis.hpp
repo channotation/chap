@@ -133,6 +133,8 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
     real outputGridSampleDist_;
     real outputCorrectionThreshold_;
 
+    bool outputDetailed_;
+
     // selection and topology for initial probe position:
     gmx::SelectionCollection initProbePosCollection_;
     gmx::Selection initProbePosSelection_;
