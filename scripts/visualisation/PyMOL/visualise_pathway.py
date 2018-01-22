@@ -1,15 +1,30 @@
-from pymol import cmd, stored
+###############################################################################
+# SETUP
+###############################################################################
 
-#from wobj import draw_wobj
-import wobj as wobj
+# load libraries:
+import argparse             # command line argument parsing
+from pymol import cmd       # execute PyMOL visualisation command
+import wobj as wobj         # import and draw OBJ meshes
 
-
-#cmd.bg_color(color = "white")
-cmd.bg_color(color = "black")
-
-
-
-file_structure = "output.pdb"
+# parse command line arguments: 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-structure",
+    nargs = "?",
+    const = "output.pdb",
+    default = "output.pdb")
+parser.add_argument(
+    "-surface",
+    nargs = "?",
+    const = "output.obj",
+    default = "output.obj")
+parser.add_argument(
+    "-property",
+    nargs = "?",
+    const = None,
+    default = None)
+args = parser.parse_args()
 
 
 ###############################################################################
@@ -17,7 +32,7 @@ file_structure = "output.pdb"
 ###############################################################################
 
 # load structure into object named structure:
-cmd.load(file_structure, "structure")
+cmd.load(args.structure, "structure")
 
 # hide starting representation:
 cmd.hide("all")
@@ -42,10 +57,9 @@ cmd.color("yellow", sel_pore_facing)
 # ADD PORE SURFACE
 ###############################################################################
 
-
 # read OBJ data from file:
-obj = wobj.import_wobj("output.obj")
+obj = wobj.import_wobj(args.surface)
 
 # draw all groups in the OBJ file:
-wobj.draw_wobj(obj)
+wobj.draw_wobj(obj, args.property)
 
