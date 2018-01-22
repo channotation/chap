@@ -336,16 +336,16 @@ class WavefrontObjImporter:
             # add triangular vertices to CGO object:
             cgo_object.extend([
                 COLOR, ka[0], ka[1], ka[2],
-                VERTEX, vertex_a[0], vertex_a[1], vertex_a[2],
-                NORMAL, normal_a[0], normal_a[1], normal_a[2]])
+                NORMAL, normal_a[0], normal_a[1], normal_a[2],
+                VERTEX, vertex_a[0], vertex_a[1], vertex_a[2]])
             cgo_object.extend([
                 COLOR, ka[0], ka[1], ka[2],
-                VERTEX, vertex_b[0], vertex_b[1], vertex_b[2],
-                NORMAL, normal_b[0], normal_b[1], normal_b[2]])
+                NORMAL, normal_b[0], normal_b[1], normal_b[2],
+                VERTEX, vertex_b[0], vertex_b[1], vertex_b[2]])
             cgo_object.extend([
                 COLOR, ka[0], ka[1], ka[2],
-                VERTEX, vertex_c[0], vertex_c[1], vertex_c[2],
-                NORMAL, normal_c[0], normal_c[1], normal_c[2]])
+                NORMAL, normal_c[0], normal_c[1], normal_c[2],
+                VERTEX, vertex_c[0], vertex_c[1], vertex_c[2]])
 
 
         # end this CGO object:
