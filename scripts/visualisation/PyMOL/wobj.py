@@ -31,10 +31,10 @@ class WavefrontMtlImporter:
     def __parse_line(self, line):
         """ Parses one line from an MTL file.
 
-        Currently only supports newmtl, Ka, Kd, and Ks records. Depending on which
-        of these records in encountered, the corresponding parse function is 
-        called to further process the line. If an unknown record is encountered,
-        this method will throw an exception.
+        Currently only supports newmtl, Ka, Kd, and Ks records. Depending on
+        which of these records in encountered, the corresponding parse function 
+        is called to further process the line. If an unknown record is
+        encountered, this method will throw an exception.
 
         Args:
             line: a string read from an MTL file
@@ -58,7 +58,7 @@ class WavefrontMtlImporter:
         current matrial member variable accordingly.
 
         Args:
-            split_line: list of strings created by splitting the MTL line at spaces
+            split_line: list of strings, MTL line split at spaces
         """
 
         # change current material:
@@ -74,7 +74,7 @@ class WavefrontMtlImporter:
         This will add an ambient colour definition to the current material.
 
         Args:
-            split_line: list of strings created by splitting the MTL line at spaces
+            split_line: list of strings, MTL line split at spaces
         """
 
         # add ambient colour value to materials dictionary:
@@ -87,7 +87,7 @@ class WavefrontMtlImporter:
         This will add an diffuse colour definition to the current material.
 
         Args:
-            split_line: list of strings created by splitting the MTL line at spaces
+            split_line: list of strings, MTL line split at spaces
         """
 
         # add ambient colour value to materials dictionary:
@@ -100,7 +100,7 @@ class WavefrontMtlImporter:
         This will add an specular colour definition to the current material.
 
         Args:
-            split_line: list of strings created by splitting the MTL line at spaces
+            split_line: list of strings, MTL line split at spaces
         """
 
         # add ambient colour value to materials dictionary:
