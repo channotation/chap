@@ -187,6 +187,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "Negative values may result in "
                                       "visualisation artifacts."));
 
+    options -> addOption(BooleanOption("out-detailed")
+	                     .store(&outputDetailed_)
+                         .defaultValue(false)
+                         .description("If true, CHAP will write detailed per-"
+                                      "frame information to a newline "
+                                      "delimited JSON file including original "
+                                      "probe positions and spline parameters. "
+                                      "This is mostly useful for debugging."));
+
 
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
@@ -787,12 +796,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     std::string radiusFilePath = programContext.fullBinaryPath();
 
     // obtain radius database location as relative path:
-    auto lastSlash = radiusFilePath.find_last_of('/');
-    radiusFilePath.replace(radiusFilePath.begin() + lastSlash - 5, 
-                           radiusFilePath.end(), 
-                           "share/data/vdwradii/");
+//    auto lastSlash = radiusFilePath.find_last_of('/');
 
-    radiusFilePath = chapInstallBase() + std::string("/share/data/vdwradii/");
+    radiusFilePath = chapInstallBase() + std::string("/chap/share/data/vdwradii/");
     
 
     // select appropriate database file:
@@ -939,7 +945,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
     // base path to location of hydrophobicity databases:
     std::string hydrophobicityFilePath = chapInstallBase() + 
-            std::string("/share/data/hydrophobicity/");
+            std::string("/chap/share/data/hydrophobicity/");
     
     // select appropriate database file:
     if( hydrophobicityDatabase_ == eHydrophobicityDatabaseHessa2005 )
@@ -2049,39 +2055,15 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
     results.write(outFileName);
 
 
-    // COPYING PER-FRAME DATA TO FINAL OUTPUT FILE
+    // DELETE PER FRAME DATA
     // ------------------------------------------------------------------------
-    
-    // open file with per-frame data and output data:
-    inFile.open(inFileName, std::fstream::in);
-    outFile.open(outFileName, std::fstream::app);
-
-    // append input file to output file line by line:    
-    int linesCopied = 0;
-    std::string copyLine;
-    while( std::getline(inFile, copyLine) )
+   
+    // detailed output requested?
+    if( !outputDetailed_ )
     {
-        // append line to out file:
-        outFile<<copyLine<<std::endl;
-
-        // increment line counter:
-        linesCopied++;
+        // remove streaming JSON file:
+        std::remove(inFileName.c_str());
     }
-
-    // close file streams:
-    inFile.close();
-    outFile.close();
-
-    // sanity checks:
-    if( linesCopied != numFrames )
-    {
-        throw std::runtime_error("Could not copy all lines from per-frame data"
-        "file to output data file.");
-    }
-
-    // delete temporary file:
-    std::remove(inFileName.c_str());
-
 
     // EXPORT PATHWAY TO OBJ FILE
     // ------------------------------------------------------------------------
@@ -2135,7 +2117,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 
     // load colour palletes from JSON file:
     std::string paletteFilePath = chapInstallBase() + 
-            std::string("/share/data/palettes/");
+            std::string("/chap/share/data/palettes/");
     std::string paletteFileName = paletteFilePath + "default.json";
     auto palettes = ColourPaletteProvider::fromJsonFile(paletteFileName);
 

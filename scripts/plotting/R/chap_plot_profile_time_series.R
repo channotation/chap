@@ -1,19 +1,51 @@
+#!/usr/bin/env Rscript
+
 ################################################################################
-# SETTINGS (CHANGE FILENAME HERE)
+# CONFIGURATION
 ################################################################################
 
-# libraries:
-library(ggplot2)   # plotting
-library(ggrepel)   # improved labels
-library(gridExtra) # plot panel arrangement
-library(jsonlite)  # parsing JSON files
+# load libraries:
+if( !require(optparse) )
+{
+  install.packages("optparse", repos = "http://cran.us.r-project.org")
+  library(optparse)
+}
+if( !require(jsonlite) )
+{
+  install.packages("jsonlite", repos = "http://cran.us.r-project.org")
+  library(jsonlite)
+}
+if( !require(ggplot2) )
+{
+  install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+  library(ggplot2)
+}
 
-# name of data file:
-filename <- "output.json"
+# get command line options:
+option_list = list(
+  make_option(c("--filename"),
+              action = "store",
+              default = "output.json",
+              type = "character",
+              help = "Name of the input file."),
+  make_option(c("--dpi"),
+              action = "store",
+              default = 300,
+              type = "numeric",
+              help = "Resolution of plot in dots per inch.")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+
+
+################################################################################
+# PLOT APPEARANCE
+################################################################################
 
 # plot output parameters:
 plot.width.cm <- 5.8
 plot.height.cm <- plot.width.cm * 0.75
+plot.width <- unit(plot.width.cm, "cm")
+plot.height <- unit(plot.height.cm, "cm")
 
 # plot appearance:
 theme_heatmap <- theme(text = element_text(size = 13),
@@ -24,9 +56,6 @@ theme_heatmap <- theme(text = element_text(size = 13),
                        panel.border = element_rect(colour = "black", 
                                                    fill=NA, 
                                                    size=1)) 
-  
-  
-nm.to.ang <- 10
 
 
 ################################################################################
@@ -34,16 +63,12 @@ nm.to.ang <- 10
 ################################################################################
 
 # load first line from JSON file:
-dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
+dat <- fromJSON(readLines(opt$filename, n = 1), flatten = FALSE)
 
 
 ################################################################################
 # PATHWAY PROFILE PLOTS
 ################################################################################
-
-# individual plot size:
-plot.width <- unit(plot.width.cm, "cm")
-plot.height <- unit(plot.height.cm, "cm")
 
 
 # Radius Profile Time Series
@@ -70,7 +95,7 @@ ggsave("time_series_radius_profile.png",
        plt.radius.profile.ts,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
 # Solvent Density Profile Time Series
@@ -97,10 +122,10 @@ ggsave("time_series_number_density_profile.png",
        plt.density.ts,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
+       dpi = opt$dpi)
 
 
-# Pore-facing Profile Time Series
+# Pore-facing Hydrophobicity Profile Time Series
 #-------------------------------------------------------------------------------
 
 plt.pf.hydrophobicity.ts <- ggplot(data = as.data.frame(dat$pathwayProfileTimeSeries),
@@ -126,19 +151,4 @@ ggsave("time_series_hydrophobicity_profile.png",
        plt.pf.hydrophobicity.ts,
        width = plot.width,
        height = plot.height,
-       dpi = 1200)
-
-
-# Combined Plot
-#-------------------------------------------------------------------------------
-
-plt.profile.ts <- grid.arrange(plt.radius.profile.ts, 
-                               plt.density.ts,
-                               plt.pf.hydrophobicity.ts,
-                               ncol = 1)
-
-ggsave("time_series_pathway_profiles.png", 
-       plt.profile.ts, 
-       width = unit(1*plot.width.cm, "cm"), 
-       height = unit(3*plot.height.cm, "cm"),
-       dpi = 400)
+       dpi = opt$dpi)
