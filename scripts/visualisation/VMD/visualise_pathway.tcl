@@ -2,13 +2,22 @@
 # SETUP
 ###############################################################################
 
-# check for existence of WOBJ library:
-if { [file exists "wobj.tcl"] == 0 } {
-    error "ERROR: File wobj.tcl does not exist in working directory!"
+# try finding wobj library in current working directory:
+set WOBJ_FILE "wobj.tcl"
+if { [file exists $WOBJ_FILE] == 0 } {
+
+    # try finding it in same path as this script:
+    set WOBJ_FILE [file join [file dirname [info script]] wobj.tcl]
+    if { [file exists $WOBJ_FILE] == 0 } {
+        
+        # raise error if neither location was successful:
+        error "ERROR: Could not find wobj.tcl in working directory ([pwd]) \
+               or script directory ([file dirname [info script]])."
+    }
 }
 
 # source library with Wavefront OBJ parser:
-source wobj.tcl
+source $WOBJ_FILE
 
 # global settings:
 axes location Off
@@ -80,16 +89,16 @@ mol modmaterial 0 top AOEdgy
 
 # pore lining (but not facing) residues:
 mol addrep top
-mol modselect 1 top (occupancy > 0 and beta <= 0)
+mol modselect 1 top (occupancy > 0.5 and beta <= 0.5)
 mol modstyle 1 top Licorice 0.3 12 12
 mol modcolor 1 top ColorID 3
 mol modmaterial 1 top AOEdgy
 
 # pore facing residues:
 mol addrep top
-mol modselect 2 top (beta > 0)
+mol modselect 2 top (beta > 0.5)
 mol modstyle 2 top Licorice 0.3 12 12
-mol modcolor 2 top ColorID 32
+mol modcolor 2 top ColorID 4
 mol modmaterial 2 top AOEdgy
 
 
@@ -98,8 +107,8 @@ mol modmaterial 2 top AOEdgy
 ###############################################################################
 
 # import an OBJ file:
-set obj [WOBJ::import_wavefront_obj $FILE_PORE_SURFACE]
+set obj [WOBJ::import_wobj $FILE_PORE_SURFACE]
 
 # draw OBJ mesh:
-WOBJ::draw_wavefront_obj $obj $PROPERTY
+WOBJ::draw_wobj $obj $PROPERTY
 

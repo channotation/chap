@@ -8,7 +8,7 @@ set FALLBACK_COLOR 8
 #
 # INPUT:
 # filename - name of MTL file to import
-proc import_wavefront_mtl {filename} {
+proc import_wmtl {filename} {
 
 	# handle empty file name:
 	if { $filename == "" } {
@@ -83,7 +83,7 @@ proc import_wavefront_mtl {filename} {
 #
 # INPUT:
 # filename - name of OBJ file to import
-proc import_wavefront_obj {filename} {
+proc import_wobj {filename} {
 
     # prepare list of vertex coordinates:
     set vertices_x {}
@@ -312,7 +312,7 @@ proc setup_color_lookup_table { color_rgb } {
 #
 # INPUT:
 # obj - list of lists containing vertices and faces
-proc draw_wavefront_obj {obj group_name} {
+proc draw_wobj {obj group_name} {
 
     # extract information from OBJ object:
     set vert_x [lindex $obj 0]
@@ -352,7 +352,7 @@ proc draw_wavefront_obj {obj group_name} {
     global FALLBACK_COLOR
 
     # change colours to match material definitions:
-	set mtl_color_indeces [WOBJ::import_wavefront_mtl $mtl_lib]
+	set mtl_color_indeces [WOBJ::import_wmtl $mtl_lib]
     
     # have vertex normals?
     set num_vert_idx [llength $vertex_idx_a]
@@ -416,7 +416,7 @@ proc draw_obj_frame_callback {args} {
     draw delete all
     
     # draw obj:
-    draw_wavefront_obj $obj
+    draw_wobj $obj
 }
 
 }
