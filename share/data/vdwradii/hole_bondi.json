@@ -1,18 +1,49 @@
 {
-    "remark": "Adapted from 'bondi.rad' used in HOLE program.",
-
-    "reference": {
-        "citation": "Bondi, A. (1964), J. Phys. Chem., vol 68 pp441-451"
-        },
-
-    "vdwradii": [
-        {"atomname": "C???", "resname": "???", "vdwr": 0.170},
-        {"atomname": "H???", "resname": "???", "vdwr": 0.120},
-        {"atomname": "N???", "resname": "???", "vdwr": 0.155},
-        {"atomname": "O???", "resname": "???", "vdwr": 0.152},
-        {"atomname": "P???", "resname": "???", "vdwr": 0.180},
-        {"atomname": "S???", "resname": "???", "vdwr": 0.180},
-        {"atomname": "LP", "resname": "???", "vdwr": 0.00},
-        {"atomname": "MW", "resname": "???", "vdwr": 0.00}
-    ]
+  "remark": "Adapted from 'bondi.rad' used in HOLE program.",
+  "reference": {
+    "citation": "Bondi, A. (1964), J. Phys. Chem., vol 68 pp441-451",
+    "doi": "10.1021/j100785a001"
+  },
+  "vdwradii": [
+    {
+      "atomname": "C???",
+      "resname": "???",
+      "vdwr": 0.17
+    },
+    {
+      "atomname": "H???",
+      "resname": "???",
+      "vdwr": 0.12
+    },
+    {
+      "atomname": "N???",
+      "resname": "???",
+      "vdwr": 0.155
+    },
+    {
+      "atomname": "O???",
+      "resname": "???",
+      "vdwr": 0.152
+    },
+    {
+      "atomname": "P???",
+      "resname": "???",
+      "vdwr": 0.18
+    },
+    {
+      "atomname": "S???",
+      "resname": "???",
+      "vdwr": 0.18
+    },
+    {
+      "atomname": "LP",
+      "resname": "???",
+      "vdwr": 0
+    },
+    {
+      "atomname": "MW",
+      "resname": "???",
+      "vdwr": 0
+    }
+  ]
 }
