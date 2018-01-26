@@ -79,7 +79,7 @@ trajectoryAnalysis::trajectoryAnalysis()
     registerAnalysisDataset(&timingData_, "timingData");
 
     // default initial probe position and chanell direction:
-    pfInitProbePos_ = {0.0, 0.0, 0.0};
+    pfInitProbePos_ = {std::nan(""), std::nan(""), std::nan("")};
     pfChanDirVec_ = {0.0, 0.0, 1.0};
 
 
@@ -146,26 +146,20 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 	                     .store(&outputBaseFileName_)
                          .defaultValue("output")
                          .description("File name for output files without "
-                                      "file extension. Proper file extensions "
-                                      "(e.g. filename.json) will be added "
-                                      "internally."));
+                                      "file extension."));
 
     options -> addOption(IntegerOption("out-num-points")
 	                     .store(&outputNumPoints_)
                          .defaultValue(1000)
                          .description("Number of spatial sample points that "
-                                      "are written to the JSON output file. "
-                                      "This determines the resolution of the "
-                                      "pathway profile plots."));
+                                      "are written to the JSON output file."));
 
     options -> addOption(RealOption("out-extrap-dist")
 	                     .store(&outputExtrapDist_)
                          .defaultValue(0.0)
-                         .description("Distance along the arc of the pathway "
-                                      "centre line for which profile data is "
-                                      "written to the JSON output file. Also "
-                                      "determines how far the 3D pathway "
-                                      "surface extends in the OBJ output."));
+                         .description("Extrapolation distance beyond the "
+                                      "pathway endpoints for both JSON and "
+                                      "OBJ output."));
 
     options -> addOption(RealOption("out-grid-dist")
 	                     .store(&outputGridSampleDist_)
@@ -200,7 +194,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
 
-    const char * const allowedPathFindingMethod[] = {"naive_cylindrical",
+    const char * const allowedPathFindingMethod[] = {"cylindrical",
                                                      "inplane_optim"};
     pfMethod_ = ePathFindingMethodInplaneOptimised;                                         
     options -> addOption(EnumOption<ePathFindingMethod>("pf-method")
@@ -277,13 +271,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(SelectionOption("pf-sel-ipp")
                          .store(&ippsel_)
                          .storeIsSet(&ippselIsSet_)
-	                     .description("Reference group from which to "
-                                      "determine the initial probe position "
-                                      "for the path finding algorithm. If "
-                                      "unspecified, this defaults to the "
-                                      "overall path defining group. Will be "
-                                      "overridden if init-probe-pos is set "
-                                      "explicitly."));
+	                     .description("Selection of atoms whose COM will be "
+                                      "used as initial probe position. If not "
+                                      "set, the selection specified with "
+                                      "'sel-pathway' will be used."));
 
     options -> addOption(RealOption("pf-init-probe-pos")
                          .storeVector(&pfInitProbePos_)
@@ -301,17 +292,18 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .storeIsSet(&pfChanDirVecIsSet_)
                          .valueCount(3)
                          .description("Channel direction vector. Will be "
-                                      "normalised to unit vector internally. "
-                                      "If unset pore is assumed to be "
-                                      "oriented in z-direction."));
+                                      "normalised to unit vector internally."));
    
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
 	                     .store(&cutoff_)
+                         .defaultValue(std::nan(""))
                          .storeIsSet(&cutoffIsSet_)
                          .description("Cutoff for distance searches in path "
                                       "finding algorithm. A value of zero "
-                                      "or less means no cutoff is applied."));
+                                      "or less means no cutoff is applied. "
+                                      "If unset, an appropriate cutoff is "
+                                      "determined automatically".));
  
 
 
@@ -329,7 +321,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(IntegerOption("sa-max-iter")
                           .store(&saMaxCoolingIter_)
                           .defaultValue(0)
-                          .description("Maximum number of cooling iterations "
+                          .description("Number of cooling iterations "
                                        "in one simulated annealing run."));
                           
     options -> addOption(RealOption("sa-init-temp")
@@ -347,7 +339,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                          .store(&pfPar_["saStepLengthFactor"])
                          .defaultValue(0.001)
                          .description("Step length factor used in candidate "
-                                      "generation. Defaults to 0.001."));
+                                      "generation."));
 
     options -> addOption(IntegerOption("nm-max-iter")
                          .store(&nmMaxIter_)
@@ -412,7 +404,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(RealOption("de-bw-scale")
                          .store(&deBandWidthScale_)
                          .defaultValue(1.0)
-                         .description("Scaling factor for the band width."
+                         .description("Scaling factor for the band width. "
                                       "Useful to set a bandwidth relative to "
                                       "the AMISE-optimal value."));
 
@@ -538,6 +530,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     
     if( cutoffIsSet_ )
     {
+        // this will be determined automatically if not set explcitly:
         pfParams_.setNbhCutoff(cutoff_);
     }
 
