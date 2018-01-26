@@ -232,14 +232,14 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(RealOption("pf-vdwr-fallback")
                          .store(&pfDefaultVdwRadius_)
                          .storeIsSet(&pfDefaultVdwRadiusIsSet_)
-                         .defaultValue(-1.0)
+                         .defaultValue(std::nan(""))
                          .description("Fallback van-der-Waals radius for "
                                       "atoms that are not listed in "
-                                      "van-der-Waals radius database. If "
-                                      "negative, an error will be thrown if "
-                                      "the database does not contain a "
-                                      "van-der-Waals radii for all particles "
-                                      "in the pathway defining group."));
+                                      "van-der-Waals radius database. Unless "
+                                      "this is set to a positive value, an "
+                                      "error will be thrown if a pathway-"
+                                      "forming atom has no associated van-der-"
+                                      "Waals radius in the database."));
 
     options -> addOption(StringOption("pf-vdwr-json")
                          .store(&pfVdwRadiusJson_)
