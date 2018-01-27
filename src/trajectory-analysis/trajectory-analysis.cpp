@@ -1,5 +1,5 @@
 #include <algorithm>	// for std::max_element()
-#include <cmath>		// for std::sqrt()
+#include <cmath>				// for std::sqrt()
 #include <fstream>
 #include <iomanip>
 #include <string>
@@ -97,18 +97,18 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // HELP TEXT
     //-------------------------------------------------------------------------
 
-	// set help text:
-	static const char *const desc[] = {
-		"This is a first prototype for the CHAP tool.",
-		"There is NO HELP, you are on your own!"
-	};
+		// set help text:
+		static const char *const desc[] = {
+				"This is a first prototype for the CHAP tool.",
+				"There is NO HELP, you are on your own!"
+		};
     settings -> setHelpText(desc);
 
 
     // SETTINGS
     //-------------------------------------------------------------------------
 
-	// require the user to provide a topology file input:
+		// require the user to provide a topology file input:
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
 
     // will not use periodic boundary conditions:
@@ -127,15 +127,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // SELECTION OPTIONS
     //-------------------------------------------------------------------------
 
-	options -> addOption(SelectionOption("sel-pathway")
-	                     .store(&refsel_).required()
-		                 .description("Reference group that defines the "
+		options -> addOption(SelectionOption("sel-pathway")
+							 .store(&refsel_).required()
+								 .description("Reference group that defines the "
                                       "permeation pathway (usually "
                                       "'Protein') "));
 
-	options -> addOption(SelectionOption("sel-solvent")
+		options -> addOption(SelectionOption("sel-solvent")
                          .storeVector(&sel_)
-	                     .description("Group of small particles to calculate "
+							 .description("Group of small particles to calculate "
                                       "density of (usually 'Water')"));
 
 
@@ -143,26 +143,26 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // ------------------------------------------------------------------------
 
     options -> addOption(StringOption("out-filename")
-	                     .store(&outputBaseFileName_)
+							 .store(&outputBaseFileName_)
                          .defaultValue("output")
                          .description("File name for output files without "
                                       "file extension."));
 
     options -> addOption(IntegerOption("out-num-points")
-	                     .store(&outputNumPoints_)
+							 .store(&outputNumPoints_)
                          .defaultValue(1000)
                          .description("Number of spatial sample points that "
                                       "are written to the JSON output file."));
 
     options -> addOption(RealOption("out-extrap-dist")
-	                     .store(&outputExtrapDist_)
+							 .store(&outputExtrapDist_)
                          .defaultValue(0.0)
                          .description("Extrapolation distance beyond the "
                                       "pathway endpoints for both JSON and "
                                       "OBJ output."));
 
     options -> addOption(RealOption("out-grid-dist")
-	                     .store(&outputGridSampleDist_)
+							 .store(&outputGridSampleDist_)
                          .defaultValue(0.15)
                          .description("Controls the sampling distance of "
                                       "vertices on the pathway surface which "
@@ -171,7 +171,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "may yield visual artifacts."));
 
     options -> addOption(RealOption("out-vis-tweak")
-	                     .store(&outputCorrectionThreshold_)
+							 .store(&outputCorrectionThreshold_)
                          .defaultValue(0.1)
                          .description("Visual tweaking factor that controls "
                                       "the smoothness of the pathway surface "
@@ -182,7 +182,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "visualisation artifacts."));
 
     options -> addOption(BooleanOption("out-detailed")
-	                     .store(&outputDetailed_)
+							 .store(&outputDetailed_)
                          .defaultValue(false)
                          .description("If true, CHAP will write detailed per-"
                                       "frame information to a newline "
@@ -271,7 +271,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     options -> addOption(SelectionOption("pf-sel-ipp")
                          .store(&ippsel_)
                          .storeIsSet(&ippselIsSet_)
-	                     .description("Selection of atoms whose COM will be "
+							 .description("Selection of atoms whose COM will be "
                                       "used as initial probe position. If not "
                                       "set, the selection specified with "
                                       "'sel-pathway' will be used."));
@@ -296,14 +296,14 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
    
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
-	                     .store(&cutoff_)
+							 .store(&cutoff_)
                          .defaultValue(std::nan(""))
                          .storeIsSet(&cutoffIsSet_)
                          .description("Cutoff for distance searches in path "
                                       "finding algorithm. A value of zero "
                                       "or less means no cutoff is applied. "
                                       "If unset, an appropriate cutoff is "
-                                      "determined automatically".));
+                                      "determined automatically."));
  
 
 
@@ -358,7 +358,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-pl-margin")
-	                     .store(&poreMappingMargin_)
+							 .store(&poreMappingMargin_)
                          .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
@@ -771,14 +771,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // PREPARE TOPOLOGY QUERIES
     //-------------------------------------------------------------------------
 
-	// load full topology:
-	t_topology *topol = top.topology();	
+		// load full topology:
+		t_topology *topol = top.topology();		
 
-	// access list of all atoms:
-	t_atoms atoms = topol -> atoms;
+		// access list of all atoms:
+		t_atoms atoms = topol -> atoms;
     
-	// create atomprop struct:
-	gmx_atomprop_t aps = gmx_atomprop_init();
+		// create atomprop struct:
+		gmx_atomprop_t aps = gmx_atomprop_init();
 
     
     // GET ATOM RADII FROM TOPOLOGY
@@ -904,8 +904,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // FINALISE ATOMPROP QUERIES
     //-------------------------------------------------------------------------
     
-	// delete atomprop struct:
-	gmx_atomprop_destroy(aps);
+		// delete atomprop struct:
+		gmx_atomprop_destroy(aps);
 
     // set user-defined default radius?
     if( pfDefaultVdwRadiusIsSet_ )
@@ -1022,14 +1022,14 @@ trajectoryAnalysis::analyzeFrame(
 {
 
     // get thread-local selections:
-	const Selection &refSelection = pdata -> parallelSelection(refsel_);
+		const Selection &refSelection = pdata -> parallelSelection(refsel_);
 //    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
 
     // get data handles for this frame:
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
     AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
-	// get data for frame number frnr into data handle:
+		// get data for frame number frnr into data handle:
     dhFrameStream.startFrame(frnr, fr.time);
     dhTiming.startFrame(frnr, fr.time);
 
@@ -1095,24 +1095,24 @@ trajectoryAnalysis::analyzeFrame(
     // TODO: Move this to separate class and test!
     // TODO: Should then also work for coarse-grained situations!
 
-	// create vector of van der Waals radii and allocate memory:
+		// create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
-	selVdwRadii.reserve(refSelection.atomCount());
+		selVdwRadii.reserve(refSelection.atomCount());
 
     // loop over all atoms in system and get vdW-radii:
-	for(int i=0; i<refSelection.atomCount(); i++)
+		for(int i=0; i<refSelection.atomCount(); i++)
     {
         // get global index of i-th atom in selection:
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-		// add radius to vector of radii:
-		selVdwRadii.push_back(vdwRadii_.at(idx));
-	}
+				// add radius to vector of radii:
+				selVdwRadii.push_back(vdwRadii_.at(idx));
+		}
 
 
-	// PORE FINDING AND RADIUS CALCULATION
-	// ------------------------------------------------------------------------
+		// PORE FINDING AND RADIUS CALCULATION
+		// ------------------------------------------------------------------------
 
     // vectors as RVec:
     RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
@@ -1612,7 +1612,7 @@ trajectoryAnalysis::analyzeFrame(
     // FINISH FRAME
     //-------------------------------------------------------------------------
 
-	// finish analysis of current frame:
+		// finish analysis of current frame:
     dhFrameStream.finishFrame();
     dhTiming.finishFrame();
 }
