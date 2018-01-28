@@ -25,12 +25,12 @@ using namespace gmx;
 
 
 
-class trajectoryAnalysis : public TrajectoryAnalysisModule
+class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
 {
     public:
 
         // constructor for the trajectoryAnalysis module:
-        trajectoryAnalysis();
+        ChapTrajectoryAnalysis();
 
         // method for adding all options of the trajectoryAnalysis module:
         virtual void initOptions(
@@ -61,58 +61,46 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         // ??
         virtual void writeOutput();
 
-    protected:
+
+    private:
 
         // find file path fo index files:
         virtual void obtainNdxFilePathInfo();   
         std::string customNdxFileName_;
 
+        
         // check input parameter validity:
         virtual void checkParameters();
 
-
-    private:
-
-        PdbStructure outputStructure_;
-
+        
         // names of output files:
         std::string outputBaseFileName_;
         std::string outputJsonFileName_;
         std::string outputPdbFileName_;
 
-        bool poreFile_;
-
-        class ModuleData;
-        double                           cutoff_;		// cutoff for grid search
-        bool                             cutoffIsSet_;
-        Selection                        refsel_;   	// selection of the reference group
-        Selection                        ippsel_;   	// selection of the initial probe position group
+        
+        // selections:
+        SelectionList sel_;	    // selection of the small particle groups
+        Selection refsel_;   	// selection of the reference group
+        Selection ippsel_;   	// selection of the initial probe position group
+        bool ippselIsSet_;
 
         
+        // internal selections for pore mapping:
+        std::string pfSelString_;
+        SelectionCollection poreMappingSelCol_;
+        SelectionCollection solvMappingSelCol_;
+        Selection poreMappingSelCal_;
+        Selection poreMappingSelCog_;
+        Selection solvMappingSelCog_;
+        real poreMappingMargin_;
         bool findPfResidues_;
 
 
-        // internal selections for pore mapping:
-        std::string                      pfSelString_;
-        SelectionCollection              poreMappingSelCol_;
-        SelectionCollection              solvMappingSelCol_;
-        Selection                        poreMappingSelCal_;
-        Selection                        poreMappingSelCog_;
-        Selection                        solvMappingSelCog_;
-        real                             poreMappingMargin_;
-
-
-
-        bool                             ippselIsSet_;
-        SelectionList                    sel_;			// selection of the small particle groups
-        AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
-
-        AnalysisData                     frameStreamData_;
-        AnalysisData                     dataResMappingPdb_;
-        AnalysisData timingData_;
-
-        std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
-        real 							 maxVdwRadius_;	// largest vdW radius of all atoms
+        // data containers:
+        AnalysisData frameStreamData_;
+        AnalysisData dataResMappingPdb_;
+        AnalysisData timingData_; 
 
 
         // pore residue chemical and physical information:
@@ -124,25 +112,19 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         bool hydrophobicityJsonIsSet_;
         ResidueInformationProvider resInfo_;
         
-        // hydrophobicity profile parameters:
-        real hpBandWidth_;
-        real hpEvalRangeCutoff_;
-        real hpResolution_;
-        DensityEstimationParameters hydrophobKernelParams_;
 
-        int outputNumPoints_;   // number of points on path sample
+        // output parameters:
+        int outputNumPoints_;        
         real outputExtrapDist_;
-
         real outputGridSampleDist_;
         real outputCorrectionThreshold_;
-
         bool outputDetailed_;
+        PdbStructure outputStructure_;
 
-        // selection and topology for initial probe position:
-        gmx::SelectionCollection initProbePosCollection_;
-        gmx::Selection initProbePosSelection_;
 
-        // path finding method parameters:
+        // path finding:
+        double cutoff_;
+        bool cutoffIsSet_;
         real pfDefaultVdwRadius_;
         bool pfDefaultVdwRadiusIsSet_;
         eVdwRadiusDatabase pfVdwRadiusDatabase_;
@@ -159,6 +141,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         bool pfChanDirVecIsSet_;
         ePathAlignmentMethod pfPathAlignmentMethod_;
         PathFindingParameters pfParams_;
+        std::map<std::string, real> pfPar_;
+        std::unordered_map<int, real> vdwRadii_;
+        real maxVdwRadius_;
 
 
         // simulated annealing parameters:
@@ -176,6 +161,7 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         // Nelder-Mead parameters:
         int nmMaxIter_;
 
+        
         // density estimation parameters:
         eDensityEstimator deMethod_;
         DensityEstimationParameters deParams_;
@@ -184,25 +170,16 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         real deBandWidthScale_;
         real deEvalRangeCutoff_;
 
+
+        // hydrophobicity profile parameters:
+        real hpBandWidth_;
+        real hpEvalRangeCutoff_;
+        real hpResolution_;
+        DensityEstimationParameters hydrophobKernelParams_;
+        
+        
         // molecular pathway for first frame:
         std::unique_ptr<MolecularPath> molPathAvg_;
-
-
-        bool debug_output_;
-
-        // map for path finding parameters:
-        std::map<std::string, real> pfPar_;
-
-        // calculate the radius of a spherical void with given centre: 
-        real calculateVoidRadius(RVec centre,
-                                 t_pbc *pbc,
-                                 const Selection refSelection);
-
-        // optimise centre coordinates for maximum void radius:
-        real maximiseVoidRadius(RVec &centre,
-                                RVec channelVec,
-                                t_pbc *pbc,
-                                const Selection refSelection);
 };
 
 #endif

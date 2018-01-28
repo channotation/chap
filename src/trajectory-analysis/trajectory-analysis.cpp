@@ -57,9 +57,9 @@ using namespace gmx;
 
 
 /*
- * Constructor for the trajectoryAnalysis class.
+ * Constructor for the ChapTrajectoryAnalysis class.
  */
-trajectoryAnalysis::trajectoryAnalysis()
+ChapTrajectoryAnalysis::ChapTrajectoryAnalysis()
     : pfProbeRadius_(0.0)
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
@@ -91,7 +91,7 @@ trajectoryAnalysis::trajectoryAnalysis()
  *
  */
 void
-trajectoryAnalysis::initOptions(IOptionsContainer          *options,
+ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                 TrajectoryAnalysisSettings *settings)
 {    
     // HELP TEXT
@@ -471,7 +471,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
  * 
  */
 void
-trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
+ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                  const TopologyInformation &top)
 {
     // set ath name of NDX file:
@@ -824,7 +824,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
  *
  */
 void
-trajectoryAnalysis::initAfterFirstFrame(
+ChapTrajectoryAnalysis::initAfterFirstFrame(
         const TrajectoryAnalysisSettings &settings,
         const t_trxframe &fr)
 {
@@ -836,7 +836,7 @@ trajectoryAnalysis::initAfterFirstFrame(
  *
  */
 void
-trajectoryAnalysis::analyzeFrame(
+ChapTrajectoryAnalysis::analyzeFrame(
         int frnr, 
         const t_trxframe &fr, 
         t_pbc *pbc,
@@ -1439,7 +1439,7 @@ trajectoryAnalysis::analyzeFrame(
  *
  */
 void
-trajectoryAnalysis::finishAnalysis(int numFrames)
+ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 {
     // free line for neater output:
     std::cout<<std::endl;
@@ -1947,7 +1947,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
  *
  */
 void
-trajectoryAnalysis::writeOutput()
+ChapTrajectoryAnalysis::writeOutput()
 {
 
 }
@@ -1959,7 +1959,7 @@ trajectoryAnalysis::writeOutput()
  * convenient way of getting it directly from Gromacs.
  */
 void
-trajectoryAnalysis::obtainNdxFilePathInfo()
+ChapTrajectoryAnalysis::obtainNdxFilePathInfo()
 {
     // name of index file flag:
     std::string flagName = " -n ";
@@ -1988,7 +1988,7 @@ trajectoryAnalysis::obtainNdxFilePathInfo()
  * Bundled here to keep initAnalysis() uncluttered.
  */
 void
-trajectoryAnalysis::checkParameters()
+ChapTrajectoryAnalysis::checkParameters()
 {
     // OUTPUT PARAMETERS
     //-------------------------------------------------------------------------

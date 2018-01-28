@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 
-//#include <gromacs/trajectoryanalysis.h>
 #include <gromacs/commandline/cmdlineinit.h>
 #include <gromacs/commandline/cmdlineprogramcontext.h>
 #include <gromacs/commandline.h>
@@ -30,7 +29,7 @@ int main(int argc, char **argv)
     argc++;
 
     // run trajectory analysis:
-	int status =  gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<trajectoryAnalysis>(argc, argv);
+	int status = gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<ChapTrajectoryAnalysis>(argc, argv);
 
     // print back matter:
     BackMatter::print();
@@ -38,14 +37,4 @@ int main(int argc, char **argv)
     // return status:
     return status;
 }
-
-
-
-
-
-
-
-
-
-
 
