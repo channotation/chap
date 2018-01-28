@@ -347,7 +347,11 @@ ChapTrajectoryAnalysis::initOptions(
     options -> addOption(StringOption("pm-pf-sel")
 						 .store(&pfSelString_)
                          .defaultValue("name CA")
-                         .description(""));
+                         .description("Selection string that determines the "
+                                      "group of atoms in each residue whose "
+                                      "centre of geometry's distance from the "
+                                      "centre line is used to determine if "
+                                      "a residue is pore-facing."));
 
 
     // DENSITY ESTIMATION PARAMETERS
