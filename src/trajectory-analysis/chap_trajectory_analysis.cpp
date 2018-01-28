@@ -1,24 +1,12 @@
-#include <algorithm>	// for std::max_element()
-#include <cmath>				// for std::sqrt()
-#include <fstream>
-#include <iomanip>
+#include <algorithm>
 #include <string>
-#include <cstring>
-#include <ctime>
-#include <regex>
 
-#include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
-#include <gromacs/random/uniformrealdistribution.h>
-#include <gromacs/fileio/confio.h>
-#include <gromacs/utility/programcontext.h>
 
-#include "trajectory-analysis/trajectory-analysis.hpp"
+#include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
 #include "aggregation/boltzmann_energy_calculator.hpp"
 #include "aggregation/number_density_calculator.hpp"
-#include "aggregation/multiscalar_time_series.hpp"
-#include "aggregation/scalar_time_series.hpp"
 
 #include "config/config.hpp"
 #include "config/version.hpp"
@@ -32,7 +20,6 @@
 #include "io/analysis_data_json_frame_exporter.hpp"
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
-#include "io/multiscalar_time_series_json_converter.hpp"
 #include "io/results_json_exporter.hpp"
 #include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
@@ -44,9 +31,6 @@
 #include "statistics/summary_statistics.hpp"
 #include "statistics/weighted_kernel_density_estimator.hpp"
 
-#include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
-#include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
-
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 #include "path-finding/naive_cylindrical_path_finder.hpp"
@@ -55,34 +39,27 @@
 using namespace gmx;
 
 
-
 /*
- * Constructor for the trajectoryAnalysis class.
+ * Constructor for the ChapTrajectoryAnalysis class.
  */
-trajectoryAnalysis::trajectoryAnalysis()
+ChapTrajectoryAnalysis::ChapTrajectoryAnalysis()
     : pfProbeRadius_(0.0)
     , pfMaxProbeSteps_(1e3)
     , pfInitProbePos_(3)
     , pfChanDirVec_(3)
     , saMaxCoolingIter_(1e3)
     , saNumCostSamples_(50)
-    , saConvRelTol_(1e-10)
     , saInitTemp_(10.0)
     , saCoolingFactor_(0.99)
     , saStepLengthFactor_(0.01)
-    , saUseAdaptiveCandGen_(false)
 {
+    // register data containers:
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
     frameStreamData_.setMultipoint(true); 
-
-    // register internal timing dataset:
-    registerAnalysisDataset(&timingData_, "timingData");
 
     // default initial probe position and chanell direction:
     pfInitProbePos_ = {std::nan(""), std::nan(""), std::nan("")};
     pfChanDirVec_ = {0.0, 0.0, 1.0};
-
-
 }
 
 
@@ -91,8 +68,9 @@ trajectoryAnalysis::trajectoryAnalysis()
  *
  */
 void
-trajectoryAnalysis::initOptions(IOptionsContainer          *options,
-                                TrajectoryAnalysisSettings *settings)
+ChapTrajectoryAnalysis::initOptions(
+        IOptionsContainer *options,
+        TrajectoryAnalysisSettings *settings)
 {    
     // HELP TEXT
     //-------------------------------------------------------------------------
@@ -127,13 +105,13 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     //-------------------------------------------------------------------------
 
     options -> addOption(SelectionOption("sel-pathway")
-                         .store(&refsel_).required()
+                         .store(&pathwaySel_).required()
                          .description("Reference group that defines the "
                                       "permeation pathway (usually "
                                       "'Protein') "));
 
     options -> addOption(SelectionOption("sel-solvent")
-                         .storeVector(&sel_)
+                         .storeVector(&solventSel_)
                          .description("Group of small particles to calculate "
                                       "density of (usually 'Water')"));
 
@@ -268,9 +246,9 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "moved in either direction."));
 
     options -> addOption(SelectionOption("pf-sel-ipp")
-                         .store(&ippsel_)
-                         .storeIsSet(&ippselIsSet_)
-							 .description("Selection of atoms whose COM will be "
+                         .store(&ippSel_)
+                         .storeIsSet(&ippSelIsSet_)
+                         .description("Selection of atoms whose COM will be "
                                       "used as initial probe position. If not "
                                       "set, the selection specified with "
                                       "'sel-pathway' will be used."));
@@ -283,7 +261,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "probe-based pore finding algorithms. "
                                       "If set explicitly, it will overwrite "
                                       "the COM-based initial position set "
-                                      "with the ippselflag."));
+                                      "with the ippSelflag."));
 
     std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
     options -> addOption(RealOption("pf-chan-dir-vec")
@@ -295,7 +273,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
    
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
-							 .store(&cutoff_)
+                         .store(&cutoff_)
                          .defaultValue(std::nan(""))
                          .storeIsSet(&cutoffIsSet_)
                          .description("Cutoff for distance searches in path "
@@ -357,7 +335,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-pl-margin")
-							 .store(&poreMappingMargin_)
+						 .store(&poreMappingMargin_)
                          .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
@@ -365,6 +343,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "than the local path radius plus this "
                                       "margin from the pathway's centre "
                                       "line."));
+
+    options -> addOption(StringOption("pm-pf-sel")
+						 .store(&pfSelString_)
+                         .defaultValue("name CA")
+                         .description(""));
 
 
     // DENSITY ESTIMATION PARAMETERS
@@ -460,133 +443,22 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
 }
 
 
-
-
-/*
+/*!
  * 
  */
 void
-trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
-                                 const TopologyInformation &top)
+ChapTrajectoryAnalysis::initAnalysis(
+        const TrajectoryAnalysisSettings& /*settings*/,
+        const TopologyInformation &top)
 {
     // set ath name of NDX file:
     obtainNdxFilePathInfo();
 
-    
+    // check valididty of input parameters:
+    checkParameters();
+        
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
-
-    // OUTPUT PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // TODO: own member function for parameter checking
-
-    // add proper extensions to file names:
-    // TODO: better in exporter code?
-    outputJsonFileName_ = outputBaseFileName_ + ".json";
-    outputPdbFileName_ = outputBaseFileName_ + ".pdb";
-
-    // sanity checks;
-    if( outputExtrapDist_ < 0.0 )
-    {
-        throw std::runtime_error("Parameter -out-extrap-dist may not be "
-                                 "negative.");
-    }
-    if( outputGridSampleDist_ <= 0.0 )
-    {
-        throw std::runtime_error("Parameter -out-grid-dist must be strictly "
-                                 "positive.");
-    }
-    if( outputCorrectionThreshold_ >= 1.0 or 
-        outputCorrectionThreshold_ <= -1.0)
-    {
-        throw std::runtime_error("Parameter -out-vis-teak must be in interval "
-                                 "(-1, 1).");
-    }
-
-
-    // PATH FINDING PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // set inut-dependent defaults:
-    if( !saRandomSeedIsSet_ )
-    {
-        saRandomSeed_ = gmx::makeRandomSeed();
-    }
-
-    // set parameters in map:
-    pfPar_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
-
-    pfPar_["pfCylRad"] = pfMaxProbeRadius_;
-    pfPar_["pfCylNumSteps"] = pfPar_["pfProbeMaxSteps"];
-    pfPar_["pfCylStepLength"] = pfProbeStepLength_;
-
-    pfPar_["saMaxCoolingIter"] = saMaxCoolingIter_;
-    pfPar_["saRandomSeed"] = saRandomSeed_;
-    pfPar_["saNumCostSamples"] = saNumCostSamples_;
-
-    pfPar_["nmMaxIter"] = nmMaxIter_;
-
-
-    // 
-    pfParams_.setProbeStepLength(pfProbeStepLength_);
-    pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
-    pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
-    
-    if( cutoffIsSet_ )
-    {
-        // this will be determined automatically if not set explcitly:
-        pfParams_.setNbhCutoff(cutoff_);
-    }
-
-    // PATH MAPPING PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // sanity checks and automatic defaults:
-    if( mappingParams_.mapTol_ <= 0.0 )
-    {
-        throw(std::runtime_error("Mapping tolerance parameter pm-tol must be positive."));
-    }
-
-    if( mappingParams_.extrapDist_ <= 0 )
-    {
-        throw(std::runtime_error("Extrapolation distance set with pm-extrap-dist may not be negative."));
-    }
-
-    if( mappingParams_.sampleStep_ <= 0 )
-    {
-        throw(std::runtime_error("Sampling step set with pm-sample-step must be positive."));
-    }
-
-
-    // DENSITY ESTIMATION PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // which estimator will be used?
-    if( deMethod_ == eDensityEstimatorHistogram )
-    {
-        deParams_.setBinWidth(deResolution_);
-    }
-    else if( deMethod_ == eDensityEstimatorKernel )
-    {
-        deParams_.setKernelFunction(eKernelFunctionGaussian);
-        deParams_.setBandWidth(deBandWidth_);
-        deParams_.setBandWidthScale(deBandWidthScale_);
-        deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
-        deParams_.setMaxEvalPointDist(deResolution_);
-    }
-
-    
-    // HYDROPHOBICITY PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // parameters for the hydrophobicity kernel:
-    hpResolution_ = deResolution_;
-    hpEvalRangeCutoff_ = deEvalRangeCutoff_;
-    hydrophobKernelParams_.setKernelFunction(eKernelFunctionGaussian);
-    hydrophobKernelParams_.setBandWidth(hpBandWidth_);
-    hydrophobKernelParams_.setEvalRangeCutoff(hpEvalRangeCutoff_);
-    hydrophobKernelParams_.setMaxEvalPointDist(hpResolution_);
 
 
     // PREPARE DATSETS
@@ -691,15 +563,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     frameStreamData_.addModule(jsonFrameExporter);
 
 
-    // TIMING DATA
-    //-------------------------------------------------------------------------
-
-    // TODO: perhaps mive to constructor?
-    timingData_.setDataSetCount(1);
-    timingData_.setColumnCount(0, 1);
-    timingData_.setMultipoint(false);
-
-
     // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
@@ -708,10 +571,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     poreMappingSelCol_.setOutputPosType("res_cog");
   
     // selection of C-alpha atoms:
-    // TODO: this will not work if only part of protein is specified as pore
-    std::string refselSelText = refsel_.selectionText();
-    std::string poreMappingSelCalString = "name CA";
-    std::string poreMappingSelCogString = refselSelText;
+    std::string pathwaySelSelText = pathwaySel_.selectionText();
+    std::string poreMappingSelCalString = pfSelString_;
+    std::string poreMappingSelCogString = pathwaySelSelText;
 
     // create index groups from topology:
     gmx_ana_indexgrps_t *poreIdxGroups;
@@ -740,12 +602,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // free memory:
     gmx_ana_indexgrps_free(poreIdxGroups);
 
-    // validate that there is a c-alpha for each residue:
+    // do we have one C-alpha for each pore-forming residue?
     if( poreMappingSelCal_.posCount() != poreMappingSelCog_.posCount() )
     {
-        std::cerr<<"ERROR: Could not find a C-alpha for each residue in pore forming group."
-                 <<std::endl<<"Is your pore a protein?"<<std::endl;
-        std::abort();
+        findPfResidues_ = false;  
+    }
+    else
+    {
+        findPfResidues_ = true;
     }
 
 
@@ -753,7 +617,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     //-------------------------------------------------------------------------
 
     // only do this if solvent selection specified:
-    if( !sel_.empty() )
+    if( !solventSel_.empty() )
     {
         // prepare centre of geometry selection collection:
         solvMappingSelCol_.setReferencePosType("res_cog");
@@ -777,7 +641,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         }
 
         // selection text:
-        std::string solvMappingSelCogString = sel_[0].selectionText();
+        std::string solvMappingSelCogString = solventSel_[0].selectionText();
 
         // create selection as defined by user:
         solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
@@ -790,19 +654,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         // free memory:
         gmx_ana_indexgrps_free(solvIdxGroups);
     }
-
-    
-    // PREPARE TOPOLOGY QUERIES
-    //-------------------------------------------------------------------------
-
-    // load full topology:
-    t_topology *topol = top.topology();		
-
-    // access list of all atoms:
-    t_atoms atoms = topol -> atoms;
-
-    // create atomprop struct:
-    gmx_atomprop_t aps = gmx_atomprop_init();
 
     
     // GET ATOM RADII FROM TOPOLOGY
@@ -850,80 +701,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
    
     // create radius provider and build lookup table:
     VdwRadiusProvider vrp;
-    try
-    {
-        vrp.lookupTableFromJson(radiiDoc);
-    }
-    catch( std::exception& e )
-    {
-        std::cerr<<"ERROR while creating van der Waals radius lookup table:"<<std::endl;
-        std::cerr<<e.what()<<std::endl; 
-        std::abort();
-    }
-
-
-    // TRACK C-ALPHAS and RESIDUE INDICES
-    //-------------------------------------------------------------------------
-   
-    // loop through all atoms, get index lists for c-alphas and residues:
-    for(int i = 0; i < atoms.nr; i++)
-    {
-        // check for calpha:
-        if( std::strcmp(*atoms.atomname[i], "CA") == 0 )
-        {
-           poreCAlphaIndices_.push_back(i); 
-        }
-
-        // track residue ID of atoms: 
-        residueIndices_.push_back(atoms.atom[i].resind);
-        atomResidueMapping_[i] = atoms.atom[i].resind;
-        residueAtomMapping_[atoms.atom[i].resind].push_back(i);
-    }
-
-    // remove duplicate residue indices:
-    std::vector<int>::iterator it;
-    it = std::unique(residueIndices_.begin(), residueIndices_.end());
-    residueIndices_.resize(std::distance(residueIndices_.begin(), it));
-
-    // loop over residues:
-    ConstArrayRef<int> refselAtomIdx = refsel_.atomIndices();
-    for(it = residueIndices_.begin(); it != residueIndices_.end(); it++)
-    {
-        // current residue id:
-        int resId = *it;
-    
-        // get vector of all atom indices in this residue:
-        std::vector<int> atomIdx = residueAtomMapping_[resId];
-
-        // for each atom in residue, check if it belongs to pore selection:
-        bool addResidue = false;
-        std::vector<int>::iterator jt;
-        for(jt = atomIdx.begin(); jt != atomIdx.end(); jt++)
-        {
-            // check if atom belongs to pore selection:
-            if( std::find(refselAtomIdx.begin(), refselAtomIdx.end(), *jt) != refselAtomIdx.end() )
-            {
-                // add atom to list of pore atoms:
-                poreAtomIndices_.push_back(*jt);
-
-                // if at least one atom belongs to pore group, the whole residue will be considered:
-                addResidue = true;
-            }
-        }
-
-        // add residue, if at least one atom is part of pore:
-        if( addResidue == true )
-        {
-            poreResidueIndices_.push_back(resId);
-        }
-    }
-
-
-    // FINALISE ATOMPROP QUERIES
-    //-------------------------------------------------------------------------
-    
-		// delete atomprop struct:
-		gmx_atomprop_destroy(aps);
+    vrp.lookupTableFromJson(radiiDoc);
 
     // set user-defined default radius?
     if( pfDefaultVdwRadiusIsSet_ )
@@ -932,16 +710,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     }
 
     // build vdw radius lookup map:
-    try
-    {
-        vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
-    }
-    catch( std::exception& e )
-    {
-        std::cerr<<"ERROR in van der Waals radius lookup:"<<std::endl;
-        std::cerr<<e.what()<<std::endl;
-        std::abort();
-    } 
+    vdwRadii_ = vrp.vdwRadiiForTopology(top, pathwaySel_.mappedIds());
 
     // find maximum van der Waals radius:
     maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
@@ -992,10 +761,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         // has user provided a file name?
         if( !hydrophobicityJsonIsSet_ )
         {
-            std::cerr<<"ERROR: Option hydrophob-database set to 'user', but "
-            "no custom hydrophobicity scale was specified with "
-            "hydrophob-json."<<std::endl;
-            std::abort();
+            throw std::runtime_error("Option hydrophob-database set to 'user', "
+                                     "but no custom hydrophobicity scale was "
+                                     "specified with '-hydrophob-json'.");
         }
     }
 
@@ -1020,7 +788,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
  *
  */
 void
-trajectoryAnalysis::initAfterFirstFrame(
+ChapTrajectoryAnalysis::initAfterFirstFrame(
         const TrajectoryAnalysisSettings &settings,
         const t_trxframe &fr)
 {
@@ -1032,24 +800,20 @@ trajectoryAnalysis::initAfterFirstFrame(
  *
  */
 void
-trajectoryAnalysis::analyzeFrame(
+ChapTrajectoryAnalysis::analyzeFrame(
         int frnr, 
         const t_trxframe &fr, 
         t_pbc *pbc,
         TrajectoryAnalysisModuleData *pdata)
 {
-
     // get thread-local selections:
-		const Selection &refSelection = pdata -> parallelSelection(refsel_);
-//    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
+    const Selection &refSelection = pdata -> parallelSelection(pathwaySel_);
 
     // get data handles for this frame:
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
-    AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
-		// get data for frame number frnr into data handle:
+    // get data for frame number frnr into data handle:
     dhFrameStream.startFrame(frnr, fr.time);
-    dhTiming.startFrame(frnr, fr.time);
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -1062,15 +826,15 @@ trajectoryAnalysis::analyzeFrame(
         Selection tmpsel;
   
         // has a group for specifying initial probe position been set?
-        if( ippselIsSet_ == true )
+        if( ippSelIsSet_ == true )
         {
             // use explicitly given selection:
-            tmpsel = ippsel_;
+            tmpsel = ippSel_;
         }
         else 
         {
             // default to overall group of pore forming particles:
-            tmpsel = refsel_;
+            tmpsel = pathwaySel_;
         }
      
         // load data into initial position selection:
@@ -1090,47 +854,44 @@ trajectoryAnalysis::analyzeFrame(
             totalMass += atom.mass();
 
             // add to COM vector:
-            // TODO: implement separate centre of geometry and centre of mass 
-            centreOfMass[0] += atom.mass() * atom.x()[0];
-            centreOfMass[1] += atom.mass() * atom.x()[1];
-            centreOfMass[2] += atom.mass() * atom.x()[2];
+            centreOfMass[XX] += atom.mass() * atom.x()[XX];
+            centreOfMass[YY] += atom.mass() * atom.x()[YY];
+            centreOfMass[ZZ] += atom.mass() * atom.x()[ZZ];
         }
 
         // scale COM vector by total MASS:
-        centreOfMass[0] /= 1.0 * totalMass;
-        centreOfMass[1] /= 1.0 * totalMass;
-        centreOfMass[2] /= 1.0 * totalMass; 
+        centreOfMass[XX] /= 1.0 * totalMass;
+        centreOfMass[YY] /= 1.0 * totalMass;
+        centreOfMass[ZZ] /= 1.0 * totalMass; 
 
         // set initial probe position:
-        pfInitProbePos_[0] = centreOfMass[0];
-        pfInitProbePos_[1] = centreOfMass[1];
-        pfInitProbePos_[2] = centreOfMass[2];
+        pfInitProbePos_[XX] = centreOfMass[XX];
+        pfInitProbePos_[YY] = centreOfMass[YY];
+        pfInitProbePos_[ZZ] = centreOfMass[ZZ];
     }
 
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
-    // TODO: Move this to separate class and test!
-    // TODO: Should then also work for coarse-grained situations!
 
-		// create vector of van der Waals radii and allocate memory:
+    // create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
-		selVdwRadii.reserve(refSelection.atomCount());
+    selVdwRadii.reserve(refSelection.atomCount());
 
     // loop over all atoms in system and get vdW-radii:
-		for(int i=0; i<refSelection.atomCount(); i++)
+    for(int i=0; i<refSelection.atomCount(); i++)
     {
         // get global index of i-th atom in selection:
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-				// add radius to vector of radii:
-				selVdwRadii.push_back(vdwRadii_.at(idx));
-		}
+        // add radius to vector of radii:
+        selVdwRadii.push_back(vdwRadii_.at(idx));
+	}
 
 
-		// PORE FINDING AND RADIUS CALCULATION
-		// ------------------------------------------------------------------------
+	// PORE FINDING AND RADIUS CALCULATION
+	// ------------------------------------------------------------------------
 
     // vectors as RVec:
     RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
@@ -1185,9 +946,7 @@ trajectoryAnalysis::analyzeFrame(
         // map initial probe position onto pathway:
         std::vector<gmx::RVec> ipp;
         ipp.push_back(initProbePos);
-        std::vector<gmx::RVec> mappedIpp = molPath.mapPositions(
-                ipp, 
-                mappingParams_);
+        std::vector<gmx::RVec> mappedIpp = molPath.mapPositions(ipp);
 
         // shift coordinates of molecular path appropriately:
         molPath.shift(mappedIpp.front());
@@ -1246,15 +1005,13 @@ trajectoryAnalysis::analyzeFrame(
     // map pore residue COG onto pathway:
     clock_t tMapResCog = std::clock();
     std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
-            poreMappingSelCog, 
-            mappingParams_);
+            poreMappingSelCog);
     tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
 
     // map pore residue C-alpha onto pathway:
     clock_t tMapResCal = std::clock();
     std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
-            poreMappingSelCal, 
-            mappingParams_);
+            poreMappingSelCal);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
 
     
@@ -1283,7 +1040,8 @@ trajectoryAnalysis::analyzeFrame(
     {
         // is residue pore lining and has COG closer to centreline than CA?
         if( it -> second[RR] < poreCalMappedCoords[it->first][RR] &&
-            poreLining[it -> first] == true )
+            poreLining[it -> first] == true &&
+            findPfResidues_ == true )
         {
             poreFacing[it->first] = true;
             nPoreFacing++;
@@ -1395,7 +1153,7 @@ trajectoryAnalysis::analyzeFrame(
     int numSolvInsidePore = 0;
 
     // only do this if solvent selection is valid:
-    if( !sel_.empty() )
+    if( !solventSel_.empty() )
     {
         // evaluate solevnt mapping selections for this frame:
         t_trxframe tmpFrame = fr;
@@ -1409,7 +1167,7 @@ trajectoryAnalysis::analyzeFrame(
 
         // map particles onto pathway:
         clock_t tMapSol = std::clock();
-        solventMappedCoords = molPath.mapSelection(solvMapSel, mappingParams_);
+        solventMappedCoords = molPath.mapSelection(solvMapSel);
         tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
 
         // find particles inside path (i.e. pore plus bulk sampling regime):
@@ -1609,30 +1367,11 @@ trajectoryAnalysis::analyzeFrame(
     }
 
 
-    // WRITE PORE TO OBJ FILE
-    //-------------------------------------------------------------------------
-
-    // TODO: this should be moved to a separate binary!
-/*
-    MolecularPathObjExporter molPathExp;
-    molPathExp(objOutputFileName_.c_str(),
-               "molecular_pathway",
-               molPath);
-*/
-
-    // ADD TIMING DATA TO DATA HANDLE
-    //-------------------------------------------------------------------------
-
-    dhTiming.selectDataSet(0);
-    dhTiming.setPoint(0, 1.1111);
-
-
     // FINISH FRAME
     //-------------------------------------------------------------------------
 
-		// finish analysis of current frame:
+    // finish analysis of current frame:
     dhFrameStream.finishFrame();
-    dhTiming.finishFrame();
 }
 
 
@@ -1641,7 +1380,7 @@ trajectoryAnalysis::analyzeFrame(
  *
  */
 void
-trajectoryAnalysis::finishAnalysis(int numFrames)
+ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 {
     // free line for neater output:
     std::cout<<std::endl;
@@ -2149,7 +1888,7 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
  *
  */
 void
-trajectoryAnalysis::writeOutput()
+ChapTrajectoryAnalysis::writeOutput()
 {
 
 }
@@ -2161,7 +1900,7 @@ trajectoryAnalysis::writeOutput()
  * convenient way of getting it directly from Gromacs.
  */
 void
-trajectoryAnalysis::obtainNdxFilePathInfo()
+ChapTrajectoryAnalysis::obtainNdxFilePathInfo()
 {
     // name of index file flag:
     std::string flagName = " -n ";
@@ -2182,5 +1921,105 @@ trajectoryAnalysis::obtainNdxFilePathInfo()
         auto substrLen = callString.find(" ", startPos) - startPos;
         customNdxFileName_ = callString.substr(startPos, substrLen);
     }
+}
+
+
+/*! 
+ * Auxiliary function for checking the validity of various input parameters. 
+ * Bundled here to keep initAnalysis() uncluttered.
+ */
+void
+ChapTrajectoryAnalysis::checkParameters()
+{
+    // OUTPUT PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // add proper extensions to file names:
+    // TODO: better in exporter code?
+    outputJsonFileName_ = outputBaseFileName_ + ".json";
+    outputPdbFileName_ = outputBaseFileName_ + ".pdb";
+
+    // sanity checks:
+    if( outputExtrapDist_ < 0.0 )
+    {
+        throw std::runtime_error("Parameter -out-extrap-dist may not be "
+                                 "negative.");
+    }
+    if( outputGridSampleDist_ <= 0.0 )
+    {
+        throw std::runtime_error("Parameter -out-grid-dist must be strictly "
+                                 "positive.");
+    }
+    if( outputCorrectionThreshold_ >= 1.0 or 
+        outputCorrectionThreshold_ <= -1.0)
+    {
+        throw std::runtime_error("Parameter -out-vis-teak must be in interval "
+                                 "(-1, 1).");
+    }
+
+
+    // PATH FINDING PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // create random seed unless user has set seed explicitly:
+    if( !saRandomSeedIsSet_ )
+    {
+        saRandomSeed_ = gmx::makeRandomSeed();
+    }
+
+    // set parameters in map:
+    // TODO: these should all be refactored into struct:
+    pfPar_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
+
+    pfPar_["pfCylRad"] = pfMaxProbeRadius_;
+    pfPar_["pfCylNumSteps"] = pfPar_["pfProbeMaxSteps"];
+    pfPar_["pfCylStepLength"] = pfProbeStepLength_;
+
+    pfPar_["saMaxCoolingIter"] = saMaxCoolingIter_;
+    pfPar_["saRandomSeed"] = saRandomSeed_;
+    pfPar_["saNumCostSamples"] = saNumCostSamples_;
+
+    pfPar_["nmMaxIter"] = nmMaxIter_;
+
+    // set parameters in struct:
+    pfParams_.setProbeStepLength(pfProbeStepLength_);
+    pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
+    pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
+    
+    if( cutoffIsSet_ )
+    {
+        // this will be determined automatically if not set explcitly:
+        pfParams_.setNbhCutoff(cutoff_);
+    }
+
+
+    // DENSITY ESTIMATION PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // which estimator will be used?
+    if( deMethod_ == eDensityEstimatorHistogram )
+    {
+        deParams_.setBinWidth(deResolution_);
+    }
+    else if( deMethod_ == eDensityEstimatorKernel )
+    {
+        deParams_.setKernelFunction(eKernelFunctionGaussian);
+        deParams_.setBandWidth(deBandWidth_);
+        deParams_.setBandWidthScale(deBandWidthScale_);
+        deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
+        deParams_.setMaxEvalPointDist(deResolution_);
+    }
+
+    
+    // HYDROPHOBICITY PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // parameters for the hydrophobicity kernel:
+    hpResolution_ = deResolution_;
+    hpEvalRangeCutoff_ = deEvalRangeCutoff_;
+    hydrophobKernelParams_.setKernelFunction(eKernelFunctionGaussian);
+    hydrophobKernelParams_.setBandWidth(hpBandWidth_);
+    hydrophobKernelParams_.setEvalRangeCutoff(hpEvalRangeCutoff_);
+    hydrophobKernelParams_.setMaxEvalPointDist(hpResolution_);
 }
 

@@ -1,12 +1,9 @@
 #ifndef TRAJECTORYANALYSIS_HPP
 #define TRAJECTORYANALYSIS_HPP
 
-#include <cstdint>
-#include <iostream>
 #include <map>
-#include <unordered_map>
 #include <string>
-
+#include <unordered_map>
 #include <vector>
 
 #include <gromacs/trajectoryanalysis.h>
@@ -25,12 +22,12 @@ using namespace gmx;
 
 
 
-class trajectoryAnalysis : public TrajectoryAnalysisModule
+class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
 {
     public:
 
         // constructor for the trajectoryAnalysis module:
-        trajectoryAnalysis();
+        ChapTrajectoryAnalysis();
 
         // method for adding all options of the trajectoryAnalysis module:
         virtual void initOptions(
@@ -61,48 +58,44 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         // ??
         virtual void writeOutput();
 
-    protected:
-
-        virtual void obtainNdxFilePathInfo();   
-        std::string customNdxFileName_;
 
     private:
 
-        PdbStructure outputStructure_;
+        // find file path fo index files:
+        virtual void obtainNdxFilePathInfo();   
+        std::string customNdxFileName_;
 
+        
+        // check input parameter validity:
+        virtual void checkParameters();
+
+        
         // names of output files:
         std::string outputBaseFileName_;
         std::string outputJsonFileName_;
         std::string outputPdbFileName_;
 
-        bool poreFile_;
+        
+        // user specified selections:
+        SelectionList solventSel_;
+        Selection pathwaySel_;
+        Selection ippSel_;
+        bool ippSelIsSet_;
 
-        class ModuleData;
-        double                           cutoff_;		// cutoff for grid search
-        bool                             cutoffIsSet_;
-        Selection                        refsel_;   	// selection of the reference group
-        Selection                        ippsel_;   	// selection of the initial probe position group
-
+        
         // internal selections for pore mapping:
-        SelectionCollection              poreMappingSelCol_;
-        SelectionCollection              solvMappingSelCol_;
-        Selection                        poreMappingSelCal_;
-        Selection                        poreMappingSelCog_;
-        Selection                        solvMappingSelCog_;
-        real                             poreMappingMargin_;
+        std::string pfSelString_;
+        SelectionCollection poreMappingSelCol_;
+        SelectionCollection solvMappingSelCol_;
+        Selection poreMappingSelCal_;
+        Selection poreMappingSelCog_;
+        Selection solvMappingSelCog_;
+        real poreMappingMargin_;
+        bool findPfResidues_;
 
 
-
-        bool                             ippselIsSet_;
-        SelectionList                    sel_;			// selection of the small particle groups
-        AnalysisNeighborhood             nb_;			// neighbourhood for grid searches
-
-        AnalysisData                     frameStreamData_;
-        AnalysisData                     dataResMappingPdb_;
-        AnalysisData timingData_;
-
-        std::unordered_map<int, real>	 vdwRadii_;		// vdW radii of all atoms
-        real 							 maxVdwRadius_;	// largest vdW radius of all atoms
+        // data containers:
+        AnalysisData frameStreamData_;
 
 
         // pore residue chemical and physical information:
@@ -114,36 +107,19 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         bool hydrophobicityJsonIsSet_;
         ResidueInformationProvider resInfo_;
         
-        // hydrophobicity profile parameters:
-        real hpBandWidth_;
-        real hpEvalRangeCutoff_;
-        real hpResolution_;
-        DensityEstimationParameters hydrophobKernelParams_;
 
-
-        // pore particle and group indices:
-        std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
-        std::vector<int> residueIndices_;                       // all resIds
-        std::vector<int> poreResidueIndices_;                   // resIds of pore selection
-        std::vector<int> poreAtomIndices_;                      // atomIds of pore selection
-        std::map<int, int> atomResidueMapping_;                 // maps atomId onto resId
-        std::map<int, std::vector<int>> residueAtomMapping_;    // maps resId onto atomId
-
-
-
-        int outputNumPoints_;   // number of points on path sample
+        // output parameters:
+        int outputNumPoints_;        
         real outputExtrapDist_;
-
         real outputGridSampleDist_;
         real outputCorrectionThreshold_;
-
         bool outputDetailed_;
+        PdbStructure outputStructure_;
 
-        // selection and topology for initial probe position:
-        gmx::SelectionCollection initProbePosCollection_;
-        gmx::Selection initProbePosSelection_;
 
-        // path finding method parameters:
+        // path finding:
+        double cutoff_;
+        bool cutoffIsSet_;
         real pfDefaultVdwRadius_;
         bool pfDefaultVdwRadiusIsSet_;
         eVdwRadiusDatabase pfVdwRadiusDatabase_;
@@ -160,6 +136,9 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         bool pfChanDirVecIsSet_;
         ePathAlignmentMethod pfPathAlignmentMethod_;
         PathFindingParameters pfParams_;
+        std::map<std::string, real> pfPar_;
+        std::unordered_map<int, real> vdwRadii_;
+        real maxVdwRadius_;
 
 
         // simulated annealing parameters:
@@ -168,18 +147,15 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         int saMaxCoolingIter_;
         int saNumCostSamples_;
         real saXi_;
-        real saConvRelTol_;
         real saInitTemp_;
         real saCoolingFactor_;
         real saStepLengthFactor_;
-        bool saUseAdaptiveCandGen_;
+
 
         // Nelder-Mead parameters:
         int nmMaxIter_;
 
-        // path mapping parameters:
-        PathMappingParameters mappingParams_;
-
+        
         // density estimation parameters:
         eDensityEstimator deMethod_;
         DensityEstimationParameters deParams_;
@@ -188,25 +164,16 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         real deBandWidthScale_;
         real deEvalRangeCutoff_;
 
+
+        // hydrophobicity profile parameters:
+        real hpBandWidth_;
+        real hpEvalRangeCutoff_;
+        real hpResolution_;
+        DensityEstimationParameters hydrophobKernelParams_;
+        
+        
         // molecular pathway for first frame:
         std::unique_ptr<MolecularPath> molPathAvg_;
-
-
-        bool debug_output_;
-
-        // map for path finding parameters:
-        std::map<std::string, real> pfPar_;
-
-        // calculate the radius of a spherical void with given centre: 
-        real calculateVoidRadius(RVec centre,
-                                 t_pbc *pbc,
-                                 const Selection refSelection);
-
-        // optimise centre coordinates for maximum void radius:
-        real maximiseVoidRadius(RVec &centre,
-                                RVec channelVec,
-                                t_pbc *pbc,
-                                const Selection refSelection);
 };
 
 #endif
