@@ -108,11 +108,10 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // SETTINGS
     //-------------------------------------------------------------------------
 
-		// require the user to provide a topology file input:
+    // require the user to provide a topology file input:
     settings -> setFlag(TrajectoryAnalysisSettings::efRequireTop);
 
     // will not use periodic boundary conditions:
-    // TODO set PBC back to true
     settings -> setPBC(false);
     settings -> setFlag(TrajectoryAnalysisSettings::efNoUserPBC);
 
@@ -127,15 +126,15 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // SELECTION OPTIONS
     //-------------------------------------------------------------------------
 
-		options -> addOption(SelectionOption("sel-pathway")
-							 .store(&refsel_).required()
-								 .description("Reference group that defines the "
+    options -> addOption(SelectionOption("sel-pathway")
+                         .store(&refsel_).required()
+                         .description("Reference group that defines the "
                                       "permeation pathway (usually "
                                       "'Protein') "));
 
-		options -> addOption(SelectionOption("sel-solvent")
+    options -> addOption(SelectionOption("sel-solvent")
                          .storeVector(&sel_)
-							 .description("Group of small particles to calculate "
+                         .description("Group of small particles to calculate "
                                       "density of (usually 'Water')"));
 
 
@@ -143,26 +142,26 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     // ------------------------------------------------------------------------
 
     options -> addOption(StringOption("out-filename")
-							 .store(&outputBaseFileName_)
+						 .store(&outputBaseFileName_)
                          .defaultValue("output")
                          .description("File name for output files without "
                                       "file extension."));
 
     options -> addOption(IntegerOption("out-num-points")
-							 .store(&outputNumPoints_)
+						 .store(&outputNumPoints_)
                          .defaultValue(1000)
                          .description("Number of spatial sample points that "
                                       "are written to the JSON output file."));
 
     options -> addOption(RealOption("out-extrap-dist")
-							 .store(&outputExtrapDist_)
+						 .store(&outputExtrapDist_)
                          .defaultValue(0.0)
                          .description("Extrapolation distance beyond the "
                                       "pathway endpoints for both JSON and "
                                       "OBJ output."));
 
     options -> addOption(RealOption("out-grid-dist")
-							 .store(&outputGridSampleDist_)
+						 .store(&outputGridSampleDist_)
                          .defaultValue(0.15)
                          .description("Controls the sampling distance of "
                                       "vertices on the pathway surface which "
@@ -171,7 +170,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "may yield visual artifacts."));
 
     options -> addOption(RealOption("out-vis-tweak")
-							 .store(&outputCorrectionThreshold_)
+						 .store(&outputCorrectionThreshold_)
                          .defaultValue(0.1)
                          .description("Visual tweaking factor that controls "
                                       "the smoothness of the pathway surface "
@@ -182,7 +181,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "visualisation artifacts."));
 
     options -> addOption(BooleanOption("out-detailed")
-							 .store(&outputDetailed_)
+						 .store(&outputDetailed_)
                          .defaultValue(false)
                          .description("If true, CHAP will write detailed per-"
                                       "frame information to a newline "
@@ -470,11 +469,17 @@ void
 trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
                                  const TopologyInformation &top)
 {
+    // set ath name of NDX file:
+    obtainNdxFilePathInfo();
+
+    
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
 
     // OUTPUT PARAMETERS
     //-------------------------------------------------------------------------
+
+    // TODO: own member function for parameter checking
 
     // add proper extensions to file names:
     // TODO: better in exporter code?
@@ -708,13 +713,22 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     std::string poreMappingSelCalString = "name CA";
     std::string poreMappingSelCogString = refselSelText;
 
-
     // create index groups from topology:
-    // TODO: this will probably not work for custom index groups
     gmx_ana_indexgrps_t *poreIdxGroups;
-    gmx_ana_indexgrps_init(&poreIdxGroups, 
-                           top.topology(), 
-                           NULL); 
+ 
+    // has external index file been specified?
+    if( customNdxFileName_.size() != 0 )
+    {
+       gmx_ana_indexgrps_init(&poreIdxGroups, 
+                              top.topology(), 
+                              customNdxFileName_.c_str());  
+    }
+    else
+    {
+        gmx_ana_indexgrps_init(&poreIdxGroups, 
+                               top.topology(), 
+                               NULL); 
+    }
 
     // create selections as defined above:
     poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
@@ -746,11 +760,21 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         solvMappingSelCol_.setOutputPosType("res_cog");
 
         // create index groups from topology:
-        // TODO: this will not work for custom index groups
         gmx_ana_indexgrps_t *solvIdxGroups;
-        gmx_ana_indexgrps_init(&solvIdxGroups,
-                               top.topology(),
-                               NULL);
+
+        // has custom index file been provided?
+        if( customNdxFileName_.size() != 0 )
+        {
+            gmx_ana_indexgrps_init(&solvIdxGroups,
+                                   top.topology(),
+                                   customNdxFileName_.c_str());
+        }
+        else
+        {
+            gmx_ana_indexgrps_init(&solvIdxGroups,
+                                   top.topology(),
+                                   NULL);
+        }
 
         // selection text:
         std::string solvMappingSelCogString = sel_[0].selectionText();
@@ -771,28 +795,22 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // PREPARE TOPOLOGY QUERIES
     //-------------------------------------------------------------------------
 
-		// load full topology:
-		t_topology *topol = top.topology();		
+    // load full topology:
+    t_topology *topol = top.topology();		
 
-		// access list of all atoms:
-		t_atoms atoms = topol -> atoms;
-    
-		// create atomprop struct:
-		gmx_atomprop_t aps = gmx_atomprop_init();
+    // access list of all atoms:
+    t_atoms atoms = topol -> atoms;
+
+    // create atomprop struct:
+    gmx_atomprop_t aps = gmx_atomprop_init();
 
     
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
 
-    // get location of program binary from program context:
-    const gmx::IProgramContext &programContext = gmx::getProgramContext();
-    std::string radiusFilePath = programContext.fullBinaryPath();
-
-    // obtain radius database location as relative path:
-//    auto lastSlash = radiusFilePath.find_last_of('/');
-
-    radiusFilePath = chapInstallBase() + std::string("/chap/share/data/vdwradii/");
-    
+    // base path to location of van-der-Waals radius databases:
+    std::string radiusFilePath = chapInstallBase() +
+            std::string("/chap/share/data/vdwradii/");
 
     // select appropriate database file:
     if( pfVdwRadiusDatabase_ == eVdwRadiusDatabaseHoleAmberuni )
@@ -2127,8 +2145,9 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 }
 
 
-
-
+/*!
+ *
+ */
 void
 trajectoryAnalysis::writeOutput()
 {
@@ -2136,16 +2155,32 @@ trajectoryAnalysis::writeOutput()
 }
 
 
+/*!
+ * Auxiliary function to find the name of the NDX file (given with the -n flag)
+ * directly from the command line call string, as there seems to be no
+ * convenient way of getting it directly from Gromacs.
+ */
+void
+trajectoryAnalysis::obtainNdxFilePathInfo()
+{
+    // name of index file flag:
+    std::string flagName = " -n ";
 
+    // find name of custom index file from command line:
+    std::string callString = chapCommandLine();
+    auto startPos = callString.find(flagName);
 
-
-
-
-
-
-
-
-
-
-
+    // has an index file been specified explicitly?
+    if( startPos == std::string::npos )
+    {
+        // empty string signifies there is no explicit index file:
+        customNdxFileName_ = "";
+    }
+    else
+    {
+        startPos += flagName.size();
+        auto substrLen = callString.find(" ", startPos) - startPos;
+        customNdxFileName_ = callString.substr(startPos, substrLen);
+    }
+}
 
