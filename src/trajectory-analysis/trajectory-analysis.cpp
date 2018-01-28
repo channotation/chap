@@ -713,21 +713,22 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     std::string poreMappingSelCalString = "name CA";
     std::string poreMappingSelCogString = refselSelText;
 
-    // extract name of custom index file (if any) from call string:
-    // (NOTE: this is a hack, but I could not find a way of getting this info
-    // from the Gromacs framework directly...)
-//    std::string callString = programContext.commandLine();
-//    auto startPos = callString.find(" -n ") + 4;
-//    auto substrLen = callString.find(" ", startPos) - startPos;
-//    std::string customNdxFileName = callString.substr(startPos, substrLen);
-   
-    std::cout<<"ndx = "<<customNdxFileName_<<std::endl;
-
     // create index groups from topology:
     gmx_ana_indexgrps_t *poreIdxGroups;
-    gmx_ana_indexgrps_init(&poreIdxGroups, 
-                           top.topology(), 
-                           customNdxFileName_.c_str()); 
+ 
+    // has external index file been specified?
+    if( customNdxFileName_.size() != 0 )
+    {
+       gmx_ana_indexgrps_init(&poreIdxGroups, 
+                              top.topology(), 
+                              customNdxFileName_.c_str());  
+    }
+    else
+    {
+        gmx_ana_indexgrps_init(&poreIdxGroups, 
+                               top.topology(), 
+                               NULL); 
+    }
 
     // create selections as defined above:
     poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
@@ -760,9 +761,20 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
 
         // create index groups from topology:
         gmx_ana_indexgrps_t *solvIdxGroups;
-        gmx_ana_indexgrps_init(&solvIdxGroups,
-                               top.topology(),
-                               customNdxFileName_.c_str());
+
+        // has custom index file been provided?
+        if( customNdxFileName_.size() != 0 )
+        {
+            gmx_ana_indexgrps_init(&solvIdxGroups,
+                                   top.topology(),
+                                   customNdxFileName_.c_str());
+        }
+        else
+        {
+            gmx_ana_indexgrps_init(&solvIdxGroups,
+                                   top.topology(),
+                                   NULL);
+        }
 
         // selection text:
         std::string solvMappingSelCogString = sel_[0].selectionText();
@@ -783,14 +795,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // PREPARE TOPOLOGY QUERIES
     //-------------------------------------------------------------------------
 
-		// load full topology:
-		t_topology *topol = top.topology();		
+    // load full topology:
+    t_topology *topol = top.topology();		
 
-		// access list of all atoms:
-		t_atoms atoms = topol -> atoms;
-    
-		// create atomprop struct:
-		gmx_atomprop_t aps = gmx_atomprop_init();
+    // access list of all atoms:
+    t_atoms atoms = topol -> atoms;
+
+    // create atomprop struct:
+    gmx_atomprop_t aps = gmx_atomprop_init();
 
     
     // GET ATOM RADII FROM TOPOLOGY
@@ -2152,11 +2164,25 @@ trajectoryAnalysis::writeOutput()
 void
 trajectoryAnalysis::obtainNdxFilePathInfo()
 {
+    // name of index file flag:
+    std::string flagName = " -n ";
+
     // find name of custom index file from command line:
     std::string callString = chapCommandLine();
-    auto startPos = callString.find(" -n ") + 4;
-    auto substrLen = callString.find(" ", startPos) - startPos;
-    customNdxFileName_ = callString.substr(startPos, substrLen); 
+    auto startPos = callString.find(flagName);
+
+    // has an index file been specified explicitly?
+    if( startPos == std::string::npos )
+    {
+        // empty string signifies there is no explicit index file:
+        customNdxFileName_ = "";
+    }
+    else
+    {
+        startPos += flagName.size();
+        auto substrLen = callString.find(" ", startPos) - startPos;
+        customNdxFileName_ = callString.substr(startPos, substrLen);
+    }
 }
 
 
