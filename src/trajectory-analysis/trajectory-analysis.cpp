@@ -66,23 +66,17 @@ ChapTrajectoryAnalysis::ChapTrajectoryAnalysis()
     , pfChanDirVec_(3)
     , saMaxCoolingIter_(1e3)
     , saNumCostSamples_(50)
-    , saConvRelTol_(1e-10)
     , saInitTemp_(10.0)
     , saCoolingFactor_(0.99)
     , saStepLengthFactor_(0.01)
-    , saUseAdaptiveCandGen_(false)
 {
+    // register data containers:
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
     frameStreamData_.setMultipoint(true); 
-
-    // register internal timing dataset:
-    registerAnalysisDataset(&timingData_, "timingData");
 
     // default initial probe position and chanell direction:
     pfInitProbePos_ = {std::nan(""), std::nan(""), std::nan("")};
     pfChanDirVec_ = {0.0, 0.0, 1.0};
-
-
 }
 
 
@@ -91,8 +85,9 @@ ChapTrajectoryAnalysis::ChapTrajectoryAnalysis()
  *
  */
 void
-ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
-                                TrajectoryAnalysisSettings *settings)
+ChapTrajectoryAnalysis::initOptions(
+        IOptionsContainer *options,
+        TrajectoryAnalysisSettings *settings)
 {    
     // HELP TEXT
     //-------------------------------------------------------------------------
@@ -127,13 +122,13 @@ ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
     //-------------------------------------------------------------------------
 
     options -> addOption(SelectionOption("sel-pathway")
-                         .store(&refsel_).required()
+                         .store(&pathwaySel_).required()
                          .description("Reference group that defines the "
                                       "permeation pathway (usually "
                                       "'Protein') "));
 
     options -> addOption(SelectionOption("sel-solvent")
-                         .storeVector(&sel_)
+                         .storeVector(&solventSel_)
                          .description("Group of small particles to calculate "
                                       "density of (usually 'Water')"));
 
@@ -268,9 +263,9 @@ ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "moved in either direction."));
 
     options -> addOption(SelectionOption("pf-sel-ipp")
-                         .store(&ippsel_)
-                         .storeIsSet(&ippselIsSet_)
-							 .description("Selection of atoms whose COM will be "
+                         .store(&ippSel_)
+                         .storeIsSet(&ippSelIsSet_)
+                         .description("Selection of atoms whose COM will be "
                                       "used as initial probe position. If not "
                                       "set, the selection specified with "
                                       "'sel-pathway' will be used."));
@@ -283,7 +278,7 @@ ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "probe-based pore finding algorithms. "
                                       "If set explicitly, it will overwrite "
                                       "the COM-based initial position set "
-                                      "with the ippselflag."));
+                                      "with the ippSelflag."));
 
     std::vector<real> chanDirVec_ = {0.0, 0.0, 1.0};
     options -> addOption(RealOption("pf-chan-dir-vec")
@@ -295,7 +290,7 @@ ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
    
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
-							 .store(&cutoff_)
+                         .store(&cutoff_)
                          .defaultValue(std::nan(""))
                          .storeIsSet(&cutoffIsSet_)
                          .description("Cutoff for distance searches in path "
@@ -465,26 +460,22 @@ ChapTrajectoryAnalysis::initOptions(IOptionsContainer          *options,
 }
 
 
-
-
-/*
+/*!
  * 
  */
 void
-ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
-                                 const TopologyInformation &top)
+ChapTrajectoryAnalysis::initAnalysis(
+        const TrajectoryAnalysisSettings& /*settings*/,
+        const TopologyInformation &top)
 {
     // set ath name of NDX file:
     obtainNdxFilePathInfo();
 
     // check valididty of input parameters:
     checkParameters();
-    
-
-    
+        
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
-
 
 
     // PREPARE DATSETS
@@ -589,15 +580,6 @@ ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*setting
     frameStreamData_.addModule(jsonFrameExporter);
 
 
-    // TIMING DATA
-    //-------------------------------------------------------------------------
-
-    // TODO: perhaps mive to constructor?
-    timingData_.setDataSetCount(1);
-    timingData_.setColumnCount(0, 1);
-    timingData_.setMultipoint(false);
-
-
     // PREPARE SELECTIONS FOR PORE PARTICLE MAPPING
     //-------------------------------------------------------------------------
 
@@ -606,10 +588,9 @@ ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*setting
     poreMappingSelCol_.setOutputPosType("res_cog");
   
     // selection of C-alpha atoms:
-    // TODO: this will not work if only part of protein is specified as pore
-    std::string refselSelText = refsel_.selectionText();
+    std::string pathwaySelSelText = pathwaySel_.selectionText();
     std::string poreMappingSelCalString = pfSelString_;
-    std::string poreMappingSelCogString = refselSelText;
+    std::string poreMappingSelCogString = pathwaySelSelText;
 
     // create index groups from topology:
     gmx_ana_indexgrps_t *poreIdxGroups;
@@ -653,7 +634,7 @@ ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*setting
     //-------------------------------------------------------------------------
 
     // only do this if solvent selection specified:
-    if( !sel_.empty() )
+    if( !solventSel_.empty() )
     {
         // prepare centre of geometry selection collection:
         solvMappingSelCol_.setReferencePosType("res_cog");
@@ -677,7 +658,7 @@ ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*setting
         }
 
         // selection text:
-        std::string solvMappingSelCogString = sel_[0].selectionText();
+        std::string solvMappingSelCogString = solventSel_[0].selectionText();
 
         // create selection as defined by user:
         solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
@@ -746,7 +727,7 @@ ChapTrajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*setting
     }
 
     // build vdw radius lookup map:
-    vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
+    vdwRadii_ = vrp.vdwRadiiForTopology(top, pathwaySel_.mappedIds());
 
     // find maximum van der Waals radius:
     maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
@@ -842,18 +823,14 @@ ChapTrajectoryAnalysis::analyzeFrame(
         t_pbc *pbc,
         TrajectoryAnalysisModuleData *pdata)
 {
-
     // get thread-local selections:
-		const Selection &refSelection = pdata -> parallelSelection(refsel_);
-//    const Selection &initProbePosSelection = pdata -> parallelSelection(initProbePosSelection_);
+    const Selection &refSelection = pdata -> parallelSelection(pathwaySel_);
 
     // get data handles for this frame:
     AnalysisDataHandle dhFrameStream = pdata -> dataHandle(frameStreamData_);
-    AnalysisDataHandle dhTiming = pdata -> dataHandle(timingData_);
 
-		// get data for frame number frnr into data handle:
+    // get data for frame number frnr into data handle:
     dhFrameStream.startFrame(frnr, fr.time);
-    dhTiming.startFrame(frnr, fr.time);
 
 
     // UPDATE INITIAL PROBE POSITION FOR THIS FRAME
@@ -866,15 +843,15 @@ ChapTrajectoryAnalysis::analyzeFrame(
         Selection tmpsel;
   
         // has a group for specifying initial probe position been set?
-        if( ippselIsSet_ == true )
+        if( ippSelIsSet_ == true )
         {
             // use explicitly given selection:
-            tmpsel = ippsel_;
+            tmpsel = ippSel_;
         }
         else 
         {
             // default to overall group of pore forming particles:
-            tmpsel = refsel_;
+            tmpsel = pathwaySel_;
         }
      
         // load data into initial position selection:
@@ -1193,7 +1170,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
     int numSolvInsidePore = 0;
 
     // only do this if solvent selection is valid:
-    if( !sel_.empty() )
+    if( !solventSel_.empty() )
     {
         // evaluate solevnt mapping selections for this frame:
         t_trxframe tmpFrame = fr;
@@ -1407,30 +1384,11 @@ ChapTrajectoryAnalysis::analyzeFrame(
     }
 
 
-    // WRITE PORE TO OBJ FILE
-    //-------------------------------------------------------------------------
-
-    // TODO: this should be moved to a separate binary!
-/*
-    MolecularPathObjExporter molPathExp;
-    molPathExp(objOutputFileName_.c_str(),
-               "molecular_pathway",
-               molPath);
-*/
-
-    // ADD TIMING DATA TO DATA HANDLE
-    //-------------------------------------------------------------------------
-
-    dhTiming.selectDataSet(0);
-    dhTiming.setPoint(0, 1.1111);
-
-
     // FINISH FRAME
     //-------------------------------------------------------------------------
 
-		// finish analysis of current frame:
+    // finish analysis of current frame:
     dhFrameStream.finishFrame();
-    dhTiming.finishFrame();
 }
 
 
@@ -2081,3 +2039,4 @@ ChapTrajectoryAnalysis::checkParameters()
     hydrophobKernelParams_.setEvalRangeCutoff(hpEvalRangeCutoff_);
     hydrophobKernelParams_.setMaxEvalPointDist(hpResolution_);
 }
+

@@ -79,11 +79,11 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
         std::string outputPdbFileName_;
 
         
-        // selections:
-        SelectionList sel_;	    // selection of the small particle groups
-        Selection refsel_;   	// selection of the reference group
-        Selection ippsel_;   	// selection of the initial probe position group
-        bool ippselIsSet_;
+        // user specified selections:
+        SelectionList solventSel_;
+        Selection pathwaySel_;
+        Selection ippSel_;
+        bool ippSelIsSet_;
 
         
         // internal selections for pore mapping:
@@ -99,8 +99,6 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
 
         // data containers:
         AnalysisData frameStreamData_;
-        AnalysisData dataResMappingPdb_;
-        AnalysisData timingData_; 
 
 
         // pore residue chemical and physical information:
@@ -152,11 +150,10 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
         int saMaxCoolingIter_;
         int saNumCostSamples_;
         real saXi_;
-        real saConvRelTol_;
         real saInitTemp_;
         real saCoolingFactor_;
         real saStepLengthFactor_;
-        bool saUseAdaptiveCandGen_;
+
 
         // Nelder-Mead parameters:
         int nmMaxIter_;
