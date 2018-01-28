@@ -357,7 +357,7 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
     //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-pl-margin")
-							 .store(&poreMappingMargin_)
+						 .store(&poreMappingMargin_)
                          .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
@@ -365,6 +365,11 @@ trajectoryAnalysis::initOptions(IOptionsContainer          *options,
                                       "than the local path radius plus this "
                                       "margin from the pathway's centre "
                                       "line."));
+
+    options -> addOption(StringOption("pm-pf-sel")
+						 .store(&pfSelString_)
+                         .defaultValue("name CA")
+                         .description(""));
 
 
     // DENSITY ESTIMATION PARAMETERS
@@ -710,7 +715,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // selection of C-alpha atoms:
     // TODO: this will not work if only part of protein is specified as pore
     std::string refselSelText = refsel_.selectionText();
-    std::string poreMappingSelCalString = "name CA";
+    std::string poreMappingSelCalString = pfSelString_;
     std::string poreMappingSelCogString = refselSelText;
 
     // create index groups from topology:
@@ -740,12 +745,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // free memory:
     gmx_ana_indexgrps_free(poreIdxGroups);
 
-    // validate that there is a c-alpha for each residue:
+    // do we have one C-alpha for each pore-forming residue?
     if( poreMappingSelCal_.posCount() != poreMappingSelCog_.posCount() )
     {
-        std::cerr<<"ERROR: Could not find a C-alpha for each residue in pore forming group."
-                 <<std::endl<<"Is your pore a protein?"<<std::endl;
-        std::abort();
+        findPfResidues_ = false;  
+    }
+    else
+    {
+        findPfResidues_ = true;
     }
 
 
@@ -850,16 +857,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
    
     // create radius provider and build lookup table:
     VdwRadiusProvider vrp;
-    try
-    {
-        vrp.lookupTableFromJson(radiiDoc);
-    }
-    catch( std::exception& e )
-    {
-        std::cerr<<"ERROR while creating van der Waals radius lookup table:"<<std::endl;
-        std::cerr<<e.what()<<std::endl; 
-        std::abort();
-    }
+    vrp.lookupTableFromJson(radiiDoc);
 
 
     // TRACK C-ALPHAS and RESIDUE INDICES
@@ -871,7 +869,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         // check for calpha:
         if( std::strcmp(*atoms.atomname[i], "CA") == 0 )
         {
-           poreCAlphaIndices_.push_back(i); 
+            poreCAlphaIndices_.push_back(i); 
         }
 
         // track residue ID of atoms: 
@@ -922,8 +920,8 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // FINALISE ATOMPROP QUERIES
     //-------------------------------------------------------------------------
     
-		// delete atomprop struct:
-		gmx_atomprop_destroy(aps);
+    // delete atomprop struct:
+    gmx_atomprop_destroy(aps);
 
     // set user-defined default radius?
     if( pfDefaultVdwRadiusIsSet_ )
@@ -1283,7 +1281,8 @@ trajectoryAnalysis::analyzeFrame(
     {
         // is residue pore lining and has COG closer to centreline than CA?
         if( it -> second[RR] < poreCalMappedCoords[it->first][RR] &&
-            poreLining[it -> first] == true )
+            poreLining[it -> first] == true &&
+            findPfResidues_ == true )
         {
             poreFacing[it->first] = true;
             nPoreFacing++;

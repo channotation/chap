@@ -83,7 +83,12 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         Selection                        refsel_;   	// selection of the reference group
         Selection                        ippsel_;   	// selection of the initial probe position group
 
+        
+        bool findPfResidues_;
+
+
         // internal selections for pore mapping:
+        std::string                      pfSelString_;
         SelectionCollection              poreMappingSelCol_;
         SelectionCollection              solvMappingSelCol_;
         Selection                        poreMappingSelCal_;
