@@ -63,8 +63,13 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
 
     protected:
 
+        // find file path fo index files:
         virtual void obtainNdxFilePathInfo();   
         std::string customNdxFileName_;
+
+        // check input parameter validity:
+        virtual void checkParameters();
+
 
     private:
 

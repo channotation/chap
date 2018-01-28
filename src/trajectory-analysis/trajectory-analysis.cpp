@@ -477,121 +477,14 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     // set ath name of NDX file:
     obtainNdxFilePathInfo();
 
+    // check valididty of input parameters:
+    checkParameters();
+    
+
     
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
 
-    // OUTPUT PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // TODO: own member function for parameter checking
-
-    // add proper extensions to file names:
-    // TODO: better in exporter code?
-    outputJsonFileName_ = outputBaseFileName_ + ".json";
-    outputPdbFileName_ = outputBaseFileName_ + ".pdb";
-
-    // sanity checks;
-    if( outputExtrapDist_ < 0.0 )
-    {
-        throw std::runtime_error("Parameter -out-extrap-dist may not be "
-                                 "negative.");
-    }
-    if( outputGridSampleDist_ <= 0.0 )
-    {
-        throw std::runtime_error("Parameter -out-grid-dist must be strictly "
-                                 "positive.");
-    }
-    if( outputCorrectionThreshold_ >= 1.0 or 
-        outputCorrectionThreshold_ <= -1.0)
-    {
-        throw std::runtime_error("Parameter -out-vis-teak must be in interval "
-                                 "(-1, 1).");
-    }
-
-
-    // PATH FINDING PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // set inut-dependent defaults:
-    if( !saRandomSeedIsSet_ )
-    {
-        saRandomSeed_ = gmx::makeRandomSeed();
-    }
-
-    // set parameters in map:
-    pfPar_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
-
-    pfPar_["pfCylRad"] = pfMaxProbeRadius_;
-    pfPar_["pfCylNumSteps"] = pfPar_["pfProbeMaxSteps"];
-    pfPar_["pfCylStepLength"] = pfProbeStepLength_;
-
-    pfPar_["saMaxCoolingIter"] = saMaxCoolingIter_;
-    pfPar_["saRandomSeed"] = saRandomSeed_;
-    pfPar_["saNumCostSamples"] = saNumCostSamples_;
-
-    pfPar_["nmMaxIter"] = nmMaxIter_;
-
-
-    // 
-    pfParams_.setProbeStepLength(pfProbeStepLength_);
-    pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
-    pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
-    
-    if( cutoffIsSet_ )
-    {
-        // this will be determined automatically if not set explcitly:
-        pfParams_.setNbhCutoff(cutoff_);
-    }
-
-    // PATH MAPPING PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // sanity checks and automatic defaults:
-    if( mappingParams_.mapTol_ <= 0.0 )
-    {
-        throw(std::runtime_error("Mapping tolerance parameter pm-tol must be positive."));
-    }
-
-    if( mappingParams_.extrapDist_ <= 0 )
-    {
-        throw(std::runtime_error("Extrapolation distance set with pm-extrap-dist may not be negative."));
-    }
-
-    if( mappingParams_.sampleStep_ <= 0 )
-    {
-        throw(std::runtime_error("Sampling step set with pm-sample-step must be positive."));
-    }
-
-
-    // DENSITY ESTIMATION PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // which estimator will be used?
-    if( deMethod_ == eDensityEstimatorHistogram )
-    {
-        deParams_.setBinWidth(deResolution_);
-    }
-    else if( deMethod_ == eDensityEstimatorKernel )
-    {
-        deParams_.setKernelFunction(eKernelFunctionGaussian);
-        deParams_.setBandWidth(deBandWidth_);
-        deParams_.setBandWidthScale(deBandWidthScale_);
-        deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
-        deParams_.setMaxEvalPointDist(deResolution_);
-    }
-
-    
-    // HYDROPHOBICITY PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // parameters for the hydrophobicity kernel:
-    hpResolution_ = deResolution_;
-    hpEvalRangeCutoff_ = deEvalRangeCutoff_;
-    hydrophobKernelParams_.setKernelFunction(eKernelFunctionGaussian);
-    hydrophobKernelParams_.setBandWidth(hpBandWidth_);
-    hydrophobKernelParams_.setEvalRangeCutoff(hpEvalRangeCutoff_);
-    hydrophobKernelParams_.setMaxEvalPointDist(hpResolution_);
 
 
     // PREPARE DATSETS
@@ -2093,3 +1986,127 @@ trajectoryAnalysis::obtainNdxFilePathInfo()
     }
 }
 
+
+/*! 
+ * Auxiliary function for checking the validity of various input parameters. 
+ * Bundled here to keep initAnalysis() uncluttered.
+ */
+void
+trajectoryAnalysis::checkParameters()
+{
+    // OUTPUT PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // add proper extensions to file names:
+    // TODO: better in exporter code?
+    outputJsonFileName_ = outputBaseFileName_ + ".json";
+    outputPdbFileName_ = outputBaseFileName_ + ".pdb";
+
+    // sanity checks:
+    if( outputExtrapDist_ < 0.0 )
+    {
+        throw std::runtime_error("Parameter -out-extrap-dist may not be "
+                                 "negative.");
+    }
+    if( outputGridSampleDist_ <= 0.0 )
+    {
+        throw std::runtime_error("Parameter -out-grid-dist must be strictly "
+                                 "positive.");
+    }
+    if( outputCorrectionThreshold_ >= 1.0 or 
+        outputCorrectionThreshold_ <= -1.0)
+    {
+        throw std::runtime_error("Parameter -out-vis-teak must be in interval "
+                                 "(-1, 1).");
+    }
+
+
+    // PATH FINDING PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // create random seed unless user has set seed explicitly:
+    if( !saRandomSeedIsSet_ )
+    {
+        saRandomSeed_ = gmx::makeRandomSeed();
+    }
+
+    // set parameters in map:
+    // TODO: these should all be refactored into struct:
+    pfPar_["pfProbeMaxSteps"] = pfMaxProbeSteps_;
+
+    pfPar_["pfCylRad"] = pfMaxProbeRadius_;
+    pfPar_["pfCylNumSteps"] = pfPar_["pfProbeMaxSteps"];
+    pfPar_["pfCylStepLength"] = pfProbeStepLength_;
+
+    pfPar_["saMaxCoolingIter"] = saMaxCoolingIter_;
+    pfPar_["saRandomSeed"] = saRandomSeed_;
+    pfPar_["saNumCostSamples"] = saNumCostSamples_;
+
+    pfPar_["nmMaxIter"] = nmMaxIter_;
+
+    // set parameters in struct:
+    pfParams_.setProbeStepLength(pfProbeStepLength_);
+    pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
+    pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
+    
+    if( cutoffIsSet_ )
+    {
+        // this will be determined automatically if not set explcitly:
+        pfParams_.setNbhCutoff(cutoff_);
+    }
+
+
+    // PATH MAPPING PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // TODO: is this still used?
+
+    // sanity checks and automatic defaults:
+    if( mappingParams_.mapTol_ <= 0.0 )
+    {
+        throw std::runtime_error("Mapping tolerance parameter pm-tol must be "
+                                 "positive.");
+    }
+
+    if( mappingParams_.extrapDist_ <= 0 )
+    {
+        throw std::runtime_error("Extrapolation distance set with "
+                                 "'pm-extrap-dist' may not be negative.");
+    }
+
+    if( mappingParams_.sampleStep_ <= 0 )
+    {
+        throw std::runtime_error("Sampling step set with pm-sample-step must "
+                                 "be positive.");
+    }
+
+
+    // DENSITY ESTIMATION PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // which estimator will be used?
+    if( deMethod_ == eDensityEstimatorHistogram )
+    {
+        deParams_.setBinWidth(deResolution_);
+    }
+    else if( deMethod_ == eDensityEstimatorKernel )
+    {
+        deParams_.setKernelFunction(eKernelFunctionGaussian);
+        deParams_.setBandWidth(deBandWidth_);
+        deParams_.setBandWidthScale(deBandWidthScale_);
+        deParams_.setEvalRangeCutoff(deEvalRangeCutoff_);
+        deParams_.setMaxEvalPointDist(deResolution_);
+    }
+
+    
+    // HYDROPHOBICITY PARAMETERS
+    //-------------------------------------------------------------------------
+
+    // parameters for the hydrophobicity kernel:
+    hpResolution_ = deResolution_;
+    hpEvalRangeCutoff_ = deEvalRangeCutoff_;
+    hydrophobKernelParams_.setKernelFunction(eKernelFunctionGaussian);
+    hydrophobKernelParams_.setBandWidth(hpBandWidth_);
+    hydrophobKernelParams_.setEvalRangeCutoff(hpEvalRangeCutoff_);
+    hydrophobKernelParams_.setMaxEvalPointDist(hpResolution_);
+}
