@@ -125,17 +125,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         real hpResolution_;
         DensityEstimationParameters hydrophobKernelParams_;
 
-
-        // pore particle and group indices:
-        std::vector<int> poreCAlphaIndices_;                    // c-alpha atomIds
-        std::vector<int> residueIndices_;                       // all resIds
-        std::vector<int> poreResidueIndices_;                   // resIds of pore selection
-        std::vector<int> poreAtomIndices_;                      // atomIds of pore selection
-        std::map<int, int> atomResidueMapping_;                 // maps atomId onto resId
-        std::map<int, std::vector<int>> residueAtomMapping_;    // maps resId onto atomId
-
-
-
         int outputNumPoints_;   // number of points on path sample
         real outputExtrapDist_;
 

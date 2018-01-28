@@ -799,19 +799,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     }
 
     
-    // PREPARE TOPOLOGY QUERIES
-    //-------------------------------------------------------------------------
-
-    // load full topology:
-    t_topology *topol = top.topology();		
-
-    // access list of all atoms:
-    t_atoms atoms = topol -> atoms;
-
-    // create atomprop struct:
-    gmx_atomprop_t aps = gmx_atomprop_init();
-
-    
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
 
@@ -859,70 +846,6 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     VdwRadiusProvider vrp;
     vrp.lookupTableFromJson(radiiDoc);
 
-
-    // TRACK C-ALPHAS and RESIDUE INDICES
-    //-------------------------------------------------------------------------
-   
-    // loop through all atoms, get index lists for c-alphas and residues:
-    for(int i = 0; i < atoms.nr; i++)
-    {
-        // check for calpha:
-        if( std::strcmp(*atoms.atomname[i], "CA") == 0 )
-        {
-            poreCAlphaIndices_.push_back(i); 
-        }
-
-        // track residue ID of atoms: 
-        residueIndices_.push_back(atoms.atom[i].resind);
-        atomResidueMapping_[i] = atoms.atom[i].resind;
-        residueAtomMapping_[atoms.atom[i].resind].push_back(i);
-    }
-
-    // remove duplicate residue indices:
-    std::vector<int>::iterator it;
-    it = std::unique(residueIndices_.begin(), residueIndices_.end());
-    residueIndices_.resize(std::distance(residueIndices_.begin(), it));
-
-    // loop over residues:
-    ConstArrayRef<int> refselAtomIdx = refsel_.atomIndices();
-    for(it = residueIndices_.begin(); it != residueIndices_.end(); it++)
-    {
-        // current residue id:
-        int resId = *it;
-    
-        // get vector of all atom indices in this residue:
-        std::vector<int> atomIdx = residueAtomMapping_[resId];
-
-        // for each atom in residue, check if it belongs to pore selection:
-        bool addResidue = false;
-        std::vector<int>::iterator jt;
-        for(jt = atomIdx.begin(); jt != atomIdx.end(); jt++)
-        {
-            // check if atom belongs to pore selection:
-            if( std::find(refselAtomIdx.begin(), refselAtomIdx.end(), *jt) != refselAtomIdx.end() )
-            {
-                // add atom to list of pore atoms:
-                poreAtomIndices_.push_back(*jt);
-
-                // if at least one atom belongs to pore group, the whole residue will be considered:
-                addResidue = true;
-            }
-        }
-
-        // add residue, if at least one atom is part of pore:
-        if( addResidue == true )
-        {
-            poreResidueIndices_.push_back(resId);
-        }
-    }
-
-
-    // FINALISE ATOMPROP QUERIES
-    //-------------------------------------------------------------------------
-    
-    // delete atomprop struct:
-    gmx_atomprop_destroy(aps);
-
     // set user-defined default radius?
     if( pfDefaultVdwRadiusIsSet_ )
     {
@@ -930,16 +853,7 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
     }
 
     // build vdw radius lookup map:
-    try
-    {
-        vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
-    }
-    catch( std::exception& e )
-    {
-        std::cerr<<"ERROR in van der Waals radius lookup:"<<std::endl;
-        std::cerr<<e.what()<<std::endl;
-        std::abort();
-    } 
+    vdwRadii_ = vrp.vdwRadiiForTopology(top, refsel_.mappedIds());
 
     // find maximum van der Waals radius:
     maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;
@@ -990,10 +904,9 @@ trajectoryAnalysis::initAnalysis(const TrajectoryAnalysisSettings& /*settings*/,
         // has user provided a file name?
         if( !hydrophobicityJsonIsSet_ )
         {
-            std::cerr<<"ERROR: Option hydrophob-database set to 'user', but "
-            "no custom hydrophobicity scale was specified with "
-            "hydrophob-json."<<std::endl;
-            std::abort();
+            throw std::runtime_error("Option hydrophob-database set to 'user', "
+                                     "but no custom hydrophobicity scale was "
+                                     "specified with '-hydrophob-json'.");
         }
     }
 
@@ -1088,47 +1001,44 @@ trajectoryAnalysis::analyzeFrame(
             totalMass += atom.mass();
 
             // add to COM vector:
-            // TODO: implement separate centre of geometry and centre of mass 
-            centreOfMass[0] += atom.mass() * atom.x()[0];
-            centreOfMass[1] += atom.mass() * atom.x()[1];
-            centreOfMass[2] += atom.mass() * atom.x()[2];
+            centreOfMass[XX] += atom.mass() * atom.x()[XX];
+            centreOfMass[YY] += atom.mass() * atom.x()[YY];
+            centreOfMass[ZZ] += atom.mass() * atom.x()[ZZ];
         }
 
         // scale COM vector by total MASS:
-        centreOfMass[0] /= 1.0 * totalMass;
-        centreOfMass[1] /= 1.0 * totalMass;
-        centreOfMass[2] /= 1.0 * totalMass; 
+        centreOfMass[XX] /= 1.0 * totalMass;
+        centreOfMass[YY] /= 1.0 * totalMass;
+        centreOfMass[ZZ] /= 1.0 * totalMass; 
 
         // set initial probe position:
-        pfInitProbePos_[0] = centreOfMass[0];
-        pfInitProbePos_[1] = centreOfMass[1];
-        pfInitProbePos_[2] = centreOfMass[2];
+        pfInitProbePos_[XX] = centreOfMass[XX];
+        pfInitProbePos_[YY] = centreOfMass[YY];
+        pfInitProbePos_[ZZ] = centreOfMass[ZZ];
     }
 
 
     // GET VDW RADII FOR SELECTION
     //-------------------------------------------------------------------------
-    // TODO: Move this to separate class and test!
-    // TODO: Should then also work for coarse-grained situations!
 
-		// create vector of van der Waals radii and allocate memory:
+    // create vector of van der Waals radii and allocate memory:
     std::vector<real> selVdwRadii;
-		selVdwRadii.reserve(refSelection.atomCount());
+    selVdwRadii.reserve(refSelection.atomCount());
 
     // loop over all atoms in system and get vdW-radii:
-		for(int i=0; i<refSelection.atomCount(); i++)
+    for(int i=0; i<refSelection.atomCount(); i++)
     {
         // get global index of i-th atom in selection:
         gmx::SelectionPosition atom = refSelection.position(i);
         int idx = atom.mappedId();
 
-				// add radius to vector of radii:
-				selVdwRadii.push_back(vdwRadii_.at(idx));
-		}
+        // add radius to vector of radii:
+        selVdwRadii.push_back(vdwRadii_.at(idx));
+	}
 
 
-		// PORE FINDING AND RADIUS CALCULATION
-		// ------------------------------------------------------------------------
+	// PORE FINDING AND RADIUS CALCULATION
+	// ------------------------------------------------------------------------
 
     // vectors as RVec:
     RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
