@@ -229,26 +229,6 @@ MolecularPath::~MolecularPath()
 
 
 /*!
- * Auxiliary function for calculating the number of sample points used in the
- * initial step of particle to path mapping. The number of sample points is 
- * determined according to
- *
- * \f[
- *      N = \left\lceil \frac{L + 2d}{\Delta s} \right\rceil
- * \f]
- *
- * where \f$ L \f$ is the length of the path, \f$ d \f$ is the extrapolation 
- * at either endpoint and \f$ \Delta s \f$ is the target step length. 
- */
-inline
-int
-MolecularPath::numSamplePoints(const PathMappingParameters &params)
-{
-    return std::ceil( (2.0*params.extrapDist_ + length()) / params.sampleStep_ );
-}
-
-
-/*!
  * Function for mapping a set of Cartesian positions onto the centre line 
  * spline curve.
  *
@@ -257,8 +237,7 @@ MolecularPath::numSamplePoints(const PathMappingParameters &params)
  * input position.
  */
 std::vector<gmx::RVec>
-MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
-                            const PathMappingParameters /*&params*/)
+MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions)
 {
     // map all input positions onto centre line:
     std::vector<gmx::RVec> mappedPositions;
@@ -282,8 +261,7 @@ MolecularPath::mapPositions(const std::vector<gmx::RVec> &positions,
  * coordinates.
  */
 std::map<int, gmx::RVec>
-MolecularPath::mapSelection(const gmx::Selection &mapSel,
-                            const PathMappingParameters /*&params*/)
+MolecularPath::mapSelection(const gmx::Selection &mapSel)
 {
     // build map of pathway mapped coordinates:
     std::map<int, gmx::RVec> mappedCoords;

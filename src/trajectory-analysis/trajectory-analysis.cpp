@@ -986,9 +986,7 @@ trajectoryAnalysis::analyzeFrame(
         // map initial probe position onto pathway:
         std::vector<gmx::RVec> ipp;
         ipp.push_back(initProbePos);
-        std::vector<gmx::RVec> mappedIpp = molPath.mapPositions(
-                ipp, 
-                mappingParams_);
+        std::vector<gmx::RVec> mappedIpp = molPath.mapPositions(ipp);
 
         // shift coordinates of molecular path appropriately:
         molPath.shift(mappedIpp.front());
@@ -1047,15 +1045,13 @@ trajectoryAnalysis::analyzeFrame(
     // map pore residue COG onto pathway:
     clock_t tMapResCog = std::clock();
     std::map<int, gmx::RVec> poreCogMappedCoords = molPath.mapSelection(
-            poreMappingSelCog, 
-            mappingParams_);
+            poreMappingSelCog);
     tMapResCog = (std::clock() - tMapResCog)/CLOCKS_PER_SEC;
 
     // map pore residue C-alpha onto pathway:
     clock_t tMapResCal = std::clock();
     std::map<int, gmx::RVec> poreCalMappedCoords = molPath.mapSelection(
-            poreMappingSelCal, 
-            mappingParams_);
+            poreMappingSelCal);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
 
     
@@ -1211,7 +1207,7 @@ trajectoryAnalysis::analyzeFrame(
 
         // map particles onto pathway:
         clock_t tMapSol = std::clock();
-        solventMappedCoords = molPath.mapSelection(solvMapSel, mappingParams_);
+        solventMappedCoords = molPath.mapSelection(solvMapSel);
         tMapSol = (std::clock() - tMapSol)/CLOCKS_PER_SEC;
 
         // find particles inside path (i.e. pore plus bulk sampling regime):
@@ -2053,31 +2049,6 @@ trajectoryAnalysis::checkParameters()
     {
         // this will be determined automatically if not set explcitly:
         pfParams_.setNbhCutoff(cutoff_);
-    }
-
-
-    // PATH MAPPING PARAMETERS
-    //-------------------------------------------------------------------------
-
-    // TODO: is this still used?
-
-    // sanity checks and automatic defaults:
-    if( mappingParams_.mapTol_ <= 0.0 )
-    {
-        throw std::runtime_error("Mapping tolerance parameter pm-tol must be "
-                                 "positive.");
-    }
-
-    if( mappingParams_.extrapDist_ <= 0 )
-    {
-        throw std::runtime_error("Extrapolation distance set with "
-                                 "'pm-extrap-dist' may not be negative.");
-    }
-
-    if( mappingParams_.sampleStep_ <= 0 )
-    {
-        throw std::runtime_error("Sampling step set with pm-sample-step must "
-                                 "be positive.");
     }
 
 

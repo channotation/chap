@@ -176,9 +176,6 @@ class trajectoryAnalysis : public TrajectoryAnalysisModule
         // Nelder-Mead parameters:
         int nmMaxIter_;
 
-        // path mapping parameters:
-        PathMappingParameters mappingParams_;
-
         // density estimation parameters:
         eDensityEstimator deMethod_;
         DensityEstimationParameters deParams_;
