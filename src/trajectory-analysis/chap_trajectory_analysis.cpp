@@ -1,24 +1,12 @@
-#include <algorithm>	// for std::max_element()
-#include <cmath>				// for std::sqrt()
-#include <fstream>
-#include <iomanip>
+#include <algorithm>
 #include <string>
-#include <cstring>
-#include <ctime>
-#include <regex>
 
-#include <gromacs/topology/atomprop.h>
 #include <gromacs/random/threefry.h>
-#include <gromacs/random/uniformrealdistribution.h>
-#include <gromacs/fileio/confio.h>
-#include <gromacs/utility/programcontext.h>
 
-#include "trajectory-analysis/trajectory-analysis.hpp"
+#include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
 #include "aggregation/boltzmann_energy_calculator.hpp"
 #include "aggregation/number_density_calculator.hpp"
-#include "aggregation/multiscalar_time_series.hpp"
-#include "aggregation/scalar_time_series.hpp"
 
 #include "config/config.hpp"
 #include "config/version.hpp"
@@ -32,7 +20,6 @@
 #include "io/analysis_data_json_frame_exporter.hpp"
 #include "io/json_doc_importer.hpp"
 #include "io/molecular_path_obj_exporter.hpp"
-#include "io/multiscalar_time_series_json_converter.hpp"
 #include "io/results_json_exporter.hpp"
 #include "io/spline_curve_1D_json_converter.hpp"
 #include "io/summary_statistics_json_converter.hpp"
@@ -44,16 +31,12 @@
 #include "statistics/summary_statistics.hpp"
 #include "statistics/weighted_kernel_density_estimator.hpp"
 
-#include "trajectory-analysis/analysis_data_long_format_plot_module.hpp"
-#include "trajectory-analysis/analysis_data_pdb_plot_module.hpp"
-
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 #include "path-finding/naive_cylindrical_path_finder.hpp"
 #include "path-finding/vdw_radius_provider.hpp"
 
 using namespace gmx;
-
 
 
 /*

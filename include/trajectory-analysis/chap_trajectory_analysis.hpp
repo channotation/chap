@@ -1,12 +1,9 @@
 #ifndef TRAJECTORYANALYSIS_HPP
 #define TRAJECTORYANALYSIS_HPP
 
-#include <cstdint>
-#include <iostream>
 #include <map>
-#include <unordered_map>
 #include <string>
-
+#include <unordered_map>
 #include <vector>
 
 #include <gromacs/trajectoryanalysis.h>

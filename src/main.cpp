@@ -2,7 +2,7 @@
 
 #include "config/back_matter.hpp"
 #include "config/front_matter.hpp"
-#include "trajectory-analysis/trajectory-analysis.hpp"
+#include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
 using namespace gmx;
 
