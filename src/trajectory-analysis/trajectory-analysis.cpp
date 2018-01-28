@@ -2145,15 +2145,14 @@ trajectoryAnalysis::finishAnalysis(int numFrames)
 }
 
 
-
-
+/*!
+ *
+ */
 void
 trajectoryAnalysis::writeOutput()
 {
 
 }
-
-
 
 
 /*!
@@ -2184,13 +2183,4 @@ trajectoryAnalysis::obtainNdxFilePathInfo()
         customNdxFileName_ = callString.substr(startPos, substrLen);
     }
 }
-
-
-
-
-
-
-
-
-
 
