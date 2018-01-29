@@ -456,14 +456,16 @@ ChapTrajectoryAnalysis::initAnalysis(
         const TrajectoryAnalysisSettings& /*settings*/,
         const TopologyInformation &top)
 {
+    // the following code ensures compatibility across Gromacs versions:
+    // (there was an API break between 2016 and 2018)
     #if GROMACS_VERSION_MAJOR>=2018
 
-    gmx_mtop_t* topologyPointer = new(gmx_mtop_t);
+    std::unique_ptr<gmx_mtop_t> topologyPointer(new gmx_mtop_t);
     *topologyPointer = *top.mtop();
 
     #elif GROMACS_VERSION_MAJOR>=2016
-    
-    t_topology* topologyPointer = new(t_topology);
+
+    std::unique_ptr<t_topology> topologyPointer(new t_topology);
     *topologyPointer = *top.topology();
 
     #endif
@@ -600,20 +602,20 @@ ChapTrajectoryAnalysis::initAnalysis(
     if( customNdxFileName_.size() != 0 )
     {
         gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               topologyPointer, 
+                               topologyPointer.get(), 
                                customNdxFileName_.c_str());  
     }
     else
     {
         gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               topologyPointer, 
+                               topologyPointer.get(), 
                                NULL); 
     }
 
     // create selections as defined above:
     poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
     poreMappingSelCog_ = poreMappingSelCol_.parseFromString(poreMappingSelCogString)[0];
-    poreMappingSelCol_.setTopology(topologyPointer, 0);
+    poreMappingSelCol_.setTopology(topologyPointer.get(), 0);
     poreMappingSelCol_.setIndexGroups(poreIdxGroups);
     poreMappingSelCol_.compile();
 
@@ -648,13 +650,13 @@ ChapTrajectoryAnalysis::initAnalysis(
         if( customNdxFileName_.size() != 0 )
         {
             gmx_ana_indexgrps_init(&solvIdxGroups,
-                                   topologyPointer,
+                                   topologyPointer.get(),
                                    customNdxFileName_.c_str());
         }
         else
         {
             gmx_ana_indexgrps_init(&solvIdxGroups,
-                                   topologyPointer,
+                                   topologyPointer.get(),
                                    NULL);
         }
 
@@ -665,7 +667,7 @@ ChapTrajectoryAnalysis::initAnalysis(
         solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
 
         // compile the selections:
-        solvMappingSelCol_.setTopology(topologyPointer, 0);
+        solvMappingSelCol_.setTopology(topologyPointer.get(), 0);
         solvMappingSelCol_.setIndexGroups(solvIdxGroups);
         solvMappingSelCol_.compile();
 
