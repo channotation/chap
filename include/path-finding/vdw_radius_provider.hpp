@@ -151,7 +151,7 @@ class VdwRadiusProvider
         // public interface for obtaining vdwRadii for given topology:
         std::unordered_map<int, real> vdwRadiiForTopology(
             const gmx::TopologyInformation &top,
-            gmx::ConstArrayRef<int> mappedIds);
+            std::vector<int> mappedIds);
 
     private:
 

@@ -9,6 +9,7 @@
 #include "aggregation/number_density_calculator.hpp"
 
 #include "config/config.hpp"
+#include "config/dependencies.hpp"
 #include "config/version.hpp"
 
 #include "geometry/cubic_spline_interp_1D.hpp"
@@ -455,6 +456,19 @@ ChapTrajectoryAnalysis::initAnalysis(
         const TrajectoryAnalysisSettings& /*settings*/,
         const TopologyInformation &top)
 {
+    #if GROMACS_VERSION_MAJOR>=2018
+
+    gmx_mtop_t* topologyPointer = new(gmx_mtop_t);
+    *topologyPointer = *top.mtop();
+
+    #elif GROMACS_VERSION_MAJOR>=2016
+    
+    t_topology* topologyPointer = new(t_topology);
+    *topologyPointer = *top.topology();
+
+    #endif
+
+
     // set ath name of NDX file:
     obtainNdxFilePathInfo();
 
@@ -585,21 +599,21 @@ ChapTrajectoryAnalysis::initAnalysis(
     // has external index file been specified?
     if( customNdxFileName_.size() != 0 )
     {
-       gmx_ana_indexgrps_init(&poreIdxGroups, 
-                              top.topology(), 
-                              customNdxFileName_.c_str());  
+        gmx_ana_indexgrps_init(&poreIdxGroups, 
+                               topologyPointer, 
+                               customNdxFileName_.c_str());  
     }
     else
     {
         gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               top.topology(), 
+                               topologyPointer, 
                                NULL); 
     }
 
     // create selections as defined above:
     poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
     poreMappingSelCog_ = poreMappingSelCol_.parseFromString(poreMappingSelCogString)[0];
-    poreMappingSelCol_.setTopology(top.topology(), 0);
+    poreMappingSelCol_.setTopology(topologyPointer, 0);
     poreMappingSelCol_.setIndexGroups(poreIdxGroups);
     poreMappingSelCol_.compile();
 
@@ -634,13 +648,13 @@ ChapTrajectoryAnalysis::initAnalysis(
         if( customNdxFileName_.size() != 0 )
         {
             gmx_ana_indexgrps_init(&solvIdxGroups,
-                                   top.topology(),
+                                   topologyPointer,
                                    customNdxFileName_.c_str());
         }
         else
         {
             gmx_ana_indexgrps_init(&solvIdxGroups,
-                                   top.topology(),
+                                   topologyPointer,
                                    NULL);
         }
 
@@ -651,7 +665,7 @@ ChapTrajectoryAnalysis::initAnalysis(
         solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
 
         // compile the selections:
-        solvMappingSelCol_.setTopology(top.topology(), 0);
+        solvMappingSelCol_.setTopology(topologyPointer, 0);
         solvMappingSelCol_.setIndexGroups(solvIdxGroups);
         solvMappingSelCol_.compile();
 
@@ -713,8 +727,15 @@ ChapTrajectoryAnalysis::initAnalysis(
         vrp.setDefaultVdwRadius(pfDefaultVdwRadius_);
     }
 
-    // build vdw radius lookup map:
-    vdwRadii_ = vrp.vdwRadiiForTopology(top, pathwaySel_.mappedIds());
+
+    std::vector<int> mappedIds(
+            pathwaySel_.mappedIds().data(),
+            pathwaySel_.mappedIds().data() + pathwaySel_.mappedIds().size());
+
+    
+
+    // build vdw radius lookup map: FIXME
+    vdwRadii_ = vrp.vdwRadiiForTopology(top, mappedIds);
 
     // find maximum van der Waals radius:
     maxVdwRadius_ = std::max_element(vdwRadii_.begin(), vdwRadii_.end()) -> second;

@@ -156,7 +156,7 @@ VdwRadiusProvider::lookupTableFromJson(rapidjson::Document &jsonDoc)
  */
 std::unordered_map<int, real>
 VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
-                                       gmx::ConstArrayRef<int> mappedIds)
+                                       std::vector<int> mappedIds)
 {
     // get list of all atoms:
     t_atoms atoms = top.topology() -> atoms;
