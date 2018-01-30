@@ -112,6 +112,8 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 # configure header files:
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/version.cpp" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/config/dependencies.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/config/dependencies.hpp" @ONLY)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 
 # Compile Instructions
