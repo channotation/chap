@@ -1,7 +1,7 @@
 # ignored subdirecotires:
 build/*
 bin/*
-doc/*
+devdoc/*
 scripts/misc/*
 performance/*
 
