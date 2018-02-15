@@ -1,8 +1,8 @@
 #include "aggregation/multiscalar_time_series.hpp"
 
 
-/*
- *
+/*!
+ * Adds a time series to the container.
  */
 void
 MultiscalarTimeSeries::addScalarTimeSeries(const ScalarTimeSeries &timeSeries)

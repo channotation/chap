@@ -237,7 +237,7 @@ ColourPaletteProvider::fromJsonDoc(const rapidjson::Document &doc)
             throw std::runtime_error("Need one blue value for each value.");
         }
 
-        // extract palette defintion:
+        // extract palette definition:
         std::vector<real> values;
         values.reserve(pal["val"].Size());
         std::vector<gmx::RVec> colours;

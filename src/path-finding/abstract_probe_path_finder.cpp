@@ -6,8 +6,8 @@
 #include "path-finding/abstract_probe_path_finder.hpp"
 
 
-/*
- *
+/*!
+ * Constructor.
  */
 AbstractProbePathFinder::AbstractProbePathFinder(
         std::map<std::string, real> params,
@@ -22,27 +22,14 @@ AbstractProbePathFinder::AbstractProbePathFinder(
     // TODO: probe radius not really used, may be factored out?
     probeRadius_ = 0.0;
 
-    // set parameters:
-    /*
-    if( params.find("pfProbeRadius") != params.end() )
-    {
-        probeRadius_ = params["pfProbeRadius"];
-    }
-    else
-    {
-        std::cerr<<"ERROR: No probe radius given!"<<std::endl;
-        std::abort();
-    }
-    */
-
     // find maximum vdw radius:
     maxVdwRadius_ = *std::max_element(vdwRadii.begin(), vdwRadii.end());
 }
 
 
 /*!
- * Sets parameters of the AnalysisNeighborhood object meinted by this class and
- * initialises an AnalysisneighborhoodSearch.
+ * Sets parameters of the AnalysisNeighborhood object maintained by this class
+ * and initialises an AnalysisneighborhoodSearch.
  */
 void
 AbstractProbePathFinder::prepareNeighborhoodSearch(
@@ -60,7 +47,7 @@ AbstractProbePathFinder::prepareNeighborhoodSearch(
 }
 
 
-/*
+/*!
  * Finds the minimal free distance, i.e. the shortest distance between the 
  * probe and the closest van-der-Waals surface.
  */
@@ -74,8 +61,8 @@ AbstractProbePathFinder::findMinimalFreeDistance(
     // TODO: using infinity here will cause a LAPACK error later in the code
     // IF the search cutoff is too small. Terminating the code in the case
     // may be a good idea overall, but better error handling is needed. Note 
-    // that if an arbitraty value is chosen here the optimisation will still 
-    // work evn with too small a cutoff, but that will cause problems later,
+    // that if an arbitrary value is chosen here the optimisation will still 
+    // work even with too small a cutoff, but that will cause problems later,
     // when the path points are interpolated: The very non-smooth spacing of
     // points will then lead to kinks in the spline!
     real minimalFreeDistance = std::numeric_limits<real>::infinity();            // radius of maximal non-overlapping sphere
@@ -91,14 +78,13 @@ AbstractProbePathFinder::findMinimalFreeDistance(
     while( nbPairSearch.findNextPair(&pair) )
     {
         // get pair distance:
-        // TODO: square root can be moved out of loop!
+        // TODO: move square root out of loop?
         pairDist = std::sqrt(pair.distance2());
 
         // get vdW radius of reference atom:
         poreAtomVdwRadius = vdwRadii_.at(pair.refIndex());
 
         // update void radius if necessary:
-        // TODO: factor in probe radius!
         if( (pairDist - poreAtomVdwRadius - probeRadius_) < minimalFreeDistance )
         {
             minimalFreeDistance = pairDist - poreAtomVdwRadius;

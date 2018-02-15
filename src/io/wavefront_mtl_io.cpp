@@ -54,8 +54,8 @@ WavefrontMtlObject::addMaterial(WavefrontMtlMaterial material)
 }
 
 
-/*
- *
+/*!
+ * Writes MTL object to file.
  */
 void
 WavefrontMtlExporter::write(std::string fileName, WavefrontMtlObject object)

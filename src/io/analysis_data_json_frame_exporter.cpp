@@ -7,7 +7,7 @@
 
 
 /*!
- * Returns flas indicating what types of data this module can handle.
+ * Returns flag indicating what types of data this module can handle.
  */
 int
 AnalysisDataJsonFrameExporter::flags() const

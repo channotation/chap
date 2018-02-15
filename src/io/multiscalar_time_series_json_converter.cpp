@@ -33,9 +33,7 @@ MultiscalarTimeSeriesJsonConverter::convert(
                 jsonColumn, 
                 alloc);
     }
-    
-
-    
+        
     // return JSON object:
     return timeSeriesJson;
 }

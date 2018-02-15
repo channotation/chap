@@ -208,8 +208,8 @@ GaussianDensityDerivative::setErrorBound(real eps)
 
 
 /*!
- * Sets up a vector of equidistent cluster centres covering the unit interval.
- * The cluster spacing is alf the bandwidth.
+ * Sets up a vector of equidistant cluster centres covering the unit interval.
+ * The cluster spacing is half the bandwidth.
  */
 std::vector<real>
 GaussianDensityDerivative::setupClusterCentres()
@@ -552,7 +552,7 @@ GaussianDensityDerivative::shiftAndScale(
 
 /*!
  * Inverts the operation performed by shiftAndScale(). Assuming that the same 
- * shift and scale parameters are used, this will map the input vector back to 
+h * shift and scale parameters are used, this will map the input vector back to 
  * its original interval.
  */
 void

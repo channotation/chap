@@ -204,7 +204,7 @@ DensityEstimationParameters::evalRangeCutoffIsSet() const
 
 
 /*!
- * Returns a flag indicating wether kernel function has been set.
+ * Returns a flag indicating whether kernel function has been set.
  */
 eKernelFunction
 DensityEstimationParameters::kernelFunction() const

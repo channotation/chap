@@ -41,7 +41,7 @@ SplineCurve1DJsonConverter::fromJson(
         ctrlPoints.push_back(val["ctrl"][i].GetDouble());
     }
 
-    // add duplicate andpoint knots:
+    // add duplicate endpoint knots:
     for(unsigned int i = 0; i< degree; i++)
     {
         knots.push_back(knots.back());

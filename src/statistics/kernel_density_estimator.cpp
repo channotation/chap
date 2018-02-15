@@ -159,7 +159,6 @@ KernelDensityEstimator::setBandWidthScale(
  * Sets the maximum evaluation point distance parameter to the given value. 
  * Throws an exception if value is not positive.
  */
-// FIXME do we need a safeguard to make this smaller than the bandwidth?
 void
 KernelDensityEstimator::setMaxEvalPointDist(
         const real maxEvalPointDist)
@@ -171,7 +170,7 @@ KernelDensityEstimator::setMaxEvalPointDist(
         "must be positive!");
     }
 
-    // set avlue of internal parameter:
+    // set value of internal parameter:
     maxEvalPointDist_ = maxEvalPointDist;
 }
 

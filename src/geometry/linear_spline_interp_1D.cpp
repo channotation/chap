@@ -6,7 +6,7 @@
 /*!
  * Public interpolation interface. Returns a one-dimensional spline curve that
  * linearly interpolates the given set of function values and evaluation 
- * points. Input vectors should be of same length and ordered in the sam way.
+ * points. Input vectors should be of same length and ordered in the same way.
  */
 SplineCurve1D
 LinearSplineInterp1D::interpolate(

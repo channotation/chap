@@ -40,19 +40,19 @@ AmiseOptimalBandWidthEstimator::estimate(
     real sigma = sumStats.sd();
 
     // estimate functionals six and eight by assuming Gaussianity:
-    real phi6 = functionalPhi6(sigma); // TODO correct!
-    real phi8 = functionalPhi8(sigma); // TODO correct!
+    real phi6 = functionalPhi6(sigma);
+    real phi8 = functionalPhi8(sigma);
 
     // calculate prototype bandwidth optimal wrt asymptotic MSE:
-    real g1 = std::pow(-6.0 / ( SQRT2PI_*phi6*sample.size() ), 1.0/7.0); // TODO correct!
-    real g2 = std::pow(30.0 / ( SQRT2PI_*phi8*sample.size() ), 1.0/9.0); // TODO correct!
+    real g1 = std::pow(-6.0 / ( SQRT2PI_*phi6*sample.size() ), 1.0/7.0);
+    real g2 = std::pow(30.0 / ( SQRT2PI_*phi8*sample.size() ), 1.0/9.0);
 
     // estimate functionals via KDE with bandwidth from optimal MSE:
-    real phi4 = functionalPhiFast(sample, g1, 4); // TODO correct!
-    phi6 = functionalPhiFast(sample, g2, 6); // TODO correct!
+    real phi4 = functionalPhiFast(sample, g1, 4);
+    phi6 = functionalPhiFast(sample, g2, 6);
     
     // calculate constant prefactor in gamma expression:
-    gammaFactor_ = gammaFactor(phi4, phi6); // TODO correct!   
+    gammaFactor_ = gammaFactor(phi4, phi6);
 
     // parameters for boost root finder:
     // initial guess is Silverman's rule of thumb:

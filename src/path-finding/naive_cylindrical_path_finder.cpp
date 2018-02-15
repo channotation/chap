@@ -4,7 +4,7 @@
 #include "path-finding/naive_cylindrical_path_finder.hpp"
 
 
-/*
+/*!
  * Constructor.
  */
 NaiveCylindricalPathFinder::NaiveCylindricalPathFinder(std::map<std::string, real> params,
@@ -47,7 +47,7 @@ NaiveCylindricalPathFinder::NaiveCylindricalPathFinder(std::map<std::string, rea
 }
 
 
-/*
+/*!
  * Destructor.
  */
 NaiveCylindricalPathFinder::~NaiveCylindricalPathFinder()
@@ -56,27 +56,27 @@ NaiveCylindricalPathFinder::~NaiveCylindricalPathFinder()
 }
 
 
-/*
- *
+/*!
+ * Build cylindrical pathway.
  */
 void
 NaiveCylindricalPathFinder::findPath()
 {
     // normalise direction vector:
     gmx::RVec normDirVec = dirVec_;
-    real norm = std::sqrt( dirVec_[0]*dirVec_[0] + 
-                           dirVec_[1]*dirVec_[1] +
-                           dirVec_[2]*dirVec_[2] );
-    normDirVec[0] = normDirVec[0]/norm;
-    normDirVec[1] = normDirVec[1]/norm;
-    normDirVec[2] = normDirVec[2]/norm;
+    real norm = std::sqrt( dirVec_[XX]*dirVec_[XX] + 
+                           dirVec_[YY]*dirVec_[YY] +
+                           dirVec_[ZZ]*dirVec_[ZZ] );
+    normDirVec[XX] = normDirVec[XX]/norm;
+    normDirVec[YY] = normDirVec[YY]/norm;
+    normDirVec[ZZ] = normDirVec[ZZ]/norm;
 
     // build up path points and radii:
     for(int i = 0; i <= 2*nSteps_; i++)
     {
-        real x = centrePoint_[0] + (i - nSteps_)*stepLength_*normDirVec[0];
-        real y = centrePoint_[1] + (i - nSteps_)*stepLength_*normDirVec[1];
-        real z = centrePoint_[2] + (i - nSteps_)*stepLength_*normDirVec[2];
+        real x = centrePoint_[XX] + (i - nSteps_)*stepLength_*normDirVec[XX];
+        real y = centrePoint_[YY] + (i - nSteps_)*stepLength_*normDirVec[YY];
+        real z = centrePoint_[ZZ] + (i - nSteps_)*stepLength_*normDirVec[ZZ];
 
         path_.push_back(gmx::RVec(x, y, z));
         radii_.push_back(cylRad_);

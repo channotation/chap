@@ -20,7 +20,7 @@ BoltzmannEnergyCalculator::BoltzmannEnergyCalculator()
 
 /*!
  * Public interface for calculation of energy from density. Takes a vector of 
- * densities as inout and returns a vector of energies.
+ * densities as input and returns a vector of energies.
  *
  * This performs a sanity check on the input density and throws an exception
  * if any density value is smaller than zero!
@@ -86,7 +86,7 @@ BoltzmannEnergyCalculator::setEnergyUnits(
 {
     if( unit == eEnergyUnitBoltzmann )
     {
-        // in this cas esimply multiply by one:
+        // in this case simply multiply by one:
         energyUnitFactor_ = 1.0;
     }
     else if( unit == eEnergyUnitKiloJoulePerMol )
@@ -98,7 +98,7 @@ BoltzmannEnergyCalculator::setEnergyUnits(
                                    "energy units.");
         }
 
-        // caluclate energy unit factor:
+        // calculate energy unit factor:
         energyUnitFactor_ = temperature_ * cGasConstantKiloJoulePerMol_;
     }
     else if( unit == eEnergyUnitKiloCaloriePerMol )

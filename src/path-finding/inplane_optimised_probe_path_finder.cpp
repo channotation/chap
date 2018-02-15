@@ -9,9 +9,8 @@
 #include "path-finding/inplane_optimised_probe_path_finder.hpp"
 
 
-
-/*
- *
+/*!
+ * Constructor.
  */
 InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
         std::map<std::string, real> params,
@@ -71,8 +70,8 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
     // (this will already be normalised)
     cprod(chanDirVec_, orthVecU_, orthVecW_);
 
-    // make sure vctors are mutually orthogonal:
-    // (not that the vectors are not strictly required to be orthogonal, they 
+    // make sure vectors are mutually orthogonal:
+    // (note that the vectors are not strictly required to be orthogonal, they 
     // may just not be colinear, so small numeric deviations should not be a
     // problem here)
     real orthTol = std::numeric_limits<real>::epsilon();
@@ -94,8 +93,8 @@ InplaneOptimisedProbePathFinder::InplaneOptimisedProbePathFinder(
 }
 
 
-/*
- *
+/*!
+ * Set parameters for path-finding.
  */
 void
 InplaneOptimisedProbePathFinder::setParameters(
@@ -124,8 +123,8 @@ InplaneOptimisedProbePathFinder::setParameters(
 }
 
 
-/*
- *
+/*!
+ * Execute path-finding algorithm.
  */
 void
 InplaneOptimisedProbePathFinder::findPath()
@@ -157,8 +156,8 @@ InplaneOptimisedProbePathFinder::findPath()
 }
 
 
-/*
- *
+/*!
+ * Optimise initial position of probe.
  */
 void
 InplaneOptimisedProbePathFinder::optimiseInitialPos()
@@ -208,8 +207,8 @@ InplaneOptimisedProbePathFinder::optimiseInitialPos()
 }
 
 
-/*
- *
+/*!
+ * Optimise probe position in subsequent parallel planes.
  */
 void
 InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
@@ -239,16 +238,6 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
     int numProbeSteps = 0;
     while(true)
     {
-    /*
-        std::cout<<"probeStepLength = "<<probeStepLength_<<std::endl;
-        std::cout<<"direction = "<<direction[0]<<"  "
-                                 <<direction[1]<<"  "
-                                 <<direction[2]<<"  "
-                 <<"crntProbePos = "<<crntProbePos_[0]<<"  "
-                                    <<crntProbePos_[1]<<"  "
-                                    <<crntProbePos_[2]<<"  "
-                 <<std::endl;
-*/
         // advance probe position to next plane:
         crntProbePos_[XX] = crntProbePos_[XX] + probeStepLength_*direction[XX];
         crntProbePos_[YY] = crntProbePos_[YY] + probeStepLength_*direction[YY];
@@ -272,15 +261,7 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         crntProbePos_ = optimToConfig(nmm.getOptimPoint().first);
                
         // increment probe step counter:
-        numProbeSteps++;
-//        std::cout<<"probe step = "<<numProbeSteps<<std::endl;
-//        std::cout<<"sa best cost = "<<sam.getOptimPoint().second<<std::endl;
-//        std::cout<<"nm best cost = "<<nmm.getOptimPoint().second<<std::endl;
-//        std::cout<<"crntProbePos = "<<crntProbePos_[XX]<<"  "
-//                                    <<crntProbePos_[YY]<<"  "
-//                                    <<crntProbePos_[ZZ]<<"  "<<std::endl;
-
-       
+        numProbeSteps++;      
 
         // add result to path container: 
         path_.push_back(crntProbePos_);
@@ -297,12 +278,12 @@ InplaneOptimisedProbePathFinder::advanceAndOptimise(bool forward)
         }
     }
 
-    // change radius of ultimate point to match the disred cutoff exactly:
+    // change radius of ultimate point to match the desired cutoff exactly:
     radii_.back() = maxProbeRadius_;
 }
 
 
-/*
+/*!
  * Converts between the two-dimensional optimisation space representation to 
  * the three-dimensional configuration space representation. A point in 
  * optimisation space is represented by its position on terms of the in-plane

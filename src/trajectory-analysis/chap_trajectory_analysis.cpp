@@ -76,11 +76,11 @@ ChapTrajectoryAnalysis::initOptions(
     // HELP TEXT
     //-------------------------------------------------------------------------
 
-		// set help text:
-		static const char *const desc[] = {
-				"This is a first prototype for the CHAP tool.",
-				"There is NO HELP, you are on your own!"
-		};
+				// set help text:
+				static const char *const desc[] = {
+								"This is a first prototype for the CHAP tool.",
+								"There is NO HELP, you are on your own!"
+				};
     settings -> setHelpText(desc);
 
 
@@ -121,26 +121,26 @@ ChapTrajectoryAnalysis::initOptions(
     // ------------------------------------------------------------------------
 
     options -> addOption(StringOption("out-filename")
-						 .store(&outputBaseFileName_)
+												 .store(&outputBaseFileName_)
                          .defaultValue("output")
                          .description("File name for output files without "
                                       "file extension."));
 
     options -> addOption(IntegerOption("out-num-points")
-						 .store(&outputNumPoints_)
+												 .store(&outputNumPoints_)
                          .defaultValue(1000)
                          .description("Number of spatial sample points that "
                                       "are written to the JSON output file."));
 
     options -> addOption(RealOption("out-extrap-dist")
-						 .store(&outputExtrapDist_)
+												 .store(&outputExtrapDist_)
                          .defaultValue(0.0)
                          .description("Extrapolation distance beyond the "
                                       "pathway endpoints for both JSON and "
                                       "OBJ output."));
 
     options -> addOption(RealOption("out-grid-dist")
-						 .store(&outputGridSampleDist_)
+												 .store(&outputGridSampleDist_)
                          .defaultValue(0.15)
                          .description("Controls the sampling distance of "
                                       "vertices on the pathway surface which "
@@ -149,7 +149,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "may yield visual artifacts."));
 
     options -> addOption(RealOption("out-vis-tweak")
-						 .store(&outputCorrectionThreshold_)
+												 .store(&outputCorrectionThreshold_)
                          .defaultValue(0.1)
                          .description("Visual tweaking factor that controls "
                                       "the smoothness of the pathway surface "
@@ -160,7 +160,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "visualisation artifacts."));
 
     options -> addOption(BooleanOption("out-detailed")
-						 .store(&outputDetailed_)
+												 .store(&outputDetailed_)
                          .defaultValue(false)
                          .description("If true, CHAP will write detailed per-"
                                       "frame information to a newline "
@@ -336,7 +336,7 @@ ChapTrajectoryAnalysis::initOptions(
     //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-pl-margin")
-						 .store(&poreMappingMargin_)
+												 .store(&poreMappingMargin_)
                          .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
@@ -346,7 +346,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "line."));
 
     options -> addOption(StringOption("pm-pf-sel")
-						 .store(&pfSelString_)
+												 .store(&pfSelString_)
                          .defaultValue("name CA")
                          .description("Selection string that determines the "
                                       "group of atoms in each residue whose "
@@ -471,17 +471,17 @@ ChapTrajectoryAnalysis::initAnalysis(
     #endif
 
 
-    // set ath name of NDX file:
+    // set path name of NDX file:
     obtainNdxFilePathInfo();
 
-    // check valididty of input parameters:
+    // check validity of input parameters:
     checkParameters();
         
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
 
 
-    // PREPARE DATSETS
+    // PREPARE DATASETS
     //-------------------------------------------------------------------------
 
     // prepare per frame data stream:
@@ -736,7 +736,7 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     
 
-    // build vdw radius lookup map: FIXME
+    // build vdw radius lookup map:
     vdwRadii_ = vrp.vdwRadiiForTopology(top, mappedIds);
 
     // find maximum van der Waals radius:
@@ -914,11 +914,11 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
         // add radius to vector of radii:
         selVdwRadii.push_back(vdwRadii_.at(idx));
-	}
+		}
 
 
-	// PORE FINDING AND RADIUS CALCULATION
-	// ------------------------------------------------------------------------
+		// PORE FINDING AND RADIUS CALCULATION
+		// ------------------------------------------------------------------------
 
     // vectors as RVec:
     RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
@@ -1182,7 +1182,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
     // only do this if solvent selection is valid:
     if( !solventSel_.empty() )
     {
-        // evaluate solevnt mapping selections for this frame:
+        // evaluate solvent mapping selections for this frame:
         t_trxframe tmpFrame = fr;
         solvMappingSelCol_.evaluate(&tmpFrame, pbc);
 
@@ -1238,12 +1238,12 @@ ChapTrajectoryAnalysis::analyzeFrame(
              dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
              dhFrameStream.setPoint(1, it -> second[0]);     // s
              dhFrameStream.setPoint(2, it -> second[1]);     // rho
-             dhFrameStream.setPoint(3, 0.0);     // phi // FIXME wrong, but JSON cant handle NaN
-             dhFrameStream.setPoint(4, solvInsidePore[it -> first]);     // inside pore
-             dhFrameStream.setPoint(5, solvInsideSample[it -> first]);     // inside sample
-             dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[0]);  // x
-             dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[1]);  // y
-             dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[2]);  // z
+             dhFrameStream.setPoint(3, 0.0);                 // phi 
+             dhFrameStream.setPoint(4, solvInsidePore[it -> first]);        // inside pore
+             dhFrameStream.setPoint(5, solvInsideSample[it -> first]);      // inside sample
+             dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[XX]);  // x
+             dhFrameStream.setPoint(7, solvMapSel.position(it -> first).x()[YY]);  // y
+             dhFrameStream.setPoint(8, solvMapSel.position(it -> first).x()[ZZ]);  // z
              dhFrameStream.finishPointSet();
         }
     }
@@ -1268,7 +1268,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
         }
     }
 
-    // sample points inside the por eonly for bandwidth estimation:
+    // sample points inside the pore only for bandwidth estimation:
     std::vector<real> solventPoreCoordS;
     solventPoreCoordS.reserve(solventMappedCoords.size());
     for(auto isInsidePore : solvInsidePore)
@@ -1892,7 +1892,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     molPathAvg_ -> addScalarProperty("avg_pl_hydrophobicity", avgPlHydrophobicitySpl, true);
     molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl, true);
 
-    // load colour palletes from JSON file:
+    // load colour palettes from JSON file:
     std::string paletteFilePath = chapInstallBase() + 
             std::string("/chap/share/data/palettes/");
     std::string paletteFileName = paletteFilePath + "default.json";

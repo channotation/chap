@@ -22,7 +22,7 @@ void
 ResidueInformationProvider::nameFromTopology(
         const gmx::TopologyInformation &top)
 {
-    // get list of all atoms (includingb residue information):
+    // get list of all atoms (including residue information):
     t_atoms atoms = top.topology() -> atoms;
 
     // loop over all residues:

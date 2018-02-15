@@ -8,7 +8,7 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 
-/*
+/*!
  * Constructor. 
  */
 CubicSplineInterp3D::CubicSplineInterp3D()
@@ -17,7 +17,7 @@ CubicSplineInterp3D::CubicSplineInterp3D()
 }
 
 
-/*
+/*!
  * Destructor.
  */
 CubicSplineInterp3D::~CubicSplineInterp3D()
@@ -26,8 +26,8 @@ CubicSplineInterp3D::~CubicSplineInterp3D()
 }
 
 
-/*
- *
+/*!
+ * Interpolation interface.
  */
 SplineCurve3D
 CubicSplineInterp3D::interpolate(std::vector<gmx::RVec> &points,
@@ -41,7 +41,7 @@ CubicSplineInterp3D::interpolate(std::vector<gmx::RVec> &points,
 }
 
 
-/*
+/*!
  * Interpolation interface as convenient operator.
  */
 SplineCurve3D
@@ -52,8 +52,8 @@ CubicSplineInterp3D::operator()(std::vector<gmx::RVec> &points,
 }
 
 
-/*
- *
+/*!
+ * Interpolation interface.
  */
 SplineCurve3D
 CubicSplineInterp3D::interpolate(std::vector<real> &param,
@@ -163,7 +163,7 @@ CubicSplineInterp3D::interpolate(std::vector<real> &param,
 }
 
 
-/*
+/*!
  * Interpolation interface as convenient operator.
  */
 SplineCurve3D
@@ -175,7 +175,7 @@ CubicSplineInterp3D::operator()(std::vector<real> &param,
 }
 
 
-/*
+/*!
  * Calculates chord length for a given (ordered) point set.
  */
 std::vector<real>
@@ -190,10 +190,10 @@ CubicSplineInterp3D::calcChordLength(const std::vector<gmx::RVec> &points)
     {
         // calculate difference between subsequent points:
         gmx::RVec dVec;
-        dVec[0] = points[i - 1][0] - points[i][0];
-        dVec[1] = points[i - 1][1] - points[i][1];
-        dVec[2] = points[i - 1][2] - points[i][2];
-        real diff = std::sqrt(dVec[0]*dVec[0] + dVec[1]*dVec[1] + dVec[2]*dVec[2]);
+        dVec[XX] = points[i - 1][XX] - points[i][XX];
+        dVec[YY] = points[i - 1][YY] - points[i][YY];
+        dVec[ZZ] = points[i - 1][ZZ] - points[i][ZZ];
+        real diff = std::sqrt(dVec[XX]*dVec[XX] + dVec[YY]*dVec[YY] + dVec[ZZ]*dVec[ZZ]);
 
         // add to chord length vector:
         chordLength.push_back(chordLength[i-1] + diff);

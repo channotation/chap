@@ -33,7 +33,6 @@ BSplineBasisSet::operator()(
     // create sparse basis vector with appropriate indexing:
     SparseBasis basisSet;
     basisSet.reserve(nonzeroBasisElements.size());
-    // TODO: this loop accounts for almost half the execution time of this function:
     for(size_t i = 0; i < nonzeroBasisElements.size(); i++)
     {
         basisSet[i + knotSpanIdx - degree] = nonzeroBasisElements[i];
@@ -126,7 +125,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
     std::vector<real> left(degree + 1);
     std::vector<real> right(degree + 1);
 
-    // caclualte all nonzero basis functions:
+    // calculate all nonzero basis functions:
     nonzeroBasisElements[0] = 1.0;
     for(size_t i = 1; i <= degree; i++)
     {
@@ -151,7 +150,7 @@ BSplineBasisSet::evaluateNonzeroBasisElements(
 
 
 /*!
- * Finds the index of the knot span for a given evalution point \f$ x \f$ and
+ * Finds the index of the knot span for a given evaluation point \f$ x \f$ and
  * knot vector \f$ \{t\}_{i=1}^m \f$, i.e. finds \f$ i \f$ such that
  * \f$ t_i \leq x < t_{i+1} \f$. The special case of \f$ x = t_m \f$ is handled 
  * as \f$ i = m - p - 1 \f$.

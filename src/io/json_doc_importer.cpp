@@ -7,8 +7,8 @@
 #include "io/json_doc_importer.hpp"
 
 
-/*
- *
+/*!
+ * Returns a JSON document corresponding to the given JSON file.
  */
 rapidjson::Document
 JsonDocImporter::operator()(std::string fileName)

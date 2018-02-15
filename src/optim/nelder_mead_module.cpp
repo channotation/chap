@@ -150,16 +150,6 @@ NelderMeadModule::setInitGuess(std::vector<real> guess)
 }
 
 
-/*
- *
-
-void
-NelderMeadModule::setInitGuess(gmx::RVec guess)
-{
-    setInitGuess();
-}
-*/
-
 /*!
  * Performs the Nelder-Mead optimisation loop. Should only be called once
  * parameters, objective function, and initial point have been set.
@@ -175,7 +165,7 @@ NelderMeadModule::optimise()
         std::abort();
     }
 
-    // initialse centroid as vector of all zeros:
+    // initialise centroid as vector of all zeros:
     centroid_.first.insert(centroid_.first.begin(), simplex_.front().first.size(), 0.0); 
 
     // evaluate objective function at all vertices:

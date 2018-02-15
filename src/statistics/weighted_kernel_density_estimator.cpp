@@ -35,7 +35,7 @@ WeightedKernelDensityEstimator::estimate(
 
 /*!
  * Internal evaluation function that computes the Nadaraya-Watson estimate
- * of the smoothing function to the given datapoints.
+ * of the smoothing function to the given data points.
  */
 std::vector<real>
 WeightedKernelDensityEstimator::calculateWeightedDensity(
@@ -43,7 +43,7 @@ WeightedKernelDensityEstimator::calculateWeightedDensity(
         std::vector<real> &weights,
         std::vector<real> &evalPoints)
 {
-    // set up the density kerne:
+    // set up the density kernel:
     KernelFunctionPointer kernel = KernelFunctionFactory::create(
             kernelFunction_);
 
