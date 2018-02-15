@@ -232,7 +232,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
     real poreLength = 2.0;
     real poreCentreRadius = 0.25;
     real poreVdwRadius = 0.2;
-    gmx::RVec poreCentre(-std::sqrt(3), std::sqrt(2), -std::sqrt(4));
+    gmx::RVec poreCentre(0.0, 0.0, 0.0);
     int poreDir = XX;
     int notPoreDirA = ZZ;
     int notPoreDirB = YY;
@@ -365,7 +365,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
     real poreLength = 2.0;
     real poreCentreRadius = 0.5;
     real poreVdwRadius = 0.2;
-    gmx::RVec poreCentre(-std::sqrt(2.0), std::sqrt(3.0), std::sqrt(2.0));
+    gmx::RVec poreCentre(0.0, 0.0, 0.0);
     int poreDir = YY;
     int notPoreDirA = XX;
     int notPoreDirB = ZZ;
