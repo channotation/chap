@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 # CHAP - The Channel Annotation Package
 # 
 # Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
@@ -20,9 +22,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
-
-#!/usr/bin/env python2
 
 
 ################################################################################

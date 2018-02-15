@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # CHAP - The Channel Annotation Package
 # 
 # Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
@@ -21,8 +23,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
-#!/usr/bin/env Rscript
 
 ################################################################################
 # CONFIGURATION
