@@ -21,47 +21,38 @@
 using namespace gmx;
 
 
-
+/*!
+ * \brief Trajectory analysis module implementing the CHAP workflow.
+ */
 class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
 {
     public:
 
-        // constructor for the trajectoryAnalysis module:
+        // constructor for the ChapTrajectoryAnalysis module:
         ChapTrajectoryAnalysis();
 
-        // method for adding all options of the trajectoryAnalysis module:
+        // methods from libgromacs base class:
         virtual void initOptions(
                 IOptionsContainer *options,
                 TrajectoryAnalysisSettings *settings);
-        
-        //
         virtual void initAnalysis(
                 const TrajectoryAnalysisSettings &settings,
                 const TopologyInformation &top);
-
-        //
         virtual void initAfterFirstFrame(
                 const TrajectoryAnalysisSettings &settings,
                 const t_trxframe &fr);
-
-
-        //
         virtual void analyzeFrame(
                 int frnr, 
                 const t_trxframe &fr, 
                 t_pbc *pbc,
                 TrajectoryAnalysisModuleData *pdata);
-        
-        // ??
         virtual void finishAnalysis(int nframes);
-        
-        // ??
         virtual void writeOutput();
 
 
     private:
 
-        // find file path fo index files:
+        // find file path for index files:
         virtual void obtainNdxFilePathInfo();   
         std::string customNdxFileName_;
 

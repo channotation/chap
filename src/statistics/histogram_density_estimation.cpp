@@ -85,7 +85,7 @@ HistogramDensityEstimator::estimate(
  * This checks if all required parameters have been set and passes their values 
  * on to the relevant setter methods.
  *
- * Currently only a bin qith parameter is required.
+ * Currently only a bin width parameter is required.
  */
 void
 HistogramDensityEstimator::setParameters(
@@ -163,7 +163,7 @@ HistogramDensityEstimator::createBreaks(
 
 /*!
  * Auxiliary function for computing midpoints from a given set of break points.
- * Mitpoins are simply the average of two subsequent break points and form the
+ * Midpoins are simply the average of two subsequent break points and form the
  * evaluation points when building a SplineCurve1D interpolating the density.
  */
 std::vector<real>

@@ -10,9 +10,9 @@
 #include "path-finding/molecular_path.hpp"
 
 
-/*
- * Abstract class that implements infrastructure used by all probe-based path
- * finding algorithms (such as the probe position).
+/*!
+ * \brief Abstract class that implements infrastructure used by all probe-based
+ * path finding algorithms (such as the probe position).
  */
 class AbstractProbePathFinder : public AbstractPathFinder
 {
@@ -51,7 +51,7 @@ class AbstractProbePathFinder : public AbstractPathFinder
         
         real findMinimalFreeDistance(std::vector<real> optimSpacePos);
 
-        // conversion between optimisation space and configruation space:
+        // conversion between optimisation space and configuration space:
         virtual gmx::RVec optimToConfig(std::vector<real> optimSpacePos) = 0;
 };
 

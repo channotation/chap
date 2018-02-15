@@ -3,7 +3,6 @@
 #include <functional>
 
 #include "optim/simulated_annealing_module.hpp"
-#include "statistics/misc_stats_utilities.hpp"
 
 
 /*!
@@ -110,7 +109,7 @@ SimulatedAnnealingModule::setInitGuess(std::vector<real> guess)
     // set optimisation space dimension:
     stateDim_ = guess.size();
 
-	// initialise state vectors:
+    // initialise state vectors:
     crntState_ = guess;
     candState_ = guess;
     bestState_ = guess;
@@ -154,7 +153,7 @@ SimulatedAnnealingModule::getOptimPoint()
 void
 SimulatedAnnealingModule::anneal()
 {
-   	// get cost of inital states:
+    // get cost of inital states:
     crntCost_ = objFun_(crntState_);
     candCost_ = objFun_(candState_);
     bestCost_ = objFun_(bestState_);
@@ -172,17 +171,15 @@ SimulatedAnnealingModule::anneal()
 void
 SimulatedAnnealingModule::annealIsotropic()
 {
-	// initialise counter:
-	int nCoolingIter = 0;
+    // initialise counter:
+    int nCoolingIter = 0;
 
-	// start annealing loop:
-	while(true)
-	{
+    // start annealing loop:
+    while(true)
+    {
         // generate a candidate state:
         generateCandidateStateIsotropic();
 
-        // TODO: check boundary conditions!
-        
         // evaluate cost function:
         candCost_ = objFun_(candState_);
 
@@ -209,7 +206,7 @@ SimulatedAnnealingModule::annealIsotropic()
         {
             return;
         }
-	}
+    }
 }
 
 
@@ -226,7 +223,7 @@ SimulatedAnnealingModule::annealIsotropic()
 void
 SimulatedAnnealingModule::cool()
 {
-	temp_ *= coolingFactor_;
+    temp_ *= coolingFactor_;
 }
 
 
@@ -237,11 +234,11 @@ SimulatedAnnealingModule::cool()
 void 
 SimulatedAnnealingModule::generateCandidateStateIsotropic()
 {
-	// generate random direction in state space:
-	for(int i = 0; i < stateDim_; i++)
-	{
+    // generate random direction in state space:
+    for(int i = 0; i < stateDim_; i++)
+    {
         candState_[i] = crntState_[i] + stepLengthFactor_*candGenDistr_(rng_);
-	}
+    }
 }
 
 
@@ -264,13 +261,13 @@ SimulatedAnnealingModule::generateCandidateStateIsotropic()
 bool
 SimulatedAnnealingModule::acceptCandidateState()
 {
-	// calculate acceptance probability according to Boltzmann statistics:
-	real accProb = std::min(std::exp( (candCost_ - crntCost_)/temp_ ), 1.0f);
+    // calculate acceptance probability according to Boltzmann statistics:
+    real accProb = std::min(std::exp( (candCost_ - crntCost_)/temp_ ), 1.0f);
 
-	// draw unfiform random number on interval [0,1):
-	real r = candAccDistr_(rng_);
-	
-	// should candidate be accepted:
-	return (r < accProb);
+    // draw unfiform random number on interval [0,1):
+    real r = candAccDistr_(rng_);
+    
+    // should candidate be accepted:
+    return (r < accProb);
 }
 

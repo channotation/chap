@@ -40,7 +40,7 @@ class BasisSpline
         BasisSpline();
         ~BasisSpline();
 
-        // evalution function and operator:
+        // evaluation function and operator:
         real evaluate(std::vector<real> &knotVector, 
                       int degree,
                       int interval,
@@ -66,7 +66,7 @@ class BasisSpline
  *
  * This functor evaluates the derivative of a basis spline of degree \f$ k \f$
  * over a knot vector \f$ \mathbf{t} \f$ at a given evaluation point \f$ x \f$.
- * It makes use of the recurrance relation
+ * It makes use of the recurrence relation
  *
  * \f[
  *      \frac{d}{dx} B_{i, k}(x) = k \left( \frac{B_{i, k-1}(x)}{t_{i + k} - t_i}

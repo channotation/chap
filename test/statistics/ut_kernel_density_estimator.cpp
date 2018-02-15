@@ -8,8 +8,9 @@
 
 
 /*!
- * Test fixture for testing the KernelDensityEstimator. Provides a simple 
- * vector of test data sampled from a Gaussian distribution.
+ * \brief Test fixture for testing the KernelDensityEstimator. 
+ *
+ * Provides a simple vector of test data sampled from a Gaussian distribution.
  */
 class KernelDensityEstimatorTest : public ::testing::Test
 {
@@ -76,7 +77,6 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorParameterTest)
 }
 
 
-
 /*!
  * This test checks that the evaluation points are calculated correctly.
  * Specifically they are required to be well ordered and to cover the complete
@@ -131,7 +131,7 @@ TEST_F(KernelDensityEstimatorTest, KernelDensityEstimatorEvalPointTest)
  * This test checks that the kernel density estimator with a 
  * GaussianKernelFunction estimates a valid probability density. To be precise,
  * it asserts that all densities are non-negative. it does NOT check whether
- * the probability density inegrates to one, as this is done by in the 
+ * the probability density integrates to one, as this is done by in the 
  * subsequent test on the interpolated density (this has the advantage that the
  * integration step can be chosen independent of the evaluation step and band
  * width).
@@ -225,7 +225,7 @@ TEST_F(
     // conduct test for all bandwidths:
     for(auto bw : bandWidths)
     {
-        // vary evluation step relative to bandwidth:
+        // vary evaluation step relative to bandwidth:
         for(auto evalPointDistFac : evalPointDistanceFactors)
         {
             // create kernel density estimator and set parameters:

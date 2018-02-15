@@ -107,7 +107,7 @@ SplineCurve3D::evaluateInternal(const real &eval, unsigned int deriv)
         basis = B_(eval, knots_, degree_, deriv); 
     }
     
-    // return value of spline curve (derivative) at given evalaution point:
+    // return value of spline curve (derivative) at given evaluation point:
     return computeLinearCombination(basis);
 }
 
@@ -134,7 +134,7 @@ SplineCurve3D::evaluateExternal(const real &eval, unsigned int deriv)
     if( deriv == 0 )
     {
         // compute slope and offset:
-        // TODO: this can be made mor efficient by evaluating basis and derivs
+        // TODO: this can be made more efficient by evaluating basis and derivs
         // in one go!
         SparseBasis basis = B_(boundary, knots_, degree_);
         gmx::RVec offset = computeLinearCombination(basis);
@@ -308,8 +308,8 @@ SplineCurve3D::tangentVec(const real &eval)
     return evaluate(eval, 1); 
 }
 
-/*
- * \todo This is not yet implemented!
+/*!
+ * Returns the normal vector at the evaluation point.
  */
 gmx::RVec
 SplineCurve3D::normalVec(const real &eval)
@@ -331,7 +331,7 @@ SplineCurve3D::speed(const real &eval)
 
 
 /*!
- * Takes point in cartesian coordinates and returns that points coordinates in
+ * Takes point in Cartesian coordinates and returns that points coordinates in
  * the curvilinear system defined by the spline curve. Return value is an RVec,
  * which contains the following information:
  *
@@ -406,7 +406,7 @@ SplineCurve3D::cartesianToCurvilinear(const gmx::RVec &cartPoint)
 
 
 /*!
- * Auxiliary function for finding th closest point on a spline curve that 
+ * Auxiliary function for finding the closest point on a spline curve that 
  * returns the corresponding spline interval index. First, a set of reference
  * points is sampled from the spline curve at the location of the unique knots
  * (this step is skipped if the reference points have already been computed in
@@ -481,7 +481,7 @@ SplineCurve3D::projectionInInterval(
     const boost::uintmax_t maxIter = 100;
     boost::uintmax_t iter = maxIter;
 
-    // objective functionbinding:
+    // objective function binding:
     boost::function<real(real)> objFun;
     objFun = boost::bind(
             &SplineCurve3D::pointSqDist, 
@@ -727,7 +727,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
         return knots_.back();
     }
 
-    // find apropriate interval:
+    // find appropriate interval:
     std::pair<std::vector<real>::iterator, std::vector<real>::iterator> bounds;
     bounds = std::equal_range(arcLengthTable_.begin(), arcLengthTable_.end(), arcLength);
     int idxLo = bounds.second - arcLengthTable_.begin() - 1;
@@ -762,7 +762,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
                            _2,
                            absTol);
 
-    // objective functionbinding:
+    // objective function binding:
     boost::function<real(real)> objFun;
     objFun = boost::bind(&SplineCurve3D::arcLengthToParamObj, 
                          this, 
@@ -785,7 +785,7 @@ SplineCurve3D::arcLengthToParam(real &arcLength)
 
 
 /*!
- * Termination condition for reparameterisation optimisation. 
+ * Termination condition for re-parameterisation optimisation. 
  */
 bool
 SplineCurve3D::arcLengthToParamTerm(real lo, real hi, real tol)
@@ -795,7 +795,7 @@ SplineCurve3D::arcLengthToParamTerm(real lo, real hi, real tol)
 
 
 /*!
- * Objective function for reparameterisation optimisation.
+ * Objective function for re-parameterisation optimisation.
  */
 real
 SplineCurve3D::arcLengthToParamObj(real lo, real hi, real target)
@@ -816,8 +816,8 @@ SplineCurve3D::pointSqDist(gmx::RVec point, double eval)
     gmx::RVec splPoint = evaluate(eval, 0);
 
     // return squared distance:
-    return (splPoint[0] - point[0])*(splPoint[0] - point[0]) +
-           (splPoint[1] - point[1])*(splPoint[1] - point[1]) +
-           (splPoint[2] - point[2])*(splPoint[2] - point[2]);
+    return (splPoint[XX] - point[XX])*(splPoint[XX] - point[XX]) +
+           (splPoint[YY] - point[YY])*(splPoint[YY] - point[YY]) +
+           (splPoint[ZZ] - point[ZZ])*(splPoint[ZZ] - point[ZZ]);
 }
 

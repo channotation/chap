@@ -6,7 +6,7 @@
 #include <cmath>
 
 
-/*
+/*!
  * Constructor.
  */
 BasisSpline::BasisSpline()
@@ -17,7 +17,7 @@ BasisSpline::BasisSpline()
 }
 
 
-/*
+/*!
  * Destructor.
  */
 BasisSpline::~BasisSpline()
@@ -65,7 +65,7 @@ BasisSpline::evaluate(std::vector<real> &knotVector,
         it = std::lower_bound(knotVector_.begin(), knotVector_.end(), evalPoint);   
         int idx = it - knotVector_.begin();
 
-        // only last basis vector is nozero in this case:
+        // only last basis vector is nonzero in this case:
         if( interval == idx - 1 )
         {
             return 1.0;
@@ -171,7 +171,7 @@ BasisSplineDerivative::BasisSplineDerivative()
 }
 
 
-/*
+/*!
  * Destructor.
  */
 BasisSplineDerivative::~BasisSplineDerivative()

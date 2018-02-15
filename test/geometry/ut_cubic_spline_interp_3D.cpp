@@ -3,8 +3,8 @@
 #include "geometry/cubic_spline_interp_3D.hpp"
 
 
-/*
- * Test fixture for cubic spline interpolation in 3D.
+/*!
+ * \brief Test fixture for cubic spline interpolation in 3D.
  */
 class CubicSplineInterp3DTest : public ::testing::Test
 {
@@ -13,7 +13,7 @@ class CubicSplineInterp3DTest : public ::testing::Test
 };
 
 
-/*
+/*!
  * Tests interpolation algorithm on a problem which should yield a linear 
  * polynomial. Correct evaluation is checked at the support points and the 
  * interval midpoints. Uses Hermite boundary conditions.
@@ -42,9 +42,9 @@ TEST_F(CubicSplineInterp3DTest, CubicSplineInterpHermiteLinearTest)
         real evalPoint = 1.0*i;
         gmx::RVec val = Spl.evaluate(evalPoint, 0);
 
-        ASSERT_NEAR(points[i][0], val[0], eps);
-        ASSERT_NEAR(points[i][1], val[1], eps);
-        ASSERT_NEAR(points[i][2], val[2], eps);
+        ASSERT_NEAR(points[i][XX], val[XX], eps);
+        ASSERT_NEAR(points[i][YY], val[YY], eps);
+        ASSERT_NEAR(points[i][ZZ], val[ZZ], eps);
     }
 
     // check interpolation at interval midpoints:
@@ -53,9 +53,9 @@ TEST_F(CubicSplineInterp3DTest, CubicSplineInterpHermiteLinearTest)
         real evalPoint = 1.0*i + 0.5;
         gmx::RVec val = Spl.evaluate(evalPoint, 0);
 
-        ASSERT_NEAR((points[i][0] + points[i+1][0])/2.0, val[0], eps);
-        ASSERT_NEAR((points[i][1] + points[i+1][1])/2.0, val[1], eps);
-        ASSERT_NEAR((points[i][2] + points[i+1][2])/2.0, val[2], eps);
+        ASSERT_NEAR((points[i][XX] + points[i+1][XX])/2.0, val[XX], eps);
+        ASSERT_NEAR((points[i][YY] + points[i+1][YY])/2.0, val[YY], eps);
+        ASSERT_NEAR((points[i][ZZ] + points[i+1][ZZ])/2.0, val[ZZ], eps);
     }
 }
 

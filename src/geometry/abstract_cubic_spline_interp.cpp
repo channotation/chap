@@ -3,7 +3,7 @@
 #include "geometry/abstract_cubic_spline_interp.hpp"
 
 
-/*
+/*!
  * Constructor.
  */
 AbstractCubicSplineInterp::AbstractCubicSplineInterp()
@@ -12,7 +12,7 @@ AbstractCubicSplineInterp::AbstractCubicSplineInterp()
 }
 
 
-/*
+/*!
  * Destructor.
  */
 AbstractCubicSplineInterp::~AbstractCubicSplineInterp()
@@ -209,7 +209,7 @@ AbstractCubicSplineInterp::estimateEndpointDeriv(std::vector<real> &x,
             fDeltaLo = (f.at(0) - f.at(2))/xDeltaLo;
             fDeltaHi = (f.at(1) - f.at(0))/xDeltaHi;
         }
-        else // no else if to avoid uniinitialised variable error
+        else // no else if to avoid un-initialised variable error
         {
             xDeltaLo = x.at(nDat - 1) - x.at(nDat - 2); 
             xDeltaHi = x.at(nDat - 3) - x.at(nDat - 1);

@@ -37,7 +37,7 @@ RegularVertexGrid::addVertex(
         gmx::RVec vertex, 
         real weight)
 {
-    // FIXME: this situation should really be handled by a NaN colour
+    // TODO: this situation should really be handled by a NaN colour
     if( std::isnan(weight) )
     {
         weight = 0.5;
@@ -893,7 +893,7 @@ MolecularPathObjExporter::generatePropertyGrid(
 
 /*!
  * generates a set of normal vectors by determining a normal vector at one end
- * of the surface tube and moving it along the sline curve.
+ * of the surface tube and moving it along the spline curve.
  */
 std::vector<gmx::RVec>
 MolecularPathObjExporter::generateNormals(
@@ -980,7 +980,7 @@ MolecularPathObjExporter::rotateAboutAxis(gmx::RVec vec,
                                           gmx::RVec axis,
                                           real angle)
 {
-    // evaluate trigonometrix functions of rotation angle:
+    // evaluate trigonometric functions of rotation angle:
     const real COS = std::cos(angle);
     const real SIN = std::sin(angle);
 
@@ -1029,7 +1029,7 @@ MolecularPathObjExporter::shiftAndScale(
     // scale for divergent colour scale?
     if( std::fabs(maxProp - minProp) < std::numeric_limits<real>::epsilon() )
     {
-        // special case of constant [roperty value, shift to middle of scale:
+        // special case of constant property value, shift to middle of scale:
         real shift = -minProp + 0.5;
 
         // just shift values in this case:

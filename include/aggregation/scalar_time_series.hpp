@@ -8,7 +8,7 @@
 
 
 /*!
- *
+ * \brief Data container for scalar time series.
  */
 class ScalarTimeSeries
 {

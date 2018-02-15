@@ -9,16 +9,17 @@
 #include "geometry/basis_spline.hpp"
 
 
-/*
- * Test fixture for testing the BasisSpline class. Reference values have been
- * computed with the bs() method of the spline library in R. Values of knots 
- * reflect the example discussed in "A very short note on B-splines" by 
- * Samiran Sinha. Evalution points are selected so that both values at and
- * between the original knots are probed.
+/*!
+ * \brief Test fixture for testing the BasisSpline class.
+ *
+ * Reference values have been computed with the bs() method of the spline 
+ * library in R. Values of knots reflect the example discussed in "A very short 
+ * note on B-splines" by Samiran Sinha. Evalution points are selected so that 
+ * both values at and between the original knots are probed.
  */
 class BasisSplineTest : public ::testing::Test
 {
-	protected:
+				protected:
 
         // knot vector:
         std::vector<real> knotVector_ = {-4, -0.5, 0.0, 0.5, 4};
@@ -28,7 +29,7 @@ class BasisSplineTest : public ::testing::Test
 };
 
 
-/*
+/*!
  * Tests that the basis splines over a knot vector form a partition of unity,
  * i.e. that sum_i=1^n B_i,k(x) = 1. This is done for basis splines up to
  * degree 5. Test is considered passed if the above sum is within 2 times the
@@ -83,7 +84,7 @@ TEST_F(BasisSplineTest, BasisSplinePartitionOfUnityTest)
 }
 
 
-/*
+/*!
  * Tests that the BasisSpline functor gives correct values for quadratic 
  * splines. Reference values have been taken from the R software package and 
  * are hardcoded into this test case. Threshold for floating point comparison
@@ -137,7 +138,7 @@ TEST_F(BasisSplineTest, BasisSplineQuadraticTest)
 }
 
 
-/*
+/*!
  * Tests that the BasisSpline functor gives correct values for cubic splines.
  * Reference values have been taken from the R software package and are hard-
  * coded into this test case. Threshold for floating point comparison is taken
@@ -191,7 +192,7 @@ TEST_F(BasisSplineTest, BasisSplineCubicTest)
 }
 
 
-/*
+/*!
  * Tests that the BasisSplineDerivative functor gives correct values for the 
  * first derivative of a cubic spline. Reference values have been taken from 
  * the deriv() function of the splines2 package of the R software. Threshold
@@ -217,7 +218,7 @@ TEST_F(BasisSplineTest, BasisSplineFirstDerivativeTest)
     // create basis spline derivative functor:
     BasisSplineDerivative dB;
 
-    // append and prepend the apprpropriate number of knots:
+    // append and prepend the appropriate number of knots:
     std::vector<real> knots;
     for(int i = 0; i < degree; i++)
     {
@@ -235,10 +236,10 @@ TEST_F(BasisSplineTest, BasisSplineFirstDerivativeTest)
     // size of basis:
     int nBasis = knotVector_.size() + degree - 1;
 
-    // loop over evalution points:    
+    // loop over evaluation points:    
     for(unsigned int j = 0; j < evalPoints_.size(); j++)
     {
-        // loop ober knot intervals:
+        // loop over knot intervals:
         for(int i = 0; i < nBasis; i++)
         {      
             real d = dB(knots, degree, i, evalPoints_[j], derivOrder);
@@ -248,13 +249,12 @@ TEST_F(BasisSplineTest, BasisSplineFirstDerivativeTest)
 }
 
 
-/*
+/*!
  * Tests that the BasisSplineDerivative functor gives correct values for the 
  * second derivative of a cubic spline. Reference values have been taken from 
  * the deriv() function of the splines2 package of the R software. Threshold
  * for floating point comparison is taken to be the machine epsilon here.
  */
-
 TEST_F(BasisSplineTest, BasisSplineSecondDerivativeTest)
 {
     // test first derivative here:

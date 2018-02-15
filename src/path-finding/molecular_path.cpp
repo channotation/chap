@@ -28,11 +28,11 @@
  * interpolation parameter.
  *
  * Subsequently, CubicSplineInterp1D is used to smoothly interpolate the radius
- * between the given support points. Consqeuently, the input vectors must have
+ * between the given support points. Consequently, the input vectors must have
  * the same number of elements. This uses the arc length distance between 
  * centre line points as interpolation parameter.
  * 
- * Finally, the centre-line curve is reparameterised in terms of arc length
+ * Finally, the centre-line curve is re-parameterised in terms of arc length
  * and the length of the path is computed as the arc length distance between
  * the first and last centre line points.
  */
@@ -57,13 +57,13 @@ MolecularPath::MolecularPath(std::vector<gmx::RVec> &pathPoints,
     CubicSplineInterp1D Interp1D;
     poreRadius_ =  Interp1D(arcLen, pathRadii_, eSplineInterpBoundaryHermite);
 
-    // reparameterise centre line spline by arc length:
+    // re-parameterise centre line spline by arc length:
     centreLine_.arcLengthParam();
 }
 
 
-/*
- *
+/*!
+ * Constructor for creating MolcularPath from a JSON document.
  */
 MolecularPath::MolecularPath(
         const rapidjson::Document &doc)
@@ -327,8 +327,8 @@ MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
 }
 
 
-/*
- *
+/*!
+ * Checks if a given set of coordinates lies within the pathway.
  */
 std::map<int, bool>
 MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
@@ -342,7 +342,7 @@ MolecularPath::checkIfInside(const std::map<int, gmx::RVec> &mappedCoords,
     // now erase all elements that do not fall in given range:
     for(auto it = isInside.begin(); it != isInside.end(); it++)
     {
-        // optain mapped s value:
+        // obtain mapped s value:
         real s = mappedCoords.at(it->first)[0];
 
         // does it fall in target interval?
@@ -445,8 +445,8 @@ MolecularPath::radius(real s)
 }
 
 
-/*
- * TODO: update this with shifts of coordinate ==> done
+/*!
+ * Returns coordinates of the lower opening of the pore.
  */
 real
 MolecularPath::sLo()
@@ -455,8 +455,8 @@ MolecularPath::sLo()
 }
 
 
-/*
- * TODO: update this with shifts of coordinate ==> done
+/*!
+ * Returns the coordinates of the upper opening of the pore.
  */
 real
 MolecularPath::sHi()
@@ -617,8 +617,8 @@ MolecularPath::minRadius()
  *  is exact.
  *
  *  The volume is nonetheless an estimate due to (i) the cross-sectional area
- *  of a path not being truely circular and (ii) the dependency of radius on
- *  centre line parameter not being \f$ \mathcal{O}(s^3) \f$ neccessarily. The 
+ *  of a path not being truly circular and (ii) the dependency of radius on
+ *  centre line parameter not being \f$ \mathcal{O}(s^3) \f$ necessarily. The 
  *  former effect is likely stronger so that the volume estimate should be 
  *  viewed as a lower bound.
  */
@@ -898,8 +898,8 @@ MolecularPath::sampleRadii(std::vector<real> arcLengthSample)
 }
 
 
-/*
- *
+/*!
+ * Shift the s-coordinate by the given number.
  */
 void
 MolecularPath::shift(const gmx::RVec &shift)

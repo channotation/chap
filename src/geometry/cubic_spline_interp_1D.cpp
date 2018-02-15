@@ -8,7 +8,7 @@
 #include "geometry/cubic_spline_interp_1D.hpp"
 
 
-/*
+/*!
  * Constructor.
  */
 CubicSplineInterp1D::CubicSplineInterp1D()
@@ -17,8 +17,7 @@ CubicSplineInterp1D::CubicSplineInterp1D()
 }
 
 
-
-/*
+/*!
  * Destructor.
  */
 CubicSplineInterp1D::~CubicSplineInterp1D()
@@ -27,7 +26,7 @@ CubicSplineInterp1D::~CubicSplineInterp1D()
 }
 
 
-/*
+/*!
  * Public interface for interpolation. Function takes a one-dimensional data 
  * cloud of (x_i, f(x_i)) points (each in their separate vectors) and finds the
  * cubic spline curve that interpolates between these data points such that:
@@ -36,24 +35,13 @@ CubicSplineInterp1D::~CubicSplineInterp1D()
  *
  * Currently only Hermite endpoint conditions are implemented. The relevant 
  * linear system is solved via Gaussian elimination (using LAPACKE) and the 
- * result is returned as a splien curve object.
- *
- * TODO: Implement natural boundary conditions.
+ * result is returned as a spline curve object.
  */
 SplineCurve1D
 CubicSplineInterp1D::interpolate(std::vector<real> &x,
                                  std::vector<real> &f,
                                  eSplineInterpBoundaryCondition bc)
 {
-    for(size_t i = 0; i < x.size(); i++)
-    {
-//        std::cout<<"i = "<<i<<"  "
-//                 <<"x = "<<x[i]<<"  "
-//                 <<"f = "<<f[i]<<"  "
-//                 <<std::endl;
-    }
-
-
     // sanity check:
     if( x.size() != f.size() )
     {
@@ -142,7 +130,7 @@ CubicSplineInterp1D::interpolate(std::vector<real> &x,
 }
 
 
-/*
+/*!
  * Interpolation interface conveniently defined as operator.
  */
 SplineCurve1D

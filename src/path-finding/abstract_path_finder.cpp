@@ -64,7 +64,7 @@ PathFindingParameters::setMaxProbeSteps(int maxProbeSteps)
 
 
 /*!
- * Returns neighborhodd search cutoff.
+ * Returns neighbourhood search cutoff.
  *
  * \throws std::logic_error If parameter value unset/
  */
@@ -83,7 +83,7 @@ PathFindingParameters::nbhCutoff() const
 
 
 /*!
- * Returns flag indicating whether neighborhodd search cutoff is set.
+ * Returns flag indicating whether neighbourhood search cutoff is set.
  */
 bool
 PathFindingParameters::nbhCutoffIsSet() const
@@ -197,7 +197,7 @@ AbstractPathFinder::AbstractPathFinder(std::map<std::string, real> params)
 
 /*!
  * Returns a MolecularPath object constructed from the path finder's path 
- * points and radii. Basically jsut a wrapper around the constructor of 
+ * points and radii. Basically a wrapper around the constructor of 
  * MolecularPath.
  */
 MolecularPath
@@ -215,5 +215,4 @@ AbstractPathFinder::setParameters(const PathFindingParameters& /*&params*/)
 {
     parametersSet_ = true;
 }
-
 

@@ -23,7 +23,7 @@ WavefrontObjFace::WavefrontObjFace(
 
 
 /*!
- * Constructs a face from vectors of vertex indices and normal indeces. These
+ * Constructs a face from vectors of vertex indices and normal indices. These
  * should be of the same size.
  */
 WavefrontObjFace::WavefrontObjFace(

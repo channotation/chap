@@ -6,6 +6,7 @@
 #include "optim/simulated_annealing_module.hpp"
 #include "path-finding/optimised_direction_probe_path_finder.hpp"
 
+
 /*
  * Constructor.
  */
@@ -62,66 +63,11 @@ OptimisedDirectionProbePathFinder::findPath()
 void
 OptimisedDirectionProbePathFinder::optimiseInitialPos()
 {
-    /*
 
-    std::cout<<"OPTIMISING INITIAL POSITION"<<std::endl;
-
-    // FIRST OPTIMISATION: WITHIN A CIRCLE OF GIVEN RADIUS
-
-    // prepare simulated annealing:
-    int stateDimInCircle = 3;
-    real initStateInCircle[stateDimInCircle];
-    costFunction cfInCircle;
-    // TODO: need other cost function to include variable distance
-    cfInCircle = std::bind(&OptimisedDirectionProbePathFinder::findMinimalFreeDistance,
-                           this, std::placeholders::_1);
-
-    // create new simulated annealing module:
-    // TODO: this optimisation problem needs to be cnstrained in the distance variable
-    SimulatedAnnealingModule samInCircle(stateDimInCircle, saRandomSeed_, 
-                                         saMaxCoolingIter_, saNumCostSamples_, 
-                                         saXi_, saConvRelTol_, saInitTemp_, 
-                                         saCoolingFactor_, saStepLengthFactor_, 
-                                         initStateInCircle, cfInCircle,
-                                         saUseAdaptiveCandGen_);
-
-    // find optimal position:
-    eSimAnTerm statusInCircle = samInCircle.anneal();
-
-    // add to path vector:
-//    path_.push_back(samIn;
-    radii_.push_back(samInCircle.getBestCost());
-
-
-    // SECOND OPTIMISATION: ON A CIRCLE OF GIVEN RADIUS
-
-    // prepare simulated annealing:
-    int stateDimOnCircle = 2;
-    real initStateOnCircle[stateDimOnCircle];
-    costFunction cfOnCircle;
-    cfOnCircle = std::bind(&OptimisedDirectionProbePathFinder::findMinimalFreeDistance,
-                           this, std::placeholders::_1);
-
-    // create new simulated annealing module:                               
-    SimulatedAnnealingModule samOnCircle(stateDimOnCircle, saRandomSeed_, 
-                                         saMaxCoolingIter_, saNumCostSamples_, 
-                                         saXi_, saConvRelTol_, saInitTemp_, 
-                                         saCoolingFactor_, saStepLengthFactor_, 
-                                         initStateOnCircle, cfOnCircle,
-                                         saUseAdaptiveCandGen_);
-
-    // find optimal position:
-    eSimAnTerm statusOnCircle = samOnCircle.anneal();
-
-    // add to path vector:
-    path_.push_back(optimToConfig(samOnCircle.getBestState()));
-    radii_.push_back(samOnCircle.getBestCost());
-
-    */
 }
 
 
-/*
+/*!
  * Advances the probe position in an optimised direction until the probe radius
  * exceeds a specified limit (or a maximum number of probe steps has been 
  * exceeded).
@@ -129,69 +75,11 @@ OptimisedDirectionProbePathFinder::optimiseInitialPos()
 void
 OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
 {
-    /*
 
-    std::cout<<"Advance and optimise"<<std::endl;
-
-    // initialise direction vector and probe position:
-    gmx::RVec direction(initDirection);
-    crntProbePos_ = initProbePos_; // TODO: make crntProbePos_ local variable
-
-    // initial state in optimisation space is always the null vector:
-    int stateDim = 2;
-    real initState[stateDim] = {0.0, 0.0};
-
-    // cost function is minimal free distance function:
-    costFunction cf;
-    cf = std::bind(&OptimisedDirectionProbePathFinder::findMinimalFreeDistance,
-                   this, std::placeholders::_1);
-
-    // advance probe position:
-    int numProbeSteps = 0;
-    while( true )
-    {
-        // create new simulated annealing module:
-        // TODO: this optimisation problem needs to be constrained to a half-sphere
-        SimulatedAnnealingModule sam(stateDim, saRandomSeed_, saMaxCoolingIter_,
-                                     saNumCostSamples_, saXi_, saConvRelTol_,   
-                                     saInitTemp_, saCoolingFactor_,                
-                                     saStepLengthFactor_, initState, cf,           
-                                     saUseAdaptiveCandGen_); 
-
-        // optimise direction:
-        eSimAnTerm status = sam.anneal();
-
-        // update current and previous probe position:
-        prevProbePos_ = crntProbePos_;
-        crntProbePos_ = optimToConfig(sam.getBestState());
-
-        // add result to path container:
-        path_.push_back(crntProbePos_);
-        radii_.push_back(sam.getBestCost());
-
-        // update direction vector and inverse rotation matrix:
-        rvec_sub(crntProbePos_, prevProbePos_, direction);
-        updateInverseRotationMatrix(direction);
-
-        // incremet probe step counter:
-        numProbeSteps++;
-
-        // termination conditions:
-        // TODO: add condition for negative radius!
-        if( sam.getBestCost() > maxProbeRadius_ )
-        {
-            break;
-        }
-        if( numProbeSteps >= maxProbeSteps_ )
-        {
-            break;
-        }
-    }
-    */
 }
 
 
-/*
+/*!
  * Updates inverse rotation matrix used in conversion between optimisation and 
  * configuration space.
  *
@@ -201,8 +89,8 @@ OptimisedDirectionProbePathFinder::advanceAndOptimise(gmx::RVec initDirection)
  *
  *     R = I + K + K^2 * 1/(1+cos(alpha))
  *
- * Here I is the identity matrix, K is the cross-product matrix prescriping the
- * direction of the rotation axis in space, and alpha the the angle by which 
+ * Here I is the identity matrix, K is the cross-product matrix prescribing the
+ * direction of the rotation axis in space, and alpha the angle by which 
  * vector a is rotated around that axis to be mapped onto b.
  */
 void
@@ -275,7 +163,7 @@ OptimisedDirectionProbePathFinder::updateInverseRotationMatrix(gmx::RVec directi
 }
 
 
-/*
+/*!
  * Performs optimisation space to configuration space conversion.
  *
  * The input array optimSpacePos contains the angles theta and phi in the local

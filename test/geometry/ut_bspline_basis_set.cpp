@@ -5,14 +5,13 @@
 
 #include "geometry/bspline_basis_set.hpp"
 
-#include "geometry/basis_spline.hpp" // TODO: remove this
 
 /*!
  * \brief Test fixture for BSplineBasisSet functor.
  */
 class BSplineBasisSetTest : public ::testing::Test
 {
-	protected:
+		protected:
 
         // knot vector:
         std::vector<real> uniqueKnots_ = {-4, -0.5, 0.0, 0.5, 4};

@@ -5,8 +5,8 @@
 
 #include "path-finding/abstract_probe_path_finder.hpp"
 
-/*
- *
+/*!
+ * \brief Not yet implemented.
  */
 class OptimisedDirectionProbePathFinder : public AbstractProbePathFinder
 {

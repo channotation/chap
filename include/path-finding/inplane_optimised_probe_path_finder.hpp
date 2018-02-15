@@ -10,8 +10,8 @@
 #include "path-finding/abstract_probe_path_finder.hpp"
 
 
-/*
- *
+/*!
+ * \brief Probe-based path-finder based on the HOLE algorithm.
  */
 class InplaneOptimisedProbePathFinder : public AbstractProbePathFinder
 {

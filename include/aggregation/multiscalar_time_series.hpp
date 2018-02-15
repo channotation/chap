@@ -9,7 +9,7 @@
 
 
 /*!
- * 
+ * \brief Data container for multiple scalar time series.
  */
 class MultiscalarTimeSeries
 {

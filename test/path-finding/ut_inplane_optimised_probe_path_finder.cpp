@@ -319,8 +319,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderXDirT
 }
 
 
-
-
 /*! 
  * \brief Tests InplaneOptimisedProbePathFinder on a cylidnrical pore pointing 
  * in the \f$ y \f$-direction.
@@ -454,7 +452,7 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
 
 
 /*! 
- * \brief Tests InplaneOptimisedProbePathFinder on a cylidnrical pore pointing 
+ * \brief Tests InplaneOptimisedProbePathFinder on a cylindrical pore pointing 
  * in the \f$ z \f$-direction.
  *
  * Similar to the previous test, but with the main direction of the pore 
@@ -462,7 +460,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderYDirT
  * such as the pore and van-der-Waals radii, the initial probe position, and
  * the channel direction vector are slightly different.
  */
-
 TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirTest)
 {
     // set up periodic boundary conditions:
@@ -476,7 +473,6 @@ TEST_F(InplaneOptimisedProbePathFinderTest, InplaneOptimisedProbePathFinderZDirT
     real poreLength = 3.0;
     real poreCentreRadius = 0.25;
     real poreVdwRadius = 0.2;
-//    gmx::RVec poreCentre(std::sqrt(2), -std::sqrt(6), std::sqrt(3));
     gmx::RVec poreCentre(0.0, 0.0, 0.0);
     int poreDir = ZZ;
     int notPoreDirA = XX;

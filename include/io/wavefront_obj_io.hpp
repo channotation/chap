@@ -13,8 +13,9 @@
 
 
 /*!
- * Abstract data type for faces in Wavefront OBJ objects. Faces are sets of 
- * vertex indices and (optionally) vertex normal indices.
+ * \brief Abstract data type for faces in Wavefront OBJ objects.
+ *
+ * Faces are sets of vertex indices and (optionally) vertex normal indices.
  */
 class WavefrontObjFace
 {
@@ -35,10 +36,6 @@ class WavefrontObjFace
         int normalIdx(int i) const;
         bool hasNormals() const;
 
-
-//    private:
-
-
         // data container for indices:
         std::vector<int> vertexIdx_;
         std::vector<int> normalIdx_;
@@ -49,9 +46,10 @@ class WavefrontObjFace
 
 
 /*!
- * Effectively an abstract data type representing groups OBJ files. Consists
- * of a group name and a vector of integer vectors representing the list of 
- * faces.
+ * \brief Data container representing groups OBJ files.
+ *
+ * Consists of a group name and a vector of integer vectors representing the
+ * list of faces.
  */
 class WavefrontObjGroup
 {
@@ -71,9 +69,11 @@ class WavefrontObjGroup
 
 
 /*!
- * An abstract data type representing a complete Wavefront OBJ object (i.e. an
- * entire file). Consists of a vector of vertex positions and a vector of
- * WavefrongObjGroup objects.
+ * \brief Data container representing a complete Wavefront OBJ object (i.e. an
+ * entire file). 
+ *
+ * Consists of a vector of vertex positions and a vector of WavefrongObjGroup
+ * objects.
  */
 class WavefrontObjObject
 {
@@ -114,7 +114,8 @@ class WavefrontObjObject
 
 
 /*!
- * Simple serialiser for writing data to a Wavefront OBJ geometry file. 
+ * \brief Simple serialiser for writing data to a Wavefront OBJ geometry file.
+ *
  * Currently, only writing of comments, vertices and faces is supported. Faces
  * may be grouped together. Does not perform error checking.
  */

@@ -54,7 +54,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorBreaksTest)
     // need to sort test data manually in this test:
     std::sort(testData_.begin(), testData_.end());
 
-    // create histogram estimator and set bindwidth:
+    // create histogram estimator and set bin width:
     HistogramDensityEstimator hde;
 
     // some bin widths to try:
@@ -102,7 +102,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
     // need to sort test data manually in this test:
     std::sort(testData_.begin(), testData_.end());
 
-    // create histogram estimator and set bindwidth:
+    // create histogram estimator and set bin width:
     HistogramDensityEstimator hde;
 
     // check that exception is thrown if no bin width is set:
@@ -116,7 +116,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
     // NOTE: if bin width too small, spline interpolation will fail!
     std::vector<real> binWidth = {1.0, 0.1, 1e-2, 0.1*std::sqrt(2.0)};
 
-    // perform tests for each binwidth value:
+    // perform tests for each bin width value:
     for(auto bw : binWidth)
     {
         // set bin width:
@@ -128,7 +128,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
                 testData_,
                 breaks);
 
-        // ensure that density values are semipositive definite:
+        // ensure that density values are semi-positive definite:
         for(auto d : density)
         {
             ASSERT_LE(0.0, d);
@@ -142,7 +142,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorDensityTest)
         }
         ASSERT_NEAR(1.0, sum, eps);
 
-        // first and last bin should be empty by constructrion:
+        // first and last bin should be empty by construction:
         ASSERT_NEAR(0.0, density.front(), 0.0);
         ASSERT_NEAR(0.0, density.back(), 0.0);
     }
@@ -193,7 +193,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEmptyDatasetTest)
 /*!
  * This test checks that the public interface for histogram density estimation 
  * yields a valid probability density. In particular, it makes sure that the
- * denisty outside the data range is zero, that the density within the data 
+ * density outside the data range is zero, that the density within the data 
  * range is positive semi-definite, and that the integral over the density
  * spline equals one.
  */
@@ -202,7 +202,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
     // floating point comparison tolerance:
     real eps = std::numeric_limits<real>::epsilon();
 
-    // create histogram estimator and set bindwidth:
+    // create histogram estimator and set bin width:
     HistogramDensityEstimator hde;
 
     // check that exception is thrown if no bin width is set:
@@ -224,7 +224,7 @@ TEST_F(HistogramDensityEstimatorTest, HistogramDensityEstimatorEstimateTest)
     // check density computed for all values of bin width:
     for(auto bw : binWidth)
     {
-        // estimate density at this binwidth:
+        // estimate density at this bin width:
         hde.setBinWidth(bw);
         SplineCurve1D densitySpline = hde.estimate(testData_);
 

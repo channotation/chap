@@ -9,7 +9,7 @@
 
 
 /*!
- *
+ * \brief Enaum for available path-finding methods.
  */
 typedef enum {ePathFindingMethodNaiveCylindrical,
               ePathFindingMethodInplaneOptimised} ePathFindingMethod;
@@ -81,7 +81,7 @@ class AbstractPathFinder
         // interface for path finding method:
         virtual void findPath() = 0;
 
-        // public interface for path retrieal:
+        // public interface for path retrieval:
         virtual MolecularPath getMolecularPath();
 
         // public interface for setting parameters:

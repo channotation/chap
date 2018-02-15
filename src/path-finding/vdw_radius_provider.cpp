@@ -20,8 +20,7 @@ VdwRadiusProvider::VdwRadiusProvider()
 }
 
 /*!
- * \brief 
- * Destructor.
+ * \brief Destructor.
  */
 VdwRadiusProvider::~VdwRadiusProvider()
 {

@@ -100,7 +100,6 @@ class NelderMeadModule : public OptimisationModule
         void setParams(std::map<std::string, real> params);
         void setObjFun(ObjectiveFunction objFun);
         void setInitGuess(std::vector<real> guess);
-//        void setInitGuess(gmx::RVec guess);
 
         // optimisation and result retrieval:
         void optimise();

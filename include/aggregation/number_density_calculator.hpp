@@ -38,7 +38,7 @@ class NumberDensityCalculator
 {
     public:
 
-        // interfact for calculating number density:
+        // interface for calculating number density:
         std::vector<real> operator()(
                 const std::vector<real> &probabilityDensity,
                 const std::vector<real> &radius,
