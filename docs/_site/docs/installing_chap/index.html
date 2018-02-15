@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Installing CHAP</title>
+    <meta name="description" content="">
+
+
+    <link rel="stylesheet" href="/chap/css/main.css">
+    <link rel="stylesheet" href="/chap/css/font-awesome.min.css">
+
+    <link rel="shortcut icon" href="/chap/favicon.ico?1">
+    <!-- Begin Jekyll SEO tag v2.2.2 -->
+<title>Installing CHAP | CHAP</title>
+<meta property="og:title" content="Installing CHAP" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="http://localhost:4000/chap/docs/installing_chap/" />
+<meta property="og:url" content="http://localhost:4000/chap/docs/installing_chap/" />
+<meta property="og:site_name" content="CHAP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-02-15T21:33:50+00:00" />
+<script type="application/ld+json">
+{"@context":"http://schema.org","@type":"WebPage","headline":"Installing CHAP","datePublished":"2018-02-15T21:33:50+00:00","dateModified":"2018-02-15T21:33:50+00:00","url":"http://localhost:4000/chap/docs/installing_chap/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <link rel="canonical" href="http://localhost:4000/chap/docs/installing_chap/">
+    <link rel="alternate" type="application/rss+xml" title="CHAP" href="http://localhost:4000/chap/feed.xml" />
+</head>
+
+
+<body>
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container navbar-container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+            <a class="navbar-brand" href="/chap/">
+                <span><img src="/chap/img/logonav.png"></span> CHAP
+            </a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li  class="active" ><a href="/chap/docs/home/">Documentation</a></li>
+                <li ><a href="/chap/publications.html">Publications</a></li>
+                <li ><a href="/chap/blog/2018/01/26/chap-at-bps/">News</a></li>
+                <li ><a href="/chap/aboutus.html">About Us</a></li>
+            </ul>
+            <div class="navbar-right">
+                <form class="navbar-form navbar-left">
+                    <div class="form-group has-feedback">
+                        <input id="search-box" type="text" class="form-control" placeholder="Search...">
+                        <i class="fa fa-search form-control-feedback"></i>
+                    </div>
+                </form>
+                <ul class="nav navbar-nav">
+                    <li><a href=""><i class="fa fa-github" aria-hidden="true"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
+
+    <div class="page-content">
+        <div class="wrapper">
+            <div class="container">
+    <div class="row">
+        <div class="col-md-4">
+          <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-1" aria-expanded="false" aria-controls="collapse-1">
+          Getting Started
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/home/">What CHAP Can Do</a>
+        
+          
+          
+          <a class="list-group-item active" href="/chap/docs/installing_chap/">Installing CHAP</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/annotation_example/">Annotation Example</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-2" aria-expanded="false" aria-controls="collapse-2">
+          Running CHAP
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-2" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/chap_workflow/">Overview of CHAP Workflow</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/input_parameters/">Input Parameters</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-3" aria-expanded="false" aria-controls="collapse-3">
+          Understanding Output
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-3" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/overview_output/">Overview of Output Files</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_json_file/">Contents of the JSON Output File</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_pdb_file/">Contents of the PDB Output File</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_objmtl_file/">Contents of the OBJ and MTL Output Files</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-4" aria-expanded="false" aria-controls="collapse-4">
+          Visualising Results
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-4" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/plotting_python/">Plotting in Python</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/plotting_r/">Plotting in R</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/molecular_graphics_pymol/">Molecular Graphics in PyMOL</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/molecular_graphics_vmd/">Molecular Graphics in VMD</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-5" aria-expanded="false" aria-controls="collapse-5">
+          Data Sources
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-5" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/vdw_radii/">Van der Waals Radii</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/hydrophobicity_scales/">Hydrophobicity Scales</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/colour_palettes/">Colour Palettes</a>
+        
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+        </div>
+
+        <div class="col-md-8">
+            <h1>Installing CHAP</h1>
+            <div id="markdown-content-container">
+<p>CHAP is written in C++ and is developed and tested on Ubuntu Linux. It is expected to be portable to other Unix-like operating systems, although this has not been tested. The following installation guide will assume that you are using Ubuntu and that you are reasonably experienced in using the command line.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<p>Prior to installing CHAP, make sure that you have the following libraries and tools installed:</p>
+
+<ol>
+  <li>The <a href="https://cmake.org/">CMake</a> tool in version 3.2 or higher. This will typically be available through your system’s package manager. For example, on Ubuntu you can install CMake by typing <code class="highlighter-rouge">sudo apt-get install cmake</code>. CMake is used to check the availability of libraries and compilers on your system and will ensure that CHAP is installed properly.</li>
+  <li>A C++ compiler that supports the <code class="highlighter-rouge">C++11</code> standard. A popular choice is the <a href="https://gcc.gnu.org/">GNU Compiler Collection</a>, which on Ubuntu can be obtained by typing <code class="highlighter-rouge">sudo apt-get install gcc</code></li>
+  <li>The <a href="http://www.boost.org/">Boost</a> C++ libraries, which on Ubuntu can be installed using <code class="highlighter-rouge">sudo apt-get install libboost-all-dev</code>. Boost algorithms are used in CHAP to solve some root finding and optimisation problems.</li>
+  <li>The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing <code class="highlighter-rouge">sudo apt-get install libblas-dev liblapacke-dev libatlas-base-dev</code>. The linear algebra libraries are used in CHAP’s spline interpolation.</li>
+  <li>The <code class="highlighter-rouge">libgromacs</code> library of the <a href="http://www.gromacs.org/">Gromacs</a> molecular dynamics engine in version 2016 or higher. Comprehensive installation instructions for Gromacs can be found <a href="http://manual.gromacs.org/documentation/">here</a>.
+Please note that for using Gromacs as a library, the underlying FFTW libray 
+may <strong>not</strong> be installed automatically, i.e. you need to set
+<code class="highlighter-rouge">-DGMX_BUILD_OWN_FFTW=OFF</code> when running CMake during the Gromacs 
+installation.</li>
+</ol>
+
+<p>CHAP also depends on <a href="http://rapidjson.org/">RapidJSON</a>, but this is included as a header-only library, and on <a href="https://github.com/google/googletest">GTest</a>, but this is downloaded and installed automatically by CMake, so you don’t need to do anything about either of these (you will however need Internet access when installing CHAP).</p>
+
+<h2 id="compiling-and-installing-chap">Compiling and Installing CHAP</h2>
+
+<p>To install CHAP, unpack the source, create a <code class="highlighter-rouge">build</code> directory parallel to the source tree and from there run <code class="highlighter-rouge">cmake</code>, <code class="highlighter-rouge">make</code>, <code class="highlighter-rouge">make check</code>, and <code class="highlighter-rouge">make install</code>.</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="nb">cd </span>chap
+mkdir build
+<span class="nb">cd </span>build
+cmake ..
+make
+make check
+sudo make install
+</code></pre>
+</div>
+
+<p>CMake will automatically find all dependencies (and inform you of missing ones), <code class="highlighter-rouge">make</code> will compile the code (you can use the <code class="highlighter-rouge">make -j</code> flag to speed this up on multicore machines), <code class="highlighter-rouge">make check</code> runs a suite of unit tests, and <code class="highlighter-rouge">make install</code> will place the binary in <code class="highlighter-rouge">/usr/local/chap</code> (so you will need sudo rights for this last step). To check if CHAP has been installed properly, you can type</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code>chap -h
+</code></pre>
+</div>
+
+<p>which should bring up an online help for using CHAP.</p>
+
+</div>
+            <p class="text-center">
+              <br />
+              <a target="_blank" href="/_docs/getting-started/installing_chap.md" class="btn btn-default githubEditButton" role="button">
+                <i class="fa fa-pencil fa-lg"></i> Improve this page
+              </a>
+            </p>
+            <hr>
+            
+
+
+
+
+
+  
+  
+
+  
+  
+    <ul class="pager">
+      
+        
+        
+        <li class="previous">
+          <a href="/chap/docs/home/">
+            <span aria-hidden="true">&larr;</span> Previous
+          </a>
+        </li>
+      
+
+      
+        
+        
+        <li class="next">
+          <a href="/chap/docs/annotation_example/">
+            Next <span aria-hidden="true">&rarr;</span>
+          </a>
+        </li>
+      
+    </div>
+    <div class="clear"></div>
+    
+
+        </div>
+
+    </div>
+</div>
+
+        </div>
+    </div>
+
+    <footer class="footer">
+    <div class="container">
+
+        <p class="text-center">
+            CHAP 2018 |
+            Powered by <a href="https://github.com/aksakalli/jekyll-doc-theme">Jekyll Doc Theme</a>
+        </p>
+        <!-- <p class="text-muted">Place sticky footer content here.</p> -->
+    </div>
+</footer>
+
+    <script>
+  var baseurl = '/chap'
+</script>
+<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="/chap/js/bootstrap.min.js "></script>
+<script src="/chap/js/typeahead.bundle.min.js "></script>
+
+<script src="/chap/js/main.js "></script>
+
+</body>
+
+</html>
