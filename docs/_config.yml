@@ -1,12 +1,12 @@
 # Site settings
 title: CHAP
-email: chap@chap.com
+email: chap@bioch.ox.ac.uk
 description: >
   Jekyll Template for Project Websites
   providing documentation and blog post pages.
 
-baseurl: "/chap" # the subpath of your site, e.g. /blog/
-url: www.channotation.org # the base hostname & protocol for your site
+baseurl: "/" # the subpath of your site, e.g. /blog/
+url: https://www.channotation.org # the base hostname & protocol for your site
 git_address: https://github.com/channotation/chap
 git_edit_address: https://github.com/channotation/chap/docs
 
