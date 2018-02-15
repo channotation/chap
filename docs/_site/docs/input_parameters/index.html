@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Input Parameters</title>
+    <meta name="description" content="">
+
+
+    <link rel="stylesheet" href="/chap/css/main.css">
+    <link rel="stylesheet" href="/chap/css/font-awesome.min.css">
+
+    <link rel="shortcut icon" href="/chap/favicon.ico?1">
+    <!-- Begin Jekyll SEO tag v2.2.2 -->
+<title>Input Parameters | CHAP</title>
+<meta property="og:title" content="Input Parameters" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="http://localhost:4000/chap/docs/input_parameters/" />
+<meta property="og:url" content="http://localhost:4000/chap/docs/input_parameters/" />
+<meta property="og:site_name" content="CHAP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-02-15T21:33:50+00:00" />
+<script type="application/ld+json">
+{"@context":"http://schema.org","@type":"WebPage","headline":"Input Parameters","datePublished":"2018-02-15T21:33:50+00:00","dateModified":"2018-02-15T21:33:50+00:00","url":"http://localhost:4000/chap/docs/input_parameters/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <link rel="canonical" href="http://localhost:4000/chap/docs/input_parameters/">
+    <link rel="alternate" type="application/rss+xml" title="CHAP" href="http://localhost:4000/chap/feed.xml" />
+</head>
+
+
+<body>
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container navbar-container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+            <a class="navbar-brand" href="/chap/">
+                <span><img src="/chap/img/logonav.png"></span> CHAP
+            </a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li  class="active" ><a href="/chap/docs/home/">Documentation</a></li>
+                <li ><a href="/chap/publications.html">Publications</a></li>
+                <li ><a href="/chap/blog/2018/01/26/chap-at-bps/">News</a></li>
+                <li ><a href="/chap/aboutus.html">About Us</a></li>
+            </ul>
+            <div class="navbar-right">
+                <form class="navbar-form navbar-left">
+                    <div class="form-group has-feedback">
+                        <input id="search-box" type="text" class="form-control" placeholder="Search...">
+                        <i class="fa fa-search form-control-feedback"></i>
+                    </div>
+                </form>
+                <ul class="nav navbar-nav">
+                    <li><a href=""><i class="fa fa-github" aria-hidden="true"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
+
+    <div class="page-content">
+        <div class="wrapper">
+            <div class="container">
+    <div class="row">
+        <div class="col-md-4">
+          <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-1" aria-expanded="false" aria-controls="collapse-1">
+          Getting Started
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/home/">What CHAP Can Do</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/installing_chap/">Installing CHAP</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/annotation_example/">Annotation Example</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-2" aria-expanded="false" aria-controls="collapse-2">
+          Running CHAP
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-2" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/chap_workflow/">Overview of CHAP Workflow</a>
+        
+          
+          
+          <a class="list-group-item active" href="/chap/docs/input_parameters/">Input Parameters</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-3" aria-expanded="false" aria-controls="collapse-3">
+          Understanding Output
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-3" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/overview_output/">Overview of Output Files</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_json_file/">Contents of the JSON Output File</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_pdb_file/">Contents of the PDB Output File</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_objmtl_file/">Contents of the OBJ and MTL Output Files</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-4" aria-expanded="false" aria-controls="collapse-4">
+          Visualising Results
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-4" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/plotting_python/">Plotting in Python</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/plotting_r/">Plotting in R</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/molecular_graphics_pymol/">Molecular Graphics in PyMOL</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/molecular_graphics_vmd/">Molecular Graphics in VMD</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-5" aria-expanded="false" aria-controls="collapse-5">
+          Data Sources
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-5" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/vdw_radii/">Van der Waals Radii</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/hydrophobicity_scales/">Hydrophobicity Scales</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/colour_palettes/">Colour Palettes</a>
+        
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+        </div>
+
+        <div class="col-md-8">
+            <h1>Input Parameters</h1>
+            <div id="markdown-content-container">
+<p>The following is a comprehensive list of input parameters to CHAP. Note that you can get a similar overview including available options and default values in CHAP’s command line help by typing <code class="highlighter-rouge">chap -h</code>.</p>
+
+<h2 id="input-files">Input Files</h2>
+
+<p>Controls what data is loaded into CHAP. Note that a topology is always required, so if you want to run CHAP on an individual structure use <code class="highlighter-rouge">chap -f structure.pdb -s structure.pdb</code> and for a trajectory use <code class="highlighter-rouge">chap -f trajectory.xtc -s topology.tpr</code>.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-f</code></td>
+      <td>Input trajectory or single configuration.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-s</code></td>
+      <td>Input topology.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-n</code></td>
+      <td>Index file for custom index groups.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="time-options">Time Options</h2>
+
+<p>These control the time window from which frames are loaded and the spacing of windows. Note that if you want to estimate energies you should discount the beginning of your trajectory as equilibration time.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-b</code></td>
+      <td>First frame (in picoseconds) to read from trajectory.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-e</code></td>
+      <td>Last frame (in picoseconds) to read from trajectory.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-dt</code></td>
+      <td>Only use frame if t MOD dt == first time (in picoseconds).</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-tu</code></td>
+      <td>Unit for time values: fs, ps, ns, us, ms, s.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="unused-gromacs-options">Unused Gromacs Options</h2>
+
+<p>These are added by <code class="highlighter-rouge">libgromacs</code> per default, but are unused in CHAP.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-fgroup</code></td>
+      <td>unused</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-xvg</code></td>
+      <td>unused</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-sf</code></td>
+      <td>unused</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-selrpos</code></td>
+      <td>unused</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-seltype</code></td>
+      <td>unused</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="pathway-and-solvent-selections">Pathway and Solvent Selections</h2>
+
+<p>These two options tell CHAP what constitutes the permeation pathway and solvent.</p>
+
+<p>Only atoms in the selection specified by <code class="highlighter-rouge">-sel-pathway</code> will be considered in the path-finding algorithm, all other atoms will be ignored. Usually, this flag will be set to the <code class="highlighter-rouge">Protein</code> group. This option is mandatory and CHAP will ask for it on start-up if it has not been specified on the command line.</p>
+
+<p>Atoms which are part of the selection specified by <code class="highlighter-rouge">-sel-solvent</code> will be considered in the density estimation step. Usually, this flag will be set to the <code class="highlighter-rouge">Water</code> group. This flag is optional and if no solvent selection is specified, the density profile in the output data will simply be zero.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-sel-pathway</code></td>
+      <td>Reference group that defines the permeation pathway.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-sel-solvent</code></td>
+      <td>Group of small particles to calculate density of.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="output-options">Output Options</h2>
+
+<p>Control the name of the output files and allow for some tweaking of the pathway surface written to the output OBJ and MTL files.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-out-filename</code></td>
+      <td>File name for output files without file extension.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-out-num-points</code></td>
+      <td>Number of spatial sample points that are written to the JSON output file.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-out-extrap-dist</code></td>
+      <td>Extrapolation distance beyond the pathway endpoints for both JSON and OBJ output.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-out-grid-dist</code></td>
+      <td>Controls the sampling distance of vertices on the pathway surface which are subsequently interpolated to yield a smooth surface. Very small values may yield visual artefacts.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-out-vis-tweak</code></td>
+      <td>Visual tweaking factor that controls the smoothness of the pathway surface in the OBJ output. Varies between -1 and 1 (exclusively), where larger values result in a smoother surface. Negative values may result in visualisation artefacts.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-[no]out-detailed</code></td>
+      <td>If true, CHAP will write detailed per-frame information to a newline-delimited JSON file including original probe positions and spline parameters. This is mostly useful for debugging.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="pathway-finding-options">Pathway-Finding Options</h2>
+
+<p>These parameters control how CHAP determines the permeation pathway through the group of atoms specified by <code class="highlighter-rouge">-sel-pathway</code>.</p>
+
+<p>The default pathway-finding method <code class="highlighter-rouge">inplane_optim</code> uses an algorithm similar to that used in the <a href="http://www.holeprogram.org/">HOLE</a> programme, where a spherical probe is squeezed through the van der Waals spheres of the pathway-forming atoms. The specific van der Waals radii used in the procedure can be set using the <code class="highlighter-rouge">-pf-vdwr-database</code>, <code class="highlighter-rouge">-pf-vdwr-fallback</code>, and <code class="highlighter-rouge">-pf-vdwr-json</code> flags.</p>
+
+<p>The initial probe position is normally chosen to be the centre of mass (COM) of the pathway-forming atoms, but this behaviour can be changed through the <code class="highlighter-rouge">-pf-sel-ipp</code> (COM of a different group of atoms is used) and <code class="highlighter-rouge">-pf-init-probe-pos</code> (initial probe position is specified explicitly) flags. The probe is then moved by <code class="highlighter-rouge">-pf-probe-step</code> in the direction of the channel direction vector specified with <code class="highlighter-rouge">-pf-chan-dir-vec</code>. Note that by default this vector points in the Cartesian z-direction and for most ion channels it is more sensible to align the channel protein appropriately than to adjust the channel direction vector.</p>
+
+<p>The probe motion is stopped if either a pathway radius larger than <code class="highlighter-rouge">-pf-max-free-dist</code> is encountered or the probe has already moved by <code class="highlighter-rouge">-pf-max-probe-steps</code> steps. The point at which this happens will be considered the pathway endpoint and the probe is then moved in the opposite direction of <code class="highlighter-rouge">-pf-chan-dir-vec</code> to find the other pathway endpoint.</p>
+
+<p>Alternatively, the <code class="highlighter-rouge">-pf-method</code> flag can be set to <code class="highlighter-rouge">cylindrical</code> if the above method fails to find the correct pathway. In this case, the permeation pathway will be a cylindrical volume centred around the initial probe position and extending <code class="highlighter-rouge">-pf-max-probe-steps</code> times <code class="highlighter-rouge">-pf-probe-step</code> in either direction along the axis specified by <code class="highlighter-rouge">-pf-chan-dir-vec</code>. Note that in general the <code class="highlighter-rouge">cylindrical</code> method will not produce an accurate radius profile for the permeation pathway and consequently the solvent density profile will not take into account a variation of free space along the pathway.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-method</code></td>
+      <td>Pathway-finding method.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-vdwr-database</code></td>
+      <td>Database of van der Waals radii to be used in pathway finding.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-vdwr-fallback</code></td>
+      <td>Fallback van der Waals radius for atoms that are not listed in van der Waals radius database.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-vdwr-json</code></td>
+      <td>JSON file with user-defined van der Waals radii. Will be ignored unless <code class="highlighter-rouge">-pf-vdwr-database</code> is set to <code class="highlighter-rouge">user</code>.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-align-method</code></td>
+      <td>Method for aligning pathway coordinates across time steps.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-probe-step</code></td>
+      <td>Step length for probe movement.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-max-free-dist</code></td>
+      <td>Maximum radius of pore. The point at which this radius is reached marks the endpoint of the pathway.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-max-probe-steps</code></td>
+      <td>Maximum number of steps the probe is moved in either direction.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-sel-ipp</code></td>
+      <td>Selection of atoms whose COM will be used as initial probe position. If not set, the selection specified with <code class="highlighter-rouge">-sel-pathway</code> will be used.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-init-probe-pos</code></td>
+      <td>Initial position of probe in probe-based pore finding algorithms. If set explicitly, it will overwrite the COM-based initial position set with <code class="highlighter-rouge">-sel-ipp</code>.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-chan-dir-vec</code></td>
+      <td>Channel direction vector. Will be normalised to unit vector internally.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pf-cutoff</code></td>
+      <td>Cutoff distance for spatial searches in pathway-finding algorithm. A value of zero or less means no cutoff is applied. If unset, a cutoff is determined automatically.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="optimisation-parameters-used-in-pathway-finding">Optimisation Parameters used in Pathway Finding</h2>
+
+<p>The probe-based pathway finding-algorithm outlined above uses two subsequent optimisation procedures for finding the position which maximises the probe radius: A global optimisation procedure based on simulated annealing and a local optimisation procedure based on the Nelder-Mead simplex method. The parameters below can be used to tweak these optimisation methods. Note simulated annealing is turned off by default.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-sa-seed</code></td>
+      <td>Seed used in pseudo random number generation for simulated annealing. If not set explicitly, a random seed is used.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-sa-max-iter</code></td>
+      <td>Number of cooling iterations in one simulated annealing run.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-sa-init-temp</code></td>
+      <td>Simulated annealing initial temperature.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-sa-cooling-fac</code></td>
+      <td>Simulated annealing cooling factor.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-sa-step</code></td>
+      <td>Step length factor used in candidate generation.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-nm-max-iter</code></td>
+      <td>Number of Nelder-Mead simplex iterations.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-nm-init-shift</code></td>
+      <td>Distance of vertices in initial Nelder-Mead simplex.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="pathway-mapping-parameters">Pathway-Mapping Parameters</h2>
+
+<p>In order to determine which residues are lining the permeation pathway, CHAP calculates the distance between each residue’s centre of geometry and the pathway centre line. If this distance is smaller than the local pathway radius plus <code class="highlighter-rouge">-pm-pl-margin</code> the residue is considered to be <em>pore-lining</em>. If in addition the residue’s Cα atom is further from the centre line than its centre of geometry, a residue will also be considered <em>pore-facing</em>, i.e. its side chain is pointing towards the pore.</p>
+
+<p>Note that for determining whether a residue is pore-facing, CHAP requires each residue in the pathway forming group to contain a Cα atom, which will usually be the case for protein channels. However, if the selection specified with <code class="highlighter-rouge">-sel-pathway</code> contains non-amino-acid residues (e.g. carbon nanotubes, DNA nanopores, or protein channels where lipids form part of the pathway), this condition will not be met. In this case, CHAP will assume that no residue is pore-facing and only properties calculated from pore-lining residues will be meaningful.</p>
+
+<p>In order to allow custom reference positions for the determination of pore-facing residues, the <code class="highlighter-rouge">-pm-pf-sel</code> flag can be used. The centre of geometry of the subset of each residue specified by <code class="highlighter-rouge">-pm-pf-sel</code> will then take the place of the Cα position and a residue will be considered pore-lining, if this centre of geometry is further away from the centre line of the pathway than the centre of geometry of the whole residue.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-pm-pl-margin</code></td>
+      <td>Margin for determining pathway-lining residues.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-pm-pf-sel</code></td>
+      <td>Selection string determining the centre of geometry group for assessing if a residue is pore-facing.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="density-estimation-parameters">Density Estimation Parameters</h2>
+
+<p>In order to determine the solvent density along the permeation pathway, CHAP first maps the COM position of all residues in the <code class="highlighter-rouge">-sel-solvent</code> selection onto the pathway centre line. Subsequently, it uses the method specified with the <code class="highlighter-rouge">-de-method</code> flag to estimate the one-dimensional probability density of residue positions.</p>
+
+<p>By default, a kernel density estimator with an automatically determined bandwidth is used, but the bandwidth can also be set explicitly with the <code class="highlighter-rouge">-de-bandwidth</code> flag or fine-tuned with the <code class="highlighter-rouge">-de-bw-scale</code> flag. If a histogram is used for density estimation, the <code class="highlighter-rouge">-de-res</code> flag can be used to specify the histogram bin width; for a kernel estimator this parameter determines the spacing of evaluation points.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-de-method</code></td>
+      <td>Method used for estimating the probability density of the solvent particles along the permeation pathway.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-de-res</code></td>
+      <td>Spatial resolution of the density estimator. In case of a histogram, this is the bin width, in case of a kernel density estimator, this is the spacing of the evaluation points.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-de-bandwidth</code></td>
+      <td>Bandwidth for the kernel density estimator. Ignored for other methods. If negative or zero, bandwidth will be determined automatically.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-de-bw-scale</code></td>
+      <td>Scaling factor for the band width. Useful to set a bandwidth relative to the automatically determined value.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-de-eval-cutoff</code></td>
+      <td>Evaluation range cutoff for kernel density estimator in multiples of bandwidth. Ignored for other methods. Ensures that the density falls off smoothly to zero outside the data range.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="hydrophobicity-parameters">Hydrophobicity Parameters</h2>
+
+<p>In addition to radius and solvent density profiles, CHAP also computes a hydrophobicity profile. This is accomplished by kernel smoothing of hydrophobicity values associated with the pore-lining residues. The hydrophobicity associated with each residue can be controlled through the <code class="highlighter-rouge">-hydrophob-database</code>, <code class="highlighter-rouge">-hydrophob-fallback</code>, and <code class="highlighter-rouge">-hydrophob-json</code> flags. The amount of smoothing can be controlled with <code class="highlighter-rouge">-hydrophob-bandwidth</code>, where larger values will generate a smoother profile.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">-hydrophob-database</code></td>
+      <td>Database of hydrophobicity scale for pore-forming residues.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-hydrophob-fallback</code></td>
+      <td>Fallback hydrophobicity for residues in the pathway-defining group.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-hydrophob-json</code></td>
+      <td>JSON file with user-defined hydrophobicity scale. Will be ignored unless <code class="highlighter-rouge">-hydrophob-database</code> is set to <code class="highlighter-rouge">user</code>.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">-hydrophob-bandwidth</code></td>
+      <td>Bandwidth for hydrophobicity kernel.</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+            <p class="text-center">
+              <br />
+              <a target="_blank" href="/_docs/running-chap/input_parameters.md" class="btn btn-default githubEditButton" role="button">
+                <i class="fa fa-pencil fa-lg"></i> Improve this page
+              </a>
+            </p>
+            <hr>
+            
+
+
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <ul class="pager">
+      
+        
+        
+        <li class="previous">
+          <a href="/chap/docs/chap_workflow/">
+            <span aria-hidden="true">&larr;</span> Previous
+          </a>
+        </li>
+      
+
+      
+        
+        
+        <li class="next">
+          <a href="/chap/docs/overview_output/">
+            Next <span aria-hidden="true">&rarr;</span>
+          </a>
+        </li>
+      
+    </div>
+    <div class="clear"></div>
+    
+
+        </div>
+
+    </div>
+</div>
+
+        </div>
+    </div>
+
+    <footer class="footer">
+    <div class="container">
+
+        <p class="text-center">
+            CHAP 2018 |
+            Powered by <a href="https://github.com/aksakalli/jekyll-doc-theme">Jekyll Doc Theme</a>
+        </p>
+        <!-- <p class="text-muted">Place sticky footer content here.</p> -->
+    </div>
+</footer>
+
+    <script>
+  var baseurl = '/chap'
+</script>
+<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="/chap/js/bootstrap.min.js "></script>
+<script src="/chap/js/typeahead.bundle.min.js "></script>
+
+<script src="/chap/js/main.js "></script>
+
+</body>
+
+</html>

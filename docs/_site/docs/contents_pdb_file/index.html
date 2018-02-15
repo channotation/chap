@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Contents of the PDB Output File</title>
+    <meta name="description" content="The output.pdb written by CHAP reproduces the structure contained in thetopology (the input passed to CHAP with the -s flag), but overwrites theoccupancy and...">
+
+
+    <link rel="stylesheet" href="/chap/css/main.css">
+    <link rel="stylesheet" href="/chap/css/font-awesome.min.css">
+
+    <link rel="shortcut icon" href="/chap/favicon.ico?1">
+    <!-- Begin Jekyll SEO tag v2.2.2 -->
+<title>Contents of the PDB Output File | CHAP</title>
+<meta property="og:title" content="Contents of the PDB Output File" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The output.pdb written by CHAP reproduces the structure contained in the topology (the input passed to CHAP with the -s flag), but overwrites the occupancy and temperature factor fields of each ATOM record with values indicating whether an atom belongs to a residue that is considered pore-lining and pore-facing respectively." />
+<meta property="og:description" content="The output.pdb written by CHAP reproduces the structure contained in the topology (the input passed to CHAP with the -s flag), but overwrites the occupancy and temperature factor fields of each ATOM record with values indicating whether an atom belongs to a residue that is considered pore-lining and pore-facing respectively." />
+<link rel="canonical" href="http://localhost:4000/chap/docs/contents_pdb_file/" />
+<meta property="og:url" content="http://localhost:4000/chap/docs/contents_pdb_file/" />
+<meta property="og:site_name" content="CHAP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-02-15T21:33:50+00:00" />
+<script type="application/ld+json">
+{"@context":"http://schema.org","@type":"WebPage","headline":"Contents of the PDB Output File","datePublished":"2018-02-15T21:33:50+00:00","dateModified":"2018-02-15T21:33:50+00:00","description":"The output.pdb written by CHAP reproduces the structure contained in the topology (the input passed to CHAP with the -s flag), but overwrites the occupancy and temperature factor fields of each ATOM record with values indicating whether an atom belongs to a residue that is considered pore-lining and pore-facing respectively.","url":"http://localhost:4000/chap/docs/contents_pdb_file/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <link rel="canonical" href="http://localhost:4000/chap/docs/contents_pdb_file/">
+    <link rel="alternate" type="application/rss+xml" title="CHAP" href="http://localhost:4000/chap/feed.xml" />
+</head>
+
+
+<body>
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container navbar-container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+            <a class="navbar-brand" href="/chap/">
+                <span><img src="/chap/img/logonav.png"></span> CHAP
+            </a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li  class="active" ><a href="/chap/docs/home/">Documentation</a></li>
+                <li ><a href="/chap/publications.html">Publications</a></li>
+                <li ><a href="/chap/blog/2018/01/26/chap-at-bps/">News</a></li>
+                <li ><a href="/chap/aboutus.html">About Us</a></li>
+            </ul>
+            <div class="navbar-right">
+                <form class="navbar-form navbar-left">
+                    <div class="form-group has-feedback">
+                        <input id="search-box" type="text" class="form-control" placeholder="Search...">
+                        <i class="fa fa-search form-control-feedback"></i>
+                    </div>
+                </form>
+                <ul class="nav navbar-nav">
+                    <li><a href=""><i class="fa fa-github" aria-hidden="true"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
+
+    <div class="page-content">
+        <div class="wrapper">
+            <div class="container">
+    <div class="row">
+        <div class="col-md-4">
+          <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-1" aria-expanded="false" aria-controls="collapse-1">
+          Getting Started
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/home/">What CHAP Can Do</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/installing_chap/">Installing CHAP</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/annotation_example/">Annotation Example</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-2" aria-expanded="false" aria-controls="collapse-2">
+          Running CHAP
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-2" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/chap_workflow/">Overview of CHAP Workflow</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/input_parameters/">Input Parameters</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-3" aria-expanded="false" aria-controls="collapse-3">
+          Understanding Output
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-3" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/overview_output/">Overview of Output Files</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_json_file/">Contents of the JSON Output File</a>
+        
+          
+          
+          <a class="list-group-item active" href="/chap/docs/contents_pdb_file/">Contents of the PDB Output File</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/contents_objmtl_file/">Contents of the OBJ and MTL Output Files</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-4" aria-expanded="false" aria-controls="collapse-4">
+          Visualising Results
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-4" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/plotting_python/">Plotting in Python</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/plotting_r/">Plotting in R</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/molecular_graphics_pymol/">Molecular Graphics in PyMOL</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/molecular_graphics_vmd/">Molecular Graphics in VMD</a>
+        
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-5" aria-expanded="false" aria-controls="collapse-5">
+          Data Sources
+        </a>
+      </h4>
+    </div>
+    <div id="collapse-5" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+      <ul class="list-group">
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/vdw_radii/">Van der Waals Radii</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/hydrophobicity_scales/">Hydrophobicity Scales</a>
+        
+          
+          
+          <a class="list-group-item " href="/chap/docs/colour_palettes/">Colour Palettes</a>
+        
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+        </div>
+
+        <div class="col-md-8">
+            <h1>Contents of the PDB Output File</h1>
+            <div id="markdown-content-container"><p>The <code class="highlighter-rouge">output.pdb</code> written by CHAP reproduces the structure contained in the
+topology (the input passed to CHAP with the <code class="highlighter-rouge">-s</code> flag), but overwrites the
+occupancy and temperature factor fields of each <code class="highlighter-rouge">ATOM</code> record with values
+indicating whether an atom belongs to a residue that is considered pore-lining
+and pore-facing respectively.</p>
+
+<p>To be precise, both fields contain a number between zero and one that indicates
+the fraction of time a residue was considered pore-lining or pore-facing
+respectively, where a value of one means that a residue has been pore-lining (or
+pore-facing) for every frame in the input trajectory, while a value of zero
+indicates that a residue has never been found to be pore-lining (or
+pore-facing).  As the pore-lining and pore-facing attributes are calculated on a
+per-residues basis, this number will be identical for all atoms of the same
+residue.</p>
+
+</div>
+            <p class="text-center">
+              <br />
+              <a target="_blank" href="/_docs/overview-output/contents_pdb_file.md" class="btn btn-default githubEditButton" role="button">
+                <i class="fa fa-pencil fa-lg"></i> Improve this page
+              </a>
+            </p>
+            <hr>
+            
+
+
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <ul class="pager">
+      
+        
+        
+        <li class="previous">
+          <a href="/chap/docs/contents_json_file/">
+            <span aria-hidden="true">&larr;</span> Previous
+          </a>
+        </li>
+      
+
+      
+        
+        
+        <li class="next">
+          <a href="/chap/docs/contents_objmtl_file/">
+            Next <span aria-hidden="true">&rarr;</span>
+          </a>
+        </li>
+      
+    </div>
+    <div class="clear"></div>
+    
+
+        </div>
+
+    </div>
+</div>
+
+        </div>
+    </div>
+
+    <footer class="footer">
+    <div class="container">
+
+        <p class="text-center">
+            CHAP 2018 |
+            Powered by <a href="https://github.com/aksakalli/jekyll-doc-theme">Jekyll Doc Theme</a>
+        </p>
+        <!-- <p class="text-muted">Place sticky footer content here.</p> -->
+    </div>
+</footer>
+
+    <script>
+  var baseurl = '/chap'
+</script>
+<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="/chap/js/bootstrap.min.js "></script>
+<script src="/chap/js/typeahead.bundle.min.js "></script>
+
+<script src="/chap/js/main.js "></script>
+
+</body>
+
+</html>

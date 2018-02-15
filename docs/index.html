@@ -1,0 +1,59 @@
+---
+layout: default
+---
+
+<div class="header-container jumbotron">
+    <div class="container" style = "background-color:white;">
+        <h1 style="color:#2C3E50;">The Channel Annotation Package</h1>
+        <p style = "color:#2C3E50;">A new tool for the functional annotation of novel ion channel structures that provides information on the 
+        biophysical properties of the ion permeation pathway by utilising molecular dynamics simulations.</p>
+        <p><a class="btn btn-primary btn-lg" href="{{ "/docs/home/" | prepend: site.baseurl }}" role="button">Get Started</a></p>
+    </div>
+</div>
+
+
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-6">
+            <h2 class="header-light regular-pad">What is CHAP?</h2>
+            <blockquote>
+              <p>With the discovery of novel ion channel structures continuing at an accelerated pace there is a need for improved tools 
+              that facilitate the functional annotation of these structures. The computational approach underlying CHAP is capable of rapidly identifying hydrophobic 
+              gates, i.e. energetic barriers to ion permeation 
+              that result from the dewetting of hydrophobic segments within the nanometre-sized pores found in most ion channels. Such hydrophobic 
+              barriers are not detectable by a simple measurement of the physical dimensions of a channel pore and it is now clear that they 
+              represent an important predictor of channel permeability.</p>
+            </blockquote>
+        </div>
+        <div class="col-md-6 text-center">
+            <img src="img/hydrophobic_gating_principle.svg" alt="Hydrophobic gating principle" class="img-responsive">
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-sm-4">
+            <h1 class="text-center"><i class="fa fa-tint" aria-hidden="true"></i></h1>
+            <h3 class="text-center">Pore Hydration Analysis</h3>
+            <p>CHAP goes beyond measurement of pore dimensions and facilitates an analysis of the hydration behaviour of a channel's permeation pathway. This permits fast
+            identification of hydrophobic gates and thus improves the functional annotation of novel channel structures.
+            </p>
+        </div>
+        <div class="col-sm-4">
+            <h1 class="text-center"><i class="fa fa-flask" aria-hidden="true"></i></h1>
+            <h3 class="text-center">Based on Molecular Dynamics</h3>
+            <p>CHAP makes use of the popular molecular dynamics engine <a href="https://gromacs.org">Gromacs</a> to derive the biophysical properties of a channel's permeation pathway
+            and thereby relates channel structure and function.</p>
+        </div>
+        <div class="col-sm-4">
+            <h1 class="text-center"><i class="fa fa-area-chart" aria-hidden="true"></i></h1>
+            <h3 class="text-center">Visualisation Included</h3>
+            <p>CHAP allows the visualisation of properties of the channel pore in common molecular viewers like <a href="https://www.ks.uiuc.edu/Research/vmd/">VMD</a> and 
+            <a href="https://pymol.org">PyMOL</a>. Scripts for plotting results using R and Python are also included.</p>
+        </div>
+    </div>
+
+
+</div>

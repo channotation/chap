@@ -1,0 +1,30 @@
+- title: Getting Started
+  docs:
+  - home
+  - installing_chap
+  - annotation_example
+
+- title: Running CHAP
+  docs:
+  - chap_workflow
+  - input_parameters
+
+- title: Understanding Output
+  docs:
+  - overview_output
+  - contents_json_file
+  - contents_pdb_file
+  - contents_objmtl_file
+
+- title: Visualising Results
+  docs:
+  - plotting_python
+  - plotting_r
+  - molecular_graphics_pymol
+  - molecular_graphics_vmd
+
+- title: Data Sources
+  docs:
+  - vdw_radii
+  - hydrophobicity_scales
+  - colour_palettes
