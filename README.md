@@ -1,35 +1,30 @@
-# README #
+# CHAP - The Channel Annotation Package #
 
-## Installation ##
+CHAP is a tool for the functional annotation of ion channel structures written in C++. See the website under [www.channotation.org][CHANNOTATION] for a full documentation including installation instructions and usage examples.
 
-### Prerequisites ###
+
+## Prerequisites ##
 
 Prior to installing CHAP, make sure that you have the following libraries and tools installed:
 
-1. The [CMake](https://cmake.org/) tool in version 3.2 or higher. This will 
-typically available through your system's package manager. For example, on 
-Ubuntu you can install CMake by typing `sudp apt-get install cmake`.
-2. The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing `sudo apt-get install libblas-dev liblapacke-dev libatlas-base-dev`.
-3. The `libgromacs` library of the [Gromacs](http://www.gromacs.org/) molecular 
-dynamics engine. Very detailed installation instructions for this can be found
-[here](http://manual.gromacs.org/documentation/2016.3/install-guide/index.html).
+1. The [CMake][CMake] tool in version 3.2 or higher. This will typically be available through your system's package manager. For example, on Ubuntu you can install CMake by typing `sudo apt-get install cmake`. CMake is used to check the availability of libraries and compilers on your system and will ensure that CHAP is installed properly.
+2. A C++ compiler that supports the `C++11` standard. A popular choice is the [GNU Compiler Collection][GCC], which on Ubuntu can be obtained by typing `sudo apt-get install gcc`.
+3. The [Boost][Boost] C++ libraries, which on Ubuntu can be installed using `sudo apt-get install libboost-all-dev`. Boost algorithms are used in CHAP to solve some root finding and optimisation problems.
+4. The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing `sudo apt-get install libblas-dev libatlas-base-dev libopenblas-dev liblapacke-dev`. The linear algebra libraries are used in CHAP's spline interpolation.
+5. The `libgromacs` library of the [Gromacs][Gromacs] molecular dynamics engine in version 2016 or higher. Comprehensive installation instructions for Gromacs can be found [here][Gromacs-install].
 Please note that for using Gromacs as a library, the underlying FFTW libray 
 may **not** be installed automatically, i.e. you need to set
-`-DGMX_BUILD_OWN_FFTW=OFF` to false when running CMake during the Gromacs 
+`-DGMX_BUILD_OWN_FFTW=OFF` when running CMake during the Gromacs 
 installation.
 
-CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included
-as a header only library, and on [Googletest](https://github.com/google/googletest), but this is downloaded and installed automatically by CMake, so you don't need to do anything about this.
+CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included as a header-only library, and on [GTest][GTest], but this is downloaded and installed automatically by CMake, so you don't need to do anything about either of these (you will however need Internet access when installing CHAP).
 
 
-### Quick and Dirty Installation ###
+## Installation ##
 
-To install CHAP, unpack the source, create a `build` directory parallel to the
-source tree and from there run `cmake`, `make`, `make check`, and 
-`make install`.
+For a minimal install of CHAP create a `build` directory parallel to the source tree and from there run `cmake`, `make`, `make check`, and `make install`.
 
-~~~
-#!bash
+```bash
 cd chap
 mkdir build
 cd build
@@ -37,142 +32,28 @@ cmake ..
 make
 make check
 sudo make install
-~~~
-
-CMake will automatically find all dependencies (and inform you of missing ones)
-`make` will compile the code (you can use the `make -j` flag to speed this up 
-on multicore machines to speed this up), `make check` runs a suite of unit 
-tests, and `make install` will place the binary in `/usr/local/chap` (so you
-need sudo rights for this last step.
-
-
-## Usage ##
-
-### Running CHAP ###
-
-To run chap on a MD trajectory, you simply need to to provide the name of the
-trajectory file and the corresponding topology (which is required to assign
-a van-der-Waals radius to each particle when finding the permeation pathway):
-
-```
-#!bash
-chap -f trajectory.xtc -s topology.tpr
 ```
 
-This will create a file `output.json` which contains all results in newline
-delimited [JSON](http://www.json.org/) format. The next section describes how
-the results file is organised and how to visualise your results.
+CMake will automatically find all dependencies (and inform you of missing ones), `make` will compile the code (you can use the `make -j` flag to speed this up on multicore machines), `make check` runs a suite of unit tests, and `make install` will place the binary in `/usr/local/chap` (so you will need sudo rights for this last step). To check if CHAP has been installed properly, you can type
 
-For a complete list of all options and a brief online help you can type 
-`chap -h`.
+```bash
+chap -h
+```
 
+which should bring up an online help for using CHAP.
 
-## Visualising Results ##
+## Licence ##
 
-### Output File Structure ###
-
-The results file returned by CHAP is organised as a newline delimted JSON file
-which means that each line is a valid JSON object that can be read and parsed
-individually. The first line contains results aggregated over all trajectory
-frames and each subsequent line contains information for one specific 
-trajectory frame (in the appropriate order). As an end user you will typically 
-only need to look at the first line and under `chap/scripts/plotting/` you can 
-find ready made scripts for visualising the results.
-
-### Plotting CHAP Results in R ###
-
-Start by reading the first line of the CHAP output file into R and parse the 
-results using a library such as 
-[jsonlite](https://cran.r-project.org/web/packages/jsonlite/index.html)
-
-~~~
-library(jsonlite) # parsing JSON files
-dat <- fromJSON(readLines(filename, n = 1), flatten = FALSE)
-~~~
-
-The now contains a named list that maintains the structure of the results file.
-
-In `dat$pathSummary` you can find a summary of the overall properties of the
-permeation pathway such as its length, volume, and minimum radius. All these
-quantities aggregated over time and you are provided a set of summary 
-statistics (minimum, maximum, mean, and standard deviation) that indicate how 
-much these variables varied over time.
-
-The object `dat$pathProfile` represents a table of pathway radius, solvent
-density, and solvent free energy along the centre line of the pore (this object
-can be coerced to a data frame). All three quantities are again aggregated 
-over time and you are again provided with a set of summary statistics.
-
-As an example, you can visualise the radius along the permation pathway and its
-variation over time using the following script:
-~~~
-library(ggplot2)
-ggplot(as.data.frame(dat$pathProfile),
-       aes(x = s,
-           y = radiusMean)) +
-  geom_ribbon(alpha = 0.4,
-              aes(ymin = radiusMean - radiusSd,
-                  ymax = radiusMean + radiusSd)) +
-  geom_ribbon(alpha = 0.2,
-              aes(ymin = radiusMin,
-                  ymax = radiusMax)) +
-  geom_ribbon(alpha = 0.4) +
-  geom_line()
-~~~
-This will generate a line graph of the time averaged radius with two ribbons
-representing the one standard deviation interval and the range between minimum
-and maximum radius. 
-
-Lastly, in `dat$reproducibilityInformation` you can find some information on 
-the CHAP version used to generate the data as well as the parameters that were
-used. This is intended to help you to reproduce your results as the software
-evolves.
-
-An example script for plotting CHAP results in R can be found under 
-`chap/scripts/plotting/R/plot_chap_results.R`. 
+CHAP is released under the [MIT Licence](LICENSE.md).
 
 
-### Plotting CHAP Results in Python ###
+[CMake]: https://cmake.org/
+[Boost]: http://www.boost.org/
+[CBLAS]: http://www.netlib.org/blas/
+[LAPACKE]: http://www.netlib.org/lapack/lapacke.html
+[Gromacs]: http://www.gromacs.org/
+[Gromacs-install]: http://manual.gromacs.org/documentation/ 
+[GCC]: https://gcc.gnu.org/
+[GTest]: https://github.com/google/googletest
+[CHANNOTATION]: http://www.channotation.org
 
-Python scripts for plotting CHAP results are currently under development. 
-Please be patient.
-
-
-### Molecular Visualisation in VMD ###
-
-Visualising CHAP pore surfaces in VMD is possible, but this component of the
-program is still under development and contains some known and possibly 
-more unknown bugs. Moreover, the workflow will likely change from what
-is described below in the near future.
-
-In addtion to the main results file in JSON format, CHAP produces two more
-output files, `output.obj` and `res_mapping.dat`. These contain a pore 
-surface mesh in 
-[Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file) format
-data identifying the pore lining and pore facing residues respectively.
-
-Under `chap/scripts/visualisation/vmd` you can find the `pore_lining.tcl`
-script, which allows you to visualise the pore together with your protein 
-molecule in VMD. To do this you need to open the Tk Console in VMD and 
-specify the names of three files:
-
-~~~
-set FILE_STRUCTURE structure.gro
-set FILE_PORE_LINING res_mapping.dat
-set FILE_PORE_SURFACE output.obj
-~~~
-
-You can then load the data by sourcing the `pore_lining.tcl` script:
-
-~~~
-source pore_lining.tcl
-~~~
-
-Note however that this script uses a itself sources the `wobj.tcl` script
-(which contains an OBJ parser), which must be present in the same directory.
-
-
-### Molecular Visualisation in PyMol ###
-
-PyMol scripts for visualising CHAP results are currently under development.
-Please be patient.
