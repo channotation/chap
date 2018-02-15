@@ -6,9 +6,9 @@ description: >
   providing documentation and blog post pages.
 
 baseurl: "/chap" # the subpath of your site, e.g. /blog/
-url: https://chap.bioch.ox.ac.uk/chap # the base hostname & protocol for your site
-#git_address: https://github.com/aksakalli/jekyll-doc-theme
-#git_edit_address: https://github.com/aksakalli/jekyll-doc-theme/blob/gh-pages
+url: www.channotation.org # the base hostname & protocol for your site
+git_address: https://github.com/channotation/chap
+git_edit_address: https://github.com/channotation/chap/docs
 
 # theme options from https://bootswatch.com/
 # comment out this to use default Bootstrap
