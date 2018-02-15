@@ -2,7 +2,6 @@
 
 CHAP is a 
 
-
 ## Prerequisites ##
 
 Prior to installing CHAP, make sure that you have the following libraries and tools installed:
@@ -20,10 +19,9 @@ installation.
 CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included as a header-only library, and on [GTest][GTest], but this is downloaded and installed automatically by CMake, so you don't need to do anything about either of these (you will however need Internet access when installing CHAP).
 
 
-
 ## Installation ##
 
-To install CHAP, unpack the source, create a `build` directory parallel to the source tree and from there run `cmake`, `make`, `make check`, and `make install`.
+For a minimal install of CHAP create a `build` directory parallel to the source tree and from there run `cmake`, `make`, `make check`, and `make install`.
 
 ```bash
 cd chap
@@ -43,8 +41,17 @@ chap -h
 
 which should bring up an online help for using CHAP.
 
-
 ## Licence ##
 
-CHAP is licensed under the [MIT Licence](LICENSE.md).
+CHAP is released under the [MIT Licence](LICENSE.md).
+
+
+[CMake]: https://cmake.org/
+[Boost]: http://www.boost.org/
+[CBLAS]: http://www.netlib.org/blas/
+[LAPACKE]: http://www.netlib.org/lapack/lapacke.html
+[Gromacs]: http://www.gromacs.org/
+[Gromacs-install]: http://manual.gromacs.org/documentation/ 
+[GCC]: https://gcc.gnu.org/
+[GTest]: https://github.com/google/googletest
 
