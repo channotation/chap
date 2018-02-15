@@ -42,7 +42,7 @@ class SplineCurve3D : public AbstractSplineCurve
         // public interface for curve evaluation:
         gmx::RVec evaluate(const real &eval, unsigned int deriv);
 
-        // reparameterisation methods:
+        // re-parameterisation methods:
         void arcLengthParam();
         // map points onto curve:
         double pointSqDist(gmx::RVec point, double eval);
@@ -82,12 +82,12 @@ class SplineCurve3D : public AbstractSplineCurve
         inline real arcLengthBoole(const real &lo, const real &hi);
         void prepareArcLengthTable();
         
-        // arc length reparameterisation utilities:
+        // arc length re-parameterisation utilities:
         inline real arcLengthToParam(real &arcLength);
         inline bool arcLengthToParamTerm(real lo, real hi, real tol);
         inline real arcLengthToParamObj(real lo, real hi, real target);
 
-        //
+        // spline mapping methods:
         unsigned int closestSplinePoint(const gmx::RVec &point);
         gmx::RVec projectionInInterval(
                 const gmx::RVec &point,

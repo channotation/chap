@@ -9,7 +9,7 @@
 
 
 /*!
- *
+ * \brief Enaum for available path-finding methods.
  */
 typedef enum {ePathFindingMethodNaiveCylindrical,
               ePathFindingMethodInplaneOptimised} ePathFindingMethod;

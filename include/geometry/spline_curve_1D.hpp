@@ -31,7 +31,7 @@ class SplineCurve1D : public AbstractSplineCurve
                 std::vector<real> ctrlPoints); 
         SplineCurve1D();
 
-        // public interface for curve evalaution:
+        // public interface for curve evaluation:
         real evaluate(
                 const real &eval, 
                 unsigned int deriv);

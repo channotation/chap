@@ -27,12 +27,12 @@
  *      \Phi(f) = \int f(x)^2 dx
  * \f]
  *
- * is a funcational of the probability density (derivative). Its value is 
+ * is a functional of the probability density (derivative). Its value is 
  * analytically known for the kernel itself, but needs to be estimated from the 
  * data via the procedure implemented in GaussianDensityDerivative for the
  * second derivative of the a priori unknown density of the data. 
  *
- * This implements the plug-in bandwidth selectior of Sheather and Jones 
+ * This implements the plug-in bandwidth selector of Sheather and Jones 
  * (1991).
  *
  * \note The current implementation assumes a Gaussian kernel.

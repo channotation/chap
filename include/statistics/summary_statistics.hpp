@@ -11,7 +11,7 @@
  * hold an entire dataset in memory.
  *
  * This class computes the minimum, maximum, mean, variance, standard 
- * devition, and number of samples of a scalar-valued dataset in an incremental
+ * deviation, and number of samples of a scalar-valued dataset in an incremental
  * fashion. It exposes an update() method which is used to update the summary
  * statistics with new values, but does not store the values themselves.
  *
@@ -25,7 +25,7 @@
  *
  * Note furthermore that this class will always skip infinite values and in 
  * this case no variable is updated (the counter also stays at zero). As a
- * precaution for situatuation where no (finite) values have been passed to 
+ * precaution for situation where no (finite) values have been passed to 
  * the update() method, all returned statistics are capped at the minimum and 
  * maximum real number, i.e. no infinity is ever returned to allow 
  * compatibility with JSON.

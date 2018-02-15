@@ -27,8 +27,8 @@ const short int RR = 1;
 const short int PP = 2;
 
 
-/*
- *
+/*!
+ * \brief Abstract base class for spline curves in unspecified dimensions.
  */
 class AbstractSplineCurve
 {

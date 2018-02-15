@@ -10,7 +10,7 @@
 
 
 /*!
- *
+ * \brief Container class for facilitating the export of results to a JSON file.
  */
 class ResultsJsonExporter
 {

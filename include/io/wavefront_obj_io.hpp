@@ -35,10 +35,6 @@ class WavefrontObjFace
         int normalIdx(int i) const;
         bool hasNormals() const;
 
-
-//    private:
-
-
         // data container for indices:
         std::vector<int> vertexIdx_;
         std::vector<int> normalIdx_;

@@ -9,7 +9,7 @@
 /*!
  * \brief Conversion between a SplineCurve1D object and its JSON serialisation.
  *
- * \todo Currently onlz conversion from JSON to object implemented.
+ * \todo Currently only conversion from JSON to object implemented.
  */
 class SplineCurve1DJsonConverter
 {
