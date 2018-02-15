@@ -11,14 +11,18 @@ list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/../config/version.cpp")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/../config/config.cpp")
 
+# need pthreads for Google test:
+find_package(Threads)
+
 # add executable to run all tests and link libraries:
 add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
 target_include_directories(runAllTests PUBLIC ${CHAP_SOURCE_DIR}/include)
-target_link_libraries(runAllTests ${GROMACS_LIBRARIES} pthread)
+target_link_libraries(runAllTests ${GROMACS_LIBRARIES})
 target_link_libraries(runAllTests ${LAPACKE_LIBRARIES})
 target_link_libraries(runAllTests ${LAPACK_LIBRARIES})
 target_link_libraries(runAllTests ${BLAS_LIBRARIES})
 target_link_libraries(runAllTests ${GTEST_LIBRARY})
+target_link_libraries(runAllTests ${CMAKE_THREAD_LIBS_INIT})
 
 # make ctest aware of test executable:
 # (if the color option is not set some test fail)

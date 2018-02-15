@@ -9,8 +9,9 @@
 
 
 /*!
- * Test fixture for SummaryStatistics. Initialises a simple hard-coded data set
- * used in all tests.
+ * \brief Test fixture for SummaryStatistics.
+ *
+ * Initialises a simple hard-coded data set used in all tests.
  */
 class SummaryStatisticsTest : public ::testing::Test
 {
@@ -102,7 +103,7 @@ TEST_F(SummaryStatisticsTest, SummaryStatisticsVarSdTest)
     real mean = std::accumulate(testData_.begin(), testData_.end(), 0.0);
     mean /= testData_.size();
 
-    // manually compute variance and standrd deviation:
+    // manually compute variance and standard deviation:
     std::vector<real> diff(testData_.size());
     std::transform(
             testData_.begin(), 
