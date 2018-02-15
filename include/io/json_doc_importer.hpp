@@ -6,8 +6,8 @@
 #include "external/rapidjson/document.h"
 
 
-/*
- *
+/*!
+ * \brief Imports JSON files and returns them as rapidjson objects.
  */
 class JsonDocImporter
 {

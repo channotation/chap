@@ -7,8 +7,8 @@
 #include "io/molecular_path_obj_exporter.hpp"
 
 
-/*
- *
+/*!
+ * \brief Test fixture for the MolecularPathObjExporter.
  */
 class MolecularPathObjExporterTest : public ::testing::Test
 {
@@ -18,7 +18,7 @@ class MolecularPathObjExporterTest : public ::testing::Test
 
 
 
-/*
+/*!
  * Test orthogonal vector construction.
  */
 TEST_F(MolecularPathObjExporterTest, MolecularPathObjExporterOrthogonalVectorTest)
@@ -33,7 +33,7 @@ TEST_F(MolecularPathObjExporterTest, MolecularPathObjExporterOrthogonalVectorTes
     vectors.push_back(gmx::RVec( 0.0,  0.0,  1.0));
     vectors.push_back(gmx::RVec(-1.0,  2.0, -3.5));
 
-    // construct orthgonal vectors and check orthogonality:
+    // construct orthogonal vectors and check orthogonality:
     for(unsigned int i = 0; i < vectors.size(); i++)
     {
         gmx::RVec orthVec = molPathExp.orthogonalVector(vectors[i]);
@@ -42,8 +42,8 @@ TEST_F(MolecularPathObjExporterTest, MolecularPathObjExporterOrthogonalVectorTes
 }
 
 
-/*
- *
+/*!
+ * Tests vector rotation around axis.
  */
 TEST_F(MolecularPathObjExporterTest, MolecularPathObjExporterAxisRotationTest)
 {
@@ -104,14 +104,14 @@ TEST_F(MolecularPathObjExporterTest, MolecularPathObjExporterAxisRotationTest)
     rotZ = molPathExp.rotateAboutAxis(vec, vecZ, PI);
     
     // should be mirrored in other two components:
-    ASSERT_NEAR( vec[0], rotX[0], 10*eps);
-    ASSERT_NEAR(-vec[1], rotX[1], 10*eps);
-    ASSERT_NEAR(-vec[2], rotX[2], 10*eps);
-    ASSERT_NEAR(-vec[0], rotY[0], 10*eps);
-    ASSERT_NEAR( vec[1], rotY[1], 10*eps);
-    ASSERT_NEAR(-vec[2], rotY[2], 10*eps);
-    ASSERT_NEAR(-vec[0], rotZ[0], 10*eps);
-    ASSERT_NEAR(-vec[1], rotZ[1], 10*eps);
-    ASSERT_NEAR( vec[2], rotZ[2], 10*eps);
+    ASSERT_NEAR( vec[XX], rotX[XX], 10*eps);
+    ASSERT_NEAR(-vec[YY], rotX[YY], 10*eps);
+    ASSERT_NEAR(-vec[ZZ], rotX[ZZ], 10*eps);
+    ASSERT_NEAR(-vec[XX], rotY[XX], 10*eps);
+    ASSERT_NEAR( vec[YY], rotY[YY], 10*eps);
+    ASSERT_NEAR(-vec[ZZ], rotY[ZZ], 10*eps);
+    ASSERT_NEAR(-vec[XX], rotZ[XX], 10*eps);
+    ASSERT_NEAR(-vec[YY], rotZ[YY], 10*eps);
+    ASSERT_NEAR( vec[ZZ], rotZ[ZZ], 10*eps);
 }
 

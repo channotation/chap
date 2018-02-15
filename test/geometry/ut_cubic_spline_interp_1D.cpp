@@ -3,8 +3,8 @@
 #include "geometry/cubic_spline_interp_1D.hpp"
 
 
-/*
- * Test fixture for cubic spline interpolation in 1D.
+/*!
+ * \brief Test fixture for cubic spline interpolation in 1D.
  */
 class CubicSplineInterp1DTest : public ::testing::Test
 {
@@ -13,10 +13,10 @@ class CubicSplineInterp1DTest : public ::testing::Test
 };
 
 
-/*
+/*!
  * Tests the interpolation algorithm on a problem which should yield a linear
  * polynomial. Correct evaluation is checked at the support points and the 
- * interval midpoints. Uses Hermite boudnary conditions.
+ * interval midpoints. Uses Hermite boundary conditions.
  */
 TEST_F(CubicSplineInterp1DTest, CubicSplineInterpHermiteLinearTest)
 {

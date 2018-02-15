@@ -7,8 +7,13 @@
 #include "path-finding/abstract_path_finder.hpp"
 
 
-/*
+/*!
+ * \brief Fallback path-finding module, which constructs a simple cylinder as
+ * molecular pathway.
  *
+ * This is not technically finding a path, but may be useful if other 
+ * path-finding algorithms fail and the user can manually define a cylindrical
+ * pathway.
  */
 class NaiveCylindricalPathFinder : public AbstractPathFinder
 {

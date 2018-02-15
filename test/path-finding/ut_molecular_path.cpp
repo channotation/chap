@@ -328,7 +328,6 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
     ASSERT_NEAR(length/2.0, mpHourglass.minRadius().first, 2*std::sqrt(eps));
     ASSERT_NEAR(radius, mpHourglass.minRadius().second, eps);
 
-
     // create a toroidal path    
     real pathRadius = 0.5;
     real torusRadius = 10.0;
@@ -364,13 +363,12 @@ TEST_F(MolecularPathTest, MolecularPathMinRadiusTest)
 
 /*!
  * This test checks that the MolecularPath object calculates the correct volume
- * for a cylinder, hourglass, half-torus, and spring. The tolarance threshold 
+ * for a cylinder, hourglass, half-torus, and spring. The tolerance threshold 
  * is \f$ \sqrt{\epsilon} \f$ in all cases.
  */
 TEST_F(MolecularPathTest, MolecularPathVolumeTest)
 {
-  
-  // get machine epsilon:
+    // get machine epsilon:
     real eps = std::numeric_limits<real>::epsilon();
 
     // create a cylindrical path:
@@ -394,7 +392,7 @@ TEST_F(MolecularPathTest, MolecularPathVolumeTest)
 
     // create an hourglass-shaped path:
     // (note: if length too large, radius varies over many orders of magnitude
-    // so that chord-length approximation in reparameterisation is poor, 
+    // so that chord-length approximation in re-parameterisation is poor, 
     // leading to an error in volume estimation, but this should not be 
     // relevant in channels, where chord length should be a good approximation)
     dir = gmx::RVec(0.2, -3.0, 1.0);
@@ -433,7 +431,6 @@ TEST_F(MolecularPathTest, MolecularPathVolumeTest)
     ASSERT_NEAR(PI_*PI_*pathRadius*pathRadius*torusRadius, 
                 mpToroidal.volume(), 
                 std::sqrt(eps));
-
 
     // create a spring-shaped path:
     pathRadius = 0.015;

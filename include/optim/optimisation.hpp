@@ -33,9 +33,11 @@ class OptimSpacePoint : public std::pair<std::vector<real>, real>
 
 
 /*!
- * Functor for comparing two points in optimisation space by their respective
- * function value. Returns true if the value of the objective function is lower
- * at the first point than at the second point. This allows sorting a vector of
+ * \brief Functor for comparing two points in optimisation space by their
+ * respective function value. 
+ *
+ * Returns true if the value of the objective function is lower at the first 
+ * point than at the second point. This allows sorting a vector of
  * OptimSpacePoints using standard library functions.
  */
 typedef struct CompOptimSpacePoints
@@ -54,7 +56,8 @@ typedef struct CompOptimSpacePoints
 typedef std::function<real(std::vector<real>)> ObjectiveFunction;
 
 
-/*! \brief Abstract base class for optimisation modules.
+/*!
+ * \brief Abstract base class for optimisation modules.
  *
  * Specifies public interface that needs to be implemented by an optimisation 
  * module.

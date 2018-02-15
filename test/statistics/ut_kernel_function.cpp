@@ -6,7 +6,7 @@
 
 
 /*!
- * Test fixture for kernel functions derived from AbstractKernelFunction.
+ * \brief Test fixture for kernel functions derived from AbstractKernelFunction.
  */
 class KernelFunctionTest : public ::testing::Test
 {
@@ -39,7 +39,7 @@ TEST_F(KernelFunctionTest, KernelFunctionGaussianTest)
         evalPoints.push_back(evalLo + i*evalStep);
     }
 
-    // assert nonnegativity of kernel:
+    // assert non-negativity of kernel:
     for(auto eval : evalPoints)
     {
         ASSERT_LE(0.0, Kernel -> operator()(eval));

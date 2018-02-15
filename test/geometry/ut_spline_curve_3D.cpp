@@ -19,8 +19,8 @@ class SplineCurve3DTest : public ::testing::Test
 };
 
 
-/*
- *
+/*!
+ * Tests linear spline in three dimensions.
  */
 TEST_F(SplineCurve3DTest, SplineCurve3DLinearTest)
 {
@@ -57,9 +57,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLinearTest)
     for(unsigned int i = 0; i < t.size(); i++)
     {
         gmx::RVec value = SplC.evaluate(t[i], derivOrder);
-        ASSERT_NEAR(f[i][0], value[0], eps);
-        ASSERT_NEAR(f[i][1], value[1], eps);
-        ASSERT_NEAR(f[i][2], value[2], eps);
+        ASSERT_NEAR(f[i][XX], value[XX], eps);
+        ASSERT_NEAR(f[i][YY], value[YY], eps);
+        ASSERT_NEAR(f[i][ZZ], value[ZZ], eps);
     }
 
     // check if spline interpolates linearly at interval midpoints:
@@ -67,9 +67,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLinearTest)
     {
         real midpoint = (t[i] + t[i+1])/2.0; 
         gmx::RVec value = SplC.evaluate(midpoint, derivOrder);
-        ASSERT_NEAR((f[i][0] + f[i+1][0])/2.0, value[0], eps);
-        ASSERT_NEAR((f[i][1] + f[i+1][1])/2.0, value[1], eps);
-        ASSERT_NEAR((f[i][2] + f[i+1][2])/2.0, value[2], eps);
+        ASSERT_NEAR((f[i][XX] + f[i+1][XX])/2.0, value[XX], eps);
+        ASSERT_NEAR((f[i][YY] + f[i+1][YY])/2.0, value[YY], eps);
+        ASSERT_NEAR((f[i][ZZ] + f[i+1][ZZ])/2.0, value[ZZ], eps);
     }
 }
 
@@ -113,9 +113,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     for(unsigned int i = 0; i < t.size(); i++)
     {
         gmx::RVec value = SplC.evaluate(t[i], derivOrder);
-        ASSERT_NEAR( 1.0, value[0], eps);
-        ASSERT_NEAR(-1.0, value[1], eps);
-        ASSERT_NEAR( 0.5, value[2], eps);
+        ASSERT_NEAR( 1.0, value[XX], eps);
+        ASSERT_NEAR(-1.0, value[YY], eps);
+        ASSERT_NEAR( 0.5, value[ZZ], eps);
     }
 
     // check if spline interpolates linearly at interval midpoints:
@@ -123,9 +123,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     {
         real midpoint = (t[i] + t[i+1])/2.0; 
         gmx::RVec value = SplC.evaluate(midpoint, derivOrder);
-        ASSERT_NEAR( 1.0, value[0], eps);
-        ASSERT_NEAR(-1.0, value[1], eps);
-        ASSERT_NEAR( 0.5, value[2], eps);
+        ASSERT_NEAR( 1.0, value[XX], eps);
+        ASSERT_NEAR(-1.0, value[YY], eps);
+        ASSERT_NEAR( 0.5, value[ZZ], eps);
     }
 
     // test second derivative:
@@ -135,9 +135,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     for(unsigned int i = 0; i < t.size(); i++)
     {
         gmx::RVec value = SplC.evaluate(t[i], derivOrder);
-        ASSERT_NEAR(0.0, value[0], eps);
-        ASSERT_NEAR(0.0, value[1], eps);
-        ASSERT_NEAR(0.0, value[2], eps);
+        ASSERT_NEAR(0.0, value[XX], eps);
+        ASSERT_NEAR(0.0, value[YY], eps);
+        ASSERT_NEAR(0.0, value[ZZ], eps);
     }
 
     // check if spline interpolates linearly at interval midpoints:
@@ -145,9 +145,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDerivativeTest)
     {
         real midpoint = (t[i] + t[i+1])/2.0; 
         gmx::RVec value = SplC.evaluate(midpoint, derivOrder);
-        ASSERT_NEAR(0.0, value[0], eps);
-        ASSERT_NEAR(0.0, value[1], eps);
-        ASSERT_NEAR(0.0, value[2], eps);
+        ASSERT_NEAR(0.0, value[XX], eps);
+        ASSERT_NEAR(0.0, value[YY], eps);
+        ASSERT_NEAR(0.0, value[ZZ], eps);
     }
 }
 
@@ -188,36 +188,36 @@ TEST_F(SplineCurve3DTest, SplineCurve3DExtrapolationTest)
     // check evaluation below data range:
     real evalPoint = -4.0;
     gmx::RVec value = SplC.evaluate(evalPoint, 0);
-    ASSERT_NEAR(-4.0, value[0], eps);
-    ASSERT_NEAR( 4.0, value[1], eps);
-    ASSERT_NEAR( 1.0, value[2], eps);
+    ASSERT_NEAR(-4.0, value[XX], eps);
+    ASSERT_NEAR( 4.0, value[YY], eps);
+    ASSERT_NEAR( 1.0, value[ZZ], eps);
 
     gmx::RVec frstDeriv = SplC.evaluate(evalPoint, 1);
-    ASSERT_NEAR( 1.0, frstDeriv[0], eps);
-    ASSERT_NEAR(-1.0, frstDeriv[1], eps);
-    ASSERT_NEAR( 0.5, frstDeriv[2], eps);
+    ASSERT_NEAR( 1.0, frstDeriv[XX], eps);
+    ASSERT_NEAR(-1.0, frstDeriv[YY], eps);
+    ASSERT_NEAR( 0.5, frstDeriv[ZZ], eps);
 
     gmx::RVec scndDeriv = SplC.evaluate(evalPoint, 2);
-    ASSERT_NEAR(0.0, scndDeriv[0], eps);
-    ASSERT_NEAR(0.0, scndDeriv[1], eps);
-    ASSERT_NEAR(0.0, scndDeriv[2], eps);
+    ASSERT_NEAR(0.0, scndDeriv[XX], eps);
+    ASSERT_NEAR(0.0, scndDeriv[YY], eps);
+    ASSERT_NEAR(0.0, scndDeriv[ZZ], eps);
 
     // check evaluation above data range:
     evalPoint = 4.0;
     value = SplC.evaluate(evalPoint, 0);
-    ASSERT_NEAR( 4.0, value[0], eps);
-    ASSERT_NEAR(-4.0, value[1], eps);
-    ASSERT_NEAR( 5.0, value[2], eps);
+    ASSERT_NEAR( 4.0, value[XX], eps);
+    ASSERT_NEAR(-4.0, value[YY], eps);
+    ASSERT_NEAR( 5.0, value[ZZ], eps);
 
     frstDeriv = SplC.evaluate(evalPoint, 1);
-    ASSERT_NEAR( 1.0, frstDeriv[0], eps);
-    ASSERT_NEAR(-1.0, frstDeriv[1], eps);
-    ASSERT_NEAR( 0.5, frstDeriv[2], eps);
+    ASSERT_NEAR( 1.0, frstDeriv[XX], eps);
+    ASSERT_NEAR(-1.0, frstDeriv[YY], eps);
+    ASSERT_NEAR( 0.5, frstDeriv[ZZ], eps);
 
     scndDeriv = SplC.evaluate(evalPoint, 2);
-    ASSERT_NEAR(0.0, scndDeriv[0], eps);
-    ASSERT_NEAR(0.0, scndDeriv[1], eps);
-    ASSERT_NEAR(0.0, scndDeriv[2], eps); 
+    ASSERT_NEAR(0.0, scndDeriv[XX], eps);
+    ASSERT_NEAR(0.0, scndDeriv[YY], eps);
+    ASSERT_NEAR(0.0, scndDeriv[ZZ], eps); 
 }
 
 
@@ -272,20 +272,20 @@ TEST_F(SplineCurve3DTest, SplineCurve3DLengthTest)
                          b*evalPoint);
 
         // these should be the same:
-        ASSERT_NEAR(anaVal[0], splVal[0], eps);
-        ASSERT_NEAR(anaVal[1], splVal[1], eps);
-        ASSERT_NEAR(anaVal[2], splVal[2], eps);
+        ASSERT_NEAR(anaVal[XX], splVal[XX], eps);
+        ASSERT_NEAR(anaVal[YY], splVal[YY], eps);
+        ASSERT_NEAR(anaVal[ZZ], splVal[ZZ], eps);
     }
 
-    // check if length mataches analytical expression:
+    // check if length matches analytical expression:
     ASSERT_NEAR((tEnd - tStart)*std::sqrt(a*a + b*b),
                 SplC.length(), 
                 eps);
 }
 
 
-/*
- * 
+/*!
+ * Tests differential properties of 3D spline curve.
  */
 TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 {
@@ -333,9 +333,9 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
                          b*evalPoint);
 
         // these should be the same:
-        ASSERT_NEAR(anaVal[0], splVal[0], eps);
-        ASSERT_NEAR(anaVal[1], splVal[1], eps);
-        ASSERT_NEAR(anaVal[2], splVal[2], eps);
+        ASSERT_NEAR(anaVal[XX], splVal[XX], eps);
+        ASSERT_NEAR(anaVal[YY], splVal[YY], eps);
+        ASSERT_NEAR(anaVal[ZZ], splVal[ZZ], eps);
     }
 
     // check if spline curve speed evaluation is correct:
@@ -356,10 +356,10 @@ TEST_F(SplineCurve3DTest, SplineCurve3DDifferentialPropertiesTest)
 
 
 /*!
- * Tests whether the reparameterisation yields a curve with unit speed. To this
+ * Tests whether the re-parameterisation yields a curve with unit speed. To this
  * end a spline curve is constructed by interpolating a point set sampled from
- * a logarithmic spiral with constant z-velocity, reparameterisation is 
- * emploeyed and the result velocity is checked to be close to one at several 
+ * a logarithmic spiral with constant z-velocity, re-parameterisation is 
+ * employed and the result velocity is checked to be close to one at several 
  * evaluation points.
  */
 TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
@@ -417,7 +417,7 @@ TEST_F(SplineCurve3DTest, SplineCurve3DArcLengthReparameterisationTest)
 
 
 /*!
- * Test for the projection of points in cartesian coordinatas onto a spline 
+ * Test for the projection of points in Cartesian coordinates onto a spline 
  * curve. Two cases are considered: a linear spline curve and a spline curve 
  * interpolating points sampled from a planar circle. For the linear spline,
  * an extrapolation case is considered as well. Agreement between numerical 
@@ -454,7 +454,7 @@ TEST_F(SplineCurve3DTest, CartesianToCurvilinearInternalTest)
     knots.push_back(t.back());
     
     // create corresponding spline curve:
-    // (linear, so no need to reparameterise)
+    // (linear, so no need to re-parameterise)
     SplineCurve3D Spl(degree, knots, f);
 
     // check that all original points are found to lie on the curve:

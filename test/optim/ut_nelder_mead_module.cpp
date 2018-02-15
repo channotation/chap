@@ -3,9 +3,10 @@
 #include "optim/nelder_mead_module.hpp"
 
 
-/*
- * Test ficture for the Nelder Mead optimisation module. Defines the objective
- * functions used in the tests.
+/*!
+ * \brief Test fixture for the Nelder Mead optimisation module.
+ *
+ * Defines the objective functions used in the tests.
  */
 class NelderMeadModuleTest : public ::testing::Test
 {
@@ -46,7 +47,7 @@ class NelderMeadModuleTest : public ::testing::Test
 };
 
 
-/*
+/*!
  * Tests the Nelder Mead Module on the two-dimensional sphere function. Both
  * the error and the residual are checked and are required to converge to 
  * within the machine precision.
@@ -82,7 +83,7 @@ TEST_F(NelderMeadModuleTest, NelderMeadModuleSphereTest)
 }
 
 
-/*
+/*!
  * Tests the Nelder Mead Module on the two-dimensional Rosenbrock function. 
  * Both the error and the residual are checked and are required to converge to
  * within two times the machine precision.
