@@ -55,5 +55,5 @@ CHAP is released under the [MIT Licence](LICENSE.md).
 [Gromacs-install]: http://manual.gromacs.org/documentation/ 
 [GCC]: https://gcc.gnu.org/
 [GTest]: https://github.com/google/googletest
-[CHANNOTATION]: https://www.channotation.org
+[CHANNOTATION]: http://www.channotation.org
 
