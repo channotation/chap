@@ -1,5 +1,5 @@
 ---
-title: Installing CHAP
+title: Downloading and Installing CHAP
 permalink: /docs/installing_chap/
 ---
 
@@ -11,9 +11,21 @@ permalink: /docs/installing_chap/
 [Gromacs-install]: http://manual.gromacs.org/documentation/ 
 [GCC]: https://gcc.gnu.org/
 [GTest]: https://github.com/google/googletest
+[CHAP-Download]: https://github.com/channotation/chap/releases
 
 
 CHAP is written in C++ and is developed and tested on Ubuntu Linux. It is expected to be portable to other Unix-like operating systems, although this has not been tested. The following installation guide will assume that you are using Ubuntu and that you are reasonably experienced in using the command line.
+
+
+## Downloading CHAP ##
+
+To obtain a copy of CHAP, visit the [Releases Section][CHAP-Download] on GitHub and download the archive corresponding to the desired version. Alternatively, you can download the code directly from the command line via:
+
+```sh
+wget https://github.com/channotation/chap/archive/version_0_8_0.tar.gz
+```
+
+As CHAP is still a young project with new features and bug fixes being added continuously, you will usually want to download the latest version.
 
 
 ## Prerequisites ##
@@ -38,7 +50,8 @@ CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included as
 To install CHAP, unpack the source, create a `build` directory parallel to the source tree and from there run `cmake`, `make`, `make check`, and `make install`.
 
 ```bash
-cd chap
+tar -xvzf version_0_8_0.tar.gz
+cd chap-version_0_8_0
 mkdir build
 cd build
 cmake ..
