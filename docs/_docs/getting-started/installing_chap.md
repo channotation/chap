@@ -1,6 +1,7 @@
 ---
 title: Downloading and Installing CHAP
 permalink: /docs/installing_chap/
+redirect_from: /docs/index.html
 ---
 
 [CMake]: https://cmake.org/
