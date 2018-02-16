@@ -47,7 +47,7 @@ make check
 sudo make install
 ```
 
-CMake will automatically find all dependencies (and inform you of missing ones), `make` will compile the code (you can use the `make -j` flag to speed this up on multicore machines), `make check` runs a suite of unit tests, and `make install` will place the binary in `/usr/local/chap` (so you will need sudo rights for this last step). To check if CHAP has been installed properly, you can type
+CMake will automatically find all dependencies (and inform you of missing ones), `make` will compile the code (you can use the `make -j` flag to speed this up on multicore machines), `make check` runs a suite of unit tests, and `make install` will place the binary in `/usr/local/chap/bin` (so you will need sudo rights for this last step). To check if CHAP has been installed properly, you can type
 
 ```bash
 chap -h
