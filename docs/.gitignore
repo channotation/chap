@@ -1,0 +1,10 @@
+_site
+.sass-cache
+.jekyll-metadata
+*.gem
+.bundle
+vendor/bundle
+*.swp
+*.tga
+*.swo
+*.bak
