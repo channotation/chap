@@ -1,6 +1,6 @@
 # CHAP - The Channel Annotation Package #
 
-CHAP is a tool for the functional annotation of ion channel structures written in C++. See the website under [www.channotation.org][CHANNOTATION] for a full documentation including installation instructions and usage examples. If you have any questions please send an email to [chap@bioch.ox.ac.uk](mailto:chap@bioch.ox.ac.uk) or use the GitHub [Issue Tracker](https://github.com/channotation/chap/issues).
+CHAP is a tool for the functional annotation of ion channel structures written in C++. See the website under [www.channotation.org][CHANNOTATION] for a full documentation including installation instructions and usage examples. If you have any questions please use the GitHub [Issue Tracker](https://github.com/channotation/chap/issues).
 
 
 ## Prerequisites ##
