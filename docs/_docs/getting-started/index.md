@@ -1,6 +1,6 @@
 ---
 title: Downloading and Installing CHAP
-permalink: /docs/installing_chap/
+permalink: /docs/home/
 redirect_from: /docs/index.html
 ---
 
