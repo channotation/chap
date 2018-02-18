@@ -1,8 +1,8 @@
 - title: Getting Started
   docs:
-  - home
   - installing_chap
   - annotation_example
+  - simulation_example
 
 - title: Running CHAP
   docs:

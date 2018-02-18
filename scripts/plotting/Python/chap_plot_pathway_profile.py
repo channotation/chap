@@ -195,7 +195,7 @@ pl.fill_between(
 pl.margins(x = 0)
 pl.title("Time-Averaged Solvent Number Density Profile")
 pl.xlabel("s (nm)")
-pl.ylabel("H (a.u.)")
+pl.ylabel("n (nm$^{-3}$)")
 
 pl.savefig(
     "time_averaged_solvent_number_density_profile.png",
