@@ -26,6 +26,7 @@
 #include <string>
 
 #include <gromacs/random/threefry.h>
+#include <gromacs/utility/fatalerror.h>
 
 #include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
@@ -361,7 +362,7 @@ ChapTrajectoryAnalysis::initOptions(
     //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-pl-margin")
-																								 .store(&poreMappingMargin_)
+                         .store(&poreMappingMargin_)
                          .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
@@ -371,7 +372,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "line."));
 
     options -> addOption(StringOption("pm-pf-sel")
-																								 .store(&pfSelString_)
+						 .store(&pfSelString_)
                          .defaultValue("name CA")
                          .description("Selection string that determines the "
                                       "group of atoms in each residue whose "
@@ -656,6 +657,7 @@ ChapTrajectoryAnalysis::initAnalysis(
     {
         findPfResidues_ = true;
     }
+
 
 
     // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
@@ -1124,7 +1126,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
             plResidueHydrophobicity.push_back(
                     resInfo_.hydrophobicity(res.first));
         }
-        if( poreFacing[res.first])
+        if( poreFacing[res.first] )
         {
             pfResidueCoordS.push_back(res.second[SS]);
             pfResidueHydrophobicity.push_back(
@@ -1174,7 +1176,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
                 plHydrophobicity.ctrlPoints().at(i));
         dhFrameStream.finishPointSet();
     }
- 
+
     // estimate hydrophobicity profiles due to pore-facing residues:
     SplineCurve1D pfHydrophobicity = kernelSmoother.estimate(
             pfResidueCoordS, 
