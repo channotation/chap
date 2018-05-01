@@ -22,6 +22,8 @@
 // THE SOFTWARE.
 
 
+#include <limits>
+
 #include "geometry/linear_spline_interp_1D.hpp"
 #include "statistics/weighted_kernel_density_estimator.hpp"
 
@@ -90,8 +92,12 @@ WeightedKernelDensityEstimator::calculateWeightedDensity(
             weightedDensity[i] += kern*weights[j];
         }
 
-        // Nadaraya-Watson estimate of local function value:
-        weightedDensity[i] /= density[i];
+        // fend of NaNs occuring if density is too close to zero:
+        if( density[i] >= std::numeric_limits<real>::epsilon() )
+        {
+            // Nadaraya-Watson estimate of local function value:
+            weightedDensity[i] /= density[i];
+        }
     }
 
     // return density:
