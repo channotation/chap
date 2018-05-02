@@ -26,6 +26,7 @@
 #include <string>
 
 #include <gromacs/random/threefry.h>
+#include <gromacs/utility/fatalerror.h>
 
 #include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
@@ -146,26 +147,26 @@ ChapTrajectoryAnalysis::initOptions(
     // ------------------------------------------------------------------------
 
     options -> addOption(StringOption("out-filename")
-																								 .store(&outputBaseFileName_)
+                         .store(&outputBaseFileName_)
                          .defaultValue("output")
                          .description("File name for output files without "
                                       "file extension."));
 
     options -> addOption(IntegerOption("out-num-points")
-																								 .store(&outputNumPoints_)
+                         .store(&outputNumPoints_)
                          .defaultValue(1000)
                          .description("Number of spatial sample points that "
                                       "are written to the JSON output file."));
 
     options -> addOption(RealOption("out-extrap-dist")
-																								 .store(&outputExtrapDist_)
+                         .store(&outputExtrapDist_)
                          .defaultValue(0.0)
                          .description("Extrapolation distance beyond the "
                                       "pathway endpoints for both JSON and "
                                       "OBJ output."));
 
     options -> addOption(RealOption("out-grid-dist")
-																								 .store(&outputGridSampleDist_)
+                         .store(&outputGridSampleDist_)
                          .defaultValue(0.15)
                          .description("Controls the sampling distance of "
                                       "vertices on the pathway surface which "
@@ -174,7 +175,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "may yield visual artifacts."));
 
     options -> addOption(RealOption("out-vis-tweak")
-																								 .store(&outputCorrectionThreshold_)
+                         .store(&outputCorrectionThreshold_)
                          .defaultValue(0.1)
                          .description("Visual tweaking factor that controls "
                                       "the smoothness of the pathway surface "
@@ -185,7 +186,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "visualisation artifacts."));
 
     options -> addOption(BooleanOption("out-detailed")
-																								 .store(&outputDetailed_)
+                         .store(&outputDetailed_)
                          .defaultValue(false)
                          .description("If true, CHAP will write detailed per-"
                                       "frame information to a newline "
@@ -361,7 +362,7 @@ ChapTrajectoryAnalysis::initOptions(
     //-------------------------------------------------------------------------
 
     options -> addOption(RealOption("pm-pl-margin")
-																								 .store(&poreMappingMargin_)
+                         .store(&poreMappingMargin_)
                          .defaultValue(0.75)
                          .description("Margin for determining pathway lining "
                                       "residues. A residue is considered to "
@@ -371,7 +372,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "line."));
 
     options -> addOption(StringOption("pm-pf-sel")
-																								 .store(&pfSelString_)
+						 .store(&pfSelString_)
                          .defaultValue("name CA")
                          .description("Selection string that determines the "
                                       "group of atoms in each residue whose "
@@ -656,6 +657,7 @@ ChapTrajectoryAnalysis::initAnalysis(
     {
         findPfResidues_ = true;
     }
+
 
 
     // PREPARE SELECTIONS FOR SOLVENT PARTICLE MAPPING
@@ -1124,7 +1126,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
             plResidueHydrophobicity.push_back(
                     resInfo_.hydrophobicity(res.first));
         }
-        if( poreFacing[res.first])
+        if( poreFacing[res.first] )
         {
             pfResidueCoordS.push_back(res.second[SS]);
             pfResidueHydrophobicity.push_back(
@@ -1174,7 +1176,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
                 plHydrophobicity.ctrlPoints().at(i));
         dhFrameStream.finishPointSet();
     }
- 
+
     // estimate hydrophobicity profiles due to pore-facing residues:
     SplineCurve1D pfHydrophobicity = kernelSmoother.estimate(
             pfResidueCoordS, 
