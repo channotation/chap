@@ -22,6 +22,8 @@
 // THE SOFTWARE.
 
 
+#include <cmath>
+
 #include "gromacs/analysisdata/dataframe.h"
 
 #include "external/rapidjson/stringbuffer.h"
@@ -134,10 +136,17 @@ AnalysisDataJsonFrameExporter::pointsAdded(
         // obtain name of column:
         std::string columnName = columnNames_.at(points.dataSetIndex()).at(i);
 
+        // sanity check:
+        if( std::isnan( points.values().at(i).value() ) )
+        {
+            throw std::runtime_error("Data value " + dataSetName + "/" + columnName + " is NaN and can not be "
+                                     "written to JSON file.");
+        }
+
         // add value to column array:
         rapidjson::Value val( points.values().at(i).value() );
         json_[dataSetName][columnName].PushBack(val, allocator);
-    }    
+    }   
 }
 
 
