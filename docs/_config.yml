@@ -4,6 +4,7 @@ email: chap@bioch.ox.ac.uk
 description: >
   Jekyll Template for Project Websites
   providing documentation and blog post pages.
+lang: en-US
 
 baseurl: "/" # the subpath of your site, e.g. /blog/
 url: https://www.channotation.org # the base hostname & protocol for your site
