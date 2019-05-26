@@ -5,6 +5,7 @@ permalink: /docs/plotting_other/
 
 [JSON-spec]: https://www.json.org/
 [Python]: https://www.python.org/
+[R-main]: https://www.r-project.org/about.html
 [matplotlib]: https://matplotlib.org/
 [pip]: https://pypi.python.org/pypi/pip
 [add-path]: https://unix.stackexchange.com/questions/26047/how-to-correctly-add-a-path-to-path
