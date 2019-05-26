@@ -21,6 +21,7 @@
   docs:
   - plotting_python
   - plotting_r
+  - plotting_other
   - molecular_graphics_pymol
   - molecular_graphics_vmd
 
