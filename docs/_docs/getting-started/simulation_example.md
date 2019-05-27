@@ -4,7 +4,7 @@ permalink: /docs/simulation_example/
 ---
 
 [memprotmd]: http://memprotmd.bioch.ox.ac.uk/home/
-[membrande-builder]: http://www.charmm-gui.org/?doc=input/membrane.bilayer
+[membrane-builder]: http://www.charmm-gui.org/?doc=input/membrane.bilayer
 [gromacs-tutorials]: http://www.mdtutorials.com/gmx/
 [gromacs-documentation]: http://manual.gromacs.org/documentation/
 
