@@ -40,7 +40,7 @@ The data file containing the predictive model and the plotting script that gener
 With the three required files now present in the working directory (namely, the CHAP output `output.json`, the predictive model `heuristic_grid.json`, and the plotting script `heuristic_prediction.R`), the heuristic score can be calculated by running [R](https://www.r-project.org/):
 
 ```
-Rscript heuristic_prediction.R
+./heuristic_prediction.R
 ```
 
 This will map all the pore-facing residues in the channel structure, as identified by CHAP, to a landscape of local pore hydrophobicity and radius values, and generate the following plot:
