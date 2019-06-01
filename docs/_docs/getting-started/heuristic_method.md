@@ -1,6 +1,6 @@
 ---
 title: Heuristic Prediction
-permalink: /docs/heuristic_model/
+permalink: /docs/heuristic_method/
 ---
 
 Combined with a predictive model which we have built based on a large amount of simulation data, the CHAP output for a given channel structure can be used to assess whether its conformation is likely to contain energetic barrier(s) to water, prior to any molecular dynamics simulation.
