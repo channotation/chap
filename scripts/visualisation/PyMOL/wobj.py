@@ -102,7 +102,7 @@ class WavefrontMtlImporter:
         """
 
         # add ambient colour value to materials dictionary:
-        self.__materials[self.__crnt_material]["Ka"] = map(float, split_line[1:4])
+        self.__materials[self.__crnt_material]["Ka"] = list(map(float, split_line[1:4]))
 
 
     def __parse_kd_line(self, split_line):
@@ -115,7 +115,7 @@ class WavefrontMtlImporter:
         """
 
         # add ambient colour value to materials dictionary:
-        self.__materials[self.__crnt_material]["Kd"] = map(float, split_line[1:4])
+        self.__materials[self.__crnt_material]["Kd"] = list(map(float, split_line[1:4]))
 
 
     def __parse_ks_line(self, split_line):
@@ -128,7 +128,7 @@ class WavefrontMtlImporter:
         """
 
         # add ambient colour value to materials dictionary:
-        self.__materials[self.__crnt_material]["Ks"] = map(float, split_line[1:4])
+        self.__materials[self.__crnt_material]["Ks"] = list(map(float, split_line[1:4]))
 
 
 
@@ -283,7 +283,7 @@ class WavefrontObjImporter:
         """
          
         # append vertex 3-vector to list of vertices:
-        self.__vertices.append(map(float, split_line[1:4]))
+        self.__vertices.append(list(map(float, split_line[1:4])))
 
     
     def __parse_vn_line(self, split_line):
@@ -297,7 +297,7 @@ class WavefrontObjImporter:
         """
     
         # append vertex normal 3-vector to list of vertices:
-        self.__normals.append(map(float, split_line[1:4]))
+        self.__normals.append(list(map(float, split_line[1:4])))
     
 
     def __parse_f_line(self, split_line):
@@ -312,13 +312,13 @@ class WavefrontObjImporter:
         """
 
         # split at slash to separate out vertex, texture and normal index: 
-        all_indices = map(lambda x: x.split("/"), split_line[1:4])
+        all_indices = list(map(lambda x: x.split("/"), split_line[1:4]))
 
         # create a face with material and index into vertex and normal lists:
         face = dict()
         face["material"] = self.__crnt_material
-        face["vert_idx"] = map(int, map(lambda x: x[0], all_indices)) 
-        face["norm_idx"] = map(int, map(lambda x: x[2], all_indices)) 
+        face["vert_idx"] = list(map(int, list(map(lambda x: x[0], all_indices)))) 
+        face["norm_idx"] = list(map(int, list(map(lambda x: x[2], all_indices))))
  
         # append face to list of faces for the current group:
         self.__groups[self.__crnt_group]["faces"].append(face)
