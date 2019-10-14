@@ -13,7 +13,7 @@ install:
     - sudo apt-get install -y libatlas-base-dev
     - sudo apt-get install -y libopenblas-dev
     - sudo apt-get install -y liblapacke-dev
-    - apt-get install -y libboost-all-dev
+    - sudo apt-get install -y libboost-all-dev
 
 # prepare build process:
 before_script:
