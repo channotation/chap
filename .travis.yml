@@ -1,7 +1,7 @@
-# will build C++ programme:
+# will build a C++ programme
 language: cpp
 
-# define build matrix:
+# define build matrix
 matrix:
     include:
         # Ubuntu 16.04 Xenial Xerus
@@ -10,37 +10,58 @@ matrix:
           sudo: required
           compiler: gcc
           env:
+              OS_DIST=LINUX_XENIAL
               GMX_VERSION=2016
         - os: linux
           dist: xenial
           sudo: required
           compiler: gcc
           env:
+              OS_DIST=LINUX_XENIAL
               GMX_VERSION=2018
+        - os: linux
+          dist: xenial
+          sudo: required
+          compiler: gcc
+          env:
+              OS_DIST=LINUX_XENIAL
+              GMX_VERSION=2019
         # Ubuntu 18.04 Bionic Beaver
         - os: linux
           dist: bionic
           sudo: required
           compiler: gcc
           env:
+              OS_DIST=LINUX_BIONIC
               GMX_VERSION=2016
         - os: linux
           dist: bionic
           sudo: required
           compiler: gcc
           env:
+              OS_DIST=LINUX_BIONIC
               GMX_VERSION=2018
+        - os: linux
+          dist: bionic
+          sudo: required
+          compiler: gcc
+          env:
+              OS_DIST=LINUX_BIONIC
+              GMX_VERSION=2019
+    allow_failures:
+        # API break in newest GROMACS needs fixing
+        - GMX_VERSION=2019
 
-# install dependencies:
+# install dependencies
 install:
-    # install linear algebra dependencies:
+    # install linear algebra dependencies
     - sudo apt-get install -y libblas-dev
     - sudo apt-get install -y libatlas-base-dev
     - sudo apt-get install -y libopenblas-dev
     - sudo apt-get install -y liblapacke-dev
-    # install boost:
+    # install boost
     - sudo apt-get install -y libboost-all-dev
-    # install GROMACS:
+    # install GROMACS
     - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-${GMX_VERSION}.tar.gz
     - tar -xvzf gromacs-${GMX_VERSION}.tar.gz
     - cd gromacs-${GMX_VERSION}
@@ -51,17 +72,15 @@ install:
     - sudo make install
     - . /usr/local/gromacs/bin/GMXRC
 
-# prepare build process:
+# prepare build process
 before_script:
     - mkdir ${TRAVIS_BUILD_DIR}/build
     - cd ${TRAVIS_BUILD_DIR}/build
 
-# build and test:
+# build and test
 script:
     - cmake ..
     - make -j 2
     - make check
     - sudo make install
-    - source ~/.bashrc
-    - which chap
-    - chap -h
+    - /usr/local/chap/bin/chap -h
