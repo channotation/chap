@@ -8,17 +8,34 @@ matrix:
         - os: linux
           dist: trusty
           compiler: gcc
+          env:
+              OSDIST=trusty
         - os: linux
           dist: xenial
           compiler: gcc
+          env:
+              OSDIST=xenial
 
 # install dependencies:
 install:
+    # install linear algebra dependencies:
     - sudo apt-get install -y libblas-dev
     - sudo apt-get install -y libatlas-base-dev
     - sudo apt-get install -y libopenblas-dev
     - sudo apt-get install -y liblapacke-dev
+    # install boost:
     - sudo apt-get install -y libboost-all-dev
+    # install GROMACS from source:
+    - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-2018.tar.gz
+    - tar -xvzf gromacs-2018.tar.gz
+    - cd gromacs-2018
+    - mkdir build
+    - cd build
+    - cmake -DGMX_FFT_LIBRARY=fftpack ..
+    - make -j 2
+    - sudo make install
+    - . /usr/local/gromacs/bin/GMXRC
+    - updatedb
 
 # prepare build process:
 before_script:
