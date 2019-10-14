@@ -62,7 +62,7 @@ install:
     # install boost
     - sudo apt-get install -y libboost-all-dev
     # install GROMACS
-    - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-${GMX_VERSION}.tar.gz
+    - wget https://ftp.gromacs.org/pub/gromacs/gromacs-${GMX_VERSION}.tar.gz
     - tar -xvzf gromacs-${GMX_VERSION}.tar.gz
     - cd gromacs-${GMX_VERSION}
     - mkdir build
