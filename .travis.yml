@@ -3,11 +3,23 @@ sudo: required
 language: cpp
 
 os: linux
-dist: trusty
+dist: xenial
 
 compiler: gcc
 
-before_install:
+# install dependencies:
+install:
     - sudo apt-get install -y libblas-dev
-    - sudo apt-get install -y liblapacke-dev
     - sudo apt-get install -y libatlas-base-dev
+    - sudo apt-get install -y libopenblas-dev
+    - sudo apt-get install -y liblapacke-dev
+    - apt-get install -y libboost-all-dev
+
+# prepare build process:
+before_script:
+    - mkdir ${TRAVIS_BUILD_DIR}/project
+    - cd ${TRAVIS_BUILD_DIR}/project
+
+# build and test:
+script:
+    - pwd
