@@ -4,19 +4,6 @@ language: cpp
 # define build matrix:
 matrix:
     include:
-        # Ubuntu 14.04 Trusty Tahr
-        - os: linux
-            dist: xenial
-            sudo: required
-            compiler: gcc
-            env:
-                GMX_VERSION=2016
-        - os: linux
-            dist: xenial
-            sudo: required
-            compiler: gcc
-            env:
-                GMX_VERSION=2018
         # Ubuntu 16.04 Xenial Xerus
         - os: linux
             dist: xenial
@@ -32,13 +19,13 @@ matrix:
                 GMX_VERSION=2018
         # Ubuntu 18.04 Bionic Beaver
         - os: linux
-            dist: xenial
+            dist: bionic
             sudo: required
             compiler: gcc
             env:
                 GMX_VERSION=2016
         - os: linux
-            dist: xenial
+            dist: bionic
             sudo: required
             compiler: gcc
             env:
