@@ -49,8 +49,8 @@ matrix:
               OS_DIST=LINUX_BIONIC
               GMX_VERSION=2019
     allow_failures:
-        # API break in newest GROMACS needs fixing
-        - GMX_VERSION=2019
+        - GMX_VERSION=2019      # known API break
+        - OS_DIST=LINUX_BIONIC  # new Ubuntu LTS not tested
 
 # install dependencies
 install:
