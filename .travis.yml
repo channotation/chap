@@ -1,8 +1,13 @@
 sudo: required
 
-before_install:
-    - sudo apt install liblapacke
-
 language: cpp
 
+os: linux
+dist: trusty
+
 compiler: gcc
+
+before_install:
+    - sudo apt-get install -y libblas-dev
+    - sudo apt-get install -y liblapacke-dev
+    - sudo apt-get install -y libatlas-base-dev
