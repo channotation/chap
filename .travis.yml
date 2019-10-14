@@ -6,30 +6,30 @@ matrix:
     include:
         # Ubuntu 16.04 Xenial Xerus
         - os: linux
-            dist: xenial
-            sudo: required
-            compiler: gcc
-            env:
-                GMX_VERSION=2016
+          dist: xenial
+          sudo: required
+          compiler: gcc
+          env:
+              GMX_VERSION=2016
         - os: linux
-            dist: xenial
-            sudo: required
-            compiler: gcc
-            env:
-                GMX_VERSION=2018
+          dist: xenial
+          sudo: required
+          compiler: gcc
+          env:
+              GMX_VERSION=2018
         # Ubuntu 18.04 Bionic Beaver
         - os: linux
-            dist: bionic
-            sudo: required
-            compiler: gcc
-            env:
-                GMX_VERSION=2016
+          dist: bionic
+          sudo: required
+          compiler: gcc
+          env:
+              GMX_VERSION=2016
         - os: linux
-            dist: bionic
-            sudo: required
-            compiler: gcc
-            env:
-                GMX_VERSION=2018
+          dist: bionic
+          sudo: required
+          compiler: gcc
+          env:
+              GMX_VERSION=2018
 
 # install dependencies:
 install:
