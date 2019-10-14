@@ -4,20 +4,45 @@ language: cpp
 # define build matrix:
 matrix:
     include:
+        # Ubuntu 14.04 Trusty Tahr
         - os: linux
-          dist: xenial
-          sudo: required
-          compiler: gcc
-          env:
-              OS_DIST=${TRAVIS_OS_NAME}_${TRAVIS_DIST}
-              GMX_VERSION=2016
+            dist: xenial
+            sudo: required
+            compiler: gcc
+            env:
+                GMX_VERSION=2016
         - os: linux
-          dist: xenial
-          sudo: required
-          compiler: gcc
-          env:
-              OS_DIST=${TRAVIS_OS_NAME}_${TRAVIS_DIST}
-              GMX_VERSION=2018
+            dist: xenial
+            sudo: required
+            compiler: gcc
+            env:
+                GMX_VERSION=2018
+        # Ubuntu 16.04 Xenial Xerus
+        - os: linux
+            dist: xenial
+            sudo: required
+            compiler: gcc
+            env:
+                GMX_VERSION=2016
+        - os: linux
+            dist: xenial
+            sudo: required
+            compiler: gcc
+            env:
+                GMX_VERSION=2018
+        # Ubuntu 18.04 Bionic Beaver
+        - os: linux
+            dist: xenial
+            sudo: required
+            compiler: gcc
+            env:
+                GMX_VERSION=2016
+        - os: linux
+            dist: xenial
+            sudo: required
+            compiler: gcc
+            env:
+                GMX_VERSION=2018
 
 # install dependencies:
 install:
@@ -50,4 +75,6 @@ script:
     - make -j 2
     - make check
     - sudo make install
+    - source ~/.bashrc
+    - which chap
     - chap -h
