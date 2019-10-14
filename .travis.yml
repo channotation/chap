@@ -12,8 +12,6 @@ matrix:
           dist: xenial
           compiler: gcc
 
-
-
 # install dependencies:
 install:
     - sudo apt-get install -y libblas-dev
@@ -28,11 +26,7 @@ before_script:
     - cd ${TRAVIS_BUILD_DIR}/build
 
 # build and test:
-jobs:
-    include:
-        - stage: build
-          script:
-              - pwd
-        - stage: test
-          script:
-              - echo "test"
+script:
+    - cmake ..
+    - make
+    - make test
