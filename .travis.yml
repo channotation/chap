@@ -9,14 +9,14 @@ matrix:
           sudo: required
           compiler: gcc
           env:
-              OS_DIST=trusty
+              OS_DIST=${TRAVIS_OS_NAME}_${TRAVIS_DIST}
               GMX_VERSION=2016
         - os: linux
           dist: xenial
           sudo: required
           compiler: gcc
           env:
-              OSDIST=xenial
+              OS_DIST=${TRAVIS_OS_NAME}_${TRAVIS_DIST}
               GMX_VERSION=2018
 
 # install dependencies:
@@ -29,17 +29,15 @@ install:
     # install boost:
     - sudo apt-get install -y libboost-all-dev
     # install GROMACS:
-    - sudo apt-get install -y libgromacs-dev
-    # - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-2018.tar.gz
-    # - tar -xvzf gromacs-2018.tar.gz
-    # - cd gromacs-2018
-    # - mkdir build
-    # - cd build
-    # - cmake -DGMX_FFT_LIBRARY=fftpack ..
-    # - make -j 2
-    # - sudo make install
-    # - . /usr/local/gromacs/bin/GMXRC
-    # - updatedb
+    - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-${GMX_VERSION}.tar.gz
+    - tar -xvzf gromacs-${GMX_VERSION}.tar.gz
+    - cd gromacs-${GMX_VERSION}
+    - mkdir build
+    - cd build
+    - cmake -DGMX_FFT_LIBRARY=fftpack ..
+    - make -j 2
+    - sudo make install
+    - . /usr/local/gromacs/bin/GMXRC
 
 # prepare build process:
 before_script:
@@ -49,5 +47,7 @@ before_script:
 # build and test:
 script:
     - cmake ..
-    - make
-    - make test
+    - make -j 2
+    - make check
+    - sudo make install
+    - chap -h
