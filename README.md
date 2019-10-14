@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/channotation/chap.svg?branch=master)](https://travis-ci.org/channotation/chap)
+
 # CHAP - The Channel Annotation Package #
 
 CHAP is a tool for the functional annotation of ion channel structures written in C++. See the website under [www.channotation.org][CHANNOTATION] for a full documentation including installation instructions and usage examples. If you have any questions please use the GitHub [Issue Tracker](https://github.com/channotation/chap/issues).
@@ -12,9 +14,9 @@ Prior to installing CHAP, make sure that you have the following libraries and to
 3. The [Boost][Boost] C++ libraries, which on Ubuntu can be installed using `sudo apt-get install libboost-all-dev`. Boost algorithms are used in CHAP to solve some root finding and optimisation problems.
 4. The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing `sudo apt-get install libblas-dev libatlas-base-dev libopenblas-dev liblapacke-dev`. The linear algebra libraries are used in CHAP's spline interpolation.
 5. The `libgromacs` library of the [Gromacs][Gromacs] molecular dynamics engine in version 2016 or higher. Comprehensive installation instructions for Gromacs can be found [here][Gromacs-install].
-Please note that for using Gromacs as a library, the underlying FFTW libray 
+Please note that for using Gromacs as a library, the underlying FFTW libray
 may **not** be installed automatically, i.e. you need to set
-`-DGMX_BUILD_OWN_FFTW=OFF` when running CMake during the Gromacs 
+`-DGMX_BUILD_OWN_FFTW=OFF` when running CMake during the Gromacs
 installation.
 
 CHAP also depends on [RapidJSON](http://rapidjson.org/), but this is included as a header-only library, and on [GTest][GTest], but this is downloaded and installed automatically by CMake, so you don't need to do anything about either of these (you will however need Internet access when installing CHAP).
@@ -48,8 +50,7 @@ which should bring up an online help for using CHAP.
 [CBLAS]: http://www.netlib.org/blas/
 [LAPACKE]: http://www.netlib.org/lapack/lapacke.html
 [Gromacs]: http://www.gromacs.org/
-[Gromacs-install]: http://manual.gromacs.org/documentation/ 
+[Gromacs-install]: http://manual.gromacs.org/documentation/
 [GCC]: https://gcc.gnu.org/
 [GTest]: https://github.com/google/googletest
 [CHANNOTATION]: http://www.channotation.org
-
