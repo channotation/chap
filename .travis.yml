@@ -1,20 +1,23 @@
-sudo: required
-
+# will build C++ programme:
 language: cpp
 
 # define build matrix:
 matrix:
     include:
         - os: linux
-          dist: trusty
+          dist: xenial
+          sudo: required
           compiler: gcc
           env:
-              OSDIST=trusty
+              OS_DIST=trusty
+              GMX_VERSION=2016
         - os: linux
           dist: xenial
+          sudo: required
           compiler: gcc
           env:
               OSDIST=xenial
+              GMX_VERSION=2018
 
 # install dependencies:
 install:
@@ -25,17 +28,18 @@ install:
     - sudo apt-get install -y liblapacke-dev
     # install boost:
     - sudo apt-get install -y libboost-all-dev
-    # install GROMACS from source:
-    - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-2018.tar.gz
-    - tar -xvzf gromacs-2018.tar.gz
-    - cd gromacs-2018
-    - mkdir build
-    - cd build
-    - cmake -DGMX_FFT_LIBRARY=fftpack ..
-    - make -j 2
-    - sudo make install
-    - . /usr/local/gromacs/bin/GMXRC
-    - updatedb
+    # install GROMACS:
+    - sudo apt-get install -y libgromacs-dev
+    # - wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-2018.tar.gz
+    # - tar -xvzf gromacs-2018.tar.gz
+    # - cd gromacs-2018
+    # - mkdir build
+    # - cd build
+    # - cmake -DGMX_FFT_LIBRARY=fftpack ..
+    # - make -j 2
+    # - sudo make install
+    # - . /usr/local/gromacs/bin/GMXRC
+    # - updatedb
 
 # prepare build process:
 before_script:
