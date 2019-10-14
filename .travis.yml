@@ -2,8 +2,13 @@ sudo: required
 
 language: cpp
 
-os: linux
-dist: xenial
+# define build matrix:
+matrix:
+    include:
+        - os: linux
+          dist: trusty
+        - os: linux
+          dist: xenial
 
 compiler: gcc
 
@@ -17,8 +22,8 @@ install:
 
 # prepare build process:
 before_script:
-    - mkdir ${TRAVIS_BUILD_DIR}/project
-    - cd ${TRAVIS_BUILD_DIR}/project
+    - mkdir ${TRAVIS_BUILD_DIR}/build
+    - cd ${TRAVIS_BUILD_DIR}/build
 
 # build and test:
 script:
