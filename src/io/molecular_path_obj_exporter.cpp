@@ -340,10 +340,6 @@ RegularVertexGrid::faces(
         }
     }
 
-
-    // TODO remove
-    std::cout<<p<<": "<<minRange<<" < "<<maxRange<<std::endl;
-
     // has user specified colour ranges manually?
     if( colourRanges_.find(p) != colourRanges_.end() )
     {
@@ -367,18 +363,11 @@ RegularVertexGrid::faces(
         }
     }
 
-
-    // TODO remove
-    std::cout<<minRange<<" < "<<maxRange<<std::endl;
-
     // prepare colour scale:
     ColourScale colScale(p);
-    std::cout<<"test"<<std::endl;
-    colScale.setRange(minRange, maxRange, false); // TODO removelast argument?
+    colScale.setRange(minRange, maxRange, false); // TODO last argument obsolete?
     colScale.setResolution(100);   // NOTE: limited by number of MTL materials
-    std::cout<<"test"<<std::endl;
     colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
-    std::cout<<"test"<<std::endl;
 
     // number of vertices per property grid:
     size_t propIdx = std::distance(p_.begin(), find(p_.begin(), p_.end(), p));
@@ -387,8 +376,6 @@ RegularVertexGrid::faces(
     // preallocate face vector:
     std::vector<WavefrontObjFace> faces;
     faces.reserve(phi_.size()*s_.size());
-
-    std::cout<<"test"<<std::endl;
 
     // loop over grid:
     for(size_t i = 0; i < s_.size() - 1; i++)
@@ -418,10 +405,8 @@ RegularVertexGrid::faces(
             scalarB /= 3.0;
 
             // name of material from colour scale:
-            std::cout<<"test 4a"<<std::endl;
             std::string mtlNameA = colScale.scalarToColourName(scalarA);
             std::string mtlNameB = colScale.scalarToColourName(scalarB);
-            std::cout<<"test 4b"<<std::endl;
 
             // two faces per square:
             if( normals_.empty() )
@@ -446,8 +431,6 @@ RegularVertexGrid::faces(
             }
         }
     }
-
-    std::cout<<"test5"<<std::endl;
 
     // wrap around:
     for(size_t i = 0; i < s_.size() - 1; i++)
@@ -631,9 +614,6 @@ MolecularPathObjExporter::operator()(
 
         // obtain colour scale for this property:
         auto colScale = grid.colourScale(prop.first);
-
-        // TODO remove
-        //colScale.setRange(0.5, 1.0, true);
 
         // is there a colour palatte for this property?
         if( palettes.find(prop.first) != palettes.end() )
@@ -952,23 +932,14 @@ MolecularPathObjExporter::generatePropertyGrid(
         colRange = grid.colourRanges_[property.first];
     }
 
-    std::cout<<"before: "<<property.first<<": "<<colRange.first<<" < "<<colRange.second<<std::endl;
-
     // scale property to colour range:
     shiftAndScale(prop, property.second.second, colRange);
-
-    std::cout<<"after:  "<<property.first<<": "<<colRange.first<<" < "<<colRange.second<<std::endl;
 
     // add updated colour range to grid:
     if( grid.colourRanges_.find(property.first) != grid.colourRanges_.end() )
     {
         grid.colourRanges_[property.first] = colRange;
     }
-
-    std::cout<<"grid:   "<<property.first<<": "<<grid.colourRanges_[property.first].first<<" < "<<grid.colourRanges_[property.first].second<<std::endl;
-
-    // has user specified a colour range for this property:
-    //grid.colourRanges_[property.first] = colourRange;
 
     // loop over target grid coordinates and add vertices:
     for(size_t i = 0; i < grid.s_.size(); i++)
@@ -1121,9 +1092,6 @@ MolecularPathObjExporter::shiftAndScale(
     // find data range:
     real minProp = *std::min_element(prop.begin(), prop.end());
     real maxProp = *std::max_element(prop.begin(), prop.end());
-
-    // TODO remove
-    std::cout<<"data: "<<minProp<<" < "<<maxProp<<std::endl;
 
     // overwrite with manual colour range limits if given:
     if( !std::isnan(colRange.first) )

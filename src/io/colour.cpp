@@ -23,7 +23,6 @@
 
 
 #include <iomanip>
-#include <iostream> // TODO remove
 #include <sstream>
 
 #include "io/colour.hpp"
@@ -195,13 +194,6 @@ ColourScale::scalarToColourName(real scalar)
 
     // determine index of colour name:
     int idx = (numColours_ - 1)*(scalar - rangeMin_) / (rangeMax_ - rangeMin_);
-
-    std::cout<<"idx = "<<idx
-             <<" numColours = "<<numColours_
-             <<" scalar = "<<scalar
-             <<" rangeMin = "<<rangeMin_
-             <<" rangeMax = "<<rangeMax_
-             <<std::endl;
 
     // return appropriate colour name:
     return colourNames_.at(idx);
