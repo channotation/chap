@@ -1,8 +1,8 @@
 // CHAP - The Channel Annotation Package
-// 
-// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+//
+// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 // Stephen J. Tucker
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -12,7 +12,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,6 +23,7 @@
 
 
 #include <iomanip>
+#include <iostream> // TODO remove
 #include <sstream>
 
 #include "io/colour.hpp"
@@ -39,7 +40,7 @@ ColourPalette::ColourPalette(
     : values_(values)
     , colours_(colours)
 {
-    
+
 }
 
 
@@ -51,7 +52,7 @@ ColourPalette::ColourPalette(
     : values_(other.values_)
     , colours_(other.colours_)
 {
-    
+
 }
 
 
@@ -61,12 +62,12 @@ ColourPalette::ColourPalette(
 ColourScale::ColourScale(std::string name)
     : name_(name)
 {
-    
+
 }
 
 
 /*!
- * Sets the palette, i.e. the finite set of RGB colours which will be 
+ * Sets the palette, i.e. the finite set of RGB colours which will be
  * interpolated linearly to yield a continuous colour scale.
  */
 void
@@ -80,7 +81,7 @@ ColourScale::setPalette(ColourPalette palette)
  * Sets the range of the variable mapped through this colour scale.
  */
 void
-ColourScale::setRange(real min, real max)
+ColourScale::setRange(real min, real max, bool rangeSetUser)
 {
     // sanity check:
     if( min > max )
@@ -91,6 +92,7 @@ ColourScale::setRange(real min, real max)
 
     rangeMin_ = min;
     rangeMax_ = max;
+    rangeSetUser_ = rangeSetUser;
 }
 
 
@@ -116,7 +118,7 @@ ColourScale::setResolution(size_t res)
 
 
 /*!
- * Returns a map of named colours in the scale. Requires that setRange(), 
+ * Returns a map of named colours in the scale. Requires that setRange(),
  * setResolution(), and setPalette() have been called previously.
  */
 std::map<std::string, gmx::RVec>
@@ -148,7 +150,7 @@ ColourScale::getColours()
 
         // scaling factor for linear interpolation:
         real alpha = (scalar - paletteValues[idxLo]);
-        alpha /= (paletteValues[idxHi] - paletteValues[idxLo]); 
+        alpha /= (paletteValues[idxHi] - paletteValues[idxLo]);
 
         // interpolate palette colours:
         gmx::RVec colLo = paletteColours.at(idxLo);
@@ -173,13 +175,33 @@ std::string
 ColourScale::scalarToColourName(real scalar)
 {
     // sanity checks:
-    if( scalar < rangeMin_ || scalar > rangeMax_ )
+    if( rangeSetUser_ == true )
     {
+        // with manually determined data range, cap value at scale range:
+        if( scalar < rangeMin_ )
+        {
+            scalar = rangeMin_;
+        }
+        if( scalar > rangeMax_ )
+        {
+            scalar = rangeMax_;
+        }
+    }
+    else if( scalar < rangeMin_ || scalar > rangeMax_ )
+    {
+        // with automatic range, throw exception if value outside range:
         throw std::logic_error("Value outside scale range encountered.");
     }
 
     // determine index of colour name:
     int idx = (numColours_ - 1)*(scalar - rangeMin_) / (rangeMax_ - rangeMin_);
+
+    std::cout<<"idx = "<<idx
+             <<" numColours = "<<numColours_
+             <<" scalar = "<<scalar
+             <<" rangeMin = "<<rangeMin_
+             <<" rangeMax = "<<rangeMax_
+             <<std::endl;
 
     // return appropriate colour name:
     return colourNames_.at(idx);
@@ -213,13 +235,13 @@ ColourPaletteProvider::fromJsonDoc(const rapidjson::Document &doc)
     for(it = palettes.Begin(); it != palettes.End(); it++)
     {
         // check that required entries are present and of correct type:
-        if( !(it -> HasMember("property")) || 
+        if( !(it -> HasMember("property")) ||
             !(*it)["property"].IsString() )
         {
             throw std::runtime_error("No 'property' attribute of type string "
             "in colour palette.");
         }
-        if( !(it -> HasMember("palette")) || 
+        if( !(it -> HasMember("palette")) ||
             !(*it)["palette"].IsObject() )
         {
             throw std::runtime_error("No 'palette' attribute of type object "
@@ -299,4 +321,3 @@ ColourPaletteProvider::fromJsonFile(std::string filename)
     // document parsing is handles by separate function:
     return fromJsonDoc(doc);
 }
-

@@ -1,8 +1,8 @@
 // CHAP - The Channel Annotation Package
-// 
-// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+//
+// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 // Stephen J. Tucker
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -12,7 +12,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-#include <gromacs/math/vec.h> 
+#include <gromacs/math/vec.h>
 
 #include "external/rapidjson/document.h"
 
@@ -47,7 +47,7 @@ class ColourPalette
                 std::vector<real> values,
                 std::vector<gmx::RVec> colours);
         ColourPalette(
-                const ColourPalette &other);                
+                const ColourPalette &other);
 
         // getter methods:
         std::vector<real> values() const {return values_;};
@@ -64,7 +64,7 @@ class ColourPalette
 /*!
  * \brief Named scale of named colours.
  *
- * This object facilitates the creation of a continuous colour scale from a 
+ * This object facilitates the creation of a continuous colour scale from a
  * ColourPalette of discrete RGB colours by linear interpolation. In addition
  * it managed names of these individual colours and the scale as a whole to
  * facilitate writing colour definitions to Wavefront MTL files.
@@ -78,7 +78,7 @@ class ColourScale
 
         // setter functions:
         void setPalette(ColourPalette palette);
-        void setRange(real min, real max);
+        void setRange(real min, real max, bool rangeSetUser);
         void setResolution(size_t res);
 
         // access all colours in scale:
@@ -86,7 +86,6 @@ class ColourScale
 
         // convert scalar value to colour:
         std::string scalarToColourName(real scalar);
-        gmx::RVec scalarToColour(real scalar);
 
     private:
 
@@ -97,6 +96,7 @@ class ColourScale
         std::string name_;
         real rangeMin_;
         real rangeMax_;
+        bool rangeSetUser_;
         size_t numColours_;
         std::vector<std::string> colourNames_;
 };
@@ -119,4 +119,3 @@ class ColourPaletteProvider
 
 
 #endif
-

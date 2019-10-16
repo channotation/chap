@@ -1,8 +1,8 @@
 // CHAP - The Channel Annotation Package
-// 
-// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+//
+// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 // Stephen J. Tucker
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -12,7 +12,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -66,8 +66,8 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
                 const TrajectoryAnalysisSettings &settings,
                 const t_trxframe &fr);
         virtual void analyzeFrame(
-                int frnr, 
-                const t_trxframe &fr, 
+                int frnr,
+                const t_trxframe &fr,
                 t_pbc *pbc,
                 TrajectoryAnalysisModuleData *pdata);
         virtual void finishAnalysis(int nframes);
@@ -77,27 +77,27 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
     private:
 
         // find file path for index files:
-        virtual void obtainNdxFilePathInfo();   
+        virtual void obtainNdxFilePathInfo();
         std::string customNdxFileName_;
 
-        
+
         // check input parameter validity:
         virtual void checkParameters();
 
-        
+
         // names of output files:
         std::string outputBaseFileName_;
         std::string outputJsonFileName_;
         std::string outputPdbFileName_;
 
-        
+
         // user specified selections:
         SelectionList solventSel_;
         Selection pathwaySel_;
         Selection ippSel_;
         bool ippSelIsSet_;
 
-        
+
         // internal selections for pore mapping:
         std::string pfSelString_;
         SelectionCollection poreMappingSelCol_;
@@ -121,13 +121,15 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
         std::string hydrophobicityJson_;
         bool hydrophobicityJsonIsSet_;
         ResidueInformationProvider resInfo_;
-        
+
 
         // output parameters:
-        int outputNumPoints_;        
+        int outputNumPoints_;
         real outputExtrapDist_;
         real outputGridSampleDist_;
         real outputCorrectionThreshold_;
+        real outputColMinHydrophob_;
+        real outputColMaxHydrophob_;
         bool outputDetailed_;
         PdbStructure outputStructure_;
 
@@ -170,7 +172,7 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
         // Nelder-Mead parameters:
         int nmMaxIter_;
 
-        
+
         // density estimation parameters:
         eDensityEstimator deMethod_;
         DensityEstimationParameters deParams_;
@@ -185,11 +187,10 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
         real hpEvalRangeCutoff_;
         real hpResolution_;
         DensityEstimationParameters hydrophobKernelParams_;
-        
-        
+
+
         // molecular pathway for first frame:
         std::unique_ptr<MolecularPath> molPathAvg_;
 };
 
 #endif
-

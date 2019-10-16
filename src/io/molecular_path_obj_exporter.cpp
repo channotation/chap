@@ -1,8 +1,8 @@
 // CHAP - The Channel Annotation Package
-// 
-// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+//
+// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 // Stephen J. Tucker
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -12,7 +12,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,7 +29,7 @@
 #include <vector>
 
 #include <gromacs/math/vec.h>
-#include <gromacs/utility/real.h> 
+#include <gromacs/utility/real.h>
 
 #include "io/molecular_path_obj_exporter.hpp"
 
@@ -37,7 +37,7 @@
 
 
 /*!
- * Constructor initialises the \f$ s \f$ and \f$ \phi \f$ coordinates of the 
+ * Constructor initialises the \f$ s \f$ and \f$ \phi \f$ coordinates of the
  * grid.
  */
 RegularVertexGrid::RegularVertexGrid(
@@ -46,7 +46,7 @@ RegularVertexGrid::RegularVertexGrid(
     : s_(s)
     , phi_(phi)
 {
-    
+
 }
 
 
@@ -55,10 +55,10 @@ RegularVertexGrid::RegularVertexGrid(
  */
 void
 RegularVertexGrid::addVertex(
-        size_t i, 
+        size_t i,
         size_t j,
         std::string p,
-        gmx::RVec vertex, 
+        gmx::RVec vertex,
         real weight)
 {
     // TODO: this situation should really be handled by a NaN colour
@@ -91,7 +91,7 @@ RegularVertexGrid::vertices(
             std::tuple<size_t, size_t, std::string> key(i, j, p);
             if( vertices_.find(key) != vertices_.end() )
             {
-                vert.push_back(vertices_[key]); 
+                vert.push_back(vertices_[key]);
             }
             else
             {
@@ -120,7 +120,7 @@ RegularVertexGrid::normals(
             std::tuple<size_t, size_t, std::string> key(i, j, p);
             if( normals_.find(key) != normals_.end() )
             {
-                norm.push_back(normals_[key]); 
+                norm.push_back(normals_[key]);
             }
             else
             {
@@ -152,38 +152,38 @@ RegularVertexGrid::normalsFromFaces()
             {
                 // index pairs for neighbouring vertices:
                 std::tuple<size_t, size_t, std::string> crntKey(
-                        i, 
+                        i,
                         j,
                         p);
                 std::tuple<size_t, size_t, std::string> leftKey(
-                        i, 
+                        i,
                         (j - 1 + mJ) % mJ,
                         p);
                 std::tuple<size_t, size_t, std::string> rghtKey(
-                        i, 
+                        i,
                         (j + 1 + mJ) % mJ,
                         p);
                 std::tuple<size_t, size_t, std::string> upprKey(
-                        (i + 1 + mI) % mI, 
+                        (i + 1 + mI) % mI,
                         j,
                         p);
                 std::tuple<size_t, size_t, std::string> lowrKey((
-                        i - 1 + mI) % mI, 
+                        i - 1 + mI) % mI,
                         j,
                         p);
                 std::tuple<size_t, size_t, std::string> dglrKey(
-                        (i - 1 + mI) % mI, 
+                        (i - 1 + mI) % mI,
                         (j + 1 + mJ) % mJ,
                         p);
                 std::tuple<size_t, size_t, std::string> dgulKey(
-                        (i + 1 + mI) % mI, 
+                        (i + 1 + mI) % mI,
                         (j - 1 + mJ) % mJ,
                         p);
 
                 // handle endpoints in direction along spline:
                 if( i == 0 )
                 {
-                    lowrKey = crntKey; 
+                    lowrKey = crntKey;
                     dglrKey = crntKey;
                 }
                 if( i == s_.size() - 1 )
@@ -210,7 +210,7 @@ RegularVertexGrid::normalsFromFaces()
                 rvec_sub(rghtVert, crntVert, sideA);
                 rvec_sub(upprVert, crntVert, sideB);
                 addTriangleNorm(sideA, sideB, norm);
-                
+
                 // North-North-West triangle:
                 rvec_sub(upprVert, crntVert, sideA);
                 rvec_sub(dgulVert, crntVert, sideB);
@@ -230,7 +230,7 @@ RegularVertexGrid::normalsFromFaces()
                 rvec_sub(lowrVert, crntVert, sideA);
                 rvec_sub(dglrVert, crntVert, sideB);
                 addTriangleNorm(sideA, sideB, norm);
-                
+
                 // East-South-East triangle:
                 rvec_sub(dglrVert, crntVert, sideA);
                 rvec_sub(rghtVert, crntVert, sideB);
@@ -238,7 +238,7 @@ RegularVertexGrid::normalsFromFaces()
 
                 // normalise normal:
                 unitv(norm, norm);
-                
+
                 // add to container of normals:
                 normals_[crntKey] = norm;
             }
@@ -262,11 +262,11 @@ RegularVertexGrid::weightedVertices(
         for(size_t j = 0; j < phi_.size(); j++)
         {
             std::tuple<size_t, size_t, std::string> key(i, j, p);
-            if( vertices_.find(key) != vertices_.end() && 
+            if( vertices_.find(key) != vertices_.end() &&
                 weights_.find(key) != weights_.end() )
             {
                 std::pair<gmx::RVec, real> vertex(vertices_[key], weights_[key]);
-                vert.push_back(vertex); 
+                vert.push_back(vertex);
             }
             else
             {
@@ -324,7 +324,7 @@ RegularVertexGrid::faces(
         throw std::logic_error("Number of vertex normals does not equal "
                                "number of vertices in RegularVertexGrid.");
     }
-    
+
     // find scalar property data range:
     real minRange = std::numeric_limits<real>::max();
     real maxRange = std::numeric_limits<real>::min();
@@ -340,11 +340,45 @@ RegularVertexGrid::faces(
         }
     }
 
+
+    // TODO remove
+    std::cout<<p<<": "<<minRange<<" < "<<maxRange<<std::endl;
+
+    // has user specified colour ranges manually?
+    if( colourRanges_.find(p) != colourRanges_.end() )
+    {
+        if( !std::isnan( colourRanges_[p].first ) )
+        {
+            minRange = colourRanges_[p].first;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid lower limit for colour scale "
+                                     "of property " + p);
+        }
+        if( !std::isnan( colourRanges_[p].second ) )
+        {
+            maxRange = colourRanges_[p].second;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid upper limit for colour scale "
+                                     "of property " + p);
+        }
+    }
+
+
+    // TODO remove
+    std::cout<<minRange<<" < "<<maxRange<<std::endl;
+
     // prepare colour scale:
     ColourScale colScale(p);
-    colScale.setRange(minRange, maxRange);
+    std::cout<<"test"<<std::endl;
+    colScale.setRange(minRange, maxRange, false); // TODO removelast argument?
     colScale.setResolution(100);   // NOTE: limited by number of MTL materials
+    std::cout<<"test"<<std::endl;
     colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
+    std::cout<<"test"<<std::endl;
 
     // number of vertices per property grid:
     size_t propIdx = std::distance(p_.begin(), find(p_.begin(), p_.end(), p));
@@ -354,13 +388,15 @@ RegularVertexGrid::faces(
     std::vector<WavefrontObjFace> faces;
     faces.reserve(phi_.size()*s_.size());
 
+    std::cout<<"test"<<std::endl;
+
     // loop over grid:
     for(size_t i = 0; i < s_.size() - 1; i++)
     {
         for(size_t j = 0; j < phi_.size() - 1; j++)
         {
             // calculate linear indices:
-            int kbl = vertOffset + i * phi_.size() + j; 
+            int kbl = vertOffset + i * phi_.size() + j;
             int kbr = kbl + 1;
             int ktl = kbl + phi_.size();
             int ktr = kbr + phi_.size();
@@ -372,18 +408,20 @@ RegularVertexGrid::faces(
             std::tuple<size_t, size_t, std::string> keyTr(i + 1, j + 1, p);
 
             // face weight is average of vertex weights:
-            real scalarA = weights_.at(keyBl) 
-                         + weights_.at(keyTr) 
+            real scalarA = weights_.at(keyBl)
+                         + weights_.at(keyTr)
                          + weights_.at(keyTl);
-            real scalarB = weights_.at(keyBl) 
-                         + weights_.at(keyBr) 
+            real scalarB = weights_.at(keyBl)
+                         + weights_.at(keyBr)
                          + weights_.at(keyTr);
             scalarA /= 3.0;
             scalarB /= 3.0;
 
             // name of material from colour scale:
-            std::string mtlNameA = colScale.scalarToColourName(scalarA); 
-            std::string mtlNameB = colScale.scalarToColourName(scalarB); 
+            std::cout<<"test 4a"<<std::endl;
+            std::string mtlNameA = colScale.scalarToColourName(scalarA);
+            std::string mtlNameB = colScale.scalarToColourName(scalarB);
+            std::cout<<"test 4b"<<std::endl;
 
             // two faces per square:
             if( normals_.empty() )
@@ -409,11 +447,13 @@ RegularVertexGrid::faces(
         }
     }
 
+    std::cout<<"test5"<<std::endl;
+
     // wrap around:
     for(size_t i = 0; i < s_.size() - 1; i++)
     {
         // calculate linear indices:
-        int kbl = vertOffset + i*phi_.size() + phi_.size() - 1; 
+        int kbl = vertOffset + i*phi_.size() + phi_.size() - 1;
         int kbr = vertOffset + i*phi_.size();
         int ktl = kbl + phi_.size();
         int ktr = kbr + phi_.size();
@@ -431,8 +471,8 @@ RegularVertexGrid::faces(
         scalarB /= 3.0;
 
         // name of material from colour scale:
-        std::string mtlNameA = colScale.scalarToColourName(scalarA); 
-        std::string mtlNameB = colScale.scalarToColourName(scalarB); 
+        std::string mtlNameA = colScale.scalarToColourName(scalarA);
+        std::string mtlNameB = colScale.scalarToColourName(scalarB);
 
         // two faces per square:
         if( normals_.empty() )
@@ -472,12 +512,12 @@ MolecularPathObjExporter::MolecularPathObjExporter()
     , gridSampleDist_(-1.0)
     , correctionThreshold_(0.1)
 {
-    
+
 }
 
 
 /*!
- * Sets the extrapolation distance, i.e. the distance beyond the pathway 
+ * Sets the extrapolation distance, i.e. the distance beyond the pathway
  * endpoints for which the surface is rendered.
  */
 void
@@ -489,7 +529,7 @@ MolecularPathObjExporter::setExtrapDist(real extrapDist)
 
 /*!
  * Sets the distance step along the along the arc of the centreline for
- * sampling surface points which are subsequently interpolated to a smooth 
+ * sampling surface points which are subsequently interpolated to a smooth
  * surface.
  */
 void
@@ -500,15 +540,15 @@ MolecularPathObjExporter::setGridSampleDist(real gridSampleDist)
 
 
 /*!
- * Sets the threshold for identifying clashes. Is checked to lie in the 
- * interval between -1 and +1 (exclusively!), but should really be positive 
+ * Sets the threshold for identifying clashes. Is checked to lie in the
+ * interval between -1 and +1 (exclusively!), but should really be positive
  * to identify clashes.
  */
 void
 MolecularPathObjExporter::setCorrectionThreshold(real correctionThreshold)
 {
     // sanity check:
-    if( correctionThreshold <= -1.0 + std::numeric_limits<real>::epsilon() or 
+    if( correctionThreshold <= -1.0 + std::numeric_limits<real>::epsilon() or
         correctionThreshold_ >= 1.0 - std::numeric_limits<real>::epsilon() )
     {
         throw std::runtime_error("Corrrection threshold for "
@@ -529,9 +569,10 @@ MolecularPathObjExporter::operator()(
         std::string fileName,
         std::string objectName,
         MolecularPath &molPath,
-        std::map<std::string, ColourPalette> palettes)
+        std::map<std::string, ColourPalette> palettes,
+        std::map<std::string, std::pair<real, real>> colRanges)
 {
-    // define evaluation range:   
+    // define evaluation range:
     std::pair<real, real> range(molPath.sLo() - extrapDist_,
                                 molPath.sHi() + extrapDist_);
 
@@ -540,7 +581,7 @@ MolecularPathObjExporter::operator()(
     int numPhi = 50;
     int numLen = std::pow(2, 8) + 1;
     std::pair<size_t, size_t> resolution(numLen, numPhi);
-    
+
     // pathway geometry:
     auto centreLine = molPath.centreLine();
     auto pathRadius = molPath.pathRadius();
@@ -548,7 +589,7 @@ MolecularPathObjExporter::operator()(
     // pathway properties:
     // (radius is added here to ensure that there is always one property)
     molPath.addScalarProperty("radius", pathRadius, false);
-    auto properties = molPath.scalarProperties();   
+    auto properties = molPath.scalarProperties();
 
 
     // Build OBJ & MTL Objects of Coloured Pore Surface
@@ -557,12 +598,13 @@ MolecularPathObjExporter::operator()(
     // prepare objects:
     WavefrontObjObject obj(objectName);
     WavefrontMtlObject mtl;
-  
+
     // generate the vertex grid:
     RegularVertexGrid grid = generateGrid(
             centreLine,
             pathRadius,
             properties,
+            colRanges,
             resolution,
             range);
 
@@ -589,6 +631,9 @@ MolecularPathObjExporter::operator()(
 
         // obtain colour scale for this property:
         auto colScale = grid.colourScale(prop.first);
+
+        // TODO remove
+        //colScale.setRange(0.5, 1.0, true);
 
         // is there a colour palatte for this property?
         if( palettes.find(prop.first) != palettes.end() )
@@ -626,7 +671,7 @@ MolecularPathObjExporter::operator()(
 
     // Serialise OBJ & MTL Objects
     //-------------------------------------------------------------------------
-    
+
     // add file extensions to base name:
     std::string objFileName = fileName + ".obj";
     std::string mtlFileName = fileName + ".mtl";
@@ -658,6 +703,7 @@ MolecularPathObjExporter::generateGrid(
         SplineCurve3D &centreLine,
         SplineCurve1D &radius,
         std::map<std::string, std::pair<SplineCurve1D, bool>> &properties,
+        std::map<std::string, std::pair<real, real>> &colRanges,
         std::pair<size_t, size_t> resolution,
         std::pair<real, real> range)
 {
@@ -689,6 +735,7 @@ MolecularPathObjExporter::generateGrid(
 
     // generate grid from coordinates:
     RegularVertexGrid grid(s, phi);
+    grid.colourRanges_ = colRanges;
 
     // loop over properties and add vertices:
     for(auto &prop : properties)
@@ -716,7 +763,7 @@ MolecularPathObjExporter::generatePropertyGrid(
         SplineCurve1D &radius,
         std::pair<std::string, std::pair<SplineCurve1D, bool>> property,
         RegularVertexGrid &grid)
-{   
+{
     // extract grid coordinates:
     std::vector<real> s;
     int num = std::floor((grid.s_.back() - grid.s_.front()) / gridSampleDist_);
@@ -748,7 +795,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     // (this is better then using the standard normal vector of the centre line
     // curve as it prevents "twisting" the normal vector around the curve)
     auto normals = generateNormals(tangents);
-    
+
 
     // calculate sample points on pathway:
     // ------------------------------------------------------------------------
@@ -756,14 +803,14 @@ MolecularPathObjExporter::generatePropertyGrid(
     // ring of vertices for each pathway coordinate:
     std::vector<gmx::RVec> vertRing(phi.size());
     std::map<int, std::vector<gmx::RVec>> vertexRings;
-    
+
     // first vertex ring:
     int idxLen = 0;
     for(size_t k = 0; k < phi.size(); k++)
     {
         // rotate normal vector:
         gmx::RVec rotNormal = rotateAboutAxis(
-                normals[idxLen], 
+                normals[idxLen],
                 tangents[idxLen],
                 phi[k]);
 
@@ -784,7 +831,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     {
         // rotate normal vector:
         gmx::RVec rotNormal = rotateAboutAxis(
-                normals[idxLen], 
+                normals[idxLen],
                 tangents[idxLen],
                 phi[k]);
 
@@ -800,7 +847,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     vertexRings[idxLen] = vertRing;
 
 
-    // build intermediate vertex rings:    
+    // build intermediate vertex rings:
     for(int i = 1; i <= numLen; i *= 2)
     {
         for(int j = 1; j < i; j += 2)
@@ -815,7 +862,7 @@ MolecularPathObjExporter::generatePropertyGrid(
             {
                 // rotate normal vector:
                 gmx::RVec rotNormal = rotateAboutAxis(
-                        normals[idxLen], 
+                        normals[idxLen],
                         tangents[idxLen],
                         phi[k]);
 
@@ -840,7 +887,7 @@ MolecularPathObjExporter::generatePropertyGrid(
                 real cosB = iprod(b, tangents[idxUpper]);
 
                 // check overlap:
-                if( cosA < correctionThreshold_ or 
+                if( cosA < correctionThreshold_ or
                     cosB > -correctionThreshold_ )
                 {
                     // set crash flag to true and terminate loop:
@@ -851,7 +898,7 @@ MolecularPathObjExporter::generatePropertyGrid(
                 // add to vertex ring:
                 vertRing[k] = vertex;
             }
-   
+
             // will ignore all vertex rings with clashes:
             if( !hasClashes )
             {
@@ -862,7 +909,7 @@ MolecularPathObjExporter::generatePropertyGrid(
     }
 
 
-    // interpolate 
+    // interpolate
     // ------------------------------------------------------------------------
 
     // interpolate support points on each equal-phi line:
@@ -879,7 +926,7 @@ MolecularPathObjExporter::generatePropertyGrid(
 
             // sample points to interpolate:
             points.push_back( vr -> second[k] );
-        }       
+        }
 
         // interpolate these points:
         CubicSplineInterp3D interp;
@@ -897,7 +944,31 @@ MolecularPathObjExporter::generatePropertyGrid(
     {
         prop.push_back( property.second.first.evaluate(grid.s_[i], 0) );
     }
-    shiftAndScale(prop, property.second.second);
+
+    // is there a user defined colour range for this property?
+    std::pair<real, real> colRange(std::nan(""), std::nan(""));
+    if( grid.colourRanges_.find(property.first) != grid.colourRanges_.end() )
+    {
+        colRange = grid.colourRanges_[property.first];
+    }
+
+    std::cout<<"before: "<<property.first<<": "<<colRange.first<<" < "<<colRange.second<<std::endl;
+
+    // scale property to colour range:
+    shiftAndScale(prop, property.second.second, colRange);
+
+    std::cout<<"after:  "<<property.first<<": "<<colRange.first<<" < "<<colRange.second<<std::endl;
+
+    // add updated colour range to grid:
+    if( grid.colourRanges_.find(property.first) != grid.colourRanges_.end() )
+    {
+        grid.colourRanges_[property.first] = colRange;
+    }
+
+    std::cout<<"grid:   "<<property.first<<": "<<grid.colourRanges_[property.first].first<<" < "<<grid.colourRanges_[property.first].second<<std::endl;
+
+    // has user specified a colour range for this property:
+    //grid.colourRanges_[property.first] = colourRange;
 
     // loop over target grid coordinates and add vertices:
     for(size_t i = 0; i < grid.s_.size(); i++)
@@ -905,9 +976,9 @@ MolecularPathObjExporter::generatePropertyGrid(
         for(size_t k = 0; k < grid.phi_.size(); k++)
         {
             grid.addVertex(
-                    i, 
-                    k, 
-                    property.first, 
+                    i,
+                    k,
+                    property.first,
                     curves[k].evaluate(grid.s_[i], 0),
                     prop[i]);
         }
@@ -931,7 +1002,7 @@ MolecularPathObjExporter::generateNormals(
     gmx::RVec normal = orthogonalVector(tangents[0]);
     unitv(normal, normal);
     normals.push_back(normal);
- 
+
     // loop over tangent vectors and update normals:
     for(unsigned int i = 1; i < tangents.size(); i++)
     {
@@ -1000,7 +1071,7 @@ MolecularPathObjExporter::orthogonalVector(gmx::RVec vec)
  * degrees.
  */
 gmx::RVec
-MolecularPathObjExporter::rotateAboutAxis(gmx::RVec vec, 
+MolecularPathObjExporter::rotateAboutAxis(gmx::RVec vec,
                                           gmx::RVec axis,
                                           real angle)
 {
@@ -1034,52 +1105,86 @@ MolecularPathObjExporter::rotateAboutAxis(gmx::RVec vec,
  * Shift ands scales all values in input vector so that they lie in the unit
  * interval.
  *
- * The divergent flag controls how the data is scaled. For a divergent scale, 
+ * The divergent flag controls how the data is scaled. For a divergent scale,
  * both positive and negative values are scaled by the same factor and then
  * shifted to the unit interval, in this case the zero of the scale is
- * precisely 0.5. For a sequential colour scale, all values are first shifted 
+ * precisely 0.5. For a sequential colour scale, all values are first shifted
  * to the positive real range and then scaled to the unit interval, this does
  * obviously not preserve the zero of the original array.
  */
 void
 MolecularPathObjExporter::shiftAndScale(
         std::vector<real> &prop,
-        bool divergent)
+        bool divergent,
+        std::pair<real, real> &colRange)
 {
     // find data range:
-    real minProp = *std::min_element(prop.begin(), prop.end()); 
+    real minProp = *std::min_element(prop.begin(), prop.end());
     real maxProp = *std::max_element(prop.begin(), prop.end());
-    
+
+    // TODO remove
+    std::cout<<"data: "<<minProp<<" < "<<maxProp<<std::endl;
+
+    // overwrite with manual colour range limits if given:
+    if( !std::isnan(colRange.first) )
+    {
+        // adjust lower limit:
+        minProp = colRange.first;
+
+        // force data into range:
+        std::for_each(prop.begin(), prop.end(), [minProp](real &p){p = std::max(minProp, p);});
+    }
+    if( !std::isnan(colRange.second) )
+    {
+        // adjust upper limit:
+        maxProp = colRange.second;
+
+        // force data into range:
+        std::for_each(prop.begin(), prop.end(), [maxProp](real &p){p = std::min(maxProp, p);});
+    }
+
     // scale for divergent colour scale?
     if( std::fabs(maxProp - minProp) < std::numeric_limits<real>::epsilon() )
     {
         // special case of constant property value, shift to middle of scale:
-        real shift = -minProp + 0.5;
+        std::for_each(prop.begin(), prop.end(), [](real &p){p = 0.5;});
 
-        // just shift values in this case:
-        std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
+        // shift the colour range limits:
+        colRange.first = 0.0;
+        colRange.second = 1.0;
     }
     else if( divergent == false )
     {
         // for sequential colour scale, shift data to positive real range and
         // scale by length of data interval:
         real shift = -minProp;
-        real scale = 1.0/(maxProp - minProp);  
-       
+        real scale = 1.0/(maxProp - minProp);
+
         // shift and scale the property array:
         std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
         std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
+
+        // scale and shift the colour range limits:
+        colRange.first += shift;
+        colRange.first *= scale;
+        colRange.second += shift;
+        colRange.second *= scale;
     }
     else
     {
         // for divergent colour scale, scale both positive and negative values
         // such that data lies in [-0.5, 0.5], then shift by 0.5:
         real shift = 0.5;
-        real scale = 1.0/std::max(std::fabs(minProp), std::fabs(maxProp))/2.0; 
+        real scale = 1.0/std::max(std::fabs(minProp), std::fabs(maxProp))/2.0;
 
-        // scale and shift:
+        // scale and shift the property array:
         std::for_each(prop.begin(), prop.end(), [scale](real &p){p *= scale;});
         std::for_each(prop.begin(), prop.end(), [shift](real &p){p += shift;});
+
+        // scale and shift the colour range limits:
+        colRange.first *= scale;
+        colRange.first += shift;
+        colRange.second *= scale;
+        colRange.second += shift;
     }
 }
-
