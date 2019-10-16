@@ -191,7 +191,9 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Lower limit of radius colour scale "
                                       "in nm. Only affects OBJ and MTL "
-                                      "output."));
+                                      "output. If not set explicitly, colour "
+                                      "scale will automatically adjust to the "
+                                      "data range."));
 
     options -> addOption(RealOption("out-cmax-r")
                          .store(&outputColMaxRadius_)
@@ -199,15 +201,19 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Upper limit of radius colour scale "
                                       "in nm. Only affects OBJ and MTL "
-                                      "output."));
+                                      "output. If not set explicitly, colour "
+                                      "scale will automatically adjust to the "
+                                      "data range."));
 
     options -> addOption(RealOption("out-cmin-h")
                          .store(&outputColMinHydrophob_)
                          .storeIsSet(&outputColMinHydrophobSet_)
                          .defaultValue(std::nan(""))
                          .description("Lower limit of hydrophobicity colour "
-                                      "scale.  Only affects OBJ and MTL "
-                                      "output."));
+                                      "scale. Only affects OBJ and MTL "
+                                      "output. If not set explicitly, colour "
+                                      "scale will automatically adjust to the "
+                                      "data range."));
 
     options -> addOption(RealOption("out-cmax-h")
                          .store(&outputColMaxHydrophob_)
@@ -215,7 +221,9 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Upper limit of hydrophobicity colour "
                                       "scale. Only affects OBJ and MTL "
-                                      "output."));
+                                      "output. If not set explicitly, colour "
+                                      "scale will automatically adjust to the "
+                                      "data range."));
 
     options -> addOption(RealOption("out-cmin-n")
                          .store(&outputColMinDensity_)
@@ -223,7 +231,9 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Lower limit of density colour "
                                       "scale in nm^-3. Only affects OBJ and "
-                                      "MTL output."));
+                                      "MTL output. If not set explicitly, "
+                                      "colour scale will automatically adjust "
+                                      "to the data range."));
 
     options -> addOption(RealOption("out-cmax-n")
                          .store(&outputColMaxDensity_)
@@ -231,7 +241,9 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Upper limit of density colour "
                                       "scale in nm^-3. Only affects OBJ and "
-                                      "MTL output."));
+                                      "MTL output. If not set explicitly, "
+                                      "colour scale will automatically adjust "
+                                      "to the data range."));
 
     options -> addOption(RealOption("out-cmin-e")
                          .store(&outputColMinEnergy_)
@@ -239,7 +251,9 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Lower limit of energy colour "
                                       "scale in kT. Only affects OBJ and MTL "
-                                      "output."));
+                                      "output. If not set explicitly, colour "
+                                      "scale will automatically adjust to the "
+                                      "data range."));
 
     options -> addOption(RealOption("out-cmax-e")
                          .store(&outputColMaxEnergy_)
@@ -247,7 +261,9 @@ ChapTrajectoryAnalysis::initOptions(
                          .defaultValue(std::nan(""))
                          .description("Upper limit of energy colour "
                                       "scale in kT. Only affects OBJ and MTL "
-                                      "output."));
+                                      "output. If not set explicitly, colour "
+                                      "scale will automatically adjust to the "
+                                      "data range."));
 
     options -> addOption(BooleanOption("out-detailed")
                          .store(&outputDetailed_)

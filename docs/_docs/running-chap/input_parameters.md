@@ -43,9 +43,9 @@ These are added by `libgromacs` per default, but are unused in CHAP.
 
 These two options tell CHAP what constitutes the permeation pathway and solvent.
 
-Only atoms in the selection specified by `-sel-pathway` will be considered in the path-finding algorithm, all other atoms will be ignored. Usually, this flag will be set to the `Protein` group. This option is mandatory and CHAP will ask for it on start-up if it has not been specified on the command line. 
+Only atoms in the selection specified by `-sel-pathway` will be considered in the path-finding algorithm, all other atoms will be ignored. Usually, this flag will be set to the `Protein` group. This option is mandatory and CHAP will ask for it on start-up if it has not been specified on the command line.
 
-Atoms which are part of the selection specified by `-sel-solvent` will be considered in the density estimation step. Usually, this flag will be set to the `Water` group. This flag is optional and if no solvent selection is specified, the density profile in the output data will simply be zero. 
+Atoms which are part of the selection specified by `-sel-solvent` will be considered in the density estimation step. Usually, this flag will be set to the `Water` group. This flag is optional and if no solvent selection is specified, the density profile in the output data will simply be zero.
 
 `-sel-pathway`  | Reference group that defines the permeation pathway.
 `-sel-solvent`  | Group of small particles to calculate density of.
@@ -56,11 +56,19 @@ Atoms which are part of the selection specified by `-sel-solvent` will be consid
 Control the name of the output files and allow for some tweaking of the pathway surface written to the output OBJ and MTL files.
 
 ---                 | ---
-`-out-filename`     |   File name for output files without file extension. 
+`-out-filename`     |   File name for output files without file extension.
 `-out-num-points`   |   Number of spatial sample points that are written to the JSON output file.
 `-out-extrap-dist`  |   Extrapolation distance beyond the pathway endpoints for both JSON and OBJ output.
 `-out-grid-dist`    |   Controls the sampling distance of vertices on the pathway surface which are subsequently interpolated to yield a smooth surface. Very small values may yield visual artefacts.
-`-out-vis-tweak`    |    Visual tweaking factor that controls the smoothness of the pathway surface in the OBJ output. Varies between -1 and 1 (exclusively), where larger values result in a smoother surface. Negative values may result in visualisation artefacts.
+`-out-vis-tweak`    |   Visual tweaking factor that controls the smoothness of the pathway surface in the OBJ output. Varies between -1 and 1 (exclusively), where larger values result in a smoother surface. Negative values may result in visualisation artefacts.
+`-out-cmin-r `      |   Lower limit of radius colour scale in nm. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range.
+`-out-cmax-r `      |   Upper limit of radius colour scale in nm. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range.
+`-out-cmin-n `      |   Lower limit of density colour scale in nm^-3. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range.
+`-out-cmax-n `      |   Upper limit of density colour scale in nm^-3. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range.
+`-out-cmin-e `      |   Lower limit of energy colour scale in kT. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range.
+`-out-cmax-e `      |   Upper limit of energy colour scale in kT. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range.
+`-out-cmin-h `      |   Lower limit of hydrophobicity colour scale in kT. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range. Note that hydrophobicity is scaled symmetrically and a value of zero is always represented by a neutral colour.
+`-out-cmax-h `      |   Upper limit of hydrophobicity colour scale in kT. Only affects OBJ and MTL output. If not set explicitly, colour scale will automatically adjust to the data range. Note that hydrophobicity is scaled symmetrically and a value of zero is always represented by a neutral colour.
 `-[no]out-detailed` |   If true, CHAP will write detailed per-frame information to a newline-delimited JSON file including original probe positions and spline parameters. This is mostly useful for debugging.
 
 
@@ -109,10 +117,10 @@ In order to determine which residues are lining the permeation pathway, CHAP cal
 
 Note that for determining whether a residue is pore-facing, CHAP requires each residue in the pathway forming group to contain a Cα atom, which will usually be the case for protein channels. However, if the selection specified with `-sel-pathway` contains non-amino-acid residues (e.g. carbon nanotubes, DNA nanopores, or protein channels where lipids form part of the pathway), this condition will not be met. In this case, CHAP will assume that no residue is pore-facing and only properties calculated from pore-lining residues will be meaningful.
 
-In order to allow custom reference positions for the determination of pore-facing residues, the `-pm-pf-sel` flag can be used. The centre of geometry of the subset of each residue specified by `-pm-pf-sel` will then take the place of the Cα position and a residue will be considered pore-lining, if this centre of geometry is further away from the centre line of the pathway than the centre of geometry of the whole residue. 
+In order to allow custom reference positions for the determination of pore-facing residues, the `-pm-pf-sel` flag can be used. The centre of geometry of the subset of each residue specified by `-pm-pf-sel` will then take the place of the Cα position and a residue will be considered pore-lining, if this centre of geometry is further away from the centre line of the pathway than the centre of geometry of the whole residue.
 
 `-pm-pl-margin`     |   Margin for determining pathway-lining residues.
-`-pm-pf-sel`        |   Selection string determining the centre of geometry group for assessing if a residue is pore-facing. 
+`-pm-pf-sel`        |   Selection string determining the centre of geometry group for assessing if a residue is pore-facing.
 
 
 ## Density Estimation Parameters
@@ -136,4 +144,3 @@ In addition to radius and solvent density profiles, CHAP also computes a hydroph
 `-hydrophob-fallback`   |   Fallback hydrophobicity for residues in the pathway-defining group.
 `-hydrophob-json`       |   JSON file with user-defined hydrophobicity scale. Will be ignored unless `-hydrophob-database` is set to `user`.
 `-hydrophob-bandwidth`  |   Bandwidth for hydrophobicity kernel.
-
