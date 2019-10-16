@@ -365,7 +365,7 @@ RegularVertexGrid::faces(
 
     // prepare colour scale:
     ColourScale colScale(p);
-    colScale.setRange(minRange, maxRange, false); // TODO last argument obsolete?
+    colScale.setRange(minRange, maxRange);
     colScale.setResolution(100);   // NOTE: limited by number of MTL materials
     colourScales_.insert(std::pair<std::string, ColourScale>(p, colScale));
 

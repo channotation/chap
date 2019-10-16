@@ -78,7 +78,7 @@ class ColourScale
 
         // setter functions:
         void setPalette(ColourPalette palette);
-        void setRange(real min, real max, bool rangeSetUser);
+        void setRange(real min, real max);
         void setResolution(size_t res);
 
         // access all colours in scale:
@@ -96,7 +96,6 @@ class ColourScale
         std::string name_;
         real rangeMin_;
         real rangeMax_;
-        bool rangeSetUser_;
         size_t numColours_;
         std::vector<std::string> colourNames_;
 };

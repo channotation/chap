@@ -80,7 +80,7 @@ ColourScale::setPalette(ColourPalette palette)
  * Sets the range of the variable mapped through this colour scale.
  */
 void
-ColourScale::setRange(real min, real max, bool rangeSetUser)
+ColourScale::setRange(real min, real max)
 {
     // sanity check:
     if( min > max )
@@ -91,7 +91,6 @@ ColourScale::setRange(real min, real max, bool rangeSetUser)
 
     rangeMin_ = min;
     rangeMax_ = max;
-    rangeSetUser_ = rangeSetUser;
 }
 
 
@@ -174,19 +173,7 @@ std::string
 ColourScale::scalarToColourName(real scalar)
 {
     // sanity checks:
-    if( rangeSetUser_ == true )
-    {
-        // with manually determined data range, cap value at scale range:
-        if( scalar < rangeMin_ )
-        {
-            scalar = rangeMin_;
-        }
-        if( scalar > rangeMax_ )
-        {
-            scalar = rangeMax_;
-        }
-    }
-    else if( scalar < rangeMin_ || scalar > rangeMax_ )
+    if( scalar < rangeMin_ || scalar > rangeMax_ )
     {
         // with automatic range, throw exception if value outside range:
         throw std::logic_error("Value outside scale range encountered.");
