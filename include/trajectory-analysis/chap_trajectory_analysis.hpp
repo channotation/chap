@@ -128,8 +128,22 @@ class ChapTrajectoryAnalysis : public TrajectoryAnalysisModule
         real outputExtrapDist_;
         real outputGridSampleDist_;
         real outputCorrectionThreshold_;
+        real outputColMinRadius_;
+        real outputColMaxRadius_;
+        real outputColMinDensity_;
+        real outputColMaxDensity_;
+        real outputColMinEnergy_;
+        real outputColMaxEnergy_;
         real outputColMinHydrophob_;
         real outputColMaxHydrophob_;
+        bool outputColMinRadiusSet_;
+        bool outputColMaxRadiusSet_;
+        bool outputColMinDensitySet_;
+        bool outputColMaxDensitySet_;
+        bool outputColMinEnergySet_;
+        bool outputColMaxEnergySet_;
+        bool outputColMinHydrophobSet_;
+        bool outputColMaxHydrophobSet_;
         bool outputDetailed_;
         PdbStructure outputStructure_;
 

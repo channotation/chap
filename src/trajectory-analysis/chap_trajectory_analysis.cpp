@@ -185,13 +185,69 @@ ChapTrajectoryAnalysis::initOptions(
                                       "Negative values may result in "
                                       "visualisation artifacts."));
 
-    options -> addOption(RealOption("out-colmin-hydrophob")
-                         .store(&outputColMinHydrophob_)
-                         .description(""));
+    options -> addOption(RealOption("out-cmin-r")
+                         .store(&outputColMinRadius_)
+                         .storeIsSet(&outputColMinRadiusSet_)
+                         .defaultValue(std::nan(""))
+                         .description("Lower limit of radius colour scale "
+                                      "in nm. Only affects OBJ and MTL "
+                                      "output."));
 
-    options -> addOption(RealOption("out-colmax-hydrophob")
+    options -> addOption(RealOption("out-cmax-r")
+                         .store(&outputColMaxRadius_)
+                         .storeIsSet(&outputColMaxRadiusSet_)
+                         .defaultValue(std::nan(""))
+                         .description("Upper limit of radius colour scale "
+                                      "in nm. Only affects OBJ and MTL "
+                                      "output."));
+
+    options -> addOption(RealOption("out-cmin-h")
+                         .store(&outputColMinHydrophob_)
+                         .storeIsSet(&outputColMinHydrophobSet_)
+                         .defaultValue(std::nan(""))
+                         .description("Lower limit of hydrophobicity colour "
+                                      "scale.  Only affects OBJ and MTL "
+                                      "output."));
+
+    options -> addOption(RealOption("out-cmax-h")
                          .store(&outputColMaxHydrophob_)
-                         .description(""));
+                         .storeIsSet(&outputColMaxHydrophobSet_)
+                         .defaultValue(std::nan(""))
+                         .description("Upper limit of hydrophobicity colour "
+                                      "scale. Only affects OBJ and MTL "
+                                      "output."));
+
+    options -> addOption(RealOption("out-cmin-n")
+                         .store(&outputColMinDensity_)
+                         .storeIsSet(&outputColMinDensitySet_)
+                         .defaultValue(std::nan(""))
+                         .description("Lower limit of density colour "
+                                      "scale in nm^-3. Only affects OBJ and "
+                                      "MTL output."));
+
+    options -> addOption(RealOption("out-cmax-n")
+                         .store(&outputColMaxDensity_)
+                         .storeIsSet(&outputColMaxDensitySet_)
+                         .defaultValue(std::nan(""))
+                         .description("Upper limit of density colour "
+                                      "scale in nm^-3. Only affects OBJ and "
+                                      "MTL output."));
+
+    options -> addOption(RealOption("out-cmin-e")
+                         .store(&outputColMinEnergy_)
+                         .storeIsSet(&outputColMinEnergySet_)
+                         .defaultValue(std::nan(""))
+                         .description("Lower limit of energy colour "
+                                      "scale in kT. Only affects OBJ and MTL "
+                                      "output."));
+
+    options -> addOption(RealOption("out-cmax-e")
+                         .store(&outputColMaxEnergy_)
+                         .storeIsSet(&outputColMaxEnergySet_)
+                         .defaultValue(std::nan(""))
+                         .description("Upper limit of energy colour "
+                                      "scale in kT. Only affects OBJ and MTL "
+                                      "output."));
 
     options -> addOption(BooleanOption("out-detailed")
                          .store(&outputDetailed_)
@@ -1933,24 +1989,60 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     std::string paletteFileName = paletteFilePath + "default.json";
     auto palettes = ColourPaletteProvider::fromJsonFile(paletteFileName);
 
-    // TODO remove???
-    outputColMinHydrophob_ = 0.0;
-    outputColMaxHydrophob_ = 1.0;
-
-    // TODO make this user-defined or NaN by default:
-    std::pair<real, real> colRangeRadius(0.5, 0.5);
-    std::pair<real, real> colRangeDensity(0.5, 0.5);
-    std::pair<real, real> colRangeEnergy(0.5, 0.5);
-    std::pair<real, real> colRangeHydrophobicity(0.5, 0.5);
+    // // TODO remove???
+    // // outputColMinHydrophob_ = 0.0;
+    // // outputColMaxHydrophob_ = 1.0;
+    //
+    // // TODO make this user-defined or NaN by default:
+    // std::pair<real, real> colRangeRadius(0.0, 0.0);
+    // std::pair<real, real> colRangeDensity(0.5, 0.5);
+    // std::pair<real, real> colRangeEnergy(0.5, 0.5);
+    // std::pair<real, real> colRangeHydrophobicity(0.5, 0.5);
 
     // create map of colour ranges for each property:
     std::map<std::string, std::pair<real, real>> colRanges;
-    colRanges["radius"] = colRangeRadius;
-    colRanges["avg_radius"] = colRangeRadius;
-    colRanges["avg_density"] = colRangeDensity;
-    colRanges["avg_energy"] = colRangeEnergy;
-    colRanges["avg_pl_hydrophobicity"] = colRangeHydrophobicity;
-    colRanges["avg_pf_hydrophobicity"] = colRangeHydrophobicity;
+
+    // manual radius scale?
+    if( outputColMinRadiusSet_ && outputColMaxRadiusSet_ )
+    {
+        std::pair<real, real> colRangeRadius(
+            outputColMinRadius_,
+            outputColMaxRadius_
+        );
+        colRanges["radius"] = colRangeRadius;
+        colRanges["avg_radius"] = colRangeRadius;
+    }
+
+    // manual density scale?
+    if( outputColMinDensitySet_ && outputColMaxDensitySet_ )
+    {
+        std::pair<real, real> colRangeDensity(
+            outputColMinDensity_,
+            outputColMaxDensity_
+        );
+        colRanges["avg_density"] = colRangeDensity;
+    }
+
+    // manual energy scale?
+    if( outputColMinEnergySet_ && outputColMaxEnergySet_ )
+    {
+        std::pair<real, real> colRangeEnergy(
+            outputColMinEnergy_,
+            outputColMaxEnergy_
+        );
+        colRanges["avg_energy"] = colRangeEnergy;
+    }
+
+    // manual hydrophobicity scale?
+    if( outputColMinHydrophobSet_ && outputColMaxHydrophobSet_ )
+    {
+        std::pair<real, real> colRangeHydrophobicity(
+            outputColMinHydrophob_,
+            outputColMaxHydrophob_
+        );
+        colRanges["avg_pl_hydrophobicity"] = colRangeHydrophobicity;
+        colRanges["avg_pf_hydrophobicity"] = colRangeHydrophobicity;
+    }
 
     // export pathway to file:
     MolecularPathObjExporter mpexp;
@@ -2039,6 +2131,31 @@ ChapTrajectoryAnalysis::checkParameters()
                                  "(-1, 1).");
     }
 
+    if( outputColMinRadiusSet_ ^ outputColMaxRadiusSet_ )
+    {
+        throw std::runtime_error("Must set both lower and upper limit of "
+                                 "radius scale.");
+    }
+    if( outputColMinDensitySet_ ^ outputColMaxDensitySet_ )
+    {
+        throw std::runtime_error("Must set both lower and upper limit of "
+                                 "density scale.");
+    }
+    if( outputColMinEnergySet_ ^ outputColMaxEnergySet_ )
+    {
+        throw std::runtime_error("Must set both lower and upper limit of "
+                                 "energy scale.");
+    }
+    if( outputColMinHydrophobSet_ ^ outputColMaxHydrophobSet_ )
+    {
+        throw std::runtime_error("Must set both lower and upper limit of "
+                                 "hydrophobicity scale.");
+    }
+    // if( outputColMinRadius_ > outputColMaxRadius_ )
+    // {
+    //     throw std::runtime_error("Lower limit of radius colour range "
+    //                              "must be smaller than upper limit.");
+    // }
 
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
