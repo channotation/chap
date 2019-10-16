@@ -2131,6 +2131,7 @@ ChapTrajectoryAnalysis::checkParameters()
                                  "(-1, 1).");
     }
 
+    // colour scales always need both limits:
     if( outputColMinRadiusSet_ ^ outputColMaxRadiusSet_ )
     {
         throw std::runtime_error("Must set both lower and upper limit of "
@@ -2151,11 +2152,41 @@ ChapTrajectoryAnalysis::checkParameters()
         throw std::runtime_error("Must set both lower and upper limit of "
                                  "hydrophobicity scale.");
     }
-    // if( outputColMinRadius_ > outputColMaxRadius_ )
-    // {
-    //     throw std::runtime_error("Lower limit of radius colour range "
-    //                              "must be smaller than upper limit.");
-    // }
+
+    // colour scale limits must be well ordered:
+    if(
+        outputColMinRadiusSet_
+        and outputColMinRadius_ >= outputColMaxRadius_
+    )
+    {
+        throw std::runtime_error("Lower limit of radius colour range "
+                                 "must be smaller than upper limit.");
+    }
+    if(
+        outputColMinDensitySet_
+        and outputColMinDensity_ >= outputColMaxDensity_
+    )
+    {
+        throw std::runtime_error("Lower limit of density colour range "
+                                 "must be smaller than upper limit.");
+    }
+    if(
+        outputColMinEnergySet_
+        and outputColMinEnergy_ >= outputColMaxEnergy_
+    )
+    {
+        throw std::runtime_error("Lower limit of energy colour range "
+                                 "must be smaller than upper limit.");
+    }
+    if(
+        outputColMinHydrophobSet_
+        and outputColMinHydrophob_ >= outputColMaxHydrophob_
+    )
+    {
+        throw std::runtime_error("Lower limit of hydrophobicity colour range "
+                                 "must be smaller than upper limit.");
+    }
+
 
     // PATH FINDING PARAMETERS
     //-------------------------------------------------------------------------
