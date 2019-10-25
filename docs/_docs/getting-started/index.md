@@ -36,7 +36,7 @@ Prior to installing CHAP, make sure that you have the following libraries and to
 1. The [CMake][CMake] tool in version 3.2 or higher. This will typically be available through your system's package manager. For example, on Ubuntu you can install CMake by typing `sudo apt-get install cmake`. CMake is used to check the availability of libraries and compilers on your system and will ensure that CHAP is installed properly.
 2. A C++ compiler that supports the `C++11` standard. A popular choice is the [GNU Compiler Collection][GCC], which on Ubuntu can be obtained by typing `sudo apt-get install gcc`
 3. The [Boost][Boost] C++ libraries, which on Ubuntu can be installed using `sudo apt-get install libboost-all-dev`. Boost algorithms are used in CHAP to solve some root finding and optimisation problems.
-4. The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing `sudo apt-get install libblas-dev liblapacke-dev libatlas-base-dev`. The linear algebra libraries are used in CHAP's spline interpolation.
+4. The CBLAS and LAPACKE linear algebra libraries. On Ubuntu, the easiest way to obtain these is by typing `sudo apt-get install libblas-dev liblapacke-dev libatlas-base-dev libopenblas-dev`. The linear algebra libraries are used in CHAP's spline interpolation.
 5. The `libgromacs` library of the [Gromacs][Gromacs] molecular dynamics engine in version 2016 or higher. Comprehensive installation instructions for Gromacs can be found [here][Gromacs-install].
 Please note that for using Gromacs as a library, the underlying FFTW libray
 may **not** be installed automatically, i.e. you need to set
