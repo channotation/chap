@@ -2,6 +2,8 @@
 
 # CHAP - The Channel Annotation Package #
 
+*Please cite [G. Klesse, S. Rao, M. S. P. Sansom, and S. J. Tucker "CHAP: A Versatile Tool for the Structural and Functional Annotation of Ion Channel Pores". Journal of Molecular Biology, 2019.](https://doi.org/10.1016/j.jmb.2019.06.003) if you use CHAP in your academic work.*
+
 CHAP is a tool for the functional annotation of ion channel structures written in C++. See the website under [www.channotation.org][CHANNOTATION] for a full documentation including installation instructions and usage examples. If you have any questions please use the GitHub [Issue Tracker](https://github.com/channotation/chap/issues).
 
 
