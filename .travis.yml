@@ -19,13 +19,6 @@ matrix:
           env:
               OS_DIST=LINUX_XENIAL
               GMX_VERSION=2018
-        - os: linux
-          dist: xenial
-          sudo: required
-          compiler: gcc
-          env:
-              OS_DIST=LINUX_XENIAL
-              GMX_VERSION=2019
         # Ubuntu 18.04 Bionic Beaver
         - os: linux
           dist: bionic
@@ -41,13 +34,6 @@ matrix:
           env:
               OS_DIST=LINUX_BIONIC
               GMX_VERSION=2018
-        - os: linux
-          dist: bionic
-          sudo: required
-          compiler: gcc
-          env:
-              OS_DIST=LINUX_BIONIC
-              GMX_VERSION=2019
     allow_failures:
         - GMX_VERSION=2019      # known API break
         - OS_DIST=LINUX_BIONIC  # new Ubuntu LTS not tested
