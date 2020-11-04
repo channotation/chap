@@ -1,8 +1,8 @@
 # CHAP - The Channel Annotation Package
-# 
-# Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+#
+# Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 # Stephen J. Tucker
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -155,7 +155,9 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_BINARY_DIR}/config/config.cpp")
 add_executable(chap ${SRC_FILES})
 target_include_directories(chap PUBLIC ${CHAP_SOURCE_DIR}/include)
 target_link_libraries(chap ${LAPACKE_LIBRARIES})
+target_include_directories(chap PUBLIC ${LAPACKE_INCLUDE_DIRS})
 target_link_libraries(chap ${BOOST_LIBRARIES})
+target_include_directories(chap PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(chap ${GROMACS_LIBRARIES})
 target_link_libraries(chap ${GTEST_LIBRARY})
 
@@ -180,4 +182,3 @@ install(TARGETS chap DESTINATION ${CMAKE_INSTALL_PREFIX}/chap/bin)
 # also install data and scripts:
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share DESTINATION ${CMAKE_INSTALL_PREFIX}/chap)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts DESTINATION ${CMAKE_INSTALL_PREFIX}/chap USE_SOURCE_PERMISSIONS)
-
