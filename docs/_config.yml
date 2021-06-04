@@ -4,11 +4,12 @@ email: chap@bioch.ox.ac.uk
 description: >
   Jekyll Template for Project Websites
   providing documentation and blog post pages.
+lang: en-US
 
 baseurl: "/" # the subpath of your site, e.g. /blog/
 url: https://www.channotation.org # the base hostname & protocol for your site
 git_address: https://github.com/channotation/chap
-git_edit_address: https://github.com/channotation/chap/
+git_edit_address: https://github.com/aksakalli/chap/blob/master/docs
 
 # theme options from https://bootswatch.com/
 # comment out this to use default Bootstrap
