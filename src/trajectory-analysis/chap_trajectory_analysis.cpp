@@ -98,6 +98,7 @@ ChapTrajectoryAnalysis::initOptions(
         IOptionsContainer *options,
         TrajectoryAnalysisSettings *settings)
 {    
+    std::cout << "ChapTrajectoryAnalysis::initOptions " << std::endl;
     // HELP TEXT
     //-------------------------------------------------------------------------
 
@@ -482,6 +483,7 @@ ChapTrajectoryAnalysis::initAnalysis(
         const TrajectoryAnalysisSettings& /*settings*/,
         const TopologyInformation &top)
 {
+    std::cout << "ChapTrajectoryAnalysis::initAnalysis " << std::endl;
     // the following code ensures compatibility across Gromacs versions:
     // (there was an API break between 2016 and 2018)
     #if GROMACS_VERSION_MAJOR>=2018
@@ -846,7 +848,7 @@ ChapTrajectoryAnalysis::initAfterFirstFrame(
         const TrajectoryAnalysisSettings &settings,
         const t_trxframe &fr)
 {
-
+    std::cout << "ChapTrajectoryAnalysis::initAfterFirstFrame blank program... " << std::endl;
 }
 
 
@@ -860,6 +862,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
         t_pbc *pbc,
         TrajectoryAnalysisModuleData *pdata)
 {
+    std::cout << "ChapTrajectoryAnalysis::analyzeFrame " << std::endl;
     // get thread-local selections:
     const Selection &refSelection = pdata -> parallelSelection(pathwaySel_);
 
@@ -1436,6 +1439,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
 void
 ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 {
+    std::cout << "ChapTrajectoryAnalysis::finishAnalysis with argument numFrames " <<  numFrames << std::endl;
     // free line for neater output:
     std::cout<<std::endl;
 
@@ -1488,6 +1492,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     int linesRead = 0;
     std::string line;
     std::cout << "inFile " << inFile << " line " << line << std::endl;
+    std::cout << "getline(inFile, line) " << getline(inFile, line) << std::endl;
     while( std::getline(inFile, line) )
     {
         std::cout << "while loop touched" << std::endl;
@@ -1948,7 +1953,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 void
 ChapTrajectoryAnalysis::writeOutput()
 {
-
+    std::cout << "ChapTrajectoryAnalysis::writeOutput blank..." << std::endl;
 }
 
 
@@ -1960,6 +1965,7 @@ ChapTrajectoryAnalysis::writeOutput()
 void
 ChapTrajectoryAnalysis::obtainNdxFilePathInfo()
 {
+    std::cout << "ChapTrajectoryAnalysis::obtainNdxFilePathInfo " << std::endl;
     // name of index file flag:
     std::string flagName = " -n ";
 
@@ -1989,6 +1995,7 @@ ChapTrajectoryAnalysis::obtainNdxFilePathInfo()
 void
 ChapTrajectoryAnalysis::checkParameters()
 {
+    std::cout << "ChapTrajectoryAnalysis::checkParameters " << std::endl;
     // OUTPUT PARAMETERS
     //-------------------------------------------------------------------------
 
