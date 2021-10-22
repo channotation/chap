@@ -1570,8 +1570,8 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     {
         //throw std::runtime_error("Number of frames read does not equal number"
         //"of frames analyised.");
-        cout << "linesRead" << linesRead;
-        cout << "numFrames" << numFrames;
+        std::cout << "linesRead" << linesRead <<std::endl;
+        std::cout << "numFrames" << numFrames <<std::endl;
     }
 
 
