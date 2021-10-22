@@ -1568,8 +1568,10 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // sanity check:
     if( linesRead != numFrames )
     {
-        throw std::runtime_error("Number of frames read does not equal number"
-        "of frames analyised.");
+        //throw std::runtime_error("Number of frames read does not equal number"
+        //"of frames analyised.");
+        count << "linesRead" << linesRead;
+        count << "numFrames" << numFrames;
     }
 
 
