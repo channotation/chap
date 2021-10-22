@@ -1487,8 +1487,10 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
     std::string line;
+    std::cout << "inFile " << inFile << " line " << line << std::endl;
     while( std::getline(inFile, line) )
     {
+        std::cout << "while loop touched" << std::endl;
         // read line into JSON document:
         rapidjson::StringStream lineStream(line.c_str());
         rapidjson::Document lineDoc;
