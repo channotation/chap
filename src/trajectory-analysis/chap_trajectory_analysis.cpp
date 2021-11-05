@@ -1456,6 +1456,9 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     inFile.open(inFileName, std::fstream::in);
     std::cout << "inFileName " << inFileName << std::endl;
     std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
+    if (inFile.is_open())
+        std::cout << "print " << inFileName << std::endl;
+        std::cout << inFile.rdbuf();
 
     // prepare summary statistics for aggregate properties:
     SummaryStatistics argMinRadiusSummary;
@@ -1493,9 +1496,11 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
     std::string line;
+    std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
     std::cout << "std::getline(inFile, line) " << std::getline(inFile, line) << std::endl;
     std::cout << "return value = input (the stream to get data from , here inFile) " << std::endl;
     std::cout << "inFile " << inFile << " line " << line << std::endl;
+    std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
     while( std::getline(inFile, line) )
     {
         std::cout << "while loop touched" << std::endl;
