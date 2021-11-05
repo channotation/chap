@@ -1459,12 +1459,15 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     std::ifstream f(inFileName);
     if (inFile.is_open())
     {
-        std::cout << "print " << inFileName << std::endl;
+        std::cout << "inFile IS open " << inFileName << std::endl;
         // https://stackoverflow.com/questions/35201919/how-do-i-print-out-the-contents-of-a-file-c-file-stream
-        std::cout << "f.rdbuf() " << std::endl;
-        std::cout << f.rdbuf() << std::endl;
-        std::cout << "inFile.rdbuf() "  << std::endl;
-        std::cout << inFile.rdbuf() << std::endl;
+        std::cout << "try f.rdbuf() " << std::endl;
+        try {std::cout << f.rdbuf() << std::endl;}
+        catch (...) { std::cout << "f.rdbuf() not succesful" << std::endl; }
+
+        std::cout << "try inFile.rdbuf() " << std::endl;
+        try {std::cout << inFile.rdbuf() << std::endl;}
+        catch (...) { std::cout << "inFile.rdbuf() not succesful" << std::endl; }
     }
     else {
         std::cout << "inFile is NOT open " << inFileName << std::endl;
