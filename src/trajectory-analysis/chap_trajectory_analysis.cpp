@@ -1462,18 +1462,18 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         std::cout << "inFile IS open " << inFileName << std::endl;
         // https://stackoverflow.com/questions/35201919/how-do-i-print-out-the-contents-of-a-file-c-file-stream
         std::cout << "try f.rdbuf() " << std::endl;
-        try {std::cout << f.rdbuf() << std::endl;}
-        catch (const std::exception& e) {
-          std::cout << " a standard exception was caught, with message '"  << e.what() << std::endl;
-        }
-        catch (...) { std::cout << "f.rdbuf() not succesful" << std::endl; }
+        //try {std::cout << f.rdbuf() << std::endl;}
+        //catch (const std::exception& e) {
+        //  std::cout << " a standard exception was caught, with message '"  << e.what() << std::endl;
+        //}
+        //catch (...) { std::cout << "f.rdbuf() not succesful" << std::endl; }
 
         std::cout << "try inFile.rdbuf() " << std::endl;
-        try {std::cout << inFile.rdbuf() << std::endl;}
-        catch (const std::exception& e) {
-          std::cout << " a standard exception was caught, with message '"  << e.what() << std::endl;
-        }
-        catch (...) { std::cout << "inFile.rdbuf() not succesful" << std::endl; }
+        //try {std::cout << inFile.rdbuf() << std::endl;}
+        //catch (const std::exception& e) {
+        //  std::cout << " a standard exception was caught, with message '"  << e.what() << std::endl;
+        //}
+        //catch (...) { std::cout << "inFile.rdbuf() not succesful" << std::endl; }
     }
     else {
         std::cout << "inFile is NOT open " << inFileName << std::endl;
