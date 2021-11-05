@@ -1,8 +1,8 @@
 // CHAP - The Channel Annotation Package
-// 
-// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+//
+// Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 // Stephen J. Tucker
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -12,7 +12,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -81,7 +81,7 @@ ChapTrajectoryAnalysis::ChapTrajectoryAnalysis()
 {
     // register data containers:
     registerAnalysisDataset(&frameStreamData_, "frameStreamData");
-    frameStreamData_.setMultipoint(true); 
+    frameStreamData_.setMultipoint(true);
 
     // default initial probe position and chanell direction:
     pfInitProbePos_ = {std::nan(""), std::nan(""), std::nan("")};
@@ -97,7 +97,7 @@ void
 ChapTrajectoryAnalysis::initOptions(
         IOptionsContainer *options,
         TrajectoryAnalysisSettings *settings)
-{    
+{
     std::cout << "ChapTrajectoryAnalysis::initOptions " << std::endl;
     // HELP TEXT
     //-------------------------------------------------------------------------
@@ -201,7 +201,7 @@ ChapTrajectoryAnalysis::initOptions(
 
     const char * const allowedPathFindingMethod[] = {"cylindrical",
                                                      "inplane_optim"};
-    pfMethod_ = ePathFindingMethodInplaneOptimised;                                         
+    pfMethod_ = ePathFindingMethodInplaneOptimised;
     options -> addOption(EnumOption<ePathFindingMethod>("pf-method")
                          .enumValue(allowedPathFindingMethod)
                          .store(&pfMethod_)
@@ -218,7 +218,7 @@ ChapTrajectoryAnalysis::initOptions(
     const char * const allowedVdwRadiusDatabase[] = {"hole_amberuni",
                                                      "hole_bondi",
                                                      "hole_hardcore",
-                                                     "hole_simple", 
+                                                     "hole_simple",
                                                      "hole_xplor",
                                                      "user"};
     pfVdwRadiusDatabase_ = eVdwRadiusDatabaseHoleSimple;
@@ -298,7 +298,7 @@ ChapTrajectoryAnalysis::initOptions(
                          .valueCount(3)
                          .description("Channel direction vector. Will be "
                                       "normalised to unit vector internally."));
-   
+
     // max-free-dist and largest vdW radius
     options -> addOption(DoubleOption("pf-cutoff")
                          .store(&cutoff_)
@@ -309,7 +309,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "or less means no cutoff is applied. "
                                       "If unset, an appropriate cutoff is "
                                       "determined automatically."));
- 
+
 
 
     // OPTIMISATION PARAMETERS
@@ -328,7 +328,7 @@ ChapTrajectoryAnalysis::initOptions(
                           .defaultValue(0)
                           .description("Number of cooling iterations "
                                        "in one simulated annealing run."));
-                          
+
     options -> addOption(RealOption("sa-init-temp")
                          .store(&pfPar_["saInitTemp"])
                          .defaultValue(0.1)
@@ -395,7 +395,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "probability density of the solvent "
                                       "particles along the permeation "
                                       "pathway"));
-    
+
     options -> addOption(RealOption("de-res")
                          .store(&deResolution_)
                          .defaultValue(0.01)
@@ -435,7 +435,7 @@ ChapTrajectoryAnalysis::initOptions(
 
     // HYDROPHOBICITY PARAMETERS
     //-------------------------------------------------------------------------
-    
+
     const char * const allowedHydrophobicityDatabase[] = {"hessa_2005",
                                                           "kyte_doolittle_1982",
                                                           "monera_1995",
@@ -467,7 +467,7 @@ ChapTrajectoryAnalysis::initOptions(
                                       "hydrophobicity scale. Will be "
                                       "ignored unless -hydrophobicity-database"
                                       " is set to 'user'."));
-    
+
     options -> addOption(RealOption("hydrophob-bandwidth")
                          .store(&hpBandWidth_)
                          .defaultValue(0.35)
@@ -476,7 +476,7 @@ ChapTrajectoryAnalysis::initOptions(
 
 
 /*!
- * 
+ *
  */
 void
 ChapTrajectoryAnalysis::initAnalysis(
@@ -504,7 +504,7 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     // check validity of input parameters:
     checkParameters();
-        
+
     // save atom coordinates in topology for writing to output later:
     outputStructure_.fromTopology(top);
 
@@ -546,19 +546,19 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     // prepare container for original path points:
     frameStreamData_.setColumnCount(1, 4);
-    frameStreamColumnNames.push_back({"x", 
+    frameStreamColumnNames.push_back({"x",
                                       "y",
                                       "z",
                                       "r"});
 
     // prepare container for path radius:
     frameStreamData_.setColumnCount(2, 2);
-    frameStreamColumnNames.push_back({"knots", 
+    frameStreamColumnNames.push_back({"knots",
                                       "ctrl"});
 
     // prepare container for pathway spline:
     frameStreamData_.setColumnCount(3, 4);
-    frameStreamColumnNames.push_back({"knots", 
+    frameStreamColumnNames.push_back({"knots",
                                       "ctrlX",
                                       "ctrlY",
                                       "ctrlZ"});
@@ -579,7 +579,7 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     // prepare container for solvent mapping:
     frameStreamData_.setColumnCount(5, 9);
-    frameStreamColumnNames.push_back({"resId", 
+    frameStreamColumnNames.push_back({"resId",
                                       "s",
                                       "rho",
                                       "phi",
@@ -591,15 +591,15 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     // prepare container for solvent density:
     frameStreamData_.setColumnCount(6, 2);
-    frameStreamColumnNames.push_back({"knots", 
+    frameStreamColumnNames.push_back({"knots",
                                       "ctrl"});
 
     // prepare container for hydrophobicity splines:
     frameStreamData_.setColumnCount(7, 2);
-    frameStreamColumnNames.push_back({"knots", 
+    frameStreamColumnNames.push_back({"knots",
                                       "ctrl"});
     frameStreamData_.setColumnCount(8, 2);
-    frameStreamColumnNames.push_back({"knots", 
+    frameStreamColumnNames.push_back({"knots",
                                       "ctrl"});
 
     // add JSON exporter to frame stream data:
@@ -617,7 +617,7 @@ ChapTrajectoryAnalysis::initAnalysis(
     // prepare a centre of geometry selection collection:
     poreMappingSelCol_.setReferencePosType("res_cog");
     poreMappingSelCol_.setOutputPosType("res_cog");
-  
+
     // selection of C-alpha atoms:
     std::string pathwaySelSelText = pathwaySel_.selectionText();
     std::string poreMappingSelCalString = pfSelString_;
@@ -625,19 +625,19 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     // create index groups from topology:
     gmx_ana_indexgrps_t *poreIdxGroups;
- 
+
     // has external index file been specified?
     if( customNdxFileName_.size() != 0 )
     {
-        gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               topologyPointer.get(), 
-                               customNdxFileName_.c_str());  
+        gmx_ana_indexgrps_init(&poreIdxGroups,
+                               topologyPointer.get(),
+                               customNdxFileName_.c_str());
     }
     else
     {
-        gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               topologyPointer.get(), 
-                               NULL); 
+        gmx_ana_indexgrps_init(&poreIdxGroups,
+                               topologyPointer.get(),
+                               NULL);
     }
 
     // create selections as defined above:
@@ -653,7 +653,7 @@ ChapTrajectoryAnalysis::initAnalysis(
     // do we have one C-alpha for each pore-forming residue?
     if( poreMappingSelCal_.posCount() != poreMappingSelCog_.posCount() )
     {
-        findPfResidues_ = false;  
+        findPfResidues_ = false;
     }
     else
     {
@@ -704,7 +704,7 @@ ChapTrajectoryAnalysis::initAnalysis(
         gmx_ana_indexgrps_free(solvIdxGroups);
     }
 
-    
+
     // GET ATOM RADII FROM TOPOLOGY
     //-------------------------------------------------------------------------
 
@@ -744,10 +744,10 @@ ChapTrajectoryAnalysis::initAnalysis(
         }
     }
 
-    // import vdW radii JSON: 
+    // import vdW radii JSON:
     JsonDocImporter jdi;
     rapidjson::Document radiiDoc = jdi(pfVdwRadiusJson_.c_str());
-   
+
     // create radius provider and build lookup table:
     VdwRadiusProvider vrp;
     vrp.lookupTableFromJson(radiiDoc);
@@ -763,7 +763,7 @@ ChapTrajectoryAnalysis::initAnalysis(
             pathwaySel_.mappedIds().data(),
             pathwaySel_.mappedIds().data() + pathwaySel_.mappedIds().size());
 
-    
+
 
     // build vdw radius lookup map:
     vdwRadii_ = vrp.vdwRadiiForTopology(top, mappedIds);
@@ -780,9 +780,9 @@ ChapTrajectoryAnalysis::initAnalysis(
     resInfo_.chainFromTopology(top);
 
     // base path to location of hydrophobicity databases:
-    std::string hydrophobicityFilePath = chapInstallBase() + 
+    std::string hydrophobicityFilePath = chapInstallBase() +
             std::string("/chap/share/data/hydrophobicity/");
-    
+
     // select appropriate database file:
     if( hydrophobicityDatabase_ == eHydrophobicityDatabaseHessa2005 )
     {
@@ -825,7 +825,7 @@ ChapTrajectoryAnalysis::initAnalysis(
 
     // import hydrophbicity JSON:
     rapidjson::Document hydrophobicityDoc = jdi(hydrophobicityJson_.c_str());
-   
+
     // generate hydrophobicity lookup table:
     resInfo_.hydrophobicityFromJson(hydrophobicityDoc);
 
@@ -857,8 +857,8 @@ ChapTrajectoryAnalysis::initAfterFirstFrame(
  */
 void
 ChapTrajectoryAnalysis::analyzeFrame(
-        int frnr, 
-        const t_trxframe &fr, 
+        int frnr,
+        const t_trxframe &fr,
         t_pbc *pbc,
         TrajectoryAnalysisModuleData *pdata)
 {
@@ -878,30 +878,30 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
     // recalculate initial probe position based on reference group COG:
     if( pfInitProbePosIsSet_ == false )
-    {  
+    {
         // helper variable for conditional assignment of selection:
         Selection tmpsel;
-  
+
         // has a group for specifying initial probe position been set?
         if( ippSelIsSet_ == true )
         {
             // use explicitly given selection:
             tmpsel = ippSel_;
         }
-        else 
+        else
         {
             // default to overall group of pore forming particles:
             tmpsel = pathwaySel_;
         }
-     
+
         // load data into initial position selection:
         const gmx::Selection &initPosSelection = pdata -> parallelSelection(tmpsel);
- 
+
         // initialse total mass and COM vector:
         real totalMass = 0.0;
         gmx::RVec centreOfMass(0.0, 0.0, 0.0);
-        
-        // loop over all atoms: 
+
+        // loop over all atoms:
         for(int i = 0; i < initPosSelection.atomCount(); i++)
         {
             // get i-th atom position:
@@ -919,7 +919,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
         // scale COM vector by total MASS:
         centreOfMass[XX] /= 1.0 * totalMass;
         centreOfMass[YY] /= 1.0 * totalMass;
-        centreOfMass[ZZ] /= 1.0 * totalMass; 
+        centreOfMass[ZZ] /= 1.0 * totalMass;
 
         // set initial probe position:
         pfInitProbePos_[XX] = centreOfMass[XX];
@@ -952,7 +952,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
     // vectors as RVec:
     RVec initProbePos(pfInitProbePos_[0], pfInitProbePos_[1], pfInitProbePos_[2]);
-    RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]); 
+    RVec chanDirVec(pfChanDirVec_[0], pfChanDirVec_[1], pfChanDirVec_[2]);
 
     // create path finding module:
     std::unique_ptr<AbstractPathFinder> pfm;
@@ -964,10 +964,10 @@ ChapTrajectoryAnalysis::analyzeFrame(
                                                       chanDirVec,
                                                       pbc,
                                                       refSelection,
-                                                      selVdwRadii));        
+                                                      selVdwRadii));
     }
     else if( pfMethod_ == ePathFindingMethodNaiveCylindrical )
-    {        
+    {
         // create the naive cylindrical path finder:
         pfm.reset(new NaiveCylindricalPathFinder(pfPar_,
                                                  initProbePos,
@@ -992,7 +992,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
     clock_t tMolPath = std::clock();
     MolecularPath molPath = pfm -> getMolecularPath();
     tMolPath = (std::clock() - tMolPath)/CLOCKS_PER_SEC;
-    
+
     // which method do we use for path alignment?
     if( pfPathAlignmentMethod_ == ePathAlignmentMethodNone )
     {
@@ -1026,7 +1026,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
     // add radius spline knots and control points to frame stream dataset:
     dhFrameStream.selectDataSet(2);
-    std::vector<real> radiusKnots = molPath.poreRadiusUniqueKnots();    
+    std::vector<real> radiusKnots = molPath.poreRadiusUniqueKnots();
     std::vector<real> radiusCtrlPoints = molPath.poreRadiusCtrlPoints();
     for(size_t i = 0; i < radiusKnots.size(); i++)
     {
@@ -1034,10 +1034,10 @@ ChapTrajectoryAnalysis::analyzeFrame(
         dhFrameStream.setPoint(1, radiusCtrlPoints.at(i));
         dhFrameStream.finishPointSet();
     }
-    
+
     // add centre line spline knots and control points to frame stream dataset:
     dhFrameStream.selectDataSet(3);
-    std::vector<real> centreLineKnots = molPath.centreLineUniqueKnots();    
+    std::vector<real> centreLineKnots = molPath.centreLineUniqueKnots();
     std::vector<gmx::RVec> centreLineCtrlPoints = molPath.centreLineCtrlPoints();
     for(size_t i = 0; i < centreLineKnots.size(); i++)
     {
@@ -1051,12 +1051,12 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
     // MAP PORE PARTICLES ONTO PATHWAY
     //-------------------------------------------------------------------------
- 
+
     // evaluate pore mapping selection for this frame:
     t_trxframe frame = fr;
     poreMappingSelCol_.evaluate(&frame, pbc);
-    const gmx::Selection poreMappingSelCal = pdata -> parallelSelection(poreMappingSelCal_);    
-    const gmx::Selection poreMappingSelCog = pdata -> parallelSelection(poreMappingSelCog_);    
+    const gmx::Selection poreMappingSelCal = pdata -> parallelSelection(poreMappingSelCal_);
+    const gmx::Selection poreMappingSelCog = pdata -> parallelSelection(poreMappingSelCog_);
 
 
     // map pore residue COG onto pathway:
@@ -1071,11 +1071,11 @@ ChapTrajectoryAnalysis::analyzeFrame(
             poreMappingSelCal);
     tMapResCal = (std::clock() - tMapResCal)/CLOCKS_PER_SEC;
 
-    
+
     // check if particles are pore-lining:
     clock_t tResPoreLining = std::clock();
     std::map<int, bool> poreLining = molPath.checkIfInside(
-            poreCogMappedCoords, 
+            poreCogMappedCoords,
             poreMappingMargin_);
     int nPoreLining = 0;
     for(auto jt = poreLining.begin(); jt != poreLining.end(); jt++)
@@ -1089,7 +1089,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
     // check if residues are pore-facing:
     // TODO: make this conditional on whether C-alphas are available
-    
+
     clock_t tResPoreFacing = std::clock();
     std::map<int, bool> poreFacing;
     int nPoreFacing = 0;
@@ -1105,15 +1105,15 @@ ChapTrajectoryAnalysis::analyzeFrame(
         }
         else
         {
-            poreFacing[it->first] = false;            
+            poreFacing[it->first] = false;
         }
     }
     tResPoreFacing = (std::clock() - tResPoreFacing)/CLOCKS_PER_SEC;
-    
+
 
     // ESTIMATE HYDROPHOBICITY PROFILE
     //-------------------------------------------------------------------------
-   
+
     // get vectors of coordinates of pore-facing and -lining residues:
     std::vector<real> plResidueCoordS;
     std::vector<real> plResidueHydrophobicity;
@@ -1164,36 +1164,36 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
     // estimate hydrophobicity profiles due to pore-lining residues:
     SplineCurve1D plHydrophobicity = kernelSmoother.estimate(
-            plResidueCoordS, 
+            plResidueCoordS,
             plResidueHydrophobicity);
 
-    // add spline curve parameters to data handle:   
+    // add spline curve parameters to data handle:
     dhFrameStream.selectDataSet(7);
     for(size_t i = 0; i < plHydrophobicity.ctrlPoints().size(); i++)
     {
         dhFrameStream.setPoint(
-                0, 
+                0,
                 plHydrophobicity.uniqueKnots().at(i));
         dhFrameStream.setPoint(
-                1, 
+                1,
                 plHydrophobicity.ctrlPoints().at(i));
         dhFrameStream.finishPointSet();
     }
 
     // estimate hydrophobicity profiles due to pore-facing residues:
     SplineCurve1D pfHydrophobicity = kernelSmoother.estimate(
-            pfResidueCoordS, 
+            pfResidueCoordS,
             pfResidueHydrophobicity);
 
-    // add spline curve parameters to data handle:   
+    // add spline curve parameters to data handle:
     dhFrameStream.selectDataSet(8);
     for(size_t i = 0; i < pfHydrophobicity.ctrlPoints().size(); i++)
     {
         dhFrameStream.setPoint(
-                0, 
+                0,
                 pfHydrophobicity.uniqueKnots().at(i));
         dhFrameStream.setPoint(
-                1, 
+                1,
                 pfHydrophobicity.ctrlPoints().at(i));
         dhFrameStream.finishPointSet();
     }
@@ -1203,7 +1203,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
     //-------------------------------------------------------------------------
 
     // create data containers:
-    std::map<int, gmx::RVec> solventMappedCoords; 
+    std::map<int, gmx::RVec> solventMappedCoords;
     std::map<int, bool> solvInsideSample;
     std::map<int, bool> solvInsidePore;
     int numSolvInsideSample = 0;
@@ -1218,7 +1218,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
         // TODO: make this a parameter:
         real solvMappingMargin_ = 0.0;
-            
+
         // get thread-local selection data:
         const Selection solvMapSel = pdata -> parallelSelection(solvMappingSelCog_);
 
@@ -1230,10 +1230,10 @@ ChapTrajectoryAnalysis::analyzeFrame(
         // find particles inside path (i.e. pore plus bulk sampling regime):
         clock_t tSolInsideSample = std::clock();
         solvInsideSample = molPath.checkIfInside(
-                solventMappedCoords, 
+                solventMappedCoords,
                 solvMappingMargin_);
         for(auto jt = solvInsideSample.begin(); jt != solvInsideSample.end(); jt++)
-        {            
+        {
             if( jt -> second == true )
             {
                 numSolvInsideSample++;
@@ -1244,12 +1244,12 @@ ChapTrajectoryAnalysis::analyzeFrame(
         // find particles inside pore:
         clock_t tSolInsidePore = std::clock();
         solvInsidePore = molPath.checkIfInside(
-                solventMappedCoords, 
+                solventMappedCoords,
                 solvMappingMargin_,
                 molPath.sLo(),
                 molPath.sHi());
         for(auto jt = solvInsidePore.begin(); jt != solvInsidePore.end(); jt++)
-        {            
+        {
             if( jt -> second == true )
             {
                 numSolvInsidePore++;
@@ -1259,16 +1259,16 @@ ChapTrajectoryAnalysis::analyzeFrame(
 
         // now add mapped residue coordinates to data handle:
         dhFrameStream.selectDataSet(5);
-        
+
         // add mapped residues to data container:
-        for(auto it = solventMappedCoords.begin(); 
-            it != solventMappedCoords.end(); 
+        for(auto it = solventMappedCoords.begin();
+            it != solventMappedCoords.end();
             it++)
         {
              dhFrameStream.setPoint(0, solvMapSel.position(it -> first).mappedId()); // res.id
              dhFrameStream.setPoint(1, it -> second[0]);     // s
              dhFrameStream.setPoint(2, it -> second[1]);     // rho
-             dhFrameStream.setPoint(3, 0.0);                 // phi 
+             dhFrameStream.setPoint(3, 0.0);                 // phi
              dhFrameStream.setPoint(4, solvInsidePore[it -> first]);        // inside pore
              dhFrameStream.setPoint(5, solvInsideSample[it -> first]);      // inside sample
              dhFrameStream.setPoint(6, solvMapSel.position(it -> first).x()[XX]);  // x
@@ -1278,7 +1278,7 @@ ChapTrajectoryAnalysis::analyzeFrame(
         }
     }
 
-    
+
     // ESTIMATE SOLVENT DENSITY
     //-------------------------------------------------------------------------
 
@@ -1334,15 +1334,15 @@ ChapTrajectoryAnalysis::analyzeFrame(
     SplineCurve1D solventDensityCoordS = densityEstimator -> estimate(
             solventSampleCoordS);
 
-    // add spline curve parameters to data handle:   
+    // add spline curve parameters to data handle:
     dhFrameStream.selectDataSet(6);
     for(size_t i = 0; i < solventDensityCoordS.ctrlPoints().size(); i++)
     {
         dhFrameStream.setPoint(
-                0, 
+                0,
                 solventDensityCoordS.uniqueKnots().at(i));
         dhFrameStream.setPoint(
-                1, 
+                1,
                 solventDensityCoordS.ctrlPoints().at(i));
         dhFrameStream.finishPointSet();
     }
@@ -1355,17 +1355,17 @@ ChapTrajectoryAnalysis::analyzeFrame(
     SplineCurve1D pathRadius = molPath.pathRadius();
     NumberDensityCalculator ncc;
     SplineCurve1D numberDensity = ncc(
-            solventDensityCoordS, 
-            pathRadius, 
+            solventDensityCoordS,
+            pathRadius,
             numSolvInsideSample);
-  
+
     // find minimum instantaneous solvent density in this frame:
     std::pair<real, real> lim(molPath.sLo(), molPath.sHi());
     std::pair<real, real> minSolventDensity = numberDensity.minimum(lim);
 
 
     // ADD AGGREGATE DATA TO PARALLELISABLE CONTAINER
-    //-------------------------------------------------------------------------   
+    //-------------------------------------------------------------------------
 
     // add aggegate path data:
     dhFrameStream.selectDataSet(0);
@@ -1376,13 +1376,13 @@ ChapTrajectoryAnalysis::analyzeFrame(
     dhFrameStream.setPoint(2, molPath.minRadius().second);
     dhFrameStream.setPoint(3, molPath.length());
     dhFrameStream.setPoint(4, molPath.volume());
-    dhFrameStream.setPoint(5, numSolvInsidePore); 
-    dhFrameStream.setPoint(6, numSolvInsideSample); 
-    dhFrameStream.setPoint(7, solventRangeLo); 
+    dhFrameStream.setPoint(5, numSolvInsidePore);
+    dhFrameStream.setPoint(6, numSolvInsideSample);
+    dhFrameStream.setPoint(7, solventRangeLo);
     dhFrameStream.setPoint(8, solventRangeHi);
-    dhFrameStream.setPoint(9, minSolventDensity.first); 
+    dhFrameStream.setPoint(9, minSolventDensity.first);
     dhFrameStream.setPoint(10, minSolventDensity.second);
-    dhFrameStream.setPoint(11, molPath.sLo()); 
+    dhFrameStream.setPoint(11, molPath.sLo());
     dhFrameStream.setPoint(12, molPath.sHi());
     dhFrameStream.setPoint(13, deParams_.bandWidth()*deParams_.bandWidthScale());
     dhFrameStream.finishPointSet();
@@ -1454,6 +1454,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
     // openen per-frame data set for reading:
     inFile.open(inFileName, std::fstream::in);
+    std::cout << "inFileName " << inFileName << std::endl;
 
     // prepare summary statistics for aggregate properties:
     SummaryStatistics argMinRadiusSummary;
@@ -1491,8 +1492,9 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // read file line by line and calculate summary statistics:
     int linesRead = 0;
     std::string line;
+    std::cout << "std::getline(inFile, line) " << std::getline(inFile, line) << std::endl;
+    std::cout << "return value = input (the stream to get data from , here inFile) " << std::endl;
     std::cout << "inFile " << inFile << " line " << line << std::endl;
-    std::cout << "getline(inFile, line) " << getline(inFile, line) << std::endl;
     while( std::getline(inFile, line) )
     {
         std::cout << "while loop touched" << std::endl;
@@ -1505,11 +1507,11 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         if( !lineDoc.IsObject() )
         {
             // FIXME this is where the JSON error occurs
-            std::string error = "Line " + std::to_string(linesRead) + 
+            std::string error = "Line " + std::to_string(linesRead) +
             " read from" + inFileName + " is not valid JSON object.";
             throw std::runtime_error(error);
         }
-    
+
         // calculate summary statistics of aggregate variables:
         argMinRadiusSummary.update(
                 lineDoc["pathSummary"]["argMinRadius"][0].GetDouble());
@@ -1537,7 +1539,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
                 lineDoc["pathSummary"]["arcLengthHi"][0].GetDouble());
         bandWidthSummary.update(
                 lineDoc["pathSummary"]["bandWidth"][0].GetDouble());
-        
+
         // get time stamp of current frame:
         real timeStamp = lineDoc["pathSummary"]["timeStamp"][0].GetDouble();
         timeStamps.push_back(timeStamp);
@@ -1571,7 +1573,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
     // close per frame data set:
     inFile.close();
-    
+
     // sanity check:
     if( linesRead != numFrames )
     {
@@ -1606,7 +1608,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
     // open JSON data file in read mode:
     inFile.open(inFileName.c_str(), std::fstream::in);
-    
+
     // prepare containers for profile summaries:
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
     std::vector<SummaryStatistics> solventDensitySummary(supportPoints.size());
@@ -1626,7 +1628,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     std::vector<SummaryStatistics> residueYSummary(numPoreRes);
     std::vector<SummaryStatistics> residueZSummary(numPoreRes);
 
-    // containers for profile valued time series: 
+    // containers for profile valued time series:
     std::vector<std::vector<real>> radiusProfileTimeSeries;
     std::vector<std::vector<real>> solventDensityTimeSeries;
     std::vector<std::vector<real>> plHydrophobicityTimeSeries;
@@ -1650,7 +1652,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         // sanity checks:
         if( !lineDoc.IsObject() )
         {
-            std::string error = "Line " + std::to_string(linesProcessed) + 
+            std::string error = "Line " + std::to_string(linesProcessed) +
             " read from" + inFileName + " is not valid JSON object.";
             throw std::runtime_error(error);
         }
@@ -1666,7 +1668,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         MolecularPath molPath(lineDoc);
 
         // sample radius at support points and add to summary statistics:
-        std::vector<real> radiusSample = molPath.sampleRadii(supportPoints); 
+        std::vector<real> radiusSample = molPath.sampleRadii(supportPoints);
         for(size_t i = 0; i < radiusSample.size(); i++)
         {
             radiusSummary.at(i).update(radiusSample.at(i));
@@ -1675,11 +1677,11 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         // add to time series:
         radiusProfileTimeSeries.push_back(radiusSample);
 
-        
+
         // sample points from hydrophobicity splines:
         SplineCurve1D pfHydrophobicitySpline = SplineCurve1DJsonConverter::fromJson(
                 lineDoc["pfHydrophobicitySpline"], 1);
-        std::vector<real> pfHydrophobicitySample = 
+        std::vector<real> pfHydrophobicitySample =
                 pfHydrophobicitySpline.evaluateMultiple(supportPoints, 0);
         SummaryStatistics::updateMultiple(
                 pfHydrophobicitySummary,
@@ -1688,7 +1690,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
         SplineCurve1D plHydrophobicitySpline = SplineCurve1DJsonConverter::fromJson(
                 lineDoc["plHydrophobicitySpline"], 1);
-        std::vector<real> plHydrophobicitySample = 
+        std::vector<real> plHydrophobicitySample =
                 plHydrophobicitySpline.evaluateMultiple(supportPoints, 0);
         SummaryStatistics::updateMultiple(
                 plHydrophobicitySummary,
@@ -1699,7 +1701,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         // sample points from solvent density spline:
         SplineCurve1D solventDensitySpline = SplineCurve1DJsonConverter::fromJson(
                 lineDoc["solventDensitySpline"], 1);
-        std::vector<real> solventDensitySample = 
+        std::vector<real> solventDensitySample =
                 solventDensitySpline.evaluateMultiple(supportPoints, 0);
 
         // get total number of particles in sample for this time step:
@@ -1709,14 +1711,14 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         // TODO this should be done in per-frame analysis:
         NumberDensityCalculator ndc;
         solventDensitySample = ndc(
-                solventDensitySample, 
-                radiusSample, 
+                solventDensitySample,
+                radiusSample,
                 totalNumber);
         SummaryStatistics::updateMultiple(
                 solventDensitySummary,
                 solventDensitySample);
         solventDensityTimeSeries.push_back(solventDensitySample);
- 
+
         // convert to energy and add to summary statistic:
         BoltzmannEnergyCalculator bec;
         std::vector<real> energySample = bec.calculate(solventDensitySample);
@@ -1769,12 +1771,12 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
         // increment line counter:
         linesProcessed++;
     }
-  
+
     // shift of energy profile so that energy at anchor points is zero:
     real shift = -0.5*(anchorEnergyLo.mean() + anchorEnergyHi.mean());
     std::for_each(
-            energySummary.begin(), 
-            energySummary.end(), 
+            energySummary.begin(),
+            energySummary.end(),
             [this, shift](SummaryStatistics &s){s.shift(shift);});
 
     // inform user about progress:
@@ -1788,14 +1790,14 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     if( linesProcessed != numFrames )
     {
         std::string error = "Number of lines read from JSON file does not"
-        "equal number of frames processed!"; 
+        "equal number of frames processed!";
         throw std::runtime_error(error);
     }
 
     // close filestream object:
     inFile.close();
 
-    
+
     // CREATE PDB OUTPUT
     // ------------------------------------------------------------------------
 
@@ -1830,7 +1832,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     results.addPathwayProfile("pfHydrophobicity", pfHydrophobicitySummary);
     results.addPathwayProfile("density", solventDensitySummary);
     results.addPathwayProfile("energy", energySummary);
-    
+
     // add scalar time series data to output:
     results.addTimeStamps(timeStamps);
     results.addPathwayScalarTimeSeries("argMinRadius", argMinRadiusTimeSeries);
@@ -1870,7 +1872,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
     // DELETE PER FRAME DATA
     // ------------------------------------------------------------------------
-   
+
     // detailed output requested?
     if( !outputDetailed_ )
     {
@@ -1899,24 +1901,24 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // averaged properties as spline curves:
     CubicSplineInterp1D interp;
     auto avgRadiusSpl = interp(
-            supportPoints, 
-            avgRadius, 
+            supportPoints,
+            avgRadius,
             eSplineInterpBoundaryHermite);
     auto avgSolventDensitySpl = interp(
-            supportPoints, 
-            avgSolventDensity, 
+            supportPoints,
+            avgSolventDensity,
             eSplineInterpBoundaryHermite);
     auto avgEnergySpl = interp(
-            supportPoints, 
-            avgEnergy, 
+            supportPoints,
+            avgEnergy,
             eSplineInterpBoundaryHermite);
     auto avgPlHydrophobicitySpl = interp(
-            supportPoints, 
-            avgPlHydrophobicity, 
+            supportPoints,
+            avgPlHydrophobicity,
             eSplineInterpBoundaryHermite);
     auto avgPfHydrophobicitySpl = interp(
-            supportPoints, 
-            avgPfHydrophobicity, 
+            supportPoints,
+            avgPfHydrophobicity,
             eSplineInterpBoundaryHermite);
 
 
@@ -1929,7 +1931,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     molPathAvg_ -> addScalarProperty("avg_pf_hydrophobicity", avgPfHydrophobicitySpl, true);
 
     // load colour palettes from JSON file:
-    std::string paletteFilePath = chapInstallBase() + 
+    std::string paletteFilePath = chapInstallBase() +
             std::string("/chap/share/data/palettes/");
     std::string paletteFileName = paletteFilePath + "default.json";
     auto palettes = ColourPaletteProvider::fromJsonFile(paletteFileName);
@@ -1940,8 +1942,8 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     mpexp.setGridSampleDist(outputGridSampleDist_);
     mpexp.setCorrectionThreshold(outputCorrectionThreshold_);
     mpexp(
-        outputBaseFileName_, 
-        "time_averaged_molecular_path", 
+        outputBaseFileName_,
+        "time_averaged_molecular_path",
         *molPathAvg_,
         palettes);
 }
@@ -1988,8 +1990,8 @@ ChapTrajectoryAnalysis::obtainNdxFilePathInfo()
 }
 
 
-/*! 
- * Auxiliary function for checking the validity of various input parameters. 
+/*!
+ * Auxiliary function for checking the validity of various input parameters.
  * Bundled here to keep initAnalysis() uncluttered.
  */
 void
@@ -2015,7 +2017,7 @@ ChapTrajectoryAnalysis::checkParameters()
         throw std::runtime_error("Parameter -out-grid-dist must be strictly "
                                  "positive.");
     }
-    if( outputCorrectionThreshold_ >= 1.0 or 
+    if( outputCorrectionThreshold_ >= 1.0 or
         outputCorrectionThreshold_ <= -1.0)
     {
         throw std::runtime_error("Parameter -out-vis-teak must be in interval "
@@ -2050,7 +2052,7 @@ ChapTrajectoryAnalysis::checkParameters()
     pfParams_.setProbeStepLength(pfProbeStepLength_);
     pfParams_.setMaxProbeRadius(pfMaxProbeRadius_);
     pfParams_.setMaxProbeSteps(pfMaxProbeSteps_);
-    
+
     if( cutoffIsSet_ )
     {
         // this will be determined automatically if not set explcitly:
@@ -2075,7 +2077,7 @@ ChapTrajectoryAnalysis::checkParameters()
         deParams_.setMaxEvalPointDist(deResolution_);
     }
 
-    
+
     // HYDROPHOBICITY PARAMETERS
     //-------------------------------------------------------------------------
 
@@ -2087,4 +2089,3 @@ ChapTrajectoryAnalysis::checkParameters()
     hydrophobKernelParams_.setEvalRangeCutoff(hpEvalRangeCutoff_);
     hydrophobKernelParams_.setMaxEvalPointDist(hpResolution_);
 }
-
