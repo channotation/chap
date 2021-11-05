@@ -1456,9 +1456,19 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     inFile.open(inFileName, std::fstream::in);
     std::cout << "inFileName " << inFileName << std::endl;
     std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
+    std::ifstream f(inFileName);
     if (inFile.is_open())
+    {
         std::cout << "print " << inFileName << std::endl;
+        // https://stackoverflow.com/questions/35201919/how-do-i-print-out-the-contents-of-a-file-c-file-stream
+        std::cout << "f.rdbuf() " << std::endl;
+        std::cout << f.rdbuf() << std::endl;
+        std::cout << "inFile.rdbuf() "  << std::endl;
         std::cout << inFile.rdbuf() << std::endl;
+    }
+    else {
+        std::cout << "inFile is NOT open " << inFileName << std::endl;
+    }
 
     // prepare summary statistics for aggregate properties:
     SummaryStatistics argMinRadiusSummary;
