@@ -1455,6 +1455,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // openen per-frame data set for reading:
     inFile.open(inFileName, std::fstream::in);
     std::cout << "inFileName " << inFileName << std::endl;
+    std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
 
     // prepare summary statistics for aggregate properties:
     SummaryStatistics argMinRadiusSummary;
