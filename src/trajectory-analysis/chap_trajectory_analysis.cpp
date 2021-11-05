@@ -1458,7 +1458,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
     if (inFile.is_open())
         std::cout << "print " << inFileName << std::endl;
-        std::cout << inFile.rdbuf();
+        std::cout << inFile.rdbuf() << std::endl;
 
     // prepare summary statistics for aggregate properties:
     SummaryStatistics argMinRadiusSummary;
