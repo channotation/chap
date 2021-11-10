@@ -1444,14 +1444,14 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     std::cout<<std::endl;
 
     // read in test file
-    std::fstream inFile;
-    inFile.open("test.txt", std::fstream::in);
-    std::cout << "inFile.is_open() (test.txt) " << inFile.is_open() << std::endl;
-    std::string line;
-    while( std::getline(inFile, line) )
+    std::fstream inFile2;
+    inFile2.open("test.txt", std::fstream::in);
+    std::cout << "inFile2.is_open() (test.txt) " << inFile2.is_open() << std::endl;
+    std::string line2;
+    while( std::getline(inFile2, line2) )
     {
       std::cout << "test while loop touched" << std::endl;
-      std::cout << line << std::endl;
+      std::cout << line2 << std::endl;
     }
 
     // transfer file names from user input:
