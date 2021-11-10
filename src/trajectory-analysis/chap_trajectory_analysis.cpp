@@ -1831,7 +1831,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     {
         std::string error = "Number of lines read from JSON file does not"
         "equal number of frames processed!";
-        std::cout << std::string error  << std::endl;
+        std::cout << "Number of lines read from JSON file does not equal number of frames processed!"  << std::endl;
         std::cout << "linesProcessed " << linesProcessed  << std::endl;
         std::cout << "numFrames " << numFrames  << std::endl;
         // throw std::runtime_error(error);
