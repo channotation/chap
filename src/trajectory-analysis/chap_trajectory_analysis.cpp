@@ -1443,10 +1443,10 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // free line for neater output:
     std::cout<<std::endl;
 
-    // read in tst file
+    // read in test file
     std::fstream inFile;
     inFile.open("test.txt", std::fstream::in);
-    std::cout << "inFileName test.txt " << inFileName << std::endl;
+    std::cout << "inFile.is_open() (test.txt) " << inFile.is_open() << std::endl;
     std::string line;
     while( std::getline(inFile, line) )
     {
