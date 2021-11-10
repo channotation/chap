@@ -1615,6 +1615,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     {
         //throw std::runtime_error("Number of frames read does not equal number"
         //"of frames analyised.");
+        std::cout << "Number of frames read does not equal number of frames analyised" <<std::endl;
         std::cout << "linesRead " << linesRead <<std::endl;
         std::cout << "numFrames " << numFrames <<std::endl;
     }
@@ -1644,6 +1645,8 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
     // open JSON data file in read mode:
     inFile.open(inFileName.c_str(), std::fstream::in);
+    std::cout << " open JSON data file in read mode: inFileName.c_str() " << inFileName.c_str() <<std::endl;
+    std::cout << "inFile.is_open() " << inFile.is_open() << std::endl;
 
     // prepare containers for profile summaries:
     std::vector<SummaryStatistics> radiusSummary(supportPoints.size());
@@ -1672,6 +1675,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
 
     // read file line by line:
     int linesProcessed = 0;
+    std::cout << "std::getline(inFile, line) " << std::getline(inFile, line) << std::endl;
     while( std::getline(inFile, line) )
     {
         std::cout.precision(3);
@@ -1827,7 +1831,10 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     {
         std::string error = "Number of lines read from JSON file does not"
         "equal number of frames processed!";
-        throw std::runtime_error(error);
+        std::cout << std::string error  << std::endl;
+        std::cout << "linesProcessed " << linesProcessed  << std::endl;
+        std::cout << "numFrames " << numFrames  << std::endl;
+        // throw std::runtime_error(error);
     }
 
     // close filestream object:
@@ -2040,6 +2047,7 @@ ChapTrajectoryAnalysis::checkParameters()
     // add proper extensions to file names:
     // TODO: better in exporter code?
     outputJsonFileName_ = outputBaseFileName_ + ".json";
+    std::cout << "outputJsonFileName_ " << outputJsonFileName_ << std::endl;
     outputPdbFileName_ = outputBaseFileName_ + ".pdb";
 
     // sanity checks:
