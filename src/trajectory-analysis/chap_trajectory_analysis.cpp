@@ -1443,6 +1443,16 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     // free line for neater output:
     std::cout<<std::endl;
 
+    // read in tst file
+    inFile.open("test.txt", std::fstream::in);
+    std::cout << "inFileName test.txt " << inFileName << std::endl;
+    std::string line;
+    while( std::getline(inFile, line) )
+    {
+      std::cout << "test while loop touched" << std::endl;
+      std::cout << line << std::endl;
+    }
+
     // transfer file names from user input:
     std::string inFileName = std::string("stream_") + outputJsonFileName_;
     std::string outFileName = outputJsonFileName_;
