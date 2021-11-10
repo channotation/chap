@@ -1444,6 +1444,7 @@ ChapTrajectoryAnalysis::finishAnalysis(int numFrames)
     std::cout<<std::endl;
 
     // read in tst file
+    std::fstream inFile;
     inFile.open("test.txt", std::fstream::in);
     std::cout << "inFileName test.txt " << inFileName << std::endl;
     std::string line;
