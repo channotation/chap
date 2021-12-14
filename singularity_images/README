@@ -1,0 +1,28 @@
+# Using sigularity containers for chap
+The .sif file was build with singularity version3. 
+The .simg file was build with version2 of singularity.
+Type "singularity --version" in your terminal to check 
+which version is installed on your machine.
+If you have version 3 instlled, you can use both the .sif or the .simg file.
+If you have version 2 installed, you can only use the .simg file.
+
+### installing singularity ###
+version 2: https://sylabs.io/guides/2.6/user-guide/singularity_flow.html
+version 3: https://sylabs.io/guides/3.8/user-guide/quick_start.html
+
+### version 2 of singularity ###
+singularity shell --nv chap_singularity_version2.simg
+
+### version 3 of singularity ###
+singularity shell --nv chap_sing.sif
+
+### Usage ###
+chap -f 6v9x.pdb -s 6v9x.pdb -sel-pathway 1
+
+The file 6v9x.pdb is just an example.
+After being in the singularity environement, you have to change directorty 
+to the folder where your trajectories/pdb files are stored to use chap for
+analysis. Or you load the files in the same folder where the singularity
+folder is stored.
+
+
