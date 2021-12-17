@@ -11,6 +11,7 @@ or any of its dependencies.
 
 ### installing singularity ###
 version 2: https://sylabs.io/guides/2.6/user-guide/singularity_flow.html
+
 version 3: https://sylabs.io/guides/3.8/user-guide/quick_start.html
 
 The .sif file was built with singularity version3. 
@@ -22,7 +23,9 @@ If you have version 2 installed, you can only use the .simg file.
 
 ### Usage ###
 singularity shell --nv chap_singularity_version2.simg
+
 or
+
 singularity shell --nv chap_sing.sif
 
 chap -f 6v9x.pdb -s 6v9x.pdb -sel-pathway 1
