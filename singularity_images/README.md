@@ -1,4 +1,4 @@
-# Using sigularity containers for chap #
+# Using singularity containers for chap #
 
 Singularity is an open-source software for container-virtualization. 
 Containers offer a way to use a pre-built software in a closed and reproducible space, 
@@ -8,6 +8,12 @@ everything else such as cmake, gcc, boost, CBLAS and LAPACKE libraries).
 If you download the one of the singularity containers provided here and you have
 singularity installed on your workstation or cluster, you do not need to install chap
 or any of its dependencies.
+
+This means running chap is easily done by:-
+
+1.  Installing singularity (via apt-get for example)
+2.  Downloading the singularity image here, running it and then issueing the chap command on your files
+
 
 ### installing singularity ###
 version 2: https://sylabs.io/guides/2.6/user-guide/singularity_flow.html
@@ -43,6 +49,7 @@ read tpr files from current gromacs versions.
 
 ### Installing singularity for windows/mac ###
 https://sylabs.io/guides/3.5/admin-guide/installation.html
+
 Linux container runtimes like Singularity cannot run natively on Windows or Mac 
 because of basic incompatibilities with the host kernel.
 
@@ -51,3 +58,5 @@ one of Hashicorp’s open source tools. The current versions can be found under 
 
 Sylabs has also developed a beta version of Singularity Desktop for Mac, 
 which runs Singularity in a lightweight virtual machine, in a transparent manner.
+
+We have tested the version 3 sif container with mac (OS Catalina) and that seems to work fine.  We have not tested other versions of mac or windows.   Let us know i if you have experience of that!
