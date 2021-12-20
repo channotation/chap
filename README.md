@@ -6,6 +6,8 @@
 
 CHAP is a tool for the functional annotation of ion channel structures written in C++. See the website under [www.channotation.org][CHANNOTATION] for a full documentation including installation instructions and usage examples. If you have any questions please use the GitHub [Issue Tracker](https://github.com/channotation/chap/issues).
 
+## Precompiled chap version ##
+If you want to use a precompiled chap version with a singularity image, follow the instructions [here](https://github.com/channotation/chap/blob/singularity_branch/docs/_docs/getting-started/index.md):
 
 ## Prerequisites ##
 
