@@ -24,7 +24,7 @@ This is the simplest solution and involves just two steps.  The following is for
 1.  Install singularity
 
 ```sh
-sudo apt-get install singularity
+sudo apt-get install singularity-container
 ```
 (or follow the singularity installation guide: https://sylabs.io/guides/3.8/user-guide/quick_start.html) 
 
