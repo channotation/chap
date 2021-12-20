@@ -19,7 +19,7 @@ CHAP is written in C++ and is developed and tested on Ubuntu Linux. It is expect
 
 ## Using a singularity image ##
 
-This is the simplest solution and involves just two steps.  The following is for linux (ubuntu):
+This is the simplest solution and involves just two steps.  The following is for linux (ubuntu 18):
 
 1.  Install singularity
 
