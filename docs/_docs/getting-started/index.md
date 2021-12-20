@@ -15,8 +15,37 @@ redirect_from: /docs/index.html
 [CHAP-Download]: https://github.com/channotation/chap/releases
 
 
-CHAP is written in C++ and is developed and tested on Ubuntu Linux. It is expected to be portable to other Unix-like operating systems, although this has not been tested. The following installation guide will assume that you are using Ubuntu and that you are reasonably experienced in using the command line.
+CHAP is written in C++ and is developed and tested on Ubuntu Linux. It is expected to be portable to other Unix-like operating systems, although this has not been tested thoroughly.
 
+## Using a singularity image ##
+
+This is the simplest solution and involves just two steps.  The following is for linux (ubuntu):
+
+1.  Install singularity
+
+```sh
+sudo apt-get install singularity
+```
+
+2.  Obtain the singularity image with chap precompiled and ready to go
+
+```sh
+wget https://github.com/channotation/chap/tree/singularity_branch/singularity_images/chap_singularity_version2.simg
+```
+
+That's it - then you are good to go!  The below example is for the TRPA1 channel structure (PDB code: 6v9X):
+
+```sh
+singularity shell --nv chap_singularity_version2.simg
+
+chap -f 6v9x.pdb -s 6v9x.pdb -sel-pathway 1
+```
+
+This installs a singularity version2 image file.  A version 3 is also available though singularity images are backward compatible so its really only necessary if you already have singulairty version 3 installed.
+
+If you want to install it yourself then the instructions below will only work with gromacs up to version 2018.
+
+The following installation guide will assume that you are using Ubuntu and that you are reasonably experienced in using the command line.
 
 ## Downloading CHAP ##
 
