@@ -17,6 +17,9 @@ redirect_from: /docs/index.html
 
 CHAP is written in C++ and is developed and tested on Ubuntu Linux. It is expected to be portable to other Unix-like operating systems, although this has not been tested. The following installation guide will assume that you are using Ubuntu and that you are reasonably experienced in using the command line.
 
+## New ##
+
+If you have ubuntu and you want to run a precompiled chap version with a singularity image, follow these instructions  https://github.com/channotation/chap/blob/singularity_branch/docs/_docs/getting-started/index.md
 
 ## Downloading CHAP ##
 
