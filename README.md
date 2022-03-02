@@ -56,3 +56,8 @@ which should bring up an online help for using CHAP.
 [GCC]: https://gcc.gnu.org/
 [GTest]: https://github.com/google/googletest
 [CHANNOTATION]: http://www.channotation.org
+
+
+## New ##
+
+If you have ubuntu and you want to run a precompiled chap version with a singularity image, follow these instructions [here](https://github.com/channotation/chap/blob/singularity_branch/docs/_docs/getting-started/index.md)
