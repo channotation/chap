@@ -1,8 +1,8 @@
 # CHAP - The Channel Annotation Package
-# 
-# Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and 
+#
+# Copyright (c) 2016 - 2018 Gianni Klesse, Shanlin Rao, Mark S. P. Sansom, and
 # Stephen J. Tucker
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -43,12 +43,13 @@ add_executable(runAllTests ${TEST_SRC_FILES} ${SRC_FILES})
 target_include_directories(runAllTests PUBLIC ${CHAP_SOURCE_DIR}/include)
 target_link_libraries(runAllTests ${GROMACS_LIBRARIES})
 target_link_libraries(runAllTests ${LAPACKE_LIBRARIES})
+target_include_directories(chap PUBLIC ${LAPACKE_INCLUDE_DIRS})
 target_link_libraries(runAllTests ${LAPACK_LIBRARIES})
 target_link_libraries(runAllTests ${BLAS_LIBRARIES})
 target_link_libraries(runAllTests ${GTEST_LIBRARY})
 target_link_libraries(runAllTests ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(runAllTests PUBLIC ${Boost_INCLUDE_DIRS})
 
 # make ctest aware of test executable:
 # (if the color option is not set some test fail)
 add_test(runAllTests runAllTests --gtest_color=yes)
-
