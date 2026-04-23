@@ -26,6 +26,7 @@
 
 #include "config/back_matter.hpp"
 #include "config/front_matter.hpp"
+#include <gromacs/trajectoryanalysis/cmdlinerunner.h>
 #include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
 using namespace gmx;
@@ -45,7 +46,7 @@ int main(int argc, char **argv)
     argc++;
 
     // run trajectory analysis:
-	int status = TrajectoryAnalysisCommandLineRunner::runAsMain<ChapTrajectoryAnalysis>(argc, argv);
+	int status = gmx::TrajectoryAnalysisCommandLineRunner::runAsMain<ChapTrajectoryAnalysis>(argc, argv);
 
     // print back matter:
     BackMatter::print();

@@ -32,7 +32,7 @@
 #include <tuple>
 #include <vector>
 
-#include <gromacs/math/vec.h>
+#include <gromacs/utility/vec.h>
 #include <gromacs/utility/real.h>   
 
 

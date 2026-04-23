@@ -22,6 +22,7 @@
 // THE SOFTWARE.
 
 
+#include <stdexcept>
 #include "aggregation/scalar_time_series.hpp"
 
 

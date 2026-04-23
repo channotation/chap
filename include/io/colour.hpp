@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-#include <gromacs/math/vec.h> 
+#include <gromacs/utility/vec.h> 
 
 #include "external/rapidjson/document.h"
 

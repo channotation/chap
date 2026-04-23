@@ -25,7 +25,7 @@
 #include <iostream>
 #include <limits>
 
-#include <gromacs/math/vec.h>
+#include <gromacs/utility/vec.h>
 
 #include "optim/simulated_annealing_module.hpp"
 #include "optim/nelder_mead_module.hpp"

@@ -26,7 +26,7 @@
 #define NAIVE_CYLINDRICAL_PATH_FINDER_HPP
 
 #include <gromacs/utility/real.h> 
-#include <gromacs/math/vec.h>
+#include <gromacs/utility/vec.h>
 
 #include "path-finding/abstract_path_finder.hpp"
 

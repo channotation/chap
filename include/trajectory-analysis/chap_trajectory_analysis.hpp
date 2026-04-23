@@ -30,7 +30,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include <gromacs/trajectoryanalysis.h>
+#include <gromacs/analysisdata/analysisdata.h>
+#include <gromacs/selection/selection.h>
+#include <gromacs/selection/selectioncollection.h>
+#include <gromacs/trajectoryanalysis/analysismodule.h>
 
 #include "analysis-setup/residue_information_provider.hpp"
 

@@ -23,7 +23,7 @@
 
 
 #include <cmath>
-
+#include <stdexcept>
 #include "statistics/kernel_function.hpp"
 
 

@@ -23,7 +23,7 @@
 
 
 # minimum version of cmake required for building:
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 # set project parameters:
 project(CHAP LANGUAGES CXX C VERSION 0.9.1)
@@ -85,6 +85,41 @@ endif()
 find_package(GROMACS 2016 REQUIRED)
 gromacs_check_double(GMX_DOUBLE)
 gromacs_check_compiler(CXX)
+
+# GROMACS Conda package exports carry a non-relocatable absolute libm path
+# from the build environment. Drop that stale path and keep portable math linking.
+if(TARGET Gromacs::libgromacs)
+  get_target_property(_gmx_iface_libs Gromacs::libgromacs INTERFACE_LINK_LIBRARIES)
+  if(_gmx_iface_libs)
+    set(_gmx_iface_libs_sanitized "")
+    set(_gmx_removed_abs_libm FALSE)
+    set(_gmx_has_portable_m FALSE)
+    foreach(_lib IN LISTS _gmx_iface_libs)
+      if(_lib MATCHES ".*/libm\\.so(\\.[0-9]+)*$")
+        set(_gmx_removed_abs_libm TRUE)
+      else()
+        if(_lib STREQUAL "m")
+          set(_gmx_has_portable_m TRUE)
+        endif()
+        list(APPEND _gmx_iface_libs_sanitized "${_lib}")
+      endif()
+    endforeach()
+    if(_gmx_removed_abs_libm)
+      if(NOT _gmx_has_portable_m)
+        list(APPEND _gmx_iface_libs_sanitized m)
+      endif()
+      set_target_properties(Gromacs::libgromacs PROPERTIES
+        INTERFACE_LINK_LIBRARIES "${_gmx_iface_libs_sanitized}"
+      )
+      message(STATUS "Patched GROMACS imported target: replaced absolute libm.so dependency with portable math link")
+    endif()
+    unset(_gmx_iface_libs_sanitized)
+    unset(_gmx_removed_abs_libm)
+    unset(_gmx_has_portable_m)
+  endif()
+  unset(_gmx_iface_libs)
+endif()
+
 include_directories(${GROMACS_INCLUDE_DIRS})
 add_definitions(${GROMACS_DEFINITIONS})
 
@@ -98,7 +133,8 @@ include(ExternalProject)
 # Google test as external project:
 ExternalProject_Add(
     googletest
-    URL https://github.com/google/googletest/archive/release-1.7.0.zip
+  URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     # Disable install step
     INSTALL_COMMAND ""
 )
@@ -107,8 +143,8 @@ ExternalProject_Add(
 ExternalProject_Get_Property(googletest source_dir binary_dir)
 
 # set include and library path variables:
-set(GTEST_INCLUDE_DIR ${source_dir}/include)
-set(GTEST_LIBRARY_PATH ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
+set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
+set(GTEST_LIBRARY_PATH ${binary_dir}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
 set(GTEST_LIBRARY gtest)
 include_directories(${GTEST_INCLUDE_DIR})
 

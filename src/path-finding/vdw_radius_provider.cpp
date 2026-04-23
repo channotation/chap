@@ -28,7 +28,7 @@
 //#include <gromacs/topology/atomprop.h> 
 #include <gromacs/topology/atoms.h>  
 #include <gromacs/topology/topology.h>  
-
+#include <gromacs/trajectoryanalysis/topologyinformation.h>
 #include "path-finding/vdw_radius_provider.hpp"
 
 
@@ -182,7 +182,7 @@ VdwRadiusProvider::vdwRadiiForTopology(const gmx::TopologyInformation &top,
                                        std::vector<int> mappedIds)
 {
     // get list of all atoms:
-    t_atoms atoms = top.topology() -> atoms;
+    t_atoms atoms = *(top.atoms());
 
     // sanity check:
     int maxId = (*std::max_element(mappedIds.begin(), mappedIds.end()));

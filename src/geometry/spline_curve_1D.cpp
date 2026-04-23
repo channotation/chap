@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <functional>
+#include <cstdint>
 
 #include <boost/math/tools/minima.hpp>
 
@@ -229,7 +230,7 @@ SplineCurve1D::minimum(const std::pair<real, real> &lim)
 {
     // internal parameters:
     real maxSampleDist = 0.1;
-    boost::uintmax_t maxIter = 100;
+    std::uintmax_t maxIter = 100;
 
     // draw sample of values and find minimum:
     real length = lim.second - lim.first;

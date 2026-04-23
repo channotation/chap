@@ -32,6 +32,7 @@
 #include <gromacs/topology/atoms.h>
 #include <gromacs/topology/topology.h>
 #include <gromacs/trajectoryanalysis/analysissettings.h>
+#include <gromacs/trajectoryanalysis/topologyinformation.h>
 #include <gromacs/utility/real.h>
 
 #include "external/rapidjson/document.h"

@@ -27,7 +27,6 @@
 
 #include <vector>
 
-#include <gromacs/trajectoryanalysis.h>
 #include <gromacs/selection/nbsearch.h>
 
 #include "path-finding/abstract_path_finder.hpp"

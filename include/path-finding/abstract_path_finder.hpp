@@ -27,8 +27,6 @@
 
 #include <vector>
 
-#include <gromacs/trajectoryanalysis.h>
-
 #include "path-finding/molecular_path.hpp"
 
 

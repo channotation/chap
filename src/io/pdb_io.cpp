@@ -40,14 +40,14 @@ PdbStructure::fromTopology(
         const gmx::TopologyInformation &top)
 {
     // retrieve coordinates and box matrix from topology:
-    top.getTopologyConf(&coords_, box_);
+    coords_ = gmx::as_rvec_array(top.x().data());
+    top.getBox(box_);
 
     // retrieve list of atoms in topology:
-    t_topology *topol = top.topology();
-    atoms_ = topol -> atoms;  
+    atoms_ = *(top.atoms());  
 
     // retrieve periodic BC:
-    ePBC_ = top.ePBC();
+    ePBC_ = top.pbcType();
 }
 
 
@@ -69,7 +69,7 @@ PdbStructure::setPoreFacing(
         // fill with proper values (occup and bfac assigned zero by default):
         for(size_t i = 0; i < atoms_.nr; i++)
         {
-            atoms_.pdbinfo[i].type = epdbATOM;
+            atoms_.pdbinfo[i].type = PdbRecordType::Atom;
             atoms_.pdbinfo[i].atomnr = i + 1;
             atoms_.pdbinfo[i].altloc = ' ';
             atoms_.pdbinfo[i].occup = 0.0;

@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <gromacs/trajectoryanalysis/analysissettings.h>
+#include <gromacs/trajectoryanalysis/topologyinformation.h>
 #include <gromacs/topology/topology.h>
 #include <gromacs/utility/real.h>
 
@@ -58,8 +59,8 @@ class PdbStructure
 
         // data required for writing PDB file:
         t_atoms atoms_;
-        rvec *coords_;
-        int ePBC_;
+        const rvec *coords_;
+        PbcType ePBC_;
         matrix box_;
 };
 

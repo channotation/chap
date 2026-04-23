@@ -29,8 +29,6 @@
 #include <string>
 #include <vector>
 
-#include <gromacs/trajectoryanalysis.h>
-
 #include "path-finding/abstract_probe_path_finder.hpp"
 
 

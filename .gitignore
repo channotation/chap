@@ -1,4 +1,5 @@
 # ignored subdirecotires:
+.vscode/*
 build/*
 bin/*
 devdoc/*

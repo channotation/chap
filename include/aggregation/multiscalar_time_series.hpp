@@ -28,6 +28,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 #include "aggregation/scalar_time_series.hpp"
 

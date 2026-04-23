@@ -30,7 +30,7 @@
 
 #include <gtest/gtest_prod.h>   
 
-#include <gromacs/math/vec.h>
+#include <gromacs/utility/vec.h>
 
 #include "geometry/abstract_spline_curve.hpp"
 

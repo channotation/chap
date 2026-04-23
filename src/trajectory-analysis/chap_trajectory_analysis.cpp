@@ -25,8 +25,11 @@
 #include <algorithm>
 #include <string>
 
+#include <gromacs/options/basicoptions.h>
+#include <gromacs/options/ioptionscontainer.h>
+#include <gromacs/selection/selectionoption.h>
 #include <gromacs/random/threefry.h>
-#include <gromacs/utility/fatalerror.h>
+#include <gromacs/trajectory/trajectoryframe.h>
 
 #include "trajectory-analysis/chap_trajectory_analysis.hpp"
 
@@ -201,7 +204,7 @@ ChapTrajectoryAnalysis::initOptions(
     const char * const allowedPathFindingMethod[] = {"cylindrical",
                                                      "inplane_optim"};
     pfMethod_ = ePathFindingMethodInplaneOptimised;                                         
-    options -> addOption(EnumOption<ePathFindingMethod>("pf-method")
+    options -> addOption(LegacyEnumOption<ePathFindingMethod>("pf-method")
                          .enumValue(allowedPathFindingMethod)
                          .store(&pfMethod_)
                          .description("Path finding method. The default "
@@ -221,7 +224,7 @@ ChapTrajectoryAnalysis::initOptions(
                                                      "hole_xplor",
                                                      "user"};
     pfVdwRadiusDatabase_ = eVdwRadiusDatabaseHoleSimple;
-    options -> addOption(EnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
+    options -> addOption(LegacyEnumOption<eVdwRadiusDatabase>("pf-vdwr-database")
                          .enumValue(allowedVdwRadiusDatabase)
                          .store(&pfVdwRadiusDatabase_)
                          .description("Database of van-der-Waals radii to be "
@@ -250,7 +253,7 @@ ChapTrajectoryAnalysis::initOptions(
     const char * const allowedPathAlignmentMethod[] = {"none",
                                                        "ipp"};
     pfPathAlignmentMethod_ = ePathAlignmentMethodIpp;
-    options -> addOption(EnumOption<ePathAlignmentMethod>("pf-align-method")
+    options -> addOption(LegacyEnumOption<ePathAlignmentMethod>("pf-align-method")
                          .enumValue(allowedPathAlignmentMethod)
                          .store(&pfPathAlignmentMethod_)
                          .description("Method for aligning pathway "
@@ -387,7 +390,7 @@ ChapTrajectoryAnalysis::initOptions(
     const char * const allowedDensityEstimationMethod[] = {"histogram",
                                                            "kernel"};
     deMethod_ = eDensityEstimatorKernel;
-    options -> addOption(EnumOption<eDensityEstimator>("de-method")
+    options -> addOption(LegacyEnumOption<eDensityEstimator>("de-method")
                          .enumValue(allowedDensityEstimationMethod)
                          .store(&deMethod_)
                          .description("Method used for estimating the "
@@ -444,7 +447,7 @@ ChapTrajectoryAnalysis::initOptions(
                                                           "memprotmd",
                                                           "user"};
     hydrophobicityDatabase_ = eHydrophobicityDatabaseWimleyWhite1996;
-    options -> addOption(EnumOption<eHydrophobicityDatabase>("hydrophob-database")
+    options -> addOption(LegacyEnumOption<eHydrophobicityDatabase>("hydrophob-database")
                          .enumValue(allowedHydrophobicityDatabase)
                          .store(&hydrophobicityDatabase_)
                          .description("Database of hydrophobicity scale for "
@@ -482,19 +485,9 @@ ChapTrajectoryAnalysis::initAnalysis(
         const TrajectoryAnalysisSettings& /*settings*/,
         const TopologyInformation &top)
 {
-    // the following code ensures compatibility across Gromacs versions:
-    // (there was an API break between 2016 and 2018)
-    #if GROMACS_VERSION_MAJOR>=2018
-
-    std::unique_ptr<gmx_mtop_t> topologyPointer(new gmx_mtop_t);
-    *topologyPointer = *top.mtop();
-
-    #elif GROMACS_VERSION_MAJOR>=2016
-
-    std::unique_ptr<t_topology> topologyPointer(new t_topology);
-    *topologyPointer = *top.topology();
-
-    #endif
+    // GROMACS 202x exposes gmx_mtop_t as non-copyable; use the topology owned by
+    // TopologyInformation and cast away const for legacy APIs that still require it.
+    gmx_mtop_t* topologyPointer = const_cast<gmx_mtop_t*>(top.mtop());
 
 
     // set path name of NDX file:
@@ -628,20 +621,20 @@ ChapTrajectoryAnalysis::initAnalysis(
     if( customNdxFileName_.size() != 0 )
     {
         gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               topologyPointer.get(), 
+                               topologyPointer, 
                                customNdxFileName_.c_str());  
     }
     else
     {
         gmx_ana_indexgrps_init(&poreIdxGroups, 
-                               topologyPointer.get(), 
+                               topologyPointer, 
                                NULL); 
     }
 
     // create selections as defined above:
     poreMappingSelCal_ = poreMappingSelCol_.parseFromString(poreMappingSelCalString)[0];
     poreMappingSelCog_ = poreMappingSelCol_.parseFromString(poreMappingSelCogString)[0];
-    poreMappingSelCol_.setTopology(topologyPointer.get(), 0);
+    poreMappingSelCol_.setTopology(topologyPointer, 0);
     poreMappingSelCol_.setIndexGroups(poreIdxGroups);
     poreMappingSelCol_.compile();
 
@@ -677,13 +670,13 @@ ChapTrajectoryAnalysis::initAnalysis(
         if( customNdxFileName_.size() != 0 )
         {
             gmx_ana_indexgrps_init(&solvIdxGroups,
-                                   topologyPointer.get(),
+                                   topologyPointer,
                                    customNdxFileName_.c_str());
         }
         else
         {
             gmx_ana_indexgrps_init(&solvIdxGroups,
-                                   topologyPointer.get(),
+                                   topologyPointer,
                                    NULL);
         }
 
@@ -694,7 +687,7 @@ ChapTrajectoryAnalysis::initAnalysis(
         solvMappingSelCog_ = solvMappingSelCol_.parseFromString(solvMappingSelCogString)[0];
 
         // compile the selections:
-        solvMappingSelCol_.setTopology(topologyPointer.get(), 0);
+        solvMappingSelCol_.setTopology(topologyPointer, 0);
         solvMappingSelCol_.setIndexGroups(solvIdxGroups);
         solvMappingSelCol_.compile();
 

@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 
 #include <gromacs/trajectoryanalysis/analysissettings.h>
+#include <gromacs/trajectoryanalysis/topologyinformation.h>
 #include <gromacs/utility/arrayref.h>
 
 #include "external/rapidjson/document.h"

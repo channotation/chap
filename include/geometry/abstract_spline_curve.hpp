@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include <gromacs/math/vec.h>
+#include <gromacs/utility/vec.h>
 
 #include "geometry/bspline_basis_set.hpp"
 

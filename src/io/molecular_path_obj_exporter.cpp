@@ -28,7 +28,7 @@
 #include <sstream>
 #include <vector>
 
-#include <gromacs/math/vec.h>
+#include <gromacs/utility/vec.h>
 #include <gromacs/utility/real.h> 
 
 #include "io/molecular_path_obj_exporter.hpp"
